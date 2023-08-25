@@ -1,0 +1,146 @@
+// types
+
+    i8
+    i16
+    i32
+    i64
+    int :: i64
+
+    u8
+    u16
+    u32
+    u64
+    uint :: u64
+
+    b8
+    b16
+    b32
+    b64
+    bool :: b64
+
+    f16
+    f32
+    f64
+    float :: f64
+
+    (untyped_integer) -> int
+    (untyped_float)   -> float
+    (untyped_string)  -> []u8
+
+    ^T // pointer to type T, u64 under the hood
+
+    rawptr // raw pointer with no type information
+
+    // array of type T
+    []T :: struct {
+        _ : ^T,  // base
+        _ : u64, // length
+    }
+
+    struct // c-like structs - members are aligned to size-alignment boundaries
+
+    union // c-like unions - members are aligned to largest member's alignment
+
+    enum // c-like enums - default representation is int but can be specified (must be integer type though)
+
+    fn(_: X, _: Y) -> (_: Z, _: W) // function type determined by input param types and return param types (no information is kept at runtime, internally a rawptr)
+
+// declarations
+
+    // constant declaration - constant at compile time
+    a : int : 0 // explicit type
+    a :     : 0 // implicit type
+    a :: 0 // same as above
+
+    // variable declaration
+    b : int = 0 // explicit type
+    b :     = 0 // implicit type
+    b := 0 // same as above
+
+    c : []int = []int{0, 1, 2}
+    c := []int{0, 1, 2}
+    c : []int = {0, 1, 2}
+    c := {0, 1, 2} // compiler will attempt to figure out what type array this is based on the untyped_string
+
+    d := "string" // string literal gets converted to []u8 literal with utf8 encoding
+
+    arr := []int{0,3,0}
+    arr := [3]int{0,3,0} // optionally specify length
+    arr := [3]int{} // arr == []int{0,0,0}
+
+
+    // like a typedef struct
+    this_struct :: struct {
+        i : int,
+        f : float,
+    }
+
+    // not allowed
+    this_struct_weirdness := struct {
+        i : int,
+        f : float,
+    }
+
+    // declare struct literal
+    s := this_struct{}
+
+// constructs
+    
+    // parameter must be boolean
+    if a == 3 {
+        {...}
+    } elif a == 2 {
+        {...}
+    } else {
+        {...}
+    }
+
+    // switch-case, has default break with a 'fallthrough' statement
+    switch b {
+    case 1:
+        {...}
+    case 2:
+        {...}
+        fallthrough
+    case 3:
+        {...}
+    }
+
+    // standard while loop
+    while a == 0 {
+        {...}
+    }
+
+    // c-like for loop - iteration variable created inside a for-loop scope, so it may not be used outside of the for loop
+    for i := 0 ; i < a.len ; i += 1 {
+        {...}
+    }
+
+// error - register cannot be reserved at global scope
+value : #register("rc") int = 0
+
+// error - constant cannot be reserved
+value : #register("rc") int = 0
+
+// INLINE ASSEMBLY IDEA
+
+    add :: fn(a, b: int) -> int {
+
+        // create variables, assign to and reserve registers - registers are released once variable goes out of scope
+        a_reg #register("ra") : int = a
+        b_reg #register("rb") : int = b
+        value #register("rc") : int
+
+        asm {
+            "addr rc, ra, rb"
+        }
+
+        return value
+    }
+
+    add :: fn(a #register("ra"), b #register("rb") : int) -> (value #register("rc"): int) {
+        asm {
+            "addr rc, ra, rb"
+        }
+        return
+    }
