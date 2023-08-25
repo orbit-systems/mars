@@ -1,0 +1,4 @@
+name suggestions:
+    mars
+    helios
+    ares
