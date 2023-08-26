@@ -2,6 +2,6 @@ name suggestions:
     mars
     helios
     ares
-    aion
+    aion / aeon
     atlas
-    
+    juno
