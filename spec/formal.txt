@@ -1,0 +1,121 @@
+types
+    signed integer
+        i8
+        i16
+        i32
+        i64
+        int :: i64
+
+    unsigned integer
+        u8
+        u16
+        u32
+        u64
+        uint :: u64
+
+    boolean
+        b8
+        b16
+        b32
+        b64
+        bool :: b64
+
+    floating point
+        f16
+        f32
+        f64
+        float :: f64
+
+    pointer
+        ^T
+        rawptr
+
+    enum
+        enum T {}       enumeration over type T (default: int). T must be in (all int, uint)
+
+    untyped
+        (untyped_int)   internal int literal - can implicitly convert to any numerical type (if in range)
+        (untyped_float) internal float literal - can implictly convert to any float type, or an int type if it represents an integer value (12.0 for example)
+        (untyped_bool)  internal bool literal - can implicitly convert to any boolean type
+
+    compound
+        []T             slice array defined as hidden struct {base: ^T, len: int}
+        struct {}       data structure
+        union {}        sum type
+
+operators
+    unary numeric
+        +       is 0 + x                with type T in (all integers, uintegers, floats): + T -> T
+        -       negation (0 - x)        with type T in (all integers, uintegers, floats): - T -> T
+        ~       bitwise complement      with type T in (all integers, uintegers, floats): ~ T -> T
+
+    unary boolean
+        !       boolean not             with type T in (all booleans): !T -> T
+
+    binary numeric
+        +       addition                with type T in (all integers, uintegers, floats, pointers): T + T -> T
+        -       subtraction             with type T in (all integers, uintegers, floats, pointers): T - T -> T
+        *       multiplication          with type T in (all integers, uintegers, floats, pointers): T * T -> T
+        /       division                with type T in (all integers, uintegers, floats, pointers): T / T -> T
+        %       modulo (truncated)      with type T in (all integers, uintegers, pointers): T % T -> T
+        %%      remainder (floored)     with type T in (all integers, uintegers, pointers): T %% T -> T
+
+    binary logical
+        &       bitwise and             with type T in (all integers, uintegers, floats, pointers): T ~ T -> T
+        |       bitwise or              with type T in (all integers, uintegers, floats, pointers): T ~ T -> T
+        ~|      bitwise nor             with type T in (all integers, uintegers, floats, pointers): T ~ T -> T
+        ~       bitwise xor             with type T in (all integers, uintegers, floats, pointers): T ~ T -> T
+        <<      left shift              with type T in (all integers, uintegers, floats, pointers): T << (all uintegers) -> T
+        >>      right shift             with type T in (all integers, uintegers, floats, pointers): T >> (all uintegers) -> T
+
+    binary boolean
+        &&      boolean and             with type T in (all booleans): T && T -> T
+        ||      boolean or              with type T in (all booleans): T || T -> T
+        ~~      boolean xor             with type T in (all booleans): T ~~ T -> T
+
+    comparison
+        ==      equality                (*): T == T -> bool
+        !=      inequality              (*): T != T -> bool
+        <       less than               (**): T < T -> bool
+        <=      less than or equal      (**): T <= T -> bool
+        >       greater than            (**): T > T -> bool
+        >=      greater than or equal   (**): T >= T -> bool
+
+        * a type is comparable if:
+        | they are base types (all integers, uintegers, floats, booleans, pointers)
+        | they are structs, and their fields are comparable
+        | they are unions, and their variants are comparable
+        | they are arrays and their element type is comparable
+        | they are enums
+
+        ** a type is orderable if:
+        | they are numeric (all integers, uintegers, floats, pointers)
+        | they are enums
+
+    unary conversion
+        cast(T)     value cast to type T        (*): cast(T) X -> T
+        bitcast(T)  raw data cast to type T     (**): bitcast(T) X -> T
+
+        * values can be cast like so:
+        | all (u)integer types can cast between each other. 
+        |       if one is casting to another of smaller size, the most-significant "top" bits are discarded.
+        |       casts between (u)integers of the same size behave the same as bitcasts.
+        | all boolean types can cast between each other.
+        | all pointer types can cast between each other.
+        | all (u)integer types can cast to floating point types, converting to their closest floating point representation.
+        | all floating point types can cast to (u)integer types, truncating and mapping to their closest representation.
+
+        ** values can be bitcast if their sizes are the same.
+
+
+    precendence
+        unary operators have highest precedence.
+
+        binary operator precedence:
+        5   *   /   %   %%   &   &~  <<   >>  ~|
+        4   +   -   |   ~
+        3   ==  !=  <   >    <=  >=
+        2   &&
+        1   ||
+
+program structure

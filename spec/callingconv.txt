@@ -1,5 +1,4 @@
-ra - re is parameters, ri-rk is for returns
-
+ra through re is for function parameters, ri through rk is for returns
 
 parameters that are larger than register size OR non-base types (arrays, structs, etc) are passed on the stack.
 even if a struct is smaller than a register, it should still be passed on the stack.
@@ -10,4 +9,4 @@ if all calling-convention registers are used up, they spill over onto the stack.
 
 // take the function foo as an example:
     foo :: fn(a: int, b: int, c: []int, d: int)
-// a, b, and d are passed through registers ra, rb, and rc. c is put on the stack.
+// "a", "b", and "d" are passed through registers ra, rb, and rc. "c" is put on the stack.

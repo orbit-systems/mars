@@ -24,8 +24,8 @@
     float :: f64
 
     // default type assumptions for literals
-    (literal_integer) -> int
-    (literal_float)   -> float
+    (untyped_integer) -> int
+    (untyped_float)   -> float
 
     ^T // pointer to type T, u64 under the hood
 
@@ -170,17 +170,20 @@
 
     add :: fn(a, b: int) -> int {
 
-        // create variables, assign to and reserve registers - registers are released once variable goes out of scope
+        // create variables, assign to and reserve registers
         a_reg #register("ra") : int = a
         b_reg #register("rb") : int = b
         value #register("rc") : int
 
-        asm {
+        asm() {
             "addr rc, ra, rb"
         }
 
-        #release(a_reg)
-        #release("all")
+        #release(a_reg) // tell the compiler that a_reg can be stored elsewhere and that its associated register is now free
+        #release(b_reg)
+        #release(c_reg)
+        
+        #release("all") // releases all reserved variables/registers in
 
         return value
     }
@@ -188,14 +191,14 @@
 
     add2 :: fn(a, b: int) -> int {
 
-        value : int
+        value : int = 0
 
         // this is better practice
         asm(a -> "ra", b -> "rb", value <-> "rc") {
             "addr rc, ra, rb"
         }
 
-        // a -> "ra"        this puts the value of "a" into register "ra" at the beginning of the block, variable "a" is stored somewhere else
+        // a -> "ra"        this puts the value of "a" into register "ra" at the beginning of the block.
         // a <- "ra"        this puts the value of register "ra" into the variable "a" at the end of the block.
         // a <-> "ra"       this does both.
 
@@ -250,3 +253,6 @@ slice() :: fn(arr: []int, start_index, end_index : int = -1) -> []int {
         end_index - start_index,
     }
 }
+
+
+
