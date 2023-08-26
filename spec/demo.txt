@@ -179,8 +179,48 @@
             "addr rc, ra, rb"
         }
 
+        #release(a_reg)
+        #release("all")
+
         return value
     }
+
+
+    add2 :: fn(a, b: int) -> int {
+
+        value : int
+
+        // this is better practice
+        asm(a -> "ra", b -> "rb", value <-> "rc") {
+            "addr rc, ra, rb"
+        }
+
+        // a -> "ra"        this puts the value of "a" into register "ra" at the beginning of the block, variable "a" is stored somewhere else
+        // a <- "ra"        this puts the value of register "ra" into the variable "a" at the end of the block.
+        // a <-> "ra"       this does both.
+
+        return value
+    }
+
+
+
+    read_rf :: fn() -> int {
+        value_read : int
+
+        asm(value_read -> "ra") {
+            "add ra, rf, 0"
+        }
+        // value_read == rf
+        
+        return value_read
+    }
+
+
+
+
+
+
+
 
 
 
