@@ -3,5 +3,5 @@ package mars
 import ph "./phobos" // frontend
 import dm "./deimos" // backend
 
-// mars compiler
+// mars compiler core - executes and manages frontend + backend function
 
