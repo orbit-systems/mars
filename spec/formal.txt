@@ -31,17 +31,17 @@ types
         rawptr
 
     enum
-        enum T {}       enumeration over type T (default: int). T must be in (all int, uint)
+        enum T          enumeration over type T (default: int). T must be in (all integers, uintegers)
 
-    untyped
+    untyped/literal
         (untyped_int)   internal int literal - can implicitly convert to any numerical type (if in range)
         (untyped_float) internal float literal - can implictly convert to any float type, or an int type if it represents an integer value (12.0 for example)
         (untyped_bool)  internal bool literal - can implicitly convert to any boolean type
 
     compound
         []T             slice array defined as hidden struct {base: ^T, len: int}
-        struct {}       data structure
-        union {}        sum type
+        struct          data structure
+        union           sum type
 
 operators
     unary numeric
@@ -81,16 +81,16 @@ operators
         >       greater than            (**): T > T -> bool
         >=      greater than or equal   (**): T >= T -> bool
 
-        * a type is comparable if:
-        | they are base types (all integers, uintegers, floats, booleans, pointers)
-        | they are structs, and their fields are comparable
-        | they are unions, and their variants are comparable
-        | they are arrays and their element type is comparable
-        | they are enums
+        * a type T is comparable if it is a:
+        | base type (all integers, uintegers, floats, booleans, pointers)
+        | struct with comparable fields
+        | union with comparable variants
+        | array with comparable element type
+        | enum with a numeric backing type
 
-        ** a type is orderable if:
-        | they are numeric (all integers, uintegers, floats, pointers)
-        | they are enums
+        ** a type is orderable if it is a:
+        | numeric type (all integers, uintegers, floats, pointers)
+        | enum with a numeric backing type
 
     unary conversion
         cast(T)     value cast to type T        (*): cast(T) X -> T
@@ -102,10 +102,16 @@ operators
         |       casts between (u)integers of the same size behave the same as bitcasts.
         | all boolean types can cast between each other.
         | all pointer types can cast between each other.
+        | all pointer types can cast to u64/uint.
         | all (u)integer types can cast to floating point types, converting to their closest floating point representation.
         | all floating point types can cast to (u)integer types, truncating and mapping to their closest representation.
+        | enums have the same casting characteristics of its backing type.
+        | structs may be cast to other structs if their field structure is identical (all fields in the same order with the same types).
 
-        ** values can be bitcast if their sizes are the same.
+        ** values can be bitcast if their byte sizes are the same.
+        | bitcasting does not modify the value data of a variable,
+        | but only changes what datatype the value is interpreted as.
+        | because of this, bitcasting as an operation does not produce code.
 
 
     precendence
