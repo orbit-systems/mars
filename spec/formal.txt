@@ -48,7 +48,6 @@ types
 
 operators
     unary numeric
-        +       is 0 + x                with type T in (all integers, uintegers, floats, pointers): + T -> T
         -       negation (0 - x)        with type T in (all integers, uintegers, floats, pointers): - T -> T
         ~       bitwise complement      with type T in (all integers, uintegers, floats, pointers): ~ T -> T
 

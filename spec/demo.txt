@@ -229,9 +229,8 @@
 
 
 len() :: fn(arr: []int) -> int {
-    arr_ptr := bitcast(^int) &arr
-    return (arr_ptr + 1)^ 
-    // gets length value from opaque array struct
+    return (bitcast([2]int) arr)[1]
+    // gets length value from opaque slice struct
 }
 
 slice() :: fn(arr: []int, start_index, end_index : int = -1) -> []int {
@@ -253,6 +252,3 @@ slice() :: fn(arr: []int, start_index, end_index : int = -1) -> []int {
         end_index - start_index,
     }
 }
-
-
-
