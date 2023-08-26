@@ -23,9 +23,9 @@
     f64
     float :: f64
 
+    // default type assumptions for literals
     (literal_integer) -> int
     (literal_float)   -> float
-    (literal_string)  -> []u8
 
     ^T // pointer to type T, u64 under the hood
 
@@ -34,7 +34,7 @@
     // array of type T
     []T :: struct {
         _ : ^T,  // base
-        _ : uint, // length
+        _ : int, // length
     }
 
     struct // c-like structs - members are aligned to size-alignment boundaries
@@ -44,45 +44,68 @@
     enum // c-like enums - default representation is int but can be specified (must be integer type though)
 
     fn(_: X, _: Y) -> (_: Z, _: W) // function type determined by input param types and return param types (function pointer, no information is kept at runtime)
+    // note that a function variable is NOT the function code itself, but a pointer to that function. 
+    // this is so that the sizes of every single type can be determined at compile-time, a useful characteristic.
+    // #size_of(var) and #size_of(type) are compile-time directives, returning a (literal_integer) size of the variable or type in bytes.
 
 // declarations
 
-// constant declaration - constant at compile time
-a : int : 0 // explicit type
-a :     : 0 // implicit type
-a :: 0 // same as above
+    // constant declaration - constant at compile time
+    a : int : 0 // explicit type
+    a :     : 0 // implicit type
+    a :: 0 // same as above
 
-// variable declaration
-b : int = 0 // explicit type
-b :     = 0 // implicit type
-b := 0 // same as above
+    // variable declaration
+    b : int = 0 // explicit type
+    b :     = 0 // implicit type
+    b := 0 // same as above
 
-c : []int = []int{0, 1, 2}
-c := []int{0, 1, 2}
-c : []int = {0, 1, 2}
-c := {0, 1, 2} // compiler will attempt to figure out what type array this is based on the untyped_string
+    // variables are always initialized to their "zero" value. use "---" to explicitly uninitialize a variable (type must be specified).
+    uninitialied_var : int = ---
+    uninitialize_var2 := --- // cannot determine type!!
 
-d := "string" // string literal gets converted to []u8 literal with utf8 encoding
+    // variables cannot have the same name as a variable that is accessable within a given block. one name <-> one value.
+    global_var := 10
+    {
+        // not allowed
+        global_var := 3
+    }
 
-arr := []int{0,3,0}
-arr := [3]int{0,3,0} // optionally specify length
-arr := [3]int{} // arr == []int{0,0,0}
 
+    c : []int = []int{0, 1, 2}
+    c := []int{0, 1, 2}
+    c : []int = {0, 1, 2} // no! all compound literals must have a name attatched to them.
+    c := {0, 1, 2} // not allowed, for the same reason.
 
-// like a typedef struct
-this_struct :: struct {
-    i : int,
-    f : float,
-}
+    d := "string" // string literal gets converted to []u8 literal with utf8 encoding
 
-// not allowed
-this_struct_weirdness := struct {
-    i : int,
-    f : float,
-}
+    arr := []int{0,3,0}
+    arr := [3]int{0,3,0} // optionally specify length
+    arr := [3]int{} // arr == []int{0,0,0}
 
-// declare struct literal
-s := this_struct{}
+    // arrays are not bounds-checked, it must be done so manually.
+
+    // arrays may be sliced to create new array windows. These are not new arrays in memory, but are slices.
+    arr2 := arr[0:1] // [inclusive lower index:exclusive higher index]
+    
+    // if a field is left blank, it is automatically filled with the beginnning/end of an array.
+    arr2 := arr[1:]  // same as arr[1:len(arr)]
+    arr2 := arr[:5]  // same as arr[0:5]
+
+    // like a typedef struct
+    this_struct :: struct {
+        i : int,
+        f : float,
+    }
+
+    // not allowed
+    this_struct_weirdness := struct {
+        i : int,
+        f : float,
+    }
+
+    // declare struct literal
+    s := this_struct{}
 
 // constructs + control flow
     
@@ -119,6 +142,7 @@ s := this_struct{}
     for i := 0 ; i < a.len ; i += 1 {
         {...}
     }
+
     // this is functionally equivalent to:
     {
     i := 0
@@ -129,9 +153,9 @@ s := this_struct{}
     } // note the extra scope
 
 
-    // defer statement - defer execution of a statemnt until the end of its scope.
+    // defer statement - defer execution of a statement until the end of its scope.
     defer foo()
-    defer {
+    defer { // defer a block
         ...
     }
 
@@ -158,9 +182,31 @@ s := this_struct{}
         return value
     }
 
-    add :: fn(a #register("ra"), b #register("rb") : int) -> (value #register("rc") : int) {
-        asm {
-            "addr rc, ra, rb"
-        }
-        return
+
+
+
+len() :: fn(arr: []int) -> int {
+    arr_ptr := bitcast(^int) &arr
+    return (arr_ptr + 1)^ 
+    // gets length value from opaque array struct
+}
+
+slice() :: fn(arr: []int, start_index, end_index : int = -1) -> []int {
+
+    if start_index == -1 {
+        start_index = 0
     }
+    if end_index == -1 {
+        end_index = len(arr)
+    }
+
+    new_arr :: struct {
+        ptr : uint,
+        len : uint,
+    }
+
+    return bitcast([]int) new_arr{
+        start_index * #size_of(int) + bitcast(int) &arr,
+        end_index - start_index,
+    }
+}
