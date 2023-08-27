@@ -20,7 +20,6 @@ position :: struct {
 token_kind :: enum {
     invalid,
     EOF,
-    comment,
 
     identifier,     // bruh
 
