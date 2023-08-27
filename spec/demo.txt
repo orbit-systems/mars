@@ -145,16 +145,16 @@
 
     // this is functionally equivalent to:
     {
-    i := 0
+    i := 0;
     while i < a.len {
         {...}
-        i += 1
+        i += 1;
     }
     } // note the extra scope
 
 
     // defer statement - defer execution of a statement until the end of its scope.
-    defer foo()
+    defer foo();
     defer { // defer a block
         ...
     }
@@ -163,35 +163,37 @@
 // INLINE ASSEMBLY IDEA
 
     // error - register cannot be reserved at global scope
-    value #register("rc") : int = 0
+    value #register("rc") : int = 0;
 
     // error - compile-time constant cannot be reserved
-    value #register("rc") : int : 0
+    value #register("rc") : int : 0;
 
     add :: fn(a, b: int) -> int {
 
         // create variables, assign to and reserve registers
-        a_reg #register("ra") : int = a
-        b_reg #register("rb") : int = b
-        value #register("rc") : int
+        a_reg #register("ra") : int = a;
+        b_reg #register("rb") : int = b;
+        value #register("rc") : int;
+
+        #register(a_reg, "ra") // can also assign to register like this
 
         asm() {
             "addr rc, ra, rb"
         }
 
-        #release(a_reg) // tell the compiler that a_reg can be stored elsewhere and that its associated register is now free
-        #release(b_reg)
-        #release(c_reg)
+        #release(a_reg); // tell the compiler that a_reg can be stored elsewhere and that its associated register is now free
+        #release(b_reg);
+        #release(c_reg);
         
-        #release("all") // releases all reserved variables/registers in
+        #release("all"); // releases all reserved variables/registers in
 
-        return value
+        return value;
     }
 
 
     add2 :: fn(a, b: int) -> int {
 
-        value : int = 0
+        value : int = 0;
 
         // this is better practice
         asm(a -> "ra", b -> "rb", value <-> "rc") {
@@ -208,14 +210,14 @@
 
 
     read_rf :: fn() -> int {
-        value_read : int
+        value_read : int;
 
         asm(value_read -> "ra") {
-            "add ra, rf, 0"
+            "add ra, rf, 0";
         }
         // value_read == rf
         
-        return value_read
+        return value_read;
     }
 
 
@@ -229,17 +231,17 @@
 
 
 len() :: fn(arr: []int) -> int {
-    return (bitcast([2]int) arr)[1]
+    return (bitcast([2]int) arr)[1];
     // gets length value from opaque slice struct
 }
 
 slice() :: fn(arr: []int, start_index, end_index : int = -1) -> []int {
 
     if start_index == -1 {
-        start_index = 0
+        start_index = 0;
     }
     if end_index == -1 {
-        end_index = len(arr)
+        end_index = len(arr);
     }
 
     new_arr :: struct {

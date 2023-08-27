@@ -125,7 +125,7 @@ operators
         unary operators have highest precedence.
 
         binary operator precedence:
-        5   *   /   %   %%   &   &~  <<   >>  ~|
+        5   *   /   %   %%   &   <<   >>  ~|
         4   +   -   |   ~
         3   ==  !=  <   >    <=  >=
         2   &&
@@ -134,7 +134,7 @@ operators
         operators of the same precedence are evaluated left-to-right.
         ex. a * b / c == (a * b) / c
 
-    assignment
+    compound assignment
         +=      addition                (variable of type T) += T
         -=      subtraction             (variable of type T) -= T
         *=      multiplication          (variable of type T) *= T
