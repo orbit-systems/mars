@@ -1,3 +1,5 @@
+all: build
+
 SRC_DIR = ./src
 MARS_LOCATION = ./build/mars
 MARS_BUILD_FLAGS = -o:speed
