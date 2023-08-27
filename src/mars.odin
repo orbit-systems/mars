@@ -8,6 +8,4 @@ import "core:fmt"
 
 main :: proc() {
     x : f32 = -3.9
-    y : int = cast(int) x
-    fmt.println(y)
 }
