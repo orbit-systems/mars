@@ -24,8 +24,6 @@ token_kind :: enum {
     identifier,     // bruh
 
     meta_literal_begin,
-        uninit,         // ---
-        discard,        // _
         literal_int,    // 123
         literal_float,  // 12.3
         literal_bool,   // true/false
@@ -34,6 +32,9 @@ token_kind :: enum {
     meta_literal_end,
 
     meta_operator_begin,
+        hash,           // #
+        uninit,         // ---
+        discard,        // _
         equal,          // =
         colon,          // :
         semicolon,      // ;
@@ -119,11 +120,5 @@ token_kind :: enum {
         keyword_union,
         keyword_while,
     meta_keyword_end,
-
-    meta_directive_begin,
-        dir_register,   // #register("")
-        dir_release,    // #release("")
-        dir_private,    // #private
-    meta_directive_end,
 
 }
