@@ -7,10 +7,11 @@ lexer_info :: struct {
 lexer_token :: struct {
     kind   : token_kind,
     lexeme : string,
-    pos    : position_in_file,
+    pos    : position,
 }
 
-position_in_file :: struct {
+position :: struct {
+    file : string,
     row  : int,
     col  : int,
     line : int,
@@ -20,9 +21,12 @@ token_kind :: enum {
     invalid,
     EOF,
     comment,
-    
+
+    identifier,     // bruh
+
     meta_literal_begin,
-        identifier,     // bruh
+        uninit,         // ---
+        discard,        // _
         literal_int,    // 123
         literal_float,  // 12.3
         literal_bool,   // true/false
@@ -68,6 +72,13 @@ token_kind :: enum {
             div_equal,      // /=
             mod_equal,      // %=
             mod_mod_equal,  // %%=
+
+            and_equal,      // &=
+            or_equal,       // |=
+            nor_equal,      // ~|=
+            xor_equal,      // ~=
+            lshift_equal,   // <<=
+            rshift_equal,   // >>=
         meta_compound_assign_end,
 
         meta_comparison_begin,
@@ -85,7 +96,6 @@ token_kind :: enum {
         close_brace,    // }
         open_bracket,   // [
         close_bracket,  // ]
-
     meta_operator_end,
 
     meta_keyword_begin,

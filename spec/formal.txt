@@ -100,6 +100,7 @@ operators
         bitcast(T)  raw data cast to type T     (**): bitcast(T) X -> T
 
         * type casting rules:
+        | all types can cast to themselves. this should not generate code.
         | all (u)integer types can cast between each other.
         |       if one is casting to another of smaller size, the most-significant "top" bits are discarded
         |       casts between (u)integers of the same size behave the same as bitcasts
@@ -135,11 +136,17 @@ operators
         ex. a * b / c == (a * b) / c
 
     compound assignment
-        +=      addition                (variable of type T) += T
-        -=      subtraction             (variable of type T) -= T
-        *=      multiplication          (variable of type T) *= T
-        /=      division                (variable of type T) /= T
-        %=      modulo (truncated)      (variable of type T) %= T
-        %%=     remainder (floored)     (variable of type T) %%= T
+        +=      addition                (variable of type T) T += T
+        -=      subtraction             (variable of type T) T -= T
+        *=      multiplication          (variable of type T) T *= T
+        /=      division                (variable of type T) T /= T
+        %=      modulo (truncated)      (variable of type T) T %= T
+        %%=     remainder (floored)     (variable of type T) T %%= T
+        &=      bitwise and             (variable of type T) T &= T
+        |=      bitwise or              (variable of type T) T |= T
+        ~|=     bitwise nor             (variable of type T) T ~|= T
+        ~=      bitwise xor             (variable of type T) T ~= T
+        <<=     left shift              (variable of type T) T <<= (all uintegers)
+        >>=     right shift             (variable of type T) T >>= (all uintegers)
 
 program structure
