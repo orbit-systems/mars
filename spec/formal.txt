@@ -119,7 +119,7 @@ operators
     
     unary reference
         &       generate pointer        with type T in (all): &T -> ^T
-        ^       dereference pointer     with type T in (all): (^T)^ -> T
+        $       dereference pointer     with type T in (all): (^T)^ -> T
 
 
     precendence

@@ -38,6 +38,7 @@ token_kind :: enum {
         hash,           // #
         uninit,         // ---
         equal,          // =
+        dollar,         // $
         colon,          // :
         semicolon,      // ;
         period,         // .
