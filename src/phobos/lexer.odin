@@ -21,7 +21,10 @@ token_kind :: enum {
     invalid,
     EOF,
 
-    identifier,     // bruh
+    meta_identifer_begin,
+        identifier,         // bruh
+        identifier_discard, // _
+    meta_identifer_end,
 
     meta_literal_begin,
         literal_int,    // 123
@@ -34,7 +37,6 @@ token_kind :: enum {
     meta_operator_begin,
         hash,           // #
         uninit,         // ---
-        discard,        // _
         equal,          // =
         colon,          // :
         semicolon,      // ;
@@ -108,8 +110,10 @@ token_kind :: enum {
         keyword_enum,
         keyword_elif,
         keyword_else,
+        keyword_external,
         keyword_fallthrough,
         keyword_for,
+        keyword_fn,
         keyword_if,
         keyword_import,
         keyword_module,
