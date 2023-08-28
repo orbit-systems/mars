@@ -105,7 +105,7 @@ MST :: proc(intGraph: graph) -> graph {
 	for i:=0; i < len(intGraph.vertices) - 1; i+=1 {
 		addEdge(candidateEdges[i], &newGraph)
 		santizeGraph(&newGraph)
-		fmt.printf("Testing edge {}, connections {}<->{}, weight {}\n", i, candidateEdges[i].vertices[0], candidateEdges[i].vertices[1], candidateEdges[i].weight)
+		//fmt.printf("Testing edge {}, connections {}<->{}, weight {}\n", i, candidateEdges[i].vertices[0], candidateEdges[i].vertices[1], candidateEdges[i].weight)
 
 		if hasCycle(newGraph) == true {
 			ordered_remove(&candidateEdges, i)
@@ -166,7 +166,7 @@ DFS :: proc(intVertex: ^vertex, intGraph: graph, finished, visited: [dynamic]^ve
 
 	for vertexIter in visited { //if visited(v)
 		if vertexIter == intVertex {
-			fmt.printf("Found cycle on id: {}!\n", id)
+			//fmt.printf("Found cycle on id: {}!\n", id)
 			cycleDetected = true
 			return
 		}

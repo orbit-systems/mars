@@ -19,9 +19,30 @@ main :: fn() -> int {
 print :: fn(string: []u8) {
 	length #register("ra") := string.len; //get string length
 
-	for i := 0; i < length; i++ {
+	for i := 0; i < length; i+=1 {
 		nsys.syscall(.DRAW_TEXT, 50 + i, 30, string[i]);
 	}
 	
 	return;
-}
+} 
+
+/*
+module, test, 
+main, :, :, fn, (, ), ->, int, {, 
+test, :, [, ], u8, =, "weewoo", ;,
+print, (, test, ), ;,
+value, :, int, =, 5, ;
+asm, (, value, <->, "ra", ), {,
+"addi ra, ra, 0x1", ',' ,
+"muli ra, ra, 0x3",
+},
+return, value, ;,
+},
+
+print, :, :, fn, (, string, :, [, ], u8, ), {,
+length, #, register, (, "ra", ), :, =, string, ., len, ;,
+for, i, :, =, 0, ;, i, <, length, ;, i, +, =, 1, {,
+nsys, ., syscall, (, ., DRAW_TEXT, 50, +, i, 30, string, [, i, ], ), ;,
+},
+return, ;,
+}*/

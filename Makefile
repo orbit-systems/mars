@@ -14,3 +14,6 @@ clean:
 build: clean
 	mkdir build
 	odin build $(SRC_DIR) $(MARS_BUILD_FLAGS) -out:$(MARS_LOCATION)
+
+run: build 
+	./$(MARS_LOCATION) spec/test.mars
