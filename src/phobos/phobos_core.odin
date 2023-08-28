@@ -4,5 +4,5 @@ package phobos
 // produces abstract syntax tree to be passed to deimos backend
 
 //        lexer            parser                seman
-// file --------> tokens ---------> parse tree ----------> rich AST
+// file --------> tokens ---------> parse tree ----------> AST
 
