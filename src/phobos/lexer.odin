@@ -69,19 +69,23 @@ lex_next_token :: proc(ctx: ^lexer_info) -> (this_token: lexer_token) {
 
     // scan actual token
     switch cursor_rune {
-    case '0'..='9':                 success := scan_number(ctx)
+    case '0'..='9':
+        success := scan_number(ctx)
         fmt.printf("ERROR [ %s :: %d : %d ] invalid literal \"%s\"", ctx.file_name, ctx.current_row, ctx.current_col,
             ctx.file_data[lexeme_start_pos:ctx.current_offset])
         os.exit(0)
-    case 'A'..='Z', 'a'..='z', '_': success := scan_identifier(ctx)
+    case 'A'..='Z', 'a'..='z', '_':
+        success := scan_identifier(ctx)
         fmt.printf("ERROR [ %s :: %d : %d ] invalid identifier \"%s\"", ctx.file_name, ctx.current_row, ctx.current_col,
             ctx.file_data[lexeme_start_pos:ctx.current_offset])
         os.exit(0)
-    case '\"':                      success := scan_string_literal(ctx)
+    case '\"':
+        success := scan_string_literal(ctx)
         fmt.printf("ERROR [ %s :: %d : %d ] invalid string literal \"%s\"", ctx.file_name, ctx.current_row, ctx.current_col,
             ctx.file_data[lexeme_start_pos:ctx.current_offset])
         os.exit(0)
-    case:                           success := scan_operator(ctx)
+    case:
+        success := scan_operator(ctx)
         fmt.printf("ERROR [ %s :: %d : %d ] invalid operator \"%s\"", ctx.file_name, ctx.current_row, ctx.current_col,
             ctx.file_data[lexeme_start_pos:ctx.current_offset])
         os.exit(0)
