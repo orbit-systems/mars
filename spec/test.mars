@@ -45,4 +45,4 @@ for, i, :, =, 0, ;, i, <, length, ;, i, +, =, 1, {,
 nsys, ., syscall, (, ., DRAW_TEXT, 50, +, i, 30, string, [, i, ], ), ;,
 },
 return, ;,
-}*/
+}, .EOF*/
