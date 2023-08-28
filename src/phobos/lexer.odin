@@ -27,17 +27,16 @@ lex_next_token :: proc(ctx: ^lexer_info) -> (this_token: lexer_token) {
         cursor_rune = lex_current_rune(ctx)
         switch cursor_rune {
         case ' ', '\t', '\n', '\r':
-            cursor_rune, hit_eof := scan_whitespace(ctx)
+            cursor_rune, hit_eof := skip_whitespace(ctx)
             if hit_eof {
                 this_token = make_EOF(ctx)
                 break loop
             }
             continue
         case '/':
+            // determine what kind of comment we're dealing with here
             if lex_peek_next_rune(ctx) == '/' {
-                lex_advance_cursor(ctx)
-                lex_advance_cursor(ctx)
-                cursor_rune, hit_eof := scan_line_comment(ctx)
+                cursor_rune, hit_eof := skip_line_comment(ctx)
                 if hit_eof {
                     this_token = make_EOF(ctx)
                     break loop
@@ -45,7 +44,7 @@ lex_next_token :: proc(ctx: ^lexer_info) -> (this_token: lexer_token) {
             } else if lex_peek_next_rune(ctx) == '*' {
                 lex_advance_cursor(ctx)
                 lex_advance_cursor(ctx)
-                cursor_rune, hit_eof, block_comment_end_level := scan_block_comment(ctx)
+                cursor_rune, hit_eof, block_comment_end_level := skip_block_comment(ctx)
                 if block_comment_end_level > 0 {
                     fmt.printf("ERROR [ %s :: %d : %d ] unclosed block comment\n", ctx.file_name, ctx.current_row, ctx.current_col)
                     os.exit(0)
@@ -55,6 +54,7 @@ lex_next_token :: proc(ctx: ^lexer_info) -> (this_token: lexer_token) {
                     break loop
                 }
             } else {
+                // nevermind its an operator
                 break loop
             }
         case:
@@ -65,35 +65,57 @@ lex_next_token :: proc(ctx: ^lexer_info) -> (this_token: lexer_token) {
 
     // reset offset
     lexeme_start_pos := ctx.current_offset
-    if this_token.kind == .EOF {
-        fmt.println("EOF")
-    } else {
-        fmt.println(cursor_rune)
-    }
-    os.exit(0)
 
+
+    // scan actual token
+    switch cursor_rune {
+    case '0'..='9':                 success := scan_number(ctx)
+        fmt.printf("ERROR [ %s :: %d : %d ] invalid literal \"%s\"", ctx.file_name, ctx.current_row, ctx.current_col,
+            ctx.file_data[lexeme_start_pos:ctx.current_offset])
+        os.exit(0)
+    case 'A'..='Z', 'a'..='z', '_': success := scan_identifier(ctx)
+        fmt.printf("ERROR [ %s :: %d : %d ] invalid identifier \"%s\"", ctx.file_name, ctx.current_row, ctx.current_col,
+            ctx.file_data[lexeme_start_pos:ctx.current_offset])
+        os.exit(0)
+    case '\"':                      success := scan_string_literal(ctx)
+        fmt.printf("ERROR [ %s :: %d : %d ] invalid string literal \"%s\"", ctx.file_name, ctx.current_row, ctx.current_col,
+            ctx.file_data[lexeme_start_pos:ctx.current_offset])
+        os.exit(0)
+    case:                           success := scan_operator(ctx)
+        fmt.printf("ERROR [ %s :: %d : %d ] invalid operator \"%s\"", ctx.file_name, ctx.current_row, ctx.current_col,
+            ctx.file_data[lexeme_start_pos:ctx.current_offset])
+        os.exit(0)
+    }
 
     
-    //return
+    return
 }
 
-make_EOF :: #force_inline proc(ctx: ^lexer_info) -> lexer_token {
-    return lexer_token{.EOF,"",make_position(ctx)}
+// TODO implement
+scan_number :: proc(ctx: ^lexer_info) -> (success: token_kind) {
+    return
 }
 
-make_position :: #force_inline proc(ctx: ^lexer_info) -> position {
-    return position{
-        ctx.file_name,
-        ctx.current_row,
-        ctx.current_col,
-    }
+// TODO implement
+scan_identifier :: proc(ctx: ^lexer_info) -> (success: token_kind) {
+    return
 }
 
-scan_line_comment :: #force_inline proc(ctx: ^lexer_info) -> (r: rune, hit_eof: bool) {
-    return scan_until_rune(ctx, '\n')
+// TODO implement
+scan_string_literal :: proc(ctx: ^lexer_info) -> (success: token_kind) {
+    return
 }
 
-scan_block_comment :: proc(ctx: ^lexer_info) -> (r: rune, hit_eof: bool, level: int) {
+// TODO implement
+scan_operator :: proc(ctx: ^lexer_info) -> (success: token_kind) {
+    return
+}
+
+skip_line_comment :: #force_inline proc(ctx: ^lexer_info) -> (r: rune, hit_eof: bool) {
+    return skip_until_rune(ctx, '\n')
+}
+
+skip_block_comment :: proc(ctx: ^lexer_info) -> (r: rune, hit_eof: bool, level: int) {
     level = 1
     for level != 0 {
         r = lex_current_rune(ctx)
@@ -103,8 +125,8 @@ scan_block_comment :: proc(ctx: ^lexer_info) -> (r: rune, hit_eof: bool, level: 
         if r == '/' && lex_peek_next_rune(ctx) == '*' {
             lex_advance_cursor(ctx)
             level += 1
-        } else 
-        if r == '*' && lex_peek_next_rune(ctx) == '/' {
+        }
+        else if r == '*' && lex_peek_next_rune(ctx) == '/' {
             lex_advance_cursor(ctx)
             level -= 1
         }
@@ -113,7 +135,7 @@ scan_block_comment :: proc(ctx: ^lexer_info) -> (r: rune, hit_eof: bool, level: 
     return r, false, level
 }
 
-scan_whitespace :: proc(ctx: ^lexer_info) -> (r: rune, hit_eof: bool) {
+skip_whitespace :: proc(ctx: ^lexer_info) -> (r: rune, hit_eof: bool) {
     for {
         r = lex_current_rune(ctx)
         if ctx.current_offset >= len(ctx.file_data) {
@@ -126,7 +148,7 @@ scan_whitespace :: proc(ctx: ^lexer_info) -> (r: rune, hit_eof: bool) {
     }
 }
 
-scan_until_rune :: proc(ctx: ^lexer_info, lookout: rune) -> (r: rune, hit_eof: bool) {
+skip_until_rune :: proc(ctx: ^lexer_info, lookout: rune) -> (r: rune, hit_eof: bool) {
     for {
         r = lex_current_rune(ctx)
         if ctx.current_offset >= len(ctx.file_data) {
@@ -168,6 +190,18 @@ lex_current_rune :: #force_inline proc(ctx: ^lexer_info) -> (r: rune) {
 lex_current_rune_and_len :: #force_inline proc(ctx: ^lexer_info) -> (r: rune, byte_len: int) {
     // all because utf8.rune_at discards the damn byte length. fuck you utf8.rune_at. 
     return utf8.decode_rune_in_string(ctx.file_data[ctx.current_offset:])
+}
+
+make_EOF :: #force_inline proc(ctx: ^lexer_info) -> lexer_token {
+    return lexer_token{.EOF,"",make_position(ctx)}
+}
+
+make_position :: #force_inline proc(ctx: ^lexer_info) -> position {
+    return position{
+        ctx.file_name,
+        ctx.current_row,
+        ctx.current_col,
+    }
 }
 
 whitespace_runes :: [?]rune{' ', '\t', '\n', '\r'}
