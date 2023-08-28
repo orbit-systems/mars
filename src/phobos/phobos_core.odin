@@ -1,5 +1,7 @@
 package phobos
 
+import "core:fmt"
+
 // mars compiler frontend - lexer, parser
 // produces abstract syntax tree to be passed to deimos backend
 
@@ -24,7 +26,7 @@ process_file :: proc(file_name: string, file_data: string) {
 	}
 
 	for token in tokens {
-		fmt.printf("{}," token.lexeme)
+		fmt.printf("{},", token.lexeme)
 	}
 	fmt.printf("\n")
 
