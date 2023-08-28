@@ -17,9 +17,11 @@ lexer_token :: struct {
 
 position :: struct {
     file_name : string,
-    row       : int,
-    col       : int,
+    row       : uint,
+    col       : uint,
 }
+
+EOF_TOKEN :: lexer_token{.EOF,"",position{}}
 
 token_kind :: enum {
     invalid,
