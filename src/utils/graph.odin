@@ -1,6 +1,7 @@
 package mars_utils
 
 import "core:fmt"
+import "core:slice"
 
 edge_type :: enum {
 	DIRECTED,
@@ -69,46 +70,104 @@ addEdge :: proc(intEdge: edge, intGraph: ^graph) {
 	append(&intGraph.vertices[intEdge.vertices[1]].edges, len(intGraph.edges) - 1)
 }
 
+removeEdge :: proc(intGraph: ^graph, id: int) {
+	unordered_remove(&intGraph.edges, id)
+}
+
 addVertex :: proc(intGraph: ^graph) {
 	intVertex := new(vertex)
 	append(&intGraph.vertices, intVertex)
 }
 
-MST :: proc(intGraph: graph) -> graph {
-	return intGraph
+edge_sort_proc :: proc(a: edge, b: edge) -> bool {
+	if a.weight < b.weight {
+		return true
+	}
+	return false
 }
 
-hasCycle :: proc(intGraph: graph) {
+MST :: proc(intGraph: graph) -> graph {
+	//using kruskal's algorithm
+	candidateEdges: [dynamic]edge 
+	defer delete(candidateEdges)
+
+	if (len(intGraph.edges) - 1) < (len(intGraph.vertices) - 1) {
+		return (graph){}
+	}
+
+	append(&candidateEdges, ..intGraph.edges[:])
+	slice.sort_by(candidateEdges[:], edge_sort_proc)
+	newGraph := createGraph()
+	for vertex in intGraph.vertices {
+		addVertex(&newGraph)
+	}
+
+	for i:=0; i < len(intGraph.vertices) - 1; i+=1 {
+		addEdge(candidateEdges[i], &newGraph)
+		santizeGraph(&newGraph)
+		fmt.printf("Testing edge {}, connections {}<->{}, weight {}\n", i, candidateEdges[i].vertices[0], candidateEdges[i].vertices[1], candidateEdges[i].weight)
+
+		if hasCycle(newGraph) == true {
+			ordered_remove(&candidateEdges, i)
+			slice.sort_by(candidateEdges[:], edge_sort_proc)
+			clear(&newGraph.edges)
+			i = -1
+			if (len(candidateEdges) + 1) == len(intGraph.vertices) {
+				pop(&candidateEdges)
+				append(&newGraph.edges, ..candidateEdges[:])
+				santizeGraph(&newGraph)
+				break
+			}
+		}
+	}
+
+	return newGraph
+} 
+
+@(private) cycleDetected: bool
+
+hasCycle :: proc(intGraph: graph) -> bool {
 	finished, visited: [dynamic]^vertex
 	defer delete(finished)
 	defer delete(visited)
 
-	for vertex in intGraph.vertices {
-		DFS(vertex, intGraph, finished, visited)
+	cycleDetected = false
+
+	for vertex, i in intGraph.vertices {
+		DFS(vertex, intGraph, finished, visited, i)
 	}
+
+	return cycleDetected
 }
 
-DFS :: proc(intVertex: ^vertex, intGraph: graph, finished, visited: [dynamic]^vertex) {
+DFS :: proc(intVertex: ^vertex, intGraph: graph, finished, visited: [dynamic]^vertex, caller_id: int) {
 	finished := finished
 	visited  := visited
 
+	if cycleDetected == true {
+		return
+	}
+
 	//get vertex id
-	id := ---
+	id : int = ---
 	for vertexIter, i in intGraph.vertices {
 		if vertexIter == intVertex {
 			id = i
 		}
 	}
+	//fmt.printf("Traversing id {}!\n", id)
 
 	for vertexIter in finished { //if finished(v)
 		if vertexIter == intVertex {
 			return
 		}
+		//fmt.printf("Finished on id {}!\n", id)
 	}
 
 	for vertexIter in visited { //if visited(v)
 		if vertexIter == intVertex {
 			fmt.printf("Found cycle on id: {}!\n", id)
+			cycleDetected = true
 			return
 		}
 	}
@@ -120,17 +179,17 @@ DFS :: proc(intVertex: ^vertex, intGraph: graph, finished, visited: [dynamic]^ve
 	for edgeID in intVertex.edges {
 		edge := intGraph.edges[edgeID]
 
-		if edge.vertices[0] != id && edge.vertices[1] == id {
+		if edge.vertices[0] != id && edge.vertices[1] == id && edge.vertices[0] != caller_id {
 			append(&neighbour_list, intGraph.vertices[edge.vertices[0]])
 		}
 
-		if edge.vertices[0] == id && edge.vertices[1] != id {
+		if edge.vertices[0] == id && edge.vertices[1] != id && edge.vertices[1] != caller_id{
 			append(&neighbour_list, intGraph.vertices[edge.vertices[1]])
 		}
 	}
 
 	for vertexIter in neighbour_list {
-		DFS(vertexIter, intGraph, finished, visited)
+		DFS(vertexIter, intGraph, finished, visited, id)
 	}
 
 	append(&finished, intVertex)
