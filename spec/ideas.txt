@@ -1,0 +1,254 @@
+// types
+
+    i8
+    i16
+    i32
+    i64
+    int :: i64
+
+    u8
+    u16
+    u32
+    u64
+    uint :: u64
+
+    b8
+    b16
+    b32
+    b64
+    bool :: b64
+
+    f16
+    f32
+    f64
+    float :: f64
+
+    // default type assumptions for literals
+    (untyped_integer) -> int
+    (untyped_float)   -> float
+
+    ^T // pointer to type T, u64 under the hood
+
+    rawptr // raw pointer with no type information
+
+    // array of type T
+    []T :: struct {
+        _ : ^T,  // base
+        _ : int, // length
+    }
+
+    struct // c-like structs - members are aligned to size-alignment boundaries
+
+    union // c-like unions - members are aligned to largest member's alignment
+
+    enum // c-like enums - default representation is int but can be specified (must be integer type though)
+
+    fn(_: X, _: Y) -> (_: Z, _: W) // function type determined by input param types and return param types (function pointer, no information is kept at runtime)
+    // note that a function variable is NOT the function code itself, but a pointer to that function. 
+    // this is so that the sizes of every single type can be determined at compile-time, a useful characteristic.
+    // #size_of(var) and #size_of(type) are compile-time directives, returning a (literal_integer) size of the variable or type in bytes.
+
+// declarations
+
+    // constant declaration - constant at compile time
+    a : int : 0 // explicit type
+    a :     : 0 // implicit type
+    a :: 0 // same as above
+
+    // variable declaration
+    b : int = 0 // explicit type
+    b :     = 0 // implicit type
+    b := 0 // same as above
+
+    // variables are always initialized to their "zero" value. use "---" to explicitly uninitialize a variable (type must be specified).
+    uninitialied_var : int = ---
+    uninitialize_var2 := --- // cannot determine type!!
+
+    // variables cannot have the same name as a variable that is accessable within a given block. one name <-> one value.
+    global_var := 10
+    {
+        // not allowed
+        global_var := 3
+    }
+
+
+    c : []int = []int{0, 1, 2}
+    c := []int{0, 1, 2}
+    c : []int = {0, 1, 2} // no! all compound literals must have a name attatched to them.
+    c := {0, 1, 2} // not allowed, for the same reason.
+
+    d := "string" // string literal gets converted to []u8 literal with utf8 encoding
+
+    arr := []int{0,3,0}
+    arr := [3]int{0,3,0} // optionally specify length
+    arr := [3]int{} // arr == []int{0,0,0}
+
+    // arrays are not bounds-checked, it must be done so manually.
+
+    // arrays may be sliced to create new array windows. These are not new arrays in memory, but are slices.
+    arr2 := arr[0:1] // [inclusive lower index:exclusive higher index]
+    
+    // if a field is left blank, it is automatically filled with the beginnning/end of an array.
+    arr2 := arr[1:]  // same as arr[1:len(arr)]
+    arr2 := arr[:5]  // same as arr[0:5]
+
+    // like a typedef struct
+    this_struct :: struct {
+        i : int,
+        f : float,
+    }
+
+    // not allowed
+    this_struct_weirdness := struct {
+        i : int,
+        f : float,
+    }
+
+    // declare struct literal
+    s := this_struct{}
+
+// constructs + control flow
+    
+    // parameter must be boolean
+    if a == 3 {
+        {...}
+    } elif a == 2 {
+        {...}
+    } else {
+        {...}
+    }
+
+    // switch-case, has default break with a 'fallthrough' statement - explicit break works as well
+    switch b {
+    case 1:
+        {...}
+    case 2:
+        {...}
+        fallthrough
+    case 3:
+        {...}
+    case 4:
+        break
+        {...}
+    case: // default case
+    }
+
+    // standard while loop
+    while a == 0 {
+        {...}
+    }
+
+    // c-like for loop - iteration variable created inside a for-loop scope, so it may not be used outside of the for loop
+    for i := 0 ; i < a.len ; i += 1 {
+        {...}
+    }
+
+    // this is functionally equivalent to:
+    {
+    i := 0
+    while i < a.len {
+        {...}
+        i += 1
+    }
+    } // note the extra scope
+
+
+    // defer statement - defer execution of a statement until the end of its scope.
+    defer foo()
+    defer { // defer a block
+        ...
+    }
+
+
+// INLINE ASSEMBLY IDEA
+
+    // error - register cannot be reserved at global scope
+    value #register("rc") : int = 0
+
+    // error - compile-time constant cannot be reserved
+    value #register("rc") : int : 0
+
+    add :: fn(a, b: int) -> int {
+
+        // create variables, assign to and reserve registers
+        a_reg #register("ra") : int = a
+        b_reg #register("rb") : int = b
+        value #register("rc") : int
+
+        asm() {
+            "addr rc, ra, rb"
+        }
+
+        #release(a_reg) // tell the compiler that a_reg can be stored elsewhere and that its associated register is now free
+        #release(b_reg)
+        #release(c_reg)
+        
+        #release("all") // releases all reserved variables/registers in
+
+        return value
+    }
+
+
+    add2 :: fn(a, b: int) -> int {
+
+        value : int = 0
+
+        // this is better practice
+        asm(a -> "ra", b -> "rb", value <-> "rc") {
+            "addr rc, ra, rb"
+        }
+
+        // a -> "ra"        this puts the value of "a" into register "ra" at the beginning of the block.
+        // a <- "ra"        this puts the value of register "ra" into the variable "a" at the end of the block.
+        // a <-> "ra"       this does both.
+
+        return value
+    }
+
+
+
+    read_rf :: fn() -> int {
+        value_read : int
+
+        asm(value_read -> "ra") {
+            "add ra, rf, 0"
+        }
+        // value_read == rf
+        
+        return value_read
+    }
+
+
+
+
+
+
+
+
+
+
+
+len() :: fn(arr: []int) -> int {
+    return (bitcast([2]int) arr)[1]
+    // gets length value from opaque slice struct
+}
+
+slice() :: fn(arr: []int, start_index, end_index : int = -1) -> []int {
+
+    if start_index == -1 {
+        start_index = 0
+    }
+    if end_index == -1 {
+        end_index = len(arr)
+    }
+
+    new_arr :: struct {
+        ptr : uint,
+        len : uint,
+    }
+
+    return bitcast([]int) new_arr{
+        start_index * #size_of(int) + bitcast(int) &arr,
+        end_index - start_index,
+    }
+}
