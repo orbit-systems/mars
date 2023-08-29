@@ -19,6 +19,7 @@ process_file :: proc(file_name: string, file_data: string) {
 
 	for i:=0; i < 500; i+=1 {
 		int_token := lex_next_token(&lexer_context)
+		fmt.printf("%v ", int_token.lexeme)
 		append(&tokens, int_token)
 		if int_token.kind == .EOF {
 			break;
@@ -26,7 +27,7 @@ process_file :: proc(file_name: string, file_data: string) {
 	}
 
 	for token in tokens {
-		fmt.printf("{},", token.lexeme)
+		
 	}
 	fmt.printf("\n")
 

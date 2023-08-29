@@ -72,6 +72,9 @@ lex_next_token :: proc(ctx: ^lexer_info) -> (this_token: lexer_token) {
     cursor_rune, _ = lex_advance_cursor(ctx)
 
     // scan actual token
+    if ctx.current_offset >= len(ctx.file_data) {
+        return make_EOF(ctx)
+    }
     switch cursor_rune {
     case '0'..='9':
         success := scan_number(ctx, cursor_rune)
@@ -111,13 +114,18 @@ lex_next_token :: proc(ctx: ^lexer_info) -> (this_token: lexer_token) {
         }
     }
 
-    fmt.println(lex_get_current_substring(ctx), this_token.kind)
     this_token.lexeme = lex_get_current_substring(ctx)
-    
+    this_token.pos = position{
+        ctx.file_name,
+        ctx.start_offset,
+        start_row,
+        start_col,
+    }
+
     return
 }
 
-// ! this is jank and will cause problems later maybe!
+// TODO this is jank, please reimplement better
 scan_number :: proc(ctx: ^lexer_info, r: rune) -> (success: token_kind) {
     loop: for {
         switch lex_current_rune(ctx) {
@@ -139,7 +147,6 @@ scan_number :: proc(ctx: ^lexer_info, r: rune) -> (success: token_kind) {
     return
 }
 
-// TODO implement
 scan_identifier :: proc(ctx: ^lexer_info, r: rune) -> (success: token_kind) {
     loop: for {
         switch lex_current_rune(ctx) {
@@ -151,44 +158,269 @@ scan_identifier :: proc(ctx: ^lexer_info, r: rune) -> (success: token_kind) {
     }
 
     switch lex_get_current_substring(ctx){
-    case "asm":             return .keyword_asm
-    case "bitcast":         return .keyword_bitcast
-    case "break":           return .keyword_break
-    case "case":            return .keyword_case
-    case "cast":            return .keyword_cast
-    case "defer":           return .keyword_defer
-    case "enum":            return .keyword_enum
-    case "elif":            return .keyword_elif
-    case "else":            return .keyword_else
-    case "external":        return .keyword_external
-    case "fallthrough":     return .keyword_fallthrough
-    case "for":             return .keyword_for
-    case "fn":              return .keyword_fn
-    case "if":              return .keyword_if
-    case "import":          return .keyword_import
-    case "module":          return .keyword_module
-    case "return":          return .keyword_return
-    case "sizeof":          return .keyword_sizeof
-    case "struct":          return .keyword_struct
-    case "switch":          return .keyword_switch
-    case "union":           return .keyword_union
-    case "while":           return .keyword_while
-    case "true", "false":   return .literal_bool
-    case "null":            return .literal_null
-    case "_":               return .identifier_discard
-    case:                   return .identifier
+    case "asm":           return .keyword_asm
+    case "bitcast":       return .keyword_bitcast
+    case "break":         return .keyword_break
+    case "case":          return .keyword_case
+    case "cast":          return .keyword_cast
+    case "defer":         return .keyword_defer
+    case "enum":          return .keyword_enum
+    case "elif":          return .keyword_elif
+    case "else":          return .keyword_else
+    case "external":      return .keyword_external
+    case "fallthrough":   return .keyword_fallthrough
+    case "for":           return .keyword_for
+    case "fn":            return .keyword_fn
+    case "if":            return .keyword_if
+    case "import":        return .keyword_import
+    case "module":        return .keyword_module
+    case "return":        return .keyword_return
+    case "sizeof":        return .keyword_sizeof
+    case "struct":        return .keyword_struct
+    case "switch":        return .keyword_switch
+    case "union":         return .keyword_union
+    case "while":         return .keyword_while
+    case "true", "false": return .literal_bool
+    case "null":          return .literal_null
+    case "_":             return .identifier_discard
+    case:                 return .identifier
     }
 
     return
 }
 
-// TODO implement
 scan_string_literal :: proc(ctx: ^lexer_info, r: rune) -> (success: token_kind) {
+    for {
+        switch lex_current_rune(ctx) {
+        case '\"':
+            lex_advance_cursor(ctx)
+            return .literal_string
+        case '\\':
+            lex_advance_cursor(ctx)
+            lex_advance_cursor(ctx)
+        case '\n':
+            fmt.printf("ERROR [ %s :: %d : %d ] string not closed \"%s\"", ctx.file_name, ctx.current_row, ctx.current_col,
+                lex_get_current_substring(ctx))
+            os.exit(0)
+        case:
+            lex_advance_cursor(ctx)
+        }
+    }
     return
 }
 
-// TODO implement
 scan_operator :: proc(ctx: ^lexer_info, r: rune) -> (success: token_kind) {
+    this_rune := r
+    switch this_rune {
+    case '#':       // #
+        return .hash
+    case '-':       // -
+        this_rune = lex_current_rune(ctx)
+        switch this_rune {
+        case '-':   // --
+            lex_advance_cursor(ctx)
+            this_rune = lex_current_rune(ctx)
+            switch this_rune {
+            case '-': // ---
+                lex_advance_cursor(ctx)
+                return .uninit
+            case:
+                return .invalid
+            }
+        case '>':   // ->
+            lex_advance_cursor(ctx)
+            return .arrow_right
+        case '=':   // -=
+            lex_advance_cursor(ctx)
+            return .sub_equal
+        case:       // -
+            return .sub
+        }
+    case '=':       // =
+        this_rune = lex_current_rune(ctx)
+        switch this_rune {
+        case '=':   // ==
+            lex_advance_cursor(ctx)
+            return .equal_equal
+        case:       // =
+            return .equal
+        }
+    case '$':       // $
+        return .dollar
+    case ':':       // :
+        return .colon
+    case ';':       // ;
+        return .semicolon
+    case '.':       // .
+        return .period
+    case ',':       // ,
+        return .comma
+    case '!':       // !
+        this_rune = lex_current_rune(ctx)
+        switch this_rune {
+        case '=':   // !=
+            lex_advance_cursor(ctx)
+            return .not_equal
+        case:       // !
+            return .exclam
+        }
+    case '^':       // ^
+        return .carat
+    case '+':       // +
+        this_rune = lex_current_rune(ctx)
+        switch this_rune {
+        case '=':   // +=
+            lex_advance_cursor(ctx)
+            return .add_equal
+        case:       // +
+            return .add
+        }
+    case '*':       // *
+        this_rune = lex_current_rune(ctx)
+        switch this_rune {
+        case '=':   // *=
+            lex_advance_cursor(ctx)
+            return .mul_equal
+        case:       // *
+            return .mul
+        }
+    case '/':       // /
+        this_rune = lex_current_rune(ctx)
+        switch this_rune {
+        case '=':   // /=
+            lex_advance_cursor(ctx)
+            return .div_equal
+        case:       // /
+            return .div
+        }
+    case '%':       // %
+        this_rune = lex_current_rune(ctx)
+        switch this_rune {
+        case '%':   // %%
+            lex_advance_cursor(ctx)
+            this_rune = lex_current_rune(ctx)
+            switch this_rune {
+            case '=': // %%=
+                lex_advance_cursor(ctx)
+                return .mod_equal
+            case:
+                return .mod_mod
+            }
+        case '=':   // %=
+            lex_advance_cursor(ctx)
+            return .mod_equal
+        case:       // %
+            return .mod
+        }
+    case '~':       // ~
+        this_rune = lex_current_rune(ctx)
+        switch this_rune {
+        case '|':   // ~|
+            lex_advance_cursor(ctx)
+            this_rune = lex_current_rune(ctx)
+            switch this_rune {
+            case '=': // ~|=
+                lex_advance_cursor(ctx)
+                return .nor_equal
+            case:     // ~|
+                return .nor
+            }
+        case '~':   // ~~
+            lex_advance_cursor(ctx)
+            return .tilde_tilde
+        case '=':   // ~=
+            lex_advance_cursor(ctx)
+            return .xor_equal
+        case:       // ~
+            return .tilde
+        }
+    case '&':       // &
+        this_rune = lex_current_rune(ctx)
+        switch this_rune {
+        case '&':   // &&
+            lex_advance_cursor(ctx)
+            return .and_and
+        case '=':   // &=
+            lex_advance_cursor(ctx)
+            return .and_equal
+        case:       // %
+            return .and
+        }
+    case '|':       // |
+        this_rune = lex_current_rune(ctx)
+        switch this_rune {
+        case '|':   // ||
+            lex_advance_cursor(ctx)
+            return .or_or
+        case '=':   // |=
+            lex_advance_cursor(ctx)
+            return .or_equal
+        case:       // |
+            return .or
+        }
+    case '<':       // -
+        this_rune = lex_current_rune(ctx)
+        switch this_rune {
+        case '-':   // <-
+            lex_advance_cursor(ctx)
+            this_rune = lex_current_rune(ctx)
+            switch this_rune {
+            case '>': // <->
+                lex_advance_cursor(ctx)
+                return .arrow_bidir
+            case:
+                return .arrow_left
+            }
+        case '<':   // <<
+            lex_advance_cursor(ctx)
+            this_rune = lex_current_rune(ctx)
+            switch this_rune {
+            case '=': // <<=
+                lex_advance_cursor(ctx)
+                return .lshift_equal
+            case:   // <<
+                return .lshift
+            }
+        case '=':   // <=
+            lex_advance_cursor(ctx)
+            return .less_equal
+        case:       // <
+            return .less_than
+        }
+    case '>':       // >
+        this_rune = lex_current_rune(ctx)
+        switch this_rune {
+        case '>':   // >>
+            lex_advance_cursor(ctx)
+            this_rune = lex_current_rune(ctx)
+            switch this_rune {
+            case '=': // > > =
+                lex_advance_cursor(ctx)
+                return .rshift_equal
+            case:   // >>
+                return .rshift
+            }
+        case '=':   // > =
+            lex_advance_cursor(ctx)
+            return .greater_equal
+        case:       // >
+            return .greater_than
+        }
+    case '(':       // (
+        return .open_paren
+    case ')':       // )
+        return .close_paren
+    case '{':       // {
+        return .open_brace
+    case '}':       // }
+        return .close_brace
+    case '[':       // [
+        return .open_bracket
+    case ']':       // ]
+        return .close_bracket
+    case:
+    }
+
     return
 }
 
@@ -254,7 +486,7 @@ lex_advance_cursor :: proc(ctx: ^lexer_info) -> (r: rune, byte_len: int) {
     ctx.current_offset += uint(byte_len)
     ctx.current_col += 1
     if r == '\n' {
-        ctx.current_col = 0
+        ctx.current_col = 1
         ctx.current_row += 1
     }
     return
