@@ -3,6 +3,7 @@ package phobos
 import "core:fmt"
 import "core:os"
 import "core:unicode/utf8"
+import "core:strconv"
 
 lex_next_token :: proc(ctx: ^lexer_info) -> (this_token: lexer_token) {
 
@@ -61,57 +62,133 @@ lex_next_token :: proc(ctx: ^lexer_info) -> (this_token: lexer_token) {
             break loop
         }
     }
-    cursor_rune = lex_current_rune(ctx)
+
 
     // reset offset
-    lexeme_start_pos := ctx.current_offset
+    ctx.start_offset = ctx.current_offset
+    start_row := ctx.current_row
+    start_col := ctx.current_col
 
+    cursor_rune, _ = lex_advance_cursor(ctx)
 
     // scan actual token
     switch cursor_rune {
     case '0'..='9':
-        success := scan_number(ctx)
-        fmt.printf("ERROR [ %s :: %d : %d ] invalid literal \"%s\"", ctx.file_name, ctx.current_row, ctx.current_col,
-            ctx.file_data[lexeme_start_pos:ctx.current_offset])
-        os.exit(0)
+        success := scan_number(ctx, cursor_rune)
+        if success == .invalid {
+            fmt.printf("ERROR [ %s :: %d : %d ] invalid numeric literal \"%s\"", ctx.file_name, start_row, start_col,
+                lex_get_current_substring(ctx))
+            os.exit(0)
+        } else {
+            this_token.kind = success
+        }
     case 'A'..='Z', 'a'..='z', '_':
-        success := scan_identifier(ctx)
-        fmt.printf("ERROR [ %s :: %d : %d ] invalid identifier \"%s\"", ctx.file_name, ctx.current_row, ctx.current_col,
-            ctx.file_data[lexeme_start_pos:ctx.current_offset])
-        os.exit(0)
+        success := scan_identifier(ctx, cursor_rune)
+        if success == .invalid {
+            fmt.printf("ERROR [ %s :: %d : %d ] invalid identifier \"%s\"", ctx.file_name, start_row, start_col,
+                lex_get_current_substring(ctx))
+            os.exit(0)
+        } else {
+            this_token.kind = success
+        }
     case '\"':
-        success := scan_string_literal(ctx)
-        fmt.printf("ERROR [ %s :: %d : %d ] invalid string literal \"%s\"", ctx.file_name, ctx.current_row, ctx.current_col,
-            ctx.file_data[lexeme_start_pos:ctx.current_offset])
-        os.exit(0)
+        success := scan_string_literal(ctx, cursor_rune)
+        if success == .invalid {
+            fmt.printf("ERROR [ %s :: %d : %d ] invalid string literal \"%s\"", ctx.file_name, start_row, start_col,
+                lex_get_current_substring(ctx))
+            os.exit(0)
+        } else {
+            this_token.kind = success
+        }
     case:
-        success := scan_operator(ctx)
-        fmt.printf("ERROR [ %s :: %d : %d ] invalid operator \"%s\"", ctx.file_name, ctx.current_row, ctx.current_col,
-            ctx.file_data[lexeme_start_pos:ctx.current_offset])
-        os.exit(0)
+        success := scan_operator(ctx, cursor_rune)
+        if success == .invalid {
+            fmt.printf("ERROR [ %s :: %d : %d ] invalid operator \"%s\"", ctx.file_name, start_row, start_col,
+                lex_get_current_substring(ctx))
+            os.exit(0)
+        } else {
+            this_token.kind = success
+        }
     }
 
+    fmt.println(lex_get_current_substring(ctx), this_token.kind)
+    this_token.lexeme = lex_get_current_substring(ctx)
     
     return
 }
 
-// TODO implement
-scan_number :: proc(ctx: ^lexer_info) -> (success: token_kind) {
+// ! this is jank and will cause problems later maybe!
+scan_number :: proc(ctx: ^lexer_info, r: rune) -> (success: token_kind) {
+    loop: for {
+        switch lex_current_rune(ctx) {
+        case '0'..='9', '.', 'x', 'b', 'o':
+            lex_advance_cursor(ctx)
+        case:
+            _, i64_ok := strconv.parse_i64(lex_get_current_substring(ctx))
+            if i64_ok {
+                return .literal_int
+            }
+            _, float_ok := strconv.parse_f64(lex_get_current_substring(ctx))
+            if float_ok {
+                return .literal_float
+            }
+            break loop
+        }
+    }
+
     return
 }
 
 // TODO implement
-scan_identifier :: proc(ctx: ^lexer_info) -> (success: token_kind) {
+scan_identifier :: proc(ctx: ^lexer_info, r: rune) -> (success: token_kind) {
+    loop: for {
+        switch lex_current_rune(ctx) {
+        case 'A'..='Z', 'a'..='z', '_', '0'..='9':
+            lex_advance_cursor(ctx)
+        case:
+            break loop
+        }
+    }
+
+    switch lex_get_current_substring(ctx){
+    case "asm":             return .keyword_asm
+    case "bitcast":         return .keyword_bitcast
+    case "break":           return .keyword_break
+    case "case":            return .keyword_case
+    case "cast":            return .keyword_cast
+    case "defer":           return .keyword_defer
+    case "enum":            return .keyword_enum
+    case "elif":            return .keyword_elif
+    case "else":            return .keyword_else
+    case "external":        return .keyword_external
+    case "fallthrough":     return .keyword_fallthrough
+    case "for":             return .keyword_for
+    case "fn":              return .keyword_fn
+    case "if":              return .keyword_if
+    case "import":          return .keyword_import
+    case "module":          return .keyword_module
+    case "return":          return .keyword_return
+    case "sizeof":          return .keyword_sizeof
+    case "struct":          return .keyword_struct
+    case "switch":          return .keyword_switch
+    case "union":           return .keyword_union
+    case "while":           return .keyword_while
+    case "true", "false":   return .literal_bool
+    case "null":            return .literal_null
+    case "_":               return .identifier_discard
+    case:                   return .identifier
+    }
+
     return
 }
 
 // TODO implement
-scan_string_literal :: proc(ctx: ^lexer_info) -> (success: token_kind) {
+scan_string_literal :: proc(ctx: ^lexer_info, r: rune) -> (success: token_kind) {
     return
 }
 
 // TODO implement
-scan_operator :: proc(ctx: ^lexer_info) -> (success: token_kind) {
+scan_operator :: proc(ctx: ^lexer_info, r: rune) -> (success: token_kind) {
     return
 }
 
@@ -165,6 +242,10 @@ skip_until_rune :: proc(ctx: ^lexer_info, lookout: rune) -> (r: rune, hit_eof: b
     }
 }
 
+lex_get_current_substring :: #force_inline proc(ctx: ^lexer_info) -> string {
+    return ctx.file_data[ctx.start_offset:ctx.current_offset]
+}
+
 // b r u h                            b r u h
 //   ^- current rune: 'r'     ->          ^- current rune: 'u'
 // return current rune, move cursor forward
@@ -203,6 +284,7 @@ make_EOF :: #force_inline proc(ctx: ^lexer_info) -> lexer_token {
 make_position :: #force_inline proc(ctx: ^lexer_info) -> position {
     return position{
         ctx.file_name,
+        ctx.current_offset,
         ctx.current_row,
         ctx.current_col,
     }

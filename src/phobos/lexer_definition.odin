@@ -6,6 +6,7 @@ lexer_info :: struct {
     current_offset : uint,
     current_row    : uint,
     current_col    : uint,
+    start_offset   : uint,
     lexed_tokens   : [dynamic]lexer_token,
 }
 
@@ -17,6 +18,7 @@ lexer_token :: struct {
 
 position :: struct {
     file_name : string,
+    offset    : uint,
     row       : uint,
     col       : uint,
 }
@@ -24,7 +26,7 @@ position :: struct {
 EOF_TOKEN :: lexer_token{.EOF,"",position{}}
 
 token_kind :: enum {
-    invalid,
+    invalid = 0,
     EOF,
 
     meta_identifer_begin,
