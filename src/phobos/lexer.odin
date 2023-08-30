@@ -519,10 +519,12 @@ make_position :: #force_inline proc(ctx: ^lexer_info) -> position {
 
 whitespace_runes :: [?]u8{' ', '\t', '\n', '\r'}
 is_whitespace :: proc(r: u8) -> bool {
-    for whitespace in whitespace_runes {
-        if r == whitespace {
-            return true
-        }
-    }
-    return false
+    // for whitespace in whitespace_runes {
+    //     if r == whitespace {
+    //         return true
+    //     }
+    // }
+    // return false
+
+    return r == ' ' || r == '\t' || r == '\n' || r == '\r'
 }
