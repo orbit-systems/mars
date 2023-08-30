@@ -44,8 +44,11 @@ main :: proc() {
             case "-help": 
                 print_help()
                 os.exit(0)
+            case "-no-color": 
+                FLAG_NO_COLOR = true
+                ph.FLAG_NO_COLOR = true
 
-            case: //default because odin is WEIRD
+            case:
                 if index == 0 && argument.key[0] != '-' {
                     file_name = argument.key
                     continue
@@ -67,3 +70,5 @@ main :: proc() {
 print_help :: proc() {
     fmt.printf("you silly. you goober. DIE.\n")
 }
+
+FLAG_NO_COLOR := false

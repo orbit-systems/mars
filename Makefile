@@ -9,14 +9,14 @@ ifeq ($(OS),Windows_NT)
 endif
 
 clean:
-	rm -rf ./build
+	@rm -rf ./build
 
 build: clean
-	mkdir build
-	odin build $(SRC_DIR) $(MARS_BUILD_FLAGS) -out:$(MARS_LOCATION)
+	@mkdir build
+	@odin build $(SRC_DIR) $(MARS_BUILD_FLAGS) -out:$(MARS_LOCATION)
 
 run: build 
-	$(MARS_LOCATION) spec/test.mars
+	@$(MARS_LOCATION) mars_code/test.mars -no-color
 
 stresstest: build 
-	$(MARS_LOCATION) spec/stresstest.mars
+	@$(MARS_LOCATION) mars_code/stresstest.mars -no-color

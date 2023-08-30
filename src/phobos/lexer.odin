@@ -11,14 +11,10 @@ lex_next_token :: proc(ctx: ^lexer_info) -> (this_token: lexer_token) {
         return //return empty lexer token
     }
 
-    if ctx.file_data == "" || ctx.file_name == "" {
+    if ctx.file_data == "" || ctx.pos.path == "" {
         fmt.printf("oopsie poopsie no lexing for you! you didn't give me any information! stupid little shit\n")
         os.exit(-1)
     }
-
-    // initalize rows and cols to 1 if not set
-    ctx.current_col = (ctx.current_col == 0) ? 1 : ctx.current_col
-    ctx.current_row = (ctx.current_row == 0) ? 1 : ctx.current_row
 
     cursor_rune : u8
     
@@ -46,8 +42,7 @@ lex_next_token :: proc(ctx: ^lexer_info) -> (this_token: lexer_token) {
                 lex_advance_cursor(ctx)
                 cursor_rune, hit_eof, block_comment_end_level := skip_block_comment(ctx)
                 if block_comment_end_level > 0 {
-                    fmt.printf("ERROR [ %s :: %d : %d ] unclosed block comment\n", ctx.file_name, ctx.current_row, ctx.current_col)
-                    os.exit(0)
+                    ctx.error(ctx, "unclosed block comment", no_print_line = true)
                 }
                 if hit_eof {
                     this_token = make_EOF(ctx)
@@ -64,62 +59,53 @@ lex_next_token :: proc(ctx: ^lexer_info) -> (this_token: lexer_token) {
 
 
     // reset offset
-    ctx.start_offset = ctx.current_offset
-    start_row := ctx.current_row
-    start_col := ctx.current_col
+    ctx.pos.start = ctx.pos.offset
+    start_row := ctx.pos.line
+    start_col := ctx.pos.col
 
     cursor_rune = lex_advance_cursor(ctx)
 
     // scan actual token
-    if ctx.current_offset >= len(ctx.file_data) {
+    if ctx.pos.offset >= len(ctx.file_data) {
         return make_EOF(ctx)
     }
     switch cursor_rune {
     case '0'..='9':
         success := scan_number(ctx, cursor_rune)
         if success == .invalid {
-            fmt.printf("ERROR [ %s :: %d : %d ] invalid numeric literal \"%s\"", ctx.file_name, start_row, start_col,
-                lex_get_current_substring(ctx))
-            os.exit(0)
+            ctx.error(ctx, "invalid numeric literal \"%s\"", get_substring(ctx.file_data, ctx.pos))
         } else {
             this_token.kind = success
         }
     case 'A'..='Z', 'a'..='z', '_':
         success := scan_identifier(ctx, cursor_rune)
         if success == .invalid {
-            fmt.printf("ERROR [ %s :: %d : %d ] invalid identifier \"%s\"", ctx.file_name, start_row, start_col,
-                lex_get_current_substring(ctx))
-            os.exit(0)
+            ctx.error(ctx, "invalid identifier \"%s\"", get_substring(ctx.file_data, ctx.pos))
         } else {
             this_token.kind = success
         }
     case '\"':
         success := scan_string_literal(ctx, cursor_rune)
         if success == .invalid {
-            fmt.printf("ERROR [ %s :: %d : %d ] invalid string literal \"%s\"", ctx.file_name, start_row, start_col,
-                lex_get_current_substring(ctx))
-            os.exit(0)
+            ctx.error(ctx, "invalid string literal \"%s\"", get_substring(ctx.file_data, ctx.pos))
         } else {
             this_token.kind = success
         }
     case:
         success := scan_operator(ctx, cursor_rune)
         if success == .invalid {
-            fmt.printf("ERROR [ %s :: %d : %d ] invalid operator \"%s\"", ctx.file_name, start_row, start_col,
-                lex_get_current_substring(ctx))
-            os.exit(0)
+            ctx.error(ctx, "invalid operator \"%s\"", get_substring(ctx.file_data, ctx.pos))
         } else {
             this_token.kind = success
         }
     }
 
-    this_token.lexeme = lex_get_current_substring(ctx)
-    this_token.pos = position{
-        ctx.file_name,
-        ctx.start_offset,
-        start_row,
-        start_col,
-    }
+    // * this is significantly slow for some reason!! it slows lexing down by like .3 seconds in the stresstest
+    this_token.lexeme = get_substring(ctx.file_data, ctx.pos)
+    
+    this_token.pos = ctx.pos
+    
+    
 
     return
 }
@@ -131,11 +117,11 @@ scan_number :: proc(ctx: ^lexer_info, r: u8) -> (success: token_kind) {
         case '0'..='9', '.', 'x', 'b', 'o':
             lex_advance_cursor(ctx)
         case:
-            _, i64_ok := strconv.parse_i64(lex_get_current_substring(ctx))
+            _, i64_ok := strconv.parse_i64(get_substring(ctx.file_data, ctx.pos))
             if i64_ok {
                 return .literal_int
             }
-            _, float_ok := strconv.parse_f64(lex_get_current_substring(ctx))
+            _, float_ok := strconv.parse_f64(get_substring(ctx.file_data, ctx.pos))
             if float_ok {
                 return .literal_float
             }
@@ -156,7 +142,7 @@ scan_identifier :: proc(ctx: ^lexer_info, r: u8) -> (success: token_kind) {
         }
     }
 
-    switch lex_get_current_substring(ctx){
+    switch get_substring(ctx.file_data, ctx.pos) {
     case "asm":           return .keyword_asm
     case "bitcast":       return .keyword_bitcast
     case "break":         return .keyword_break
@@ -198,9 +184,7 @@ scan_string_literal :: proc(ctx: ^lexer_info, r: u8) -> (success: token_kind) {
             lex_advance_cursor(ctx)
             lex_advance_cursor(ctx)
         case '\n':
-            fmt.printf("ERROR [ %s :: %d : %d ] string not closed \"%s\"", ctx.file_name, ctx.current_row, ctx.current_col,
-                lex_get_current_substring(ctx))
-            os.exit(0)
+            ctx.error(ctx, "string not closed")
         case:
             lex_advance_cursor(ctx)
         }
@@ -431,7 +415,7 @@ skip_block_comment :: proc(ctx: ^lexer_info) -> (r: u8, hit_eof: bool, level: in
     level = 1
     for level != 0 {
         r = lex_current_char(ctx)
-        if ctx.current_offset >= len(ctx.file_data) {
+        if ctx.pos.offset >= len(ctx.file_data) {
             return r, true, level
         }
         if r == '/' && lex_peek_next_char(ctx) == '*' {
@@ -450,7 +434,7 @@ skip_block_comment :: proc(ctx: ^lexer_info) -> (r: u8, hit_eof: bool, level: in
 skip_whitespace :: proc(ctx: ^lexer_info) -> (r: u8, hit_eof: bool) {
     for {
         r = lex_current_char(ctx)
-        if ctx.current_offset >= len(ctx.file_data) {
+        if ctx.pos.offset >= len(ctx.file_data) {
             return r, true
         }
         if !is_whitespace(r) {
@@ -463,7 +447,7 @@ skip_whitespace :: proc(ctx: ^lexer_info) -> (r: u8, hit_eof: bool) {
 skip_until_char :: proc(ctx: ^lexer_info, lookout: u8) -> (r: u8, hit_eof: bool) {
     for {
         r = lex_current_char(ctx)
-        if ctx.current_offset >= len(ctx.file_data) {
+        if ctx.pos.offset >= len(ctx.file_data) {
             return r, true
         }
         if r == lookout {
@@ -473,26 +457,26 @@ skip_until_char :: proc(ctx: ^lexer_info, lookout: u8) -> (r: u8, hit_eof: bool)
     }
 }
 
-lex_get_current_substring :: #force_inline proc(ctx: ^lexer_info) -> string {
-    return ctx.file_data[ctx.start_offset:ctx.current_offset]
+get_substring :: #force_inline proc(data: string, pos: position) -> string {
+    return data[pos.start:pos.offset]
 }
 
 // b r u h                            b r u h
 //   ^- current rune: 'r'     ->          ^- current rune: 'u'
 // return current rune, move cursor forward
 lex_advance_cursor :: proc(ctx: ^lexer_info) -> (r: u8) {
-    r = ctx.file_data[ctx.current_offset]
-    ctx.current_offset += 1
-    ctx.current_col+=1
+    r = ctx.file_data[ctx.pos.offset]
+    ctx.pos.offset += 1
+    ctx.pos.col+=1
     if r == '\n' {
-        ctx.current_col = 1
-        ctx.current_row += 1
+        ctx.pos.col = 1
+        ctx.pos.line += 1
     }
     return 
 }
 
 lex_peek_next_char :: proc(ctx: ^lexer_info) -> (r: u8) {
-    return ctx.file_data[ctx.current_offset+1]
+    return ctx.file_data[ctx.pos.offset+1]
 }
 
 // b r u h                             b r u h
@@ -500,21 +484,12 @@ lex_peek_next_char :: proc(ctx: ^lexer_info) -> (r: u8) {
 // return current rune, keep cursor
 lex_current_char :: #force_inline proc(ctx: ^lexer_info) -> (r: u8) {
     // all because utf8.rune_at discards the damn byte length. fuck you utf8.rune_at. 
-    //return utf8.decode_rune_in_string(ctx.file_data[ctx.current_offset:])
-    return ctx.file_data[ctx.current_offset]
+    //return utf8.decode_rune_in_string(ctx.file_data[ctx.pos.offset:])
+    return ctx.file_data[ctx.pos.offset]
 }
 
 make_EOF :: #force_inline proc(ctx: ^lexer_info) -> lexer_token {
-    return lexer_token{.EOF,"",make_position(ctx)}
-}
-
-make_position :: #force_inline proc(ctx: ^lexer_info) -> position {
-    return position{
-        ctx.file_name,
-        ctx.current_offset,
-        ctx.current_row,
-        ctx.current_col,
-    }
+    return lexer_token{.EOF,"",ctx.pos}
 }
 
 whitespace_runes :: [?]u8{' ', '\t', '\n', '\r'}
@@ -528,3 +503,5 @@ is_whitespace :: proc(r: u8) -> bool {
 
     return r == ' ' || r == '\t' || r == '\n' || r == '\r'
 }
+
+FLAG_NO_COLOR := false

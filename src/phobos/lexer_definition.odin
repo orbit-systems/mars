@@ -1,13 +1,26 @@
 package phobos
 
+import "core:fmt"
+import "core:os"
+import "core:strings"
+
 lexer_info :: struct {
-    file_name      : string,
     file_data      : string,
-    current_offset : uint,
-    current_row    : uint,
-    current_col    : uint,
-    start_offset   : uint,
+    pos            : position,
     lexed_tokens   : [dynamic]lexer_token,
+    error          : lexer_error_handler,
+    warning        : lexer_error_handler,  
+}
+
+lexer_init :: proc(ctx : ^lexer_info, path: string, src: string) {
+    ctx.pos.path   = path
+	ctx.file_data  = src
+    ctx.pos.start  = 0
+    ctx.pos.offset = 0
+    ctx.pos.line   = 1
+    ctx.pos.line   = 1
+    ctx.error      = lexer_default_error_handler
+    ctx.warning    = lexer_default_warning_handler
 }
 
 lexer_token :: struct {
@@ -17,13 +30,13 @@ lexer_token :: struct {
 }
 
 position :: struct {
-    file_name : string,
+    path      : string,
+    start     : uint,
     offset    : uint,
-    row       : uint,
+    line      : uint,
     col       : uint,
 }
 
-EOF_TOKEN :: lexer_token{.EOF,"",position{}}
 
 token_kind :: enum {
     invalid = 0,
