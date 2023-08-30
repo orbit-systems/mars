@@ -17,3 +17,6 @@ build: clean
 
 run: build 
 	$(MARS_LOCATION) spec/test.mars
+
+stresstest: build 
+	$(MARS_LOCATION) spec/stresstest.mars

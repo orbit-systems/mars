@@ -1,6 +1,7 @@
 package phobos
 
 import "core:fmt"
+import "core:time"
 
 // mars compiler frontend - lexer, parser
 // produces abstract syntax tree to be passed to deimos backend
@@ -11,25 +12,25 @@ import "core:fmt"
 process_file :: proc(file_name: string, file_data: string) {
 	//lex
 
+	overall_timer : time.Stopwatch
+
 	lexer_context: lexer_info
 	lexer_context.file_name = file_name
 	lexer_context.file_data = file_data
 
-	tokens: [dynamic]lexer_token
+	//tokens: [dynamic]lexer_token
 
-	for i:=0; i < 500; i+=1 {
-		int_token := lex_next_token(&lexer_context)
-		fmt.printf("%v ", int_token.lexeme)
-		append(&tokens, int_token)
-		if int_token.kind == .EOF {
-			break;
-		}
+	int_token : lexer_token
+	count : u64 = 0
+	time.stopwatch_start(&overall_timer)
+	for count = 0; int_token.kind != .EOF; count += 1 {
+		int_token = lex_next_token(&lexer_context)
+		//fmt.printf("%v ", int_token.lexeme)
+		//append(&tokens, int_token)
 	}
-
-	for token in tokens {
-		
-	}
-	fmt.printf("\n")
+	time.stopwatch_stop(&overall_timer)
+	time_to_lex := time.duration_seconds(time.stopwatch_duration(overall_timer))
+	fmt.printf("%d tokens parsed in %v seconds\n", count, time_to_lex)
 
 	//parse
 
