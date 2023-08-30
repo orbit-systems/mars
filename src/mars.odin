@@ -19,6 +19,7 @@ cmd_arg :: struct {
 }
 
 main :: proc() {
+    
     if len(os.args) < 2 {
         print_help()
         os.exit(0)
@@ -60,6 +61,7 @@ main :: proc() {
         os.exit(-1)
     }
 
+    ph.process_file(file_name, cast(string)raw)
 }
 
 print_help :: proc() {

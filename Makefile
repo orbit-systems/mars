@@ -16,4 +16,4 @@ build: clean
 	odin build $(SRC_DIR) $(MARS_BUILD_FLAGS) -out:$(MARS_LOCATION)
 
 run: build 
-	./$(MARS_LOCATION) spec/test.mars
+	$(MARS_LOCATION) spec/test.mars
