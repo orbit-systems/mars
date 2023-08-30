@@ -16,7 +16,7 @@ build: clean
 	@odin build $(SRC_DIR) $(MARS_BUILD_FLAGS) -out:$(MARS_LOCATION)
 
 run: build 
-	@$(MARS_LOCATION) mars_code/test.mars -no-color
+	@$(MARS_LOCATION) mars_code/test.mars
 
 stresstest: build 
 	@$(MARS_LOCATION) mars_code/stresstest.mars -no-color

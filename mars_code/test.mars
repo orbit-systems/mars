@@ -3,7 +3,7 @@ module test;
 import nsys "neptune:syscall";
 
 main :: fn() -> int {
-	test : []u8 = "weewoo";
+	test : []u8 = "weewoo;
 	print(test);
 
 	value : int = 5;

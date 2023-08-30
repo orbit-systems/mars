@@ -5,7 +5,6 @@ import "core:os"
 import "core:strconv"
 
 lex_next_token :: proc(ctx: ^lexer_info) -> (this_token: lexer_token) {
-
     if ctx == nil {
         fmt.printf("Nil context provided to lex_next_token.\n")
         return //return empty lexer token
