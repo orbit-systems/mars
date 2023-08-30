@@ -25,6 +25,7 @@ process_file :: proc(file_name: string, file_data: string) {
 	time.stopwatch_start(&overall_timer)
 	for count = 0; int_token.kind != .EOF; count += 1 {
 		int_token = lex_next_token(&lexer_context)
+		//fmt.println(lexer_context.current_row)
 		//fmt.printf("%v ", int_token.lexeme)
 		//append(&tokens, int_token)
 	}
