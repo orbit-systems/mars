@@ -2,7 +2,6 @@ package phobos
 
 import "core:fmt"
 import "core:os"
-import "core:unicode/utf8"
 import "core:strconv"
 
 lex_next_token :: proc(ctx: ^lexer_info) -> (this_token: lexer_token) {
@@ -21,11 +20,11 @@ lex_next_token :: proc(ctx: ^lexer_info) -> (this_token: lexer_token) {
     ctx.current_col = (ctx.current_col == 0) ? 1 : ctx.current_col
     ctx.current_row = (ctx.current_row == 0) ? 1 : ctx.current_row
 
-    cursor_rune : rune
+    cursor_rune : u8
     
     // advance to next significant rune
     loop: for {
-        cursor_rune = lex_current_rune(ctx)
+        cursor_rune = lex_current_char(ctx)
         switch cursor_rune {
         case ' ', '\t', '\n', '\r':
             cursor_rune, hit_eof := skip_whitespace(ctx)
@@ -36,13 +35,13 @@ lex_next_token :: proc(ctx: ^lexer_info) -> (this_token: lexer_token) {
             continue
         case '/':
             // determine what kind of comment we're dealing with here
-            if lex_peek_next_rune(ctx) == '/' {
+            if lex_peek_next_char(ctx) == '/' {
                 cursor_rune, hit_eof := skip_line_comment(ctx)
                 if hit_eof {
                     this_token = make_EOF(ctx)
                     break loop
                 }
-            } else if lex_peek_next_rune(ctx) == '*' {
+            } else if lex_peek_next_char(ctx) == '*' {
                 lex_advance_cursor(ctx)
                 lex_advance_cursor(ctx)
                 cursor_rune, hit_eof, block_comment_end_level := skip_block_comment(ctx)
@@ -69,7 +68,7 @@ lex_next_token :: proc(ctx: ^lexer_info) -> (this_token: lexer_token) {
     start_row := ctx.current_row
     start_col := ctx.current_col
 
-    cursor_rune, _ = lex_advance_cursor(ctx)
+    cursor_rune = lex_advance_cursor(ctx)
 
     // scan actual token
     if ctx.current_offset >= len(ctx.file_data) {
@@ -126,9 +125,9 @@ lex_next_token :: proc(ctx: ^lexer_info) -> (this_token: lexer_token) {
 }
 
 // TODO this is jank, please reimplement better
-scan_number :: proc(ctx: ^lexer_info, r: rune) -> (success: token_kind) {
+scan_number :: proc(ctx: ^lexer_info, r: u8) -> (success: token_kind) {
     loop: for {
-        switch lex_current_rune(ctx) {
+        switch lex_current_char(ctx) {
         case '0'..='9', '.', 'x', 'b', 'o':
             lex_advance_cursor(ctx)
         case:
@@ -147,9 +146,9 @@ scan_number :: proc(ctx: ^lexer_info, r: rune) -> (success: token_kind) {
     return
 }
 
-scan_identifier :: proc(ctx: ^lexer_info, r: rune) -> (success: token_kind) {
+scan_identifier :: proc(ctx: ^lexer_info, r: u8) -> (success: token_kind) {
     loop: for {
-        switch lex_current_rune(ctx) {
+        switch lex_current_char(ctx) {
         case 'A'..='Z', 'a'..='z', '_', '0'..='9':
             lex_advance_cursor(ctx)
         case:
@@ -189,9 +188,9 @@ scan_identifier :: proc(ctx: ^lexer_info, r: rune) -> (success: token_kind) {
     return
 }
 
-scan_string_literal :: proc(ctx: ^lexer_info, r: rune) -> (success: token_kind) {
+scan_string_literal :: proc(ctx: ^lexer_info, r: u8) -> (success: token_kind) {
     for {
-        switch lex_current_rune(ctx) {
+        switch lex_current_char(ctx) {
         case '\"':
             lex_advance_cursor(ctx)
             return .literal_string
@@ -209,17 +208,17 @@ scan_string_literal :: proc(ctx: ^lexer_info, r: rune) -> (success: token_kind) 
     return
 }
 
-scan_operator :: proc(ctx: ^lexer_info, r: rune) -> (success: token_kind) {
+scan_operator :: proc(ctx: ^lexer_info, r: u8) -> (success: token_kind) {
     this_rune := r
     switch this_rune {
     case '#':       // #
         return .hash
     case '-':       // -
-        this_rune = lex_current_rune(ctx)
+        this_rune = lex_current_char(ctx)
         switch this_rune {
         case '-':   // --
             lex_advance_cursor(ctx)
-            this_rune = lex_current_rune(ctx)
+            this_rune = lex_current_char(ctx)
             switch this_rune {
             case '-': // ---
                 lex_advance_cursor(ctx)
@@ -237,7 +236,7 @@ scan_operator :: proc(ctx: ^lexer_info, r: rune) -> (success: token_kind) {
             return .sub
         }
     case '=':       // =
-        this_rune = lex_current_rune(ctx)
+        this_rune = lex_current_char(ctx)
         switch this_rune {
         case '=':   // ==
             lex_advance_cursor(ctx)
@@ -256,7 +255,7 @@ scan_operator :: proc(ctx: ^lexer_info, r: rune) -> (success: token_kind) {
     case ',':       // ,
         return .comma
     case '!':       // !
-        this_rune = lex_current_rune(ctx)
+        this_rune = lex_current_char(ctx)
         switch this_rune {
         case '=':   // !=
             lex_advance_cursor(ctx)
@@ -267,7 +266,7 @@ scan_operator :: proc(ctx: ^lexer_info, r: rune) -> (success: token_kind) {
     case '^':       // ^
         return .carat
     case '+':       // +
-        this_rune = lex_current_rune(ctx)
+        this_rune = lex_current_char(ctx)
         switch this_rune {
         case '=':   // +=
             lex_advance_cursor(ctx)
@@ -276,7 +275,7 @@ scan_operator :: proc(ctx: ^lexer_info, r: rune) -> (success: token_kind) {
             return .add
         }
     case '*':       // *
-        this_rune = lex_current_rune(ctx)
+        this_rune = lex_current_char(ctx)
         switch this_rune {
         case '=':   // *=
             lex_advance_cursor(ctx)
@@ -285,7 +284,7 @@ scan_operator :: proc(ctx: ^lexer_info, r: rune) -> (success: token_kind) {
             return .mul
         }
     case '/':       // /
-        this_rune = lex_current_rune(ctx)
+        this_rune = lex_current_char(ctx)
         switch this_rune {
         case '=':   // /=
             lex_advance_cursor(ctx)
@@ -294,11 +293,11 @@ scan_operator :: proc(ctx: ^lexer_info, r: rune) -> (success: token_kind) {
             return .div
         }
     case '%':       // %
-        this_rune = lex_current_rune(ctx)
+        this_rune = lex_current_char(ctx)
         switch this_rune {
         case '%':   // %%
             lex_advance_cursor(ctx)
-            this_rune = lex_current_rune(ctx)
+            this_rune = lex_current_char(ctx)
             switch this_rune {
             case '=': // %%=
                 lex_advance_cursor(ctx)
@@ -313,11 +312,11 @@ scan_operator :: proc(ctx: ^lexer_info, r: rune) -> (success: token_kind) {
             return .mod
         }
     case '~':       // ~
-        this_rune = lex_current_rune(ctx)
+        this_rune = lex_current_char(ctx)
         switch this_rune {
         case '|':   // ~|
             lex_advance_cursor(ctx)
-            this_rune = lex_current_rune(ctx)
+            this_rune = lex_current_char(ctx)
             switch this_rune {
             case '=': // ~|=
                 lex_advance_cursor(ctx)
@@ -335,7 +334,7 @@ scan_operator :: proc(ctx: ^lexer_info, r: rune) -> (success: token_kind) {
             return .tilde
         }
     case '&':       // &
-        this_rune = lex_current_rune(ctx)
+        this_rune = lex_current_char(ctx)
         switch this_rune {
         case '&':   // &&
             lex_advance_cursor(ctx)
@@ -347,7 +346,7 @@ scan_operator :: proc(ctx: ^lexer_info, r: rune) -> (success: token_kind) {
             return .and
         }
     case '|':       // |
-        this_rune = lex_current_rune(ctx)
+        this_rune = lex_current_char(ctx)
         switch this_rune {
         case '|':   // ||
             lex_advance_cursor(ctx)
@@ -359,11 +358,11 @@ scan_operator :: proc(ctx: ^lexer_info, r: rune) -> (success: token_kind) {
             return .or
         }
     case '<':       // -
-        this_rune = lex_current_rune(ctx)
+        this_rune = lex_current_char(ctx)
         switch this_rune {
         case '-':   // <-
             lex_advance_cursor(ctx)
-            this_rune = lex_current_rune(ctx)
+            this_rune = lex_current_char(ctx)
             switch this_rune {
             case '>': // <->
                 lex_advance_cursor(ctx)
@@ -373,7 +372,7 @@ scan_operator :: proc(ctx: ^lexer_info, r: rune) -> (success: token_kind) {
             }
         case '<':   // <<
             lex_advance_cursor(ctx)
-            this_rune = lex_current_rune(ctx)
+            this_rune = lex_current_char(ctx)
             switch this_rune {
             case '=': // <<=
                 lex_advance_cursor(ctx)
@@ -388,11 +387,11 @@ scan_operator :: proc(ctx: ^lexer_info, r: rune) -> (success: token_kind) {
             return .less_than
         }
     case '>':       // >
-        this_rune = lex_current_rune(ctx)
+        this_rune = lex_current_char(ctx)
         switch this_rune {
         case '>':   // >>
             lex_advance_cursor(ctx)
-            this_rune = lex_current_rune(ctx)
+            this_rune = lex_current_char(ctx)
             switch this_rune {
             case '=': // > > =
                 lex_advance_cursor(ctx)
@@ -424,22 +423,22 @@ scan_operator :: proc(ctx: ^lexer_info, r: rune) -> (success: token_kind) {
     return
 }
 
-skip_line_comment :: #force_inline proc(ctx: ^lexer_info) -> (r: rune, hit_eof: bool) {
-    return skip_until_rune(ctx, '\n')
+skip_line_comment :: #force_inline proc(ctx: ^lexer_info) -> (r: u8, hit_eof: bool) {
+    return skip_until_char(ctx, '\n')
 }
 
-skip_block_comment :: proc(ctx: ^lexer_info) -> (r: rune, hit_eof: bool, level: int) {
+skip_block_comment :: proc(ctx: ^lexer_info) -> (r: u8, hit_eof: bool, level: int) {
     level = 1
     for level != 0 {
-        r = lex_current_rune(ctx)
+        r = lex_current_char(ctx)
         if ctx.current_offset >= len(ctx.file_data) {
             return r, true, level
         }
-        if r == '/' && lex_peek_next_rune(ctx) == '*' {
+        if r == '/' && lex_peek_next_char(ctx) == '*' {
             lex_advance_cursor(ctx)
             level += 1
         }
-        else if r == '*' && lex_peek_next_rune(ctx) == '/' {
+        else if r == '*' && lex_peek_next_char(ctx) == '/' {
             lex_advance_cursor(ctx)
             level -= 1
         }
@@ -448,9 +447,9 @@ skip_block_comment :: proc(ctx: ^lexer_info) -> (r: rune, hit_eof: bool, level: 
     return r, false, level
 }
 
-skip_whitespace :: proc(ctx: ^lexer_info) -> (r: rune, hit_eof: bool) {
+skip_whitespace :: proc(ctx: ^lexer_info) -> (r: u8, hit_eof: bool) {
     for {
-        r = lex_current_rune(ctx)
+        r = lex_current_char(ctx)
         if ctx.current_offset >= len(ctx.file_data) {
             return r, true
         }
@@ -461,9 +460,9 @@ skip_whitespace :: proc(ctx: ^lexer_info) -> (r: rune, hit_eof: bool) {
     }
 }
 
-skip_until_rune :: proc(ctx: ^lexer_info, lookout: rune) -> (r: rune, hit_eof: bool) {
+skip_until_char :: proc(ctx: ^lexer_info, lookout: u8) -> (r: u8, hit_eof: bool) {
     for {
-        r = lex_current_rune(ctx)
+        r = lex_current_char(ctx)
         if ctx.current_offset >= len(ctx.file_data) {
             return r, true
         }
@@ -481,32 +480,28 @@ lex_get_current_substring :: #force_inline proc(ctx: ^lexer_info) -> string {
 // b r u h                            b r u h
 //   ^- current rune: 'r'     ->          ^- current rune: 'u'
 // return current rune, move cursor forward
-lex_advance_cursor :: proc(ctx: ^lexer_info) -> (r: rune, byte_len: int) {
-    r, byte_len = lex_current_rune_and_len(ctx)
-    ctx.current_offset += uint(byte_len)
-    ctx.current_col += 1
+lex_advance_cursor :: proc(ctx: ^lexer_info) -> (r: u8) {
+    r = ctx.file_data[ctx.current_offset]
+    ctx.current_offset += 1
+    ctx.current_col+=1
     if r == '\n' {
         ctx.current_col = 1
         ctx.current_row += 1
     }
-    return
+    return 
 }
 
-lex_peek_next_rune :: proc(ctx: ^lexer_info) -> (r: rune) {
-    _, byte_offset := lex_current_rune_and_len(ctx)
-    return utf8.rune_at(ctx.file_data, int(ctx.current_offset)+byte_offset)
+lex_peek_next_char :: proc(ctx: ^lexer_info) -> (r: u8) {
+    return ctx.file_data[ctx.current_offset+1]
 }
 
 // b r u h                             b r u h
 //   ^- current rune: 'r'      ->        ^- current rune: 'r'
 // return current rune, keep cursor
-lex_current_rune :: #force_inline proc(ctx: ^lexer_info) -> (r: rune) {
-    r, _ = lex_current_rune_and_len(ctx)
-    return
-}
-lex_current_rune_and_len :: #force_inline proc(ctx: ^lexer_info) -> (r: rune, byte_len: int) {
+lex_current_char :: #force_inline proc(ctx: ^lexer_info) -> (r: u8) {
     // all because utf8.rune_at discards the damn byte length. fuck you utf8.rune_at. 
-    return utf8.decode_rune_in_string(ctx.file_data[ctx.current_offset:])
+    //return utf8.decode_rune_in_string(ctx.file_data[ctx.current_offset:])
+    return ctx.file_data[ctx.current_offset]
 }
 
 make_EOF :: #force_inline proc(ctx: ^lexer_info) -> lexer_token {
@@ -522,8 +517,8 @@ make_position :: #force_inline proc(ctx: ^lexer_info) -> position {
     }
 }
 
-whitespace_runes :: [?]rune{' ', '\t', '\n', '\r'}
-is_whitespace :: proc(r: rune) -> bool {
+whitespace_runes :: [?]u8{' ', '\t', '\n', '\r'}
+is_whitespace :: proc(r: u8) -> bool {
     for whitespace in whitespace_runes {
         if r == whitespace {
             return true
