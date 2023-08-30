@@ -2,7 +2,7 @@ all: build
 
 SRC_DIR = ./src
 MARS_LOCATION = ./build/mars
-MARS_BUILD_FLAGS = 
+MARS_BUILD_FLAGS = -o:speed -no-bounds-check
 
 ifeq ($(OS),Windows_NT)
 	MARS_LOCATION = ./build/mars.exe

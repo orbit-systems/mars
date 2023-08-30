@@ -30,7 +30,10 @@ process_file :: proc(file_name: string, file_data: string) {
 	}
 	time.stopwatch_stop(&overall_timer)
 	time_to_lex := time.duration_seconds(time.stopwatch_duration(overall_timer))
-	fmt.printf("%d tokens parsed in %v seconds\n", count, time_to_lex)
+	fmt.printf("%d tokens parsed\n", count)
+	fmt.printf("%d lines parsed\n", lexer_context.current_row)
+	fmt.printf("in %v seconds\n", time_to_lex)
+
 
 	//parse
 
