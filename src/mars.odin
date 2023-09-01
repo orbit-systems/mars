@@ -13,62 +13,62 @@ import "core:path/filepath"
 
 // mars compiler core - executes and manages frontend + backend function
 
-cmd_arg :: struct {
-    key : string,
-    val : string,
-}
-
 main :: proc() {
     
-    if len(os.args) < 2 {
-        print_help()
-        os.exit(0)
-    }
-
-    parsed_args: [dynamic]cmd_arg
-    defer(delete(parsed_args))
-
-    for argument in os.args[1:] {
-        split_arg := strings.split(argument, ":")
-        if len(split_arg) == 1 {
-            append(&parsed_args, cmd_arg{argument, ""})
-        } else {
-            append(&parsed_args, cmd_arg{split_arg[0], split_arg[1]})
+    compile_directory: string
+    
+    {
+        if len(os.args) < 2 {
+            print_help()
+            os.exit(0)
         }
-    } 
 
-    file_name: string
+        parsed_args: [dynamic]cmd_arg
+        defer(delete(parsed_args))
 
-    for argument, index in parsed_args {
-        switch argument.key {
-            case "-help": 
-                print_help()
-                os.exit(0)
-            case "-no-color": 
-                FLAG_NO_COLOR = true
-                ph.FLAG_NO_COLOR = true
+        for argument in os.args[1:] {
+            split_arg := strings.split(argument, ":")
+            if len(split_arg) == 1 {
+                append(&parsed_args, cmd_arg{argument, ""})
+            } else {
+                append(&parsed_args, cmd_arg{split_arg[0], split_arg[1]})
+            }
+        } 
 
-            case:
-                if index == 0 && argument.key[0] != '-' {
-                    file_name = argument.key
-                    continue
-                }
-                print_help()
-                os.exit(0)
+        for argument, index in parsed_args {
+            switch argument.key {
+                case "-help": 
+                    print_help()
+                    os.exit(0)
+                case "-no-color": 
+                    global_build_flags.no_display_colors = true
+
+                case:
+                    if index == 0 && argument.key[0] != '-' {
+                        compile_directory = argument.key
+                        continue
+                    }
+                    print_help()
+                    os.exit(0)
+            }
         }
     }
 
-    raw, read_ok := os.read_entire_file(file_name)
-    if read_ok == false {
-        fmt.printf("Cannot read file: \"%s\"\n", file_name)
-        os.exit(-1)
-    }
-
-    ph.process_file(file_name, cast(string)raw)
+    ph.construct_AST(compile_directory)
 }
 
 print_help :: proc() {
     fmt.printf("you silly. you goober. DIE.\n")
 }
 
-FLAG_NO_COLOR := false
+cmd_arg :: struct {
+    key : string,
+    val : string,
+}
+
+build_flags :: struct {
+    compile_directory : string,
+    no_display_colors : bool,
+}
+
+global_build_flags : build_flags

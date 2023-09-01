@@ -1,6 +1,6 @@
 module test;
 
-import nsys "neptune:syscall";
+import nsys "neptune:syscall;
 
 main :: fn() -> int {
 	test : []u8 = "weewoo;

@@ -4,14 +4,14 @@ import "core:fmt"
 import "core:os"
 import "core:strings"
 
-lexer_error_handler :: proc(ctx:^lexer_info, str: string, args: ..any, no_print_line := false)
+lexer_error_handler :: proc(ctx:^lexer, str: string, args: ..any, no_print_line := false)
 
-lexer_default_error_handler :: proc(ctx:^lexer_info, str: string, args: ..any, no_print_line := false) {
+lexer_default_error_handler :: proc(ctx:^lexer, str: string, args: ..any, no_print_line := false) {
     if !FLAG_NO_COLOR do set_style(.FG_Red)
     if !FLAG_NO_COLOR do set_style(.Bold)
     fmt.print("ERROR")
     if !FLAG_NO_COLOR do set_style(.Reset)
-    fmt.printf(" [ %s @ %d : %d ] ", ctx.pos.path, ctx.pos.line, ctx.pos.col)
+    fmt.printf(" [ %s @ %d : %d ] ", ctx.path, ctx.pos.line, ctx.pos.col)
     fmt.printf(str, ..args)
     fmt.print("\n")
 
@@ -20,17 +20,18 @@ lexer_default_error_handler :: proc(ctx:^lexer_info, str: string, args: ..any, n
         os.exit(1)
     }
 
-    line_offset := get_line_offset(ctx.file_data, ctx.pos.line)
-    line_string := ctx.file_data[line_offset:get_line_offset(ctx.file_data, ctx.pos.line+1)-1]
+    line_offset := get_line_offset(ctx.src, ctx.pos.line)
+    line_string := ctx.src[line_offset:get_line_offset(ctx.src, ctx.pos.line+1)-1]
     offset_from_line := ctx.pos.start - line_offset
     error_token_width := int(ctx.pos.offset-ctx.pos.start)
 
+    if !FLAG_NO_COLOR do set_style(.Bold)
     fmt.printf("    %v", line_string)
     fmt.print("\n")
     fmt.print(strings.repeat(" ", int(4+offset_from_line), context.temp_allocator))
     
     if !FLAG_NO_COLOR do set_style(.FG_Red)
-    fmt.print("^")
+    fmt.print("^") // FUCK you odin stringwriter you MAKE ME NOT USE UNICODE AND I HATE YOU
     if error_token_width > 1 {
         if error_token_width > 2 {
             fmt.print(strings.repeat("~", error_token_width - 2, context.temp_allocator))
@@ -45,12 +46,12 @@ lexer_default_error_handler :: proc(ctx:^lexer_info, str: string, args: ..any, n
     os.exit(1)
 }
 
-lexer_default_warning_handler :: proc(ctx:^lexer_info, str: string, args: ..any, no_print_line := false) {
+lexer_default_warning_handler :: proc(ctx:^lexer, str: string, args: ..any, no_print_line := false) {
     if !FLAG_NO_COLOR do set_style(.FG_Yellow)
     if !FLAG_NO_COLOR do set_style(.Bold)
     fmt.print("WARNING")
     if !FLAG_NO_COLOR do set_style(.Reset)
-    fmt.printf(" [ %s @ %d : %d ] ", ctx.pos.path, ctx.pos.line, ctx.pos.col)
+    fmt.printf(" [ %s @ %d : %d ] ", ctx.path, ctx.pos.line, ctx.pos.col)
     fmt.printf(str, ..args)
     fmt.print("\n")
 
@@ -59,11 +60,12 @@ lexer_default_warning_handler :: proc(ctx:^lexer_info, str: string, args: ..any,
         return
     }
 
-    line_offset := get_line_offset(ctx.file_data, ctx.pos.line)
-    line_string := ctx.file_data[line_offset:get_line_offset(ctx.file_data, ctx.pos.line+1)-1]
+    line_offset := get_line_offset(ctx.src, ctx.pos.line)
+    line_string := ctx.src[line_offset:get_line_offset(ctx.src, ctx.pos.line+1)-1]
     offset_from_line := ctx.pos.start - line_offset
     error_token_width := int(ctx.pos.offset-ctx.pos.start)
 
+    if !FLAG_NO_COLOR do set_style(.Bold)
     fmt.printf("    %v", line_string)
     fmt.print("\n")
     fmt.print(strings.repeat(" ", int(4+offset_from_line), context.temp_allocator))

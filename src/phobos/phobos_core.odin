@@ -1,7 +1,11 @@
 package phobos
 
-import "core:fmt"
+import "core:os"
 import "core:time"
+import "core:strings"
+import "core:fmt"
+import "core:path/slashpath"
+import "core:path/filepath"
 
 // mars compiler frontend - lexer, parser
 // produces abstract syntax tree to be passed to deimos backend
@@ -9,32 +13,30 @@ import "core:time"
 //        lexer            parser                seman
 // file --------> tokens ---------> parse tree ----------> AST
 
-process_file :: proc(path: string, file_data: string) {
+construct_AST :: proc(module_directory : string) {
 
-	//lex
+    // raw, read_ok := os.read_entire_file()
+    // if read_ok == false {
+    //     fmt.printf("Cannot read file \"%s\"\n", file_name)
+    //     os.exit(-1)
+    // }
+    file_raw : []u8
+    file_path : string
 
-	overall_timer : time.Stopwatch
+    lexer_context: lexer
+    lexer_init(&lexer_context, file_path, string(file_raw))
+}
 
-	lexer_context: lexer_info
-	lexer_init(&lexer_context, path, file_data)
+construct_token_buffer :: proc(ctx: ^lexer) {
+    
+    buffer_capacity_heuristic := int(f64(len(ctx.src))/3.5)// 3.5 bytes per token - this initializes the token buffer to something 
+    token_buffer := make([dynamic]lexer_token, 0, buffer_capacity_heuristic)
 
-	int_token : lexer_token
-	count : u64 = 0
-	time.stopwatch_start(&overall_timer)
-	for count = 0; int_token.kind != .EOF; count += 1 {
-		int_token = lex_next_token(&lexer_context)
-		//fmt.printf("%v ", int_token.lexeme)
-	}
-	time.stopwatch_stop(&overall_timer)
-	time_to_lex := time.duration_seconds(time.stopwatch_duration(overall_timer))
-	fmt.printf("%d tokens parsed\n", count)
-	fmt.printf("%d lines parsed\n", lexer_context.pos.line)
-	fmt.printf("in %v seconds\n", time_to_lex)
+    int_token : lexer_token
+    for int_token.kind != .EOF {
+        int_token = lex_next_token(ctx)
+        append(&token_buffer, int_token)
+    }
 
-
-	//parse
-
-	//semen lmao
-
-	//pass to deimos
+    shrink(&token_buffer)
 }

@@ -4,17 +4,18 @@ import "core:fmt"
 import "core:os"
 import "core:strings"
 
-lexer_info :: struct {
-    file_data      : string,
-    pos            : position,
-    lexed_tokens   : [dynamic]lexer_token,
-    error          : lexer_error_handler,
-    warning        : lexer_error_handler,  
+lexer :: struct {
+    src     : string,
+    path    : string,
+    pos     : position,
+    error   : lexer_error_handler,
+    warning : lexer_error_handler,
+    buffer  : [dynamic]lexer_token,
 }
 
-lexer_init :: proc(ctx : ^lexer_info, path: string, src: string) {
-    ctx.pos.path   = path
-	ctx.file_data  = src
+lexer_init :: proc(ctx : ^lexer, path: string, src: string) {
+    ctx.path = path
+    ctx.src  = src
     ctx.pos.start  = 0
     ctx.pos.offset = 0
     ctx.pos.line   = 1
@@ -25,12 +26,11 @@ lexer_init :: proc(ctx : ^lexer_info, path: string, src: string) {
 
 lexer_token :: struct {
     kind   : token_kind,
-    lexeme : string,
+    //lexeme : string,
     pos    : position,
 }
 
 position :: struct {
-    path      : string,
     start     : uint,
     offset    : uint,
     line      : uint,
