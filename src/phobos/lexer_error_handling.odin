@@ -1,5 +1,6 @@
 package phobos
 
+import co "../common"
 import "core:fmt"
 import "core:os"
 import "core:strings"
@@ -7,10 +8,10 @@ import "core:strings"
 lexer_error_handler :: proc(ctx:^lexer, str: string, args: ..any, no_print_line := false)
 
 lexer_default_error_handler :: proc(ctx:^lexer, str: string, args: ..any, no_print_line := false) {
-    if !FLAG_NO_COLOR do set_style(.FG_Red)
-    if !FLAG_NO_COLOR do set_style(.Bold)
+    if !phobos_build_state.no_display_colors do set_style(.FG_Red)
+    if !phobos_build_state.no_display_colors do set_style(.Bold)
     fmt.print("ERROR")
-    if !FLAG_NO_COLOR do set_style(.Reset)
+    if !phobos_build_state.no_display_colors do set_style(.Reset)
     fmt.printf(" [ %s @ %d : %d ] ", ctx.path, ctx.pos.line, ctx.pos.col)
     fmt.printf(str, ..args)
     fmt.print("\n")
@@ -25,12 +26,12 @@ lexer_default_error_handler :: proc(ctx:^lexer, str: string, args: ..any, no_pri
     offset_from_line := ctx.pos.start - line_offset
     error_token_width := int(ctx.pos.offset-ctx.pos.start)
 
-    if !FLAG_NO_COLOR do set_style(.Bold)
+    if !phobos_build_state.no_display_colors do set_style(.Bold)
     fmt.printf("    %v", line_string)
     fmt.print("\n")
     fmt.print(strings.repeat(" ", int(4+offset_from_line), context.temp_allocator))
     
-    if !FLAG_NO_COLOR do set_style(.FG_Red)
+    if !phobos_build_state.no_display_colors do set_style(.FG_Red)
     fmt.print("^") // FUCK you odin stringwriter you MAKE ME NOT USE UNICODE AND I HATE YOU
     if error_token_width > 1 {
         if error_token_width > 2 {
@@ -39,7 +40,7 @@ lexer_default_error_handler :: proc(ctx:^lexer, str: string, args: ..any, no_pri
         fmt.print("^")
     }
     fmt.print("\n")
-    if !FLAG_NO_COLOR do set_style(.Reset)
+    if !phobos_build_state.no_display_colors do set_style(.Reset)
 
 
     free_all(context.temp_allocator)
@@ -47,10 +48,10 @@ lexer_default_error_handler :: proc(ctx:^lexer, str: string, args: ..any, no_pri
 }
 
 lexer_default_warning_handler :: proc(ctx:^lexer, str: string, args: ..any, no_print_line := false) {
-    if !FLAG_NO_COLOR do set_style(.FG_Yellow)
-    if !FLAG_NO_COLOR do set_style(.Bold)
+    if !phobos_build_state.no_display_colors do set_style(.FG_Yellow)
+    if !phobos_build_state.no_display_colors do set_style(.Bold)
     fmt.print("WARNING")
-    if !FLAG_NO_COLOR do set_style(.Reset)
+    if !phobos_build_state.no_display_colors do set_style(.Reset)
     fmt.printf(" [ %s @ %d : %d ] ", ctx.path, ctx.pos.line, ctx.pos.col)
     fmt.printf(str, ..args)
     fmt.print("\n")
@@ -65,12 +66,12 @@ lexer_default_warning_handler :: proc(ctx:^lexer, str: string, args: ..any, no_p
     offset_from_line := ctx.pos.start - line_offset
     error_token_width := int(ctx.pos.offset-ctx.pos.start)
 
-    if !FLAG_NO_COLOR do set_style(.Bold)
+    if !phobos_build_state.no_display_colors do set_style(.Bold)
     fmt.printf("    %v", line_string)
     fmt.print("\n")
     fmt.print(strings.repeat(" ", int(4+offset_from_line), context.temp_allocator))
     
-    if !FLAG_NO_COLOR do set_style(.FG_Yellow)
+    if !phobos_build_state.no_display_colors do set_style(.FG_Yellow)
     fmt.print("^")
     if error_token_width > 1 {
         if error_token_width > 2 {
@@ -79,7 +80,7 @@ lexer_default_warning_handler :: proc(ctx:^lexer, str: string, args: ..any, no_p
         fmt.print("^")
     }
     fmt.print("\n")
-    if !FLAG_NO_COLOR do set_style(.Reset)
+    if !phobos_build_state.no_display_colors do set_style(.Reset)
 
 
     free_all(context.temp_allocator)

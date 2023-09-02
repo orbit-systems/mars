@@ -2,7 +2,7 @@ all: build
 
 SRC_DIR = ./src
 MARS_LOCATION = ./build/mars
-MARS_BUILD_FLAGS = -o:speed -no-bounds-check
+MARS_BUILD_FLAGS = -o:speed
 
 MARS_EXEC_FLAGS = 
 
@@ -21,7 +21,7 @@ build: clean
 	@odin build $(SRC_DIR) $(MARS_BUILD_FLAGS) -out:$(MARS_LOCATION)
 
 run: build 
-	@$(MARS_LOCATION) mars_code/test.mars $(MARS_EXEC_FLAGS)
+	@$(MARS_LOCATION) ./mars_code $(MARS_EXEC_FLAGS)
 
 stresstest: build 
-	@$(MARS_LOCATION) mars_code/stresstest.mars $(MARS_EXEC_FLAGS)
+	@$(MARS_LOCATION) ./mars_code $(MARS_EXEC_FLAGS)

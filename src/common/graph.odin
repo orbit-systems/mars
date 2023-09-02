@@ -1,4 +1,4 @@
-package mars_utils
+package common
 
 import "core:fmt"
 import "core:slice"

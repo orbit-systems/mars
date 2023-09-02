@@ -1,5 +1,6 @@
 package phobos
 
+import co "../common"
 import "core:fmt"
 import "core:os"
 import "core:strconv"
@@ -406,6 +407,10 @@ scan_operator :: proc(ctx: ^lexer, r: u8) -> (success: token_kind) {
     return
 }
 
+get_token_substring :: proc(ctx: ^lexer, token: lexer_token) -> string {
+    return ctx.src[token.pos.start:token.pos.offset]
+}
+
 skip_line_comment :: #force_inline proc(ctx: ^lexer) -> (r: u8, hit_eof: bool) {
     return skip_until_char(ctx, '\n')
 }
@@ -502,5 +507,3 @@ is_whitespace :: proc(r: u8) -> bool {
 
     return r == ' ' || r == '\t' || r == '\n' || r == '\r'
 }
-
-phobos_build_flags :: build_flags
