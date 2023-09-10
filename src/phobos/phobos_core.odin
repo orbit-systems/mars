@@ -5,7 +5,6 @@ import "core:os"
 import "core:time"
 import "core:strings"
 import "core:fmt"
-import "core:path/slashpath"
 import "core:path/filepath"
 
 // mars compiler frontend - lexer, parser
@@ -37,10 +36,22 @@ construct_complete_AST :: proc() {
         os.exit(1)
     }
 
-    lexers := make([dynamic]lexer)
+    {
+        mars_files := 0
+        for file in compile_directory_files {
+            mars_files += int(filepath.ext(file.fullpath) == ".mars")
+        }
+        if mars_files < 1 {
+            fmt.printf("ERROR Directory \"%s\" has no .mars files.\n", phobos_build_state.compile_directory)
+            os.exit(1)
+        }
+    }
 
+
+
+    lexers := make([dynamic]lexer)
     for file in compile_directory_files {
-        if file.is_dir {
+        if file.is_dir || filepath.ext(file.fullpath) != ".mars" {
             continue
         }
 
@@ -55,6 +66,8 @@ construct_complete_AST :: proc() {
         
         append(&lexers, this_lexer)
     }
+
+
 
     //fmt.printf("%#v\n",compile_directory_files)
 

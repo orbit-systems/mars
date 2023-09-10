@@ -1,27 +1,18 @@
 module test;
 
-import nsys "neptune:syscall";
+import mem "./memory";
+import neptune "./neptune";
 
-main :: fn() -> int {
-    test : [6]u8 = "weewoo";
-    print(test[:]);
+main :: #section("boot") fn() {
+    
+    str  := "bruh";
+    str2 := []u8{0x62, 0x72, 0x75, 0x68};
 
-    value : int = 5;
+    is_eq := mem.equal(str.base, str2.base, str.len);
 
-    asm (value <-> "ra") {
-        "addi ra, ra, 0x1",
-        "muli ra, ra, 0x3"
+    if is_eq {
+        neptune.kprint("equal");
+    } else {
+        neptune.kprint("not equal");
     }
-
-    return value;
-}
-
-print :: fn(string: []u8) {
-	length #register("ra") := string.len; //get string length
-
-	for i := 0; i < length; i+=1 {
-		nsys.syscall(.DRAW_TEXT, 50 + i, 30, string[i]);
-	}
-	
-	return;
 }

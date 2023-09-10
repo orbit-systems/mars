@@ -45,7 +45,9 @@ parse_command_line_args :: proc(args: []string) -> (build_state: co.build_state)
         case "-help": 
             print_help()
             os.exit(0)
-        case "-no-color":   build_state.no_display_colors = true
+        case "-no-color":       build_state.flag_no_display_colors = true
+        case "-inline-runtime": build_state.flag_inline_runtime = true
+
         case:
             if index == 0 && argument.key[0] != '-' {
                 build_state.compile_directory = argument.key
