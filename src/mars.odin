@@ -8,7 +8,6 @@ import "core:os"
 import "core:time"
 import "core:strings"
 import "core:fmt"
-import "core:path/slashpath"
 import "core:path/filepath"
 
 // mars compiler core - executes and manages frontend + backend function
@@ -19,9 +18,9 @@ main :: proc() {
     // all build flags, settings, compile directory, etc.
     global_build_state = parse_command_line_args(os.args)
     
-    ph.phobos_build_state = global_build_state // propogate build state
-    dm.deimos_build_state = global_build_state // propogate build state
-
+    ph.phobos_build_state = global_build_state // propogate build state to front-end
+    dm.deimos_build_state = global_build_state // propogate build state to back-end
+    ph.is_constant_expr(nil)
     ph.construct_complete_AST()
 }
 

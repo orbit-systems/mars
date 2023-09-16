@@ -56,11 +56,19 @@ equal :: fn(block1, block2: rawptr, len: uint) -> bool {
 
 set :: fn(dest: rawptr, len: uint, val: u8) {
 
-    cursor    := cast(^u8) dest;
-    stop      := cursor + cast(^u8) len;
+    cursor := cast(^u8) dest;
+    stop   := cursor + cast(^u8) len;
 
     while cursor != stop {
-        $cursor = val
+        $cursor = val;
         cursor += 1;
     }
+}
+
+string_eq :: fn(a, b: []u8) -> bool {
+
+    // trivial cases
+    if a.len != b.len { return false; }
+    
+    return equal(a.base, b.base, a.len);
 }
