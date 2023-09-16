@@ -20,7 +20,7 @@ main :: proc() {
     
     ph.phobos_build_state = global_build_state // propogate build state to front-end
     dm.deimos_build_state = global_build_state // propogate build state to back-end
-    ph.is_constant_expr(nil)
+
     ph.construct_complete_AST()
 }
 

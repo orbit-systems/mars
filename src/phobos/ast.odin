@@ -2,63 +2,56 @@ package phobos
 
 AST :: union {
 
+    
 
+    //module_decl_stmt,       // module bruh;
+    //import_decl_stmt,       // x :: import "bruh";
+    //external_block_stmt,    // external {} ;
 
-   //module_meta,
+    //var_decl_stmt,          // a : int, a : int = 0, a : int = ---;
+    //const_decl_stmt,        // c :: 1, c : int : 1;
+    //assign_stmt,            // a = 1 + 2;
+    //compound_assign_stmt,   // a += 3;
 
-   //module_decl_stmt,       // module bruh;
-   //import_decl_stmt,       // x :: import "bruh";
-   //external_block_stmt,    // external {} ;
-
-   //var_decl_stmt,          // a : int, a : int = 0, a : int = ---;
-   //const_decl_stmt,        // c :: 1, c : int : 1;
-   //assign_stmt,            // a = 1 + 2;
-   //compound_assign_stmt,   // a += 3;
-
-   //expr_stmt,              // (expression); often results in an unused expression error.
-   //call_stmt,              // funct();
-   //stmt_group_stmt,        // groups statements together, often paired with the new_scope_stmt statement.
-
+    //expr_stmt,              // (expression); often results in an unused expression error.
+    //call_stmt,              // funct();
+    //stmt_group_stmt,        // groups statements together, often paired with the new_scope_stmt statement.
 
 
 
-   AST_type_expr,              // like 'int', 'f32', or a compound type like `struct{a:int, b: float}`
+    basic_type_expr,
 
-   //ident_expr,             // identifier
-   //literal_expr,           // 1, 2.0, false, null : literal value
+    array_type_expr,
+    slice_type_expr,
+    pointer_type_expr,
+    funcptr_type_expr,
 
-   //struct_field_expr,      
-   //union_field_expr,
-   //enum_variant_expr,
-   //array_access_expr,
+    struct_type_expr,
+    union_type_expr,
+    enum_type_expr,
 
-   //op_unary_expr,
-   //op_binary_expr,
+    //entity_expr,             // a THING - variable, literal, library, whatever
 
-   //call_expr,
+    //struct_field_expr,      
+    //union_field_expr,
+    //enum_variant_expr,
+    //array_access_expr,
+
+    //paren_expr,
+    //op_unary_expr,
+    //op_binary_expr,
+
+    //call_expr,
 
 
 
 
-
-}
-
-AST_type_expr :: union {
-    AST_basic_type_expr,
-
-    AST_array_type_expr,
-    AST_slice_type_expr,
-    AST_pointer_type_expr,
-
-    AST_struct_type_expr,
-    AST_union_type_expr,
-    AST_enum_type_expr,
 
 }
 
-AST_basic_type_expr :: enum {
+basic_type_expr :: enum {
     invalid = 0,
-    undetermined,
+    implicit,
     none,
 
     mars_i8,
@@ -88,39 +81,39 @@ AST_basic_type_expr :: enum {
     untyped_null,
 }
 
-AST_array_type_expr :: struct {
+array_type_expr :: struct {
     length     : int,
     entry_type : ^AST,
 }
 
-AST_slice_type_expr :: struct {
+slice_type_expr :: struct {
     entry_type : ^AST,
 }
 
-AST_pointer_type_expr :: struct {
+pointer_type_expr :: struct {
     entry_type : ^AST,
 }
 
-AST_struct_type_expr :: struct {
-    entry_field_idents : []string,
-    entry_field_types  : []^AST,
+funcptr_type_expr :: struct {
+    param_field_idents  : []string,
+    param_field_types   : []^AST,
+    return_field_idents : []string,
+    return_field_types  : []^AST,
+    is_positional       : bool,
 }
 
-AST_union_type_expr :: struct {
-    entry_field_idents : []string,
-    entry_field_types  : []^AST,
+struct_type_expr :: struct {
+    field_idents : []string,
+    field_types  : []^AST,
 }
 
-AST_enum_type_expr :: struct {
-    backing_type       : ^AST,
-    entry_field_idents : []string,
+union_type_expr :: struct {
+    field_idents : []string,
+    field_types  : []^AST,
 }
 
-
-
-
-// determine if an expression is constant or can be evaluated at compile time
-is_constant_expr :: proc(expr : ^AST) -> bool {
-    TODO("(sandwich) is_constant_expr")
-    return false
+enum_type_expr :: struct {
+    backing_type   : ^AST,
+    variant_idents : []string,
+    variant_vals   : []^AST,
 }
