@@ -1,22 +1,41 @@
 package phobos
 
+// complete program AST - this is what phobos should pass to deimos
+// contains all packages
+program_AST :: struct {
+    modules : []^module_AST
+}
+
+//
+module_AST :: struct {
+    program : ^program_AST, // what program is this module contained in?
+    files   : []^file_AST,   //
+    name    : string, // internal name. this is the name used in the module declarations.
+}
+
+
+file_AST :: struct {
+    module   : ^module_AST,
+    path     : string,
+    imported : []int, // indexes into the program_ast modules list
+    root     : ^AST,
+}
+
 AST :: union {
 
     
 
-    //module_decl_stmt,       // module bruh;
-    //import_decl_stmt,       // x :: import "bruh";
-    //external_block_stmt,    // external {} ;
+    //module_decl_stmt,       // module bruh
+    //import_decl_stmt,       // x :: import "bruh"
+    //external_block_stmt,    // external {}
 
-    //var_decl_stmt,          // a : int, a : int = 0, a : int = ---;
-    //const_decl_stmt,        // c :: 1, c : int : 1;
-    //assign_stmt,            // a = 1 + 2;
-    //compound_assign_stmt,   // a += 3;
+    //decl_stmt,              // a : int, a : int = 0, a : int = ---
+    //assign_stmt,            // a = 1 + 2
+    //compound_assign_stmt,   // a += 3
 
     //expr_stmt,              // (expression); often results in an unused expression error.
     //call_stmt,              // funct();
-    //stmt_group_stmt,        // groups statements together, often paired with the new_scope_stmt statement.
-
+    //stmt_group_stmt,        // groups statements together
 
 
     basic_type_expr,
@@ -30,22 +49,43 @@ AST :: union {
     union_type_expr,
     enum_type_expr,
 
-    //entity_expr,             // a THING - variable, literal, library, whatever
-
-    //struct_field_expr,      
-    //union_field_expr,
-    //enum_variant_expr,
-    //array_access_expr,
+    //ident_expr,             // points to entity
+    //literal_expr,           // literal value expression
+    basic_literal_expr,
+    compound_literal_expr,
+    proc_literal_expr,
+    enum_literal_expr,
 
     //paren_expr,
     //op_unary_expr,
     //op_binary_expr,
+    //selector_expr,
+    //array_index_expr,
 
     //call_expr,
 
 
 
 
+
+}
+
+basic_literal_expr :: struct {
+    // TODO
+    type  : ^AST,
+    token : ^lexer_token,
+}
+
+compound_literal_expr :: struct {
+
+    // TODO
+}
+
+proc_literal_expr :: struct {
+
+}
+
+enum_literal_expr :: struct {
 
 }
 
@@ -99,12 +139,13 @@ funcptr_type_expr :: struct {
     param_field_types   : []^AST,
     return_field_idents : []string,
     return_field_types  : []^AST,
-    is_positional       : bool,
+    positional          : bool,
 }
 
 struct_type_expr :: struct {
-    field_idents : []string,
-    field_types  : []^AST,
+    field_idents  : []string,
+    field_offsets : []int,
+    field_types   : []^AST,
 }
 
 union_type_expr :: struct {

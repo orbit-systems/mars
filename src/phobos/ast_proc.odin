@@ -1,9 +1,10 @@
 package phobos
 
 import "core:slice"
+import co "../common"
 
 is_type_expr :: proc(expr : ^AST) -> bool {
-    TODO("(sandwich) is_type_expr")
+    //TODO("(sandwich) is_type_expr")
 
     #partial switch e in expr^ {
     case 
@@ -23,7 +24,9 @@ is_type_expr :: proc(expr : ^AST) -> bool {
 
 type_size_and_align :: proc(type: ^AST) -> (int, int) {
 
-    switch t in type^ {
+    assert(is_type_expr(type), "type_size_and_align expr is not a type")
+
+    #partial switch t in type^ {
     case basic_type_expr:
         switch t {
         case .invalid:
@@ -39,16 +42,6 @@ type_size_and_align :: proc(type: ^AST) -> (int, int) {
         case .mars_i64, .mars_u64, .mars_b64, .mars_f64, .mars_rawptr: 
             return 8, 8
         }
-    case array_type_expr:
-        // |                                | <- size should be this
-        // [||||||]-----[||||||]-----[||||||]-----
-        // 
-        // array size should be (len-1) * align_forward(b_size, b_align) + b_size
-        // align is just b_align
-
-        b_size, b_align := type_size_and_align(t.entry_type)
-
-        return (t.length-1) * align_forward(b_size, b_align) + b_size, b_align
     case pointer_type_expr:
         return 8, 8
     case funcptr_type_expr:
@@ -57,30 +50,26 @@ type_size_and_align :: proc(type: ^AST) -> (int, int) {
         return 16, 16 // ptr + len
     case enum_type_expr:
         return type_size_and_align(t.backing_type)
+    case array_type_expr:
+        b_size, b_align := type_size_and_align(t.entry_type)
+        return (t.length-1) * co.align_forward(b_size, b_align) + b_size, b_align
     case union_type_expr:
-
         // maximum size, maximum align
         max_size, max_align : int
-
         for field_type in t.field_types {
             size, align := type_size_and_align(field_type)
             max_size  = max(max_size, size)
             max_align = max(max_align, align)
         }
-
         return max_size, max_align
-
     case struct_type_expr:
-
         // accumulated size, maximum align
         running_size, running_align : int
-
         for field_type in t.field_types {
             size, align := type_size_and_align(field_type)
-            running_size = size + align_forward(running_size, align)
+            running_size = size + co.align_forward(running_size, align)
             running_align = max(running_align, align)
         }
-
         return running_size, running_align
     }
     return 0, 0
@@ -88,21 +77,6 @@ type_size_and_align :: proc(type: ^AST) -> (int, int) {
 
 // determine if an expression can be evaluated at compile time
 is_constant_expr :: proc(expr : ^AST) -> bool {
-    TODO("(sandwich) implement is_constant_expr dumbass")
+    TODO("(sandwich) fuck i dont wanna implement is_constant_expr")
     return false
-}
-
-// align a value forward to next alignment increment
-// code taken STRAIGHT from the odin compiler LMAO
-align_forward :: #force_inline proc(value, align: int) -> int {
-    assert(is_power_of_two(align), "alignment is not power of two FUCK")
-
-    return ((value + (align-1)) &~ (align-1))
-}
-// check value is a power of two
-is_power_of_two :: proc(value: int) -> bool {
-    if (value <= 0) {
-		return false
-    }
-	return !cast(bool)(value & (value-1));
 }

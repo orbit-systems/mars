@@ -16,7 +16,7 @@ import "core:path/filepath"
 phobos_build_state : co.build_state
 
 // build the complete AST of the program, spanning multiple files and modules.
-construct_complete_AST :: proc() {
+construct_complete_AST :: proc() -> ^program_AST {
 
     // find files in compile directory and lex each of them
     if !os.exists(phobos_build_state.compile_directory) || 
@@ -76,6 +76,7 @@ construct_complete_AST :: proc() {
 
     //lex: lexer
     //lexer_init(&lex, file_path, string(file_raw))
+    return nil
 }
 
 construct_token_buffer :: proc(ctx: ^lexer) {
