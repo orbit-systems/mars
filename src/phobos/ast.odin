@@ -37,6 +37,10 @@ AST :: union {
     //call_stmt,              // funct();
     //stmt_group_stmt,        // groups statements together
 
+    //if_stmt,
+    //while_stmt,
+    //switch_stmt,
+    //case_clause_stmt,
 
     basic_type_expr,
 
@@ -63,8 +67,6 @@ AST :: union {
     //array_index_expr,
 
     //call_expr,
-
-
 
 
 

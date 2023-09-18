@@ -1,6 +1,9 @@
 package phobos
 
 import "core:slice"
+import "core:fmt"
+import "core:strings"
+import "core:runtime"
 import co "../common"
 
 is_type_expr :: proc(expr : ^AST) -> bool {
@@ -79,4 +82,59 @@ type_size_and_align :: proc(type: ^AST) -> (int, int) {
 is_constant_expr :: proc(expr : ^AST) -> bool {
     TODO("(sandwich) fuck i dont wanna implement is_constant_expr")
     return false
+}
+
+// bad + horrible but whatever - i guess its okay cause i pass in an allocator
+type_to_string :: proc(expr: ^AST, alloc: runtime.Allocator) -> string {
+    assert(is_type_expr(expr), "type_size_and_align expr is not a type")
+
+    #partial switch t in expr^ {
+    case basic_type_expr:
+        switch t {
+        case .invalid:       return "(invalid)"
+        case .implicit:      return "(implicit)"
+        case .none:          return "(none)"
+        case .untyped_bool:  return "untyped_bool"
+        case .untyped_float: return "untyped_float"
+        case .untyped_int:   return "untyped_int"
+        case .untyped_null:  return "untyped_null"
+        case .mars_i8:       return "i8"
+        case .mars_u8:       return "u8"
+        case .mars_b8:       return "b8"
+        case .mars_i16:      return "i16"
+        case .mars_u16:      return "u16"
+        case .mars_b16:      return "b16"
+        case .mars_f16:      return "f16"
+        case .mars_i32:      return "i32"
+        case .mars_u32:      return "u32"
+        case .mars_b32:      return "b32"
+        case .mars_f32:      return "f32"
+        case .mars_i64:      return "i64"
+        case .mars_u64:      return "u64"
+        case .mars_b64:      return "b64"
+        case .mars_f64:      return "f64"
+        case .mars_rawptr:   return "rawptr"
+        }
+    case pointer_type_expr:
+        return strings.concatenate({"^",type_to_string(t.entry_type, alloc)}, alloc)
+    case funcptr_type_expr:
+        
+    case slice_type_expr:
+        return strings.concatenate({"[]",type_to_string(t.entry_type, alloc)}, alloc)
+    case enum_type_expr:
+    case array_type_expr:
+
+        default := context.allocator
+        context.allocator = alloc
+        str := strings.concatenate({fmt.aprintf("[%d]", t.length), type_to_string(t.entry_type, alloc)}, alloc)
+        context.allocator = default
+        
+        return str
+
+    case union_type_expr:
+        
+    case struct_type_expr:
+
+    }
+    return ""
 }

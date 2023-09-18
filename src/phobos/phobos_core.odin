@@ -10,8 +10,8 @@ import "core:path/filepath"
 // mars compiler frontend - lexer, parser
 // produces abstract syntax tree to be passed to deimos backend
 
-//         lexer            parser                seman
-// files --------> tokens ---------> parse tree ----------> AST
+//         lexer            parser         validator
+// files --------> tokens ---------> AST ------------> AST
 
 phobos_build_state : co.build_state
 
@@ -67,7 +67,11 @@ construct_complete_AST :: proc() -> ^program_AST {
         append(&lexers, this_lexer)
     }
 
+    test_type0 : AST = basic_type_expr.mars_i64
+    test_type1 : AST = pointer_type_expr{&test_type0}
+    test_type2 : AST = array_type_expr{3,&test_type1}
 
+    fmt.println(type_to_string(&test_type2, context.temp_allocator))
 
     //fmt.printf("%#v\n",compile_directory_files)
 
