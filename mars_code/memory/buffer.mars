@@ -1,0 +1,25 @@
+module memory;
+
+ring : [2048]u8
+read_offset  : int
+write_offset : int
+
+read :: fn(buf: []u8) {
+
+}
+
+write :: fn(buf: []u8) {
+
+    stop := read_offset + buf.len
+
+    i := 0
+    while i < buf.len {
+        
+        ring[write_offset] = buf[i]
+
+        write_offset += 1
+        write_offset %= 2048
+        i += 1
+    }
+
+}
