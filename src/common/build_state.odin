@@ -7,8 +7,7 @@ build_state :: struct {
     
     
     flag_no_display_colors : bool, // do not print ANSI escape codes
-    flag_inline_runtime    : bool, // force inline every instance of a runtime function
-    flag_runtime           : bool,
+    flag_runtime           : flag_runtime_setting,
 }
 
 flag_runtime_setting :: enum {

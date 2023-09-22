@@ -85,7 +85,8 @@ construct_complete_AST :: proc() -> ^program_AST {
 
 construct_token_buffer :: proc(ctx: ^lexer) {
     
-    // ~3.5 bytes per token - this initializes the token buffer to a reasonably accurate guess of the final buffer size.
+    // ~3.5 bytes per token - this initializes the token buffer to a reasonably 
+    // accurate guess of the final buffer size.
     // if the buffer needs to resize, it should only have to resize once.
     buffer_capacity_heuristic := int(f64(len(ctx.src))/3.5)
     

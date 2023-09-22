@@ -28,24 +28,25 @@ types
 
     pointer
         rawptr          pointer with no type information
+        fn() -> ()      pointer to function
+        ^T              pointer to type T
 
-    untyped/literal
+    untyped
         (untyped_int)   internal int literal - can implicitly convert to any numeric type (if in range)
         (untyped_float) internal float literal - can implictly convert to any float type, or an int type if it represents an integer value (12.0 for example)
         (untyped_bool)  internal bool literal - can implicitly convert to any boolean type
         (untyped_null)  internal "null" literal - implicitly converts to any pointer
 
     compound
-        [?]T            concrete array type with determined length at compile time
-        []T             slice defined as struct {base: ^T, len: int}
+        [_]T            concrete array type with determined length at compile time
+        []T             slice of array defined as struct {base: ^T, len: int}
 
         struct          data structure / record type
         union           sum type (basically a struct with no offset between fields)
 
-        fn() -> ()      pointer to function
-        ^T              pointer to type T
-
         enum T          enumeration over type T (default: int). T must be in (all integers, uintegers)
+
+    note: types are structural, not nominal. if you declare a structural type the same way under different aliases, they are just the same and are treated as identical by the language.
 
     
 
@@ -98,8 +99,10 @@ operators
         | numeric type (all integers, uintegers, floats, pointers)
         | enum with a numeric backing type
 
+        note: entities can ONLY compare with others of the same type, no mixing.
+
     unary conversion
-        cast(T)     value cast to type T        (*): cast(T) X -> T
+        cast(T)     value cast to type T        (*):  cast(T) X -> T
         bitcast(T)  raw data cast to type T     (**): bitcast(T) X -> T
 
         * type casting rules:
@@ -113,43 +116,94 @@ operators
         | all (u)integer types can cast to floating point types, converting to their closest floating point representation
         | all floating point types can cast to (u)integer types, truncating and mapping to their closest representation
         | enums have the same casting characteristics of its backing type
-        | structs may be cast to other structs if their field structure is identical (all fields in the same order with the same types)
+        | structs may be cast to other structs if their field type structure is identical (all fields in the same order with the same types)
 
         ** values can be bitcast if their byte sizes are the same
         | bitcasting does not modify the value data of a variable,
         | but only changes what datatype the value is interpreted as
         | because of this, bitcasting as an operation does not produce code
+
+        note : the ONLY types that can cast implicitly are:
+        | rawptr -> any pointer type
+        | any pointer type -> rawptr
+        | any enum -> backing type
     
     unary reference
-        &       generate pointer        with type T in (all): &T -> ^T
-        $       dereference pointer     with type T in (all): (^T)^ -> T
+        &       generate pointer        using type T in (all): &T -> ^T
+        $       dereference pointer     using type T in (all): $^T -> T
 
+    index
+        []      index array             using entity T with type (any array, pointer to any array, slice) and A with type (any int, uint, enum) : T[A]
+
+    slice
+        [:]     generate slice          using entity T with type (any array, pointer to any array, slice) and A with type (any int, uint, enum) : T[:], T[A:] T[:A], T[A:A]
+
+
+    selector
+        .       field/variant selection
+
+        the selector operate like so:
+        | access fields from a struct or a struct pointer : struct.field
+        | access fields from a union or a union pointer   : union.field
+        | access variants of enums. can be implicitly typed where the type can be otherwise derived : enum.variant, .variant
+        | access entities from another module: module.entity
 
     precendence
         unary operators have highest precedence.
 
         binary operator precedence:
-        5   *   /   %   %%   &   <<   >>  ~|
+        5   *   /   %   %%  &   <<   >>  ~|
         4   +   -   |   ~
-        3   ==  !=  <   >    <=  >=
+        3   ==  !=  <   >   <=  >=
         2   &&
-        1   ||
+        1   ||  ~~
 
         operators of the same precedence are evaluated left-to-right.
         ex. a * b / c == (a * b) / c
 
     compound assignment
-        +=      addition                (variable of type T) T += T
-        -=      subtraction             (variable of type T) T -= T
-        *=      multiplication          (variable of type T) T *= T
-        /=      division                (variable of type T) T /= T
-        %=      modulo (truncated)      (variable of type T) T %= T
-        %%=     remainder (floored)     (variable of type T) T %%= T
-        &=      bitwise and             (variable of type T) T &= T
-        |=      bitwise or              (variable of type T) T |= T
-        ~|=     bitwise nor             (variable of type T) T ~|= T
-        ~=      bitwise xor             (variable of type T) T ~= T
-        <<=     left shift              (variable of type T) T <<= (all uintegers)
-        >>=     right shift             (variable of type T) T >>= (all uintegers)
+        +=      addition                variable of type T in (all integers, uintegers, floats, pointers): T += T
+        -=      subtraction             variable of type T in (all integers, uintegers, floats, pointers): T -= T
+        *=      multiplication          variable of type T in (all integers, uintegers, floats, pointers): T *= T
+        /=      division                variable of type T in (all integers, uintegers, floats, pointers): T /= T
+        %=      modulo (truncated)      variable of type T in (all integers, uintegers, floats, pointers): T %= T
+        %%=     remainder (floored)     variable of type T in (all integers, uintegers, floats, pointers): T %%= T
+        &=      bitwise and             variable of type T in (all integers, uintegers, floats, pointers): T &= T
+        |=      bitwise or              variable of type T in (all integers, uintegers, floats, pointers): T |= T
+        ~|=     bitwise nor             variable of type T in (all integers, uintegers, floats, pointers): T ~|= T
+        ~=      bitwise xor             variable of type T in (all integers, uintegers, floats, pointers): T ~= T
+        <<=     left shift              variable of type T in (all integers, uintegers, floats, pointers): T <<= (all uintegers)
+        >>=     right shift             variable of type T in (all integers, uintegers, floats, pointers): T >>= (all uintegers)
 
 program structure
+
+    programs are made from modules. modules must be wholly contained within one directory, 
+    there must be no more than one module per directory.
+
+    programs must begin with a module declaration:
+        module module_name;
+    
+    entites (variables, constants, everything with a name) are declared like so:
+        name : type = value;        - variable, specified type, initial value set
+        name := value;              - variable, implicit type, initial value set
+        name : type;                - variable, specified type, default initial value
+        name : type = ---;          - variable, specified type, use unititialized memory
+        name : type : value;        - constant, specified type
+        name :: value;              - constant, implied type
+
+    other modules can be imported as libraries using this syntax as well.
+        lib_name :: import "relative/path/to/module";
+    the entity name does not have match the module's internal name.
+    
+    entity names must be unique and cannot shadow entities from lower scopes.
+    e.g. this is not allowed:
+        x := 3;
+        {
+            x := 4;
+        }
+    
+    global entity names are exposed like so:
+        module_internal_name.entity_name
+    
+    local entity names that must be allocated globally, like local functions, are exposed like so:
+        module_internal_name.parent_entity_name.(...).entity_name

@@ -33,7 +33,7 @@ type_size_and_align :: proc(type: ^AST) -> (int, int) {
     case basic_type_expr:
         switch t {
         case .invalid:
-        case .implicit:
+        case .unresolved:
         case .none:
         case .untyped_bool, .untyped_float, .untyped_int, .untyped_null:
         case .mars_i8,  .mars_u8,  .mars_b8:  
@@ -50,7 +50,7 @@ type_size_and_align :: proc(type: ^AST) -> (int, int) {
     case funcptr_type_expr:
         return 8, 8
     case slice_type_expr:
-        return 16, 16 // ptr + len
+        return 16, 8 // ptr + len
     case enum_type_expr:
         return type_size_and_align(t.backing_type)
     case array_type_expr:
@@ -80,19 +80,19 @@ type_size_and_align :: proc(type: ^AST) -> (int, int) {
 
 // determine if an expression can be evaluated at compile time
 is_constant_expr :: proc(expr : ^AST) -> bool {
-    TODO("(sandwich) fuck i dont wanna implement is_constant_expr")
+    TODO("(sandwich) fuck i dont wanna implement this (is_constant_expr)")
     return false
 }
 
 // bad + horrible but whatever - i guess its okay cause i pass in an allocator
-type_to_string :: proc(expr: ^AST, alloc: runtime.Allocator) -> string {
+type_to_string :: proc(expr: ^AST, alloc: runtime.Allocator = context.allocator) -> string {
     assert(is_type_expr(expr), "type_size_and_align expr is not a type")
 
     #partial switch t in expr^ {
     case basic_type_expr:
         switch t {
         case .invalid:       return "(invalid)"
-        case .implicit:      return "(implicit)"
+        case .unresolved:    return "(unresolved)"
         case .none:          return "(none)"
         case .untyped_bool:  return "untyped_bool"
         case .untyped_float: return "untyped_float"

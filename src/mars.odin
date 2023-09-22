@@ -18,8 +18,8 @@ main :: proc() {
     // all build flags, settings, compile directory, etc.
     global_build_state = parse_command_line_args(os.args)
     
-    ph.phobos_build_state = global_build_state // propogate build state to front-end
-    dm.deimos_build_state = global_build_state // propogate build state to back-end
+    ph.phobos_build_state = global_build_state // propogate build state to frontend
+    dm.deimos_build_state = global_build_state // propogate build state to backend
 
     ph.construct_complete_AST()
 }
@@ -45,7 +45,17 @@ parse_command_line_args :: proc(args: []string) -> (build_state: co.build_state)
             print_help()
             os.exit(0)
         case "-no-color": build_state.flag_no_display_colors = true
-        case "-runtime":  build_state.flag_inline_runtime = true
+        case "-runtime":  
+            switch argument.val {
+            case "include":
+                build_state.flag_runtime = .include
+            case "none":
+                build_state.flag_runtime = .none
+            case "inline":
+                build_state.flag_runtime = .inline
+            case "external":
+                build_state.flag_runtime = .external
+            }
 
         case:
             if index == 0 && argument.key[0] != '-' {

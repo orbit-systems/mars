@@ -1,7 +1,7 @@
 package phobos
 
 // complete program AST - this is what phobos should pass to deimos
-// contains all packages
+// contains all packages and other information
 program_AST :: struct {
     modules : []^module_AST
 }
@@ -19,6 +19,11 @@ file_AST :: struct {
     path     : string,
     imported : []int, // indexes into the program_ast modules list
     root     : ^AST,
+}
+
+entity :: struct {
+    // scope:
+    // ident :
 }
 
 AST :: union {
@@ -39,6 +44,7 @@ AST :: union {
 
     //if_stmt,
     //while_stmt,
+    //for_stmt
     //switch_stmt,
     //case_clause_stmt,
 
@@ -55,15 +61,18 @@ AST :: union {
 
     //ident_expr,             // points to entity
     //literal_expr,           // literal value expression
-    basic_literal_expr,
-    compound_literal_expr,
-    proc_literal_expr,
-    enum_literal_expr,
+    // ! basic_literal_expr,
+    // ! compound_literal_expr,
+    // ! enum_literal_expr,
 
     //paren_expr,
     //op_unary_expr,
     //op_binary_expr,
-    //selector_expr,
+    
+    //struct_selector_expr,
+    //union_selector_expr,
+    //enum_variant_expr,
+    //module_selector_expr,
     //array_index_expr,
 
     //call_expr,
@@ -93,8 +102,8 @@ enum_literal_expr :: struct {
 
 basic_type_expr :: enum {
     invalid = 0,
-    implicit,
     none,
+    unresolved, // type probably exists but hasn't been derived yet - probably used in an implicit type
 
     mars_i8,
     mars_i16,
