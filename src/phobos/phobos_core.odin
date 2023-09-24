@@ -2,7 +2,7 @@ package phobos
 
 import co "../common"
 import "core:os"
-import "core:time"
+import "core:mem"
 import "core:strings"
 import "core:fmt"
 import "core:path/filepath"
@@ -18,13 +18,12 @@ phobos_build_state : co.build_state
 // build the complete AST of the program, spanning multiple files and modules.
 construct_complete_AST :: proc() -> ^program_AST {
 
-    // find files in compile directory and lex each of them
+    // lots of checks
     if !os.exists(phobos_build_state.compile_directory) || 
        !os.is_dir(phobos_build_state.compile_directory) {
             fmt.printf("ERROR Directory \"%s\" does not exist or is not a directory.\n", phobos_build_state.compile_directory)
             os.exit(1)
     }
-
     compile_directory_handle, open_dir_ok := os.open(phobos_build_state.compile_directory)
     if open_dir_ok != os.ERROR_NONE {
         fmt.printf("ERROR Directory \"%s\" cannot be opened.\n", phobos_build_state.compile_directory)
@@ -35,7 +34,6 @@ construct_complete_AST :: proc() -> ^program_AST {
         fmt.printf("ERROR Directory \"%s\" is empty.\n", phobos_build_state.compile_directory)
         os.exit(1)
     }
-
     {
         mars_files := 0
         for file in compile_directory_files {
@@ -47,9 +45,8 @@ construct_complete_AST :: proc() -> ^program_AST {
         }
     }
 
-
-
-    lexers := make([dynamic]lexer)
+    // lex all the module files
+    lexers := make([dynamic]^lexer)
     for file in compile_directory_files {
         if file.is_dir || filepath.ext(file.fullpath) != ".mars" {
             continue
@@ -57,29 +54,26 @@ construct_complete_AST :: proc() -> ^program_AST {
 
         file_source, _ := os.read_entire_file(file.fullpath)
 
-        this_lexer := lexer{}
+        this_lexer := new(lexer)
 
         #no_bounds_check {
-            lexer_init(&this_lexer, file.name, cast(string)file_source)
-            construct_token_buffer(&this_lexer)
+            lexer_init(this_lexer, file.name, cast(string)file_source)
+            construct_token_buffer(this_lexer)
         }
         
         append(&lexers, this_lexer)
     }
 
-    test_type0 : AST = basic_type_expr.mars_i64
-    test_type1 : AST = pointer_type_expr{&test_type0}
-    test_type2 : AST = array_type_expr{3,&test_type1}
 
-    fmt.println(type_to_string(&test_type2, context.temp_allocator))
+    // parse all the module files
+    main_module_ast := new(module_AST)
+    for file_lexer in lexers {
 
-    //fmt.printf("%#v\n",compile_directory_files)
+        // this_file_ast := parse_file(file_lexer, main_module_ast)
 
-    //file_raw : []u8
-    //file_path : string
+        // append(&(main_module_ast.files), this_file_ast)
+    }
 
-    //lex: lexer
-    //lexer_init(&lex, file_path, string(file_raw))
     return nil
 }
 
@@ -88,7 +82,7 @@ construct_token_buffer :: proc(ctx: ^lexer) {
     // ~3.5 bytes per token - this initializes the token buffer to a reasonably 
     // accurate guess of the final buffer size.
     // if the buffer needs to resize, it should only have to resize once.
-    buffer_capacity_heuristic := int(f64(len(ctx.src))/3.5)
+    buffer_capacity_heuristic := int(f64(len(ctx.pos.src))/3.5)
     
     ctx.buffer = make([dynamic]lexer_token, 0, buffer_capacity_heuristic)
 
