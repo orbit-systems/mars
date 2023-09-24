@@ -2,20 +2,20 @@ package phobos
 
 // complete program AST - this is what phobos should pass to deimos
 // contains all packages and other information
-program_AST :: struct {
-    modules : [dynamic]^module_AST
+program_tree :: struct {
+    modules : [dynamic]^module
 }
 
 //
-module_AST :: struct {
-    program : ^program_AST, // what program is this module contained in?
-    files   : [dynamic]^file_AST,   //
+module :: struct {
+    program : ^program_tree, // what program is this module contained in?
+    files   : [dynamic]^file,   //
     name    : string, // internal name. this is the name used in the module declarations.
 }
 
 
-file_AST :: struct {
-    module   : ^module_AST,
+file :: struct {
+    module   : ^module,
     path     : string,
     imported : [dynamic]int, // indexes into the program_ast modules list
     root     : AST, // stmt_group_stmt
@@ -40,16 +40,15 @@ AST :: union {
     //^switch_stmt,
     //^case_clause_stmt,
 
-    ^basic_type_expr,
+    ^basic_type,
 
-    ^array_type_expr,
-    ^slice_type_expr,
-    ^pointer_type_expr,
-    ^funcptr_type_expr,
-
-    ^struct_type_expr,
-    ^union_type_expr,
-    ^enum_type_expr,
+    ^array_type,
+    ^slice_type,
+    ^pointer_type,
+    ^funcptr_type,
+    ^struct_type,
+    ^union_type,
+    ^enum_type,
 
     //ident_expr,             // points to entity
     //literal_expr,           // literal value expression
@@ -112,7 +111,7 @@ enum_literal_expr :: struct {
 
 }
 
-basic_type_expr :: enum {
+basic_type :: enum {
     invalid = 0,
     none,
     unresolved, // type probably exists but hasn't been derived yet - probably used in an implicit type
@@ -144,20 +143,20 @@ basic_type_expr :: enum {
     untyped_null,
 }
 
-array_type_expr :: struct {
+array_type :: struct {
     length     : int,
     entry_type : AST,
 }
 
-slice_type_expr :: struct {
+slice_type :: struct {
     entry_type : AST,
 }
 
-pointer_type_expr :: struct {
+pointer_type :: struct {
     entry_type : AST,
 }
 
-funcptr_type_expr :: struct {
+funcptr_type :: struct {
     param_field_idents  : [dynamic]string,
     param_field_types   : [dynamic]AST,
     return_field_idents : [dynamic]string,
@@ -165,18 +164,18 @@ funcptr_type_expr :: struct {
     positional          : bool,
 }
 
-struct_type_expr :: struct {
+struct_type :: struct {
     field_idents  : [dynamic]string,
     field_offsets : [dynamic]int,
     field_types   : [dynamic]AST,
 }
 
-union_type_expr :: struct {
+union_type :: struct {
     field_idents : [dynamic]string,
     field_types  : [dynamic]AST,
 }
 
-enum_type_expr :: struct {
+enum_type :: struct {
     backing_type   : AST,
     variant_idents : [dynamic]string,
     variant_vals   : [dynamic]AST,

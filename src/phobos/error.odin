@@ -5,29 +5,30 @@ import "core:fmt"
 import "core:os"
 import "core:strings"
 
-error :: proc(pos: position, str: string, args: ..any, no_print_line := false) {
+error :: proc(path, src: string, pos: position, str: string, args: ..any, no_print_line := false) {
     if !phobos_build_state.flag_no_display_colors do set_style(.FG_Red)
     if !phobos_build_state.flag_no_display_colors do set_style(.Bold)
     fmt.print("ERROR")
     if !phobos_build_state.flag_no_display_colors do set_style(.Reset)
-    fmt.printf(" [ %s @ %d:%d ] ", pos.path, pos.line, pos.col)
+    fmt.printf(" [ %s @ %d:%d ] ", path, pos.line, pos.col)
     //fmt.printf(str, ..args)
     fmt.print("\n")
 
+
     if no_print_line {
-        free_all(context.temp_allocator)
         os.exit(1)
     }
 
-    line_offset := get_line_offset(pos.src, pos.line)
-    line_string := pos.src[line_offset:get_line_offset(pos.src, pos.line+1)-1]
+    line_offset := get_line_offset(src, pos.line)
+    line_string := src[line_offset:get_line_offset(src, pos.line+1)-1]
     offset_from_line := pos.start - line_offset
     error_token_width := int(pos.offset-pos.start)
 
+    fmt.printf("% 3d | ", pos.line)
     if !phobos_build_state.flag_no_display_colors do set_style(.Bold)
-    fmt.printf("    %v", line_string)
+    fmt.printf("%v", line_string)
     fmt.print("\n")
-    fmt.print(strings.repeat(" ", int(4+offset_from_line), context.temp_allocator))
+    fmt.print(strings.repeat(" ", int(6+offset_from_line), context.temp_allocator))
     
     if !phobos_build_state.flag_no_display_colors do set_style(.FG_Red)
     fmt.print("^") // FUCK you odin stringwriter you MAKE ME NOT USE UNICODE AND I HATE YOU
@@ -42,27 +43,26 @@ error :: proc(pos: position, str: string, args: ..any, no_print_line := false) {
     fmt.printf(str, ..args)
     fmt.print("\n")
 
-
-    free_all(context.temp_allocator)
     os.exit(1)
 }
 
-warning :: proc(pos: position, str: string, args: ..any, no_print_line := false) {
+warning :: proc(path, src: string, pos: position, str: string, args: ..any, no_print_line := false) {
     if !phobos_build_state.flag_no_display_colors do set_style(.FG_Yellow)
     if !phobos_build_state.flag_no_display_colors do set_style(.Bold)
     fmt.print("WARNING")
     if !phobos_build_state.flag_no_display_colors do set_style(.Reset)
-    fmt.printf(" [ %s @ %d:%d ] ", pos.path, pos.line, pos.col)
+    fmt.printf(" [ %s @ %d:%d ] ", path, pos.line, pos.col)
     //fmt.printf(str, ..args)
     fmt.print("\n")
 
+    defer free_all(context.temp_allocator)
+
     if no_print_line {
-        free_all(context.temp_allocator)
         return
     }
 
-    line_offset := get_line_offset(pos.src, pos.line)
-    line_string := pos.src[line_offset:get_line_offset(pos.src, pos.line+1)-1]
+    line_offset := get_line_offset(src, pos.line)
+    line_string := src[line_offset:get_line_offset(src, pos.line+1)-1]
     offset_from_line := pos.start - line_offset
     error_token_width := int(pos.offset-pos.start)
 
@@ -83,8 +83,6 @@ warning :: proc(pos: position, str: string, args: ..any, no_print_line := false)
     if !phobos_build_state.flag_no_display_colors do set_style(.Reset)
     fmt.printf(str, ..args)
     fmt.print("\n")
-
-    free_all(context.temp_allocator)
 
 }
 

@@ -34,8 +34,18 @@ package phobos
 //     module_decl = new_entity(module_name)
 // }
 
-expect_token :: proc(ctx: ^lexer, kind: token_kind) {
-    if ctx.buffer[ctx.curr_token].kind != .semicolon {
-        error(ctx.buffer[ctx.curr_token].pos, "expected %s, got %s", kind, ctx.buffer[ctx.curr_token].kind)
-    }
+parser :: struct {
+    file: ^file,
+    lexer: ^lexer,
+
+    prev_tok,
+    next_tok : lexer_token,
+
+
 }
+
+// expect_token :: proc(ctx: ^lexer, kind: token_kind) {
+//     if ctx.buffer[ctx.curr_token].kind != .semicolon {
+//         error(ctx.buffer[ctx.curr_token].pos, "expected %s, got %s", kind, ctx.buffer[ctx.curr_token].kind)
+//     }
+// }

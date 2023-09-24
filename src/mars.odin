@@ -52,7 +52,7 @@ parse_command_line_args :: proc(args: []string) -> (build_state: co.build_state)
             case "none":
                 build_state.flag_runtime = .none
             case "inline":
-                build_state.flag_runtime = .inline
+                build_state.flag_runtime = .inlined
             case "external":
                 build_state.flag_runtime = .external
             }

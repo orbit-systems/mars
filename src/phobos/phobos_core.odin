@@ -16,7 +16,7 @@ import "core:path/filepath"
 phobos_build_state : co.build_state
 
 // build the complete AST of the program, spanning multiple files and modules.
-construct_complete_AST :: proc() -> ^program_AST {
+construct_complete_AST :: proc() -> ^program_tree {
 
     // lots of checks
     if !os.exists(phobos_build_state.compile_directory) || 
@@ -66,7 +66,7 @@ construct_complete_AST :: proc() -> ^program_AST {
 
 
     // parse all the module files
-    main_module_ast := new(module_AST)
+    main_module_ast := new(module)
     for file_lexer in lexers {
 
         // this_file_ast := parse_file(file_lexer, main_module_ast)
@@ -82,7 +82,7 @@ construct_token_buffer :: proc(ctx: ^lexer) {
     // ~3.5 bytes per token - this initializes the token buffer to a reasonably 
     // accurate guess of the final buffer size.
     // if the buffer needs to resize, it should only have to resize once.
-    buffer_capacity_heuristic := int(f64(len(ctx.pos.src))/3.5)
+    buffer_capacity_heuristic := int(f64(len(ctx.src))/3.5)
     
     ctx.buffer = make([dynamic]lexer_token, 0, buffer_capacity_heuristic)
 

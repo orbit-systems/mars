@@ -6,13 +6,17 @@ import "core:strings"
 
 lexer :: struct {
     pos     : position,
+    
+    src  : string,
+    path : string,
+    
     buffer  : [dynamic]lexer_token,
     curr_token : uint,
 }
 
 lexer_init :: proc(ctx : ^lexer, path: string, src: string) {
-    ctx.pos.path = path
-    ctx.pos.src  = src
+    ctx.path = path
+    ctx.src  = src
     ctx.pos.start  = 0
     ctx.pos.offset = 0
     ctx.pos.line   = 1
@@ -26,8 +30,6 @@ lexer_token :: struct {
 }
 
 position :: struct {
-    path      : string,
-    src       : string,
     start     : uint,
     offset    : uint,
     line      : uint,
