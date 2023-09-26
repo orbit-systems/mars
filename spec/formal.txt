@@ -27,7 +27,7 @@ types
         float :: f64
 
     pointer
-        rawptr          pointer with no type information
+        addr            raw address - behaves like ^u8 except cannot dereference.
         fn() -> ()      pointer to function
         ^T              pointer to type T
 
@@ -47,8 +47,6 @@ types
         enum T          enumeration over type T (default: int). T must be in (all integers, uintegers)
 
     note: types are structural, not nominal. if you declare a structural type the same way under different aliases, they are just the same and are treated as identical by the language.
-
-    
 
 operators
     unary numeric
@@ -124,8 +122,8 @@ operators
         | because of this, bitcasting as an operation does not produce code
 
         note : the ONLY types that can cast implicitly are:
-        | rawptr -> any pointer type
-        | any pointer type -> rawptr
+        | addr -> any pointer type
+        | any pointer type -> addr
         | any enum -> backing type
     
     unary reference
@@ -189,7 +187,7 @@ program structure
         name : type;                - variable, specified type, default initial value
         name : type = ---;          - variable, specified type, use unititialized memory
         name : type : value;        - constant, specified type
-        name :: value;              - constant, implied type
+        name :: value;              - constant, implicit type
 
     other modules can be imported as libraries using this syntax as well.
         lib_name :: import "relative/path/to/module";
@@ -199,11 +197,6 @@ program structure
     e.g. this is not allowed:
         x := 3;
         {
-            x := 4;
+            x := 4; // x already declared
         }
     
-    global entity names are exposed like so:
-        module_internal_name.entity_name
-    
-    local entity names that must be allocated globally, like local functions, are exposed like so:
-        module_internal_name.parent_entity_name.(...).entity_name

@@ -44,6 +44,16 @@ parser :: struct {
 
 }
 
+// merges a start and end position into a single position encompassing both.
+merge_pos :: proc(start, end : position) -> position {
+    return {
+        start.start,
+        end.offset,
+        start.line,
+        start.col,
+    }
+}
+
 // expect_token :: proc(ctx: ^lexer, kind: token_kind) {
 //     if ctx.buffer[ctx.curr_token].kind != .semicolon {
 //         error(ctx.buffer[ctx.curr_token].pos, "expected %s, got %s", kind, ctx.buffer[ctx.curr_token].kind)

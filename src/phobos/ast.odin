@@ -8,15 +8,16 @@ program_tree :: struct {
 
 //
 module :: struct {
-    program : ^program_tree, // what program is this module contained in?
-    files   : [dynamic]^file,   //
-    name    : string, // internal name. this is the name used in the module declarations.
+    program  : ^program_tree, // what program is this module contained in?
+    files    : [dynamic]^file,   //
+    name     : string, // internal name. this is the name used in the module declarations.
+    fullpath : string,
 }
 
 
 file :: struct {
     module   : ^module,
-    path     : string,
+    fullpath : string,
     imported : [dynamic]int, // indexes into the program_ast modules list
     root     : AST, // stmt_group_stmt
 }
@@ -73,19 +74,8 @@ AST :: union {
 
 }
 
-entity :: struct {
-    // scope:
-    ident : string,
-}
-
-new_entity :: proc(name: string) -> ^entity {
-    e := new(entity)
-    e.ident = name
-    return e
-}
-
 module_decl_stmt :: struct {
-    name_entity : ^entity
+    name : string
 }
 
 stmt_group_stmt :: struct {
@@ -135,7 +125,7 @@ basic_type :: enum {
     mars_f32,
     mars_f64,
 
-    mars_rawptr,
+    mars_addr,
 
     untyped_int,
     untyped_float,

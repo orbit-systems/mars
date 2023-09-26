@@ -42,7 +42,7 @@ type_size_and_align :: proc(type: AST) -> (int, int) {
             return 2, 2
         case .mars_i32, .mars_u32, .mars_b32, .mars_f32: 
             return 4, 4
-        case .mars_i64, .mars_u64, .mars_b64, .mars_f64, .mars_rawptr: 
+        case .mars_i64, .mars_u64, .mars_b64, .mars_f64, .mars_addr: 
             return 8, 8
         }
     case ^pointer_type:
@@ -113,7 +113,7 @@ type_to_string :: proc(expr: AST, alloc: runtime.Allocator = context.allocator) 
         case .mars_u64:      return "u64"
         case .mars_b64:      return "b64"
         case .mars_f64:      return "f64"
-        case .mars_rawptr:   return "rawptr"
+        case .mars_addr:     return "addr"
         }
     case ^pointer_type:
         return strings.concatenate({"^",type_to_string(t.entry_type, alloc)}, alloc)

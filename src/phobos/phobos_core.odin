@@ -56,11 +56,12 @@ construct_complete_AST :: proc() -> ^program_tree {
 
         this_lexer := new(lexer)
 
+        relative_path, _ := filepath.rel(phobos_build_state.compile_directory, file.fullpath)
+
         #no_bounds_check {
-            lexer_init(this_lexer, file.name, cast(string)file_source)
+            lexer_init(this_lexer, relative_path, cast(string) file_source)
             construct_token_buffer(this_lexer)
         }
-        
         append(&lexers, this_lexer)
     }
 
@@ -78,13 +79,6 @@ construct_complete_AST :: proc() -> ^program_tree {
 }
 
 construct_token_buffer :: proc(ctx: ^lexer) {
-    
-    // ~3.5 bytes per token - this initializes the token buffer to a reasonably 
-    // accurate guess of the final buffer size.
-    // if the buffer needs to resize, it should only have to resize once.
-    buffer_capacity_heuristic := int(f64(len(ctx.src))/3.5)
-    
-    ctx.buffer = make([dynamic]lexer_token, 0, buffer_capacity_heuristic)
 
     int_token : lexer_token
     for int_token.kind != .EOF {

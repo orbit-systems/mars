@@ -496,7 +496,7 @@ make_EOF :: #force_inline proc(ctx: ^lexer) -> lexer_token {
     return lexer_token{.EOF,ctx.pos}
 }
 
-whitespace_runes :: [?]u8{' ', '\t', '\n', '\r'}
+whitespace_runes :: [?]u8{' ', '\t', '\n', '\r', '\v'}
 is_whitespace :: proc(r: u8) -> bool {
     // for whitespace in whitespace_runes {
     //     if r == whitespace {
@@ -505,5 +505,5 @@ is_whitespace :: proc(r: u8) -> bool {
     // }
     // return false
 
-    return r == ' ' || r == '\t' || r == '\n' || r == '\r'
+    return r == ' ' || r == '\t' || r == '\n' || r == '\r' || r == '\v'
 }

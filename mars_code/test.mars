@@ -8,7 +8,7 @@ main :: #section("boot") #link_name("__main") fn() {
     str  := "bruh";
     str2 := []u8{0x62, 0x72, 0x75, 0x68};
 
-    is_eq := mem.equal(str.base, str2.base, str.len);  ?
+    is_eq := mem.equal(str.base, str2.base, str.len);
 
     if is_eq {
         neptune.kprint("equal");

@@ -59,7 +59,12 @@ parse_command_line_args :: proc(args: []string) -> (build_state: co.build_state)
 
         case:
             if index == 0 && argument.key[0] != '-' {
-                build_state.compile_directory = argument.key
+                e : bool
+                build_state.compile_directory, e = filepath.abs(argument.key)
+                if !e {
+                    fmt.printf("ERROR Directory \"%s\" does not exist or is not a directory.\n",argument.key)
+                    os.exit(-1)
+                }
                 continue
             }
             print_help()

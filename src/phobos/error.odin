@@ -11,7 +11,7 @@ error :: proc(path, src: string, pos: position, str: string, args: ..any, no_pri
     fmt.print("ERROR")
     if !phobos_build_state.flag_no_display_colors do set_style(.Reset)
     fmt.printf(" [ %s @ %d:%d ] ", path, pos.line, pos.col)
-    //fmt.printf(str, ..args)
+    fmt.printf(str, ..args)
     fmt.print("\n")
 
 
@@ -24,21 +24,26 @@ error :: proc(path, src: string, pos: position, str: string, args: ..any, no_pri
     offset_from_line := pos.start - line_offset
     error_token_width := int(pos.offset-pos.start)
 
-    fmt.printf("% 3d | ", pos.line)
+    fmt.println("     ┆ ")
+    fmt.printf("% 4d │ ", pos.line)
     if !phobos_build_state.flag_no_display_colors do set_style(.Bold)
-    fmt.printf("%v", line_string)
-    fmt.print("\n")
-    fmt.print(strings.repeat(" ", int(6+offset_from_line), context.temp_allocator))
+    fmt.printf("%v\n", line_string)
+    if !phobos_build_state.flag_no_display_colors do set_style(.Reset)
+    fmt.print("     ┆ ")
+    fmt.print(strings.repeat(" ", int(offset_from_line), context.temp_allocator))
     
+    if !phobos_build_state.flag_no_display_colors do set_style(.Bold)
     if !phobos_build_state.flag_no_display_colors do set_style(.FG_Red)
-    fmt.print("^") // FUCK you odin stringwriter you MAKE ME NOT USE UNICODE AND I HATE YOU
+    
     if error_token_width > 1 {
+        fmt.print("╰")
         if error_token_width > 2 {
-            fmt.print(strings.repeat("~", error_token_width - 2, context.temp_allocator))
+            fmt.print(strings.repeat("─", error_token_width-2, context.temp_allocator))
         }
-        fmt.print("^")
+        fmt.print("┴╴")
+    } else {
+        fmt.print("↑ ")
     }
-    fmt.print(" ")
     if !phobos_build_state.flag_no_display_colors do set_style(.Reset)
     fmt.printf(str, ..args)
     fmt.print("\n")
@@ -52,7 +57,7 @@ warning :: proc(path, src: string, pos: position, str: string, args: ..any, no_p
     fmt.print("WARNING")
     if !phobos_build_state.flag_no_display_colors do set_style(.Reset)
     fmt.printf(" [ %s @ %d:%d ] ", path, pos.line, pos.col)
-    //fmt.printf(str, ..args)
+    fmt.printf(str, ..args)
     fmt.print("\n")
 
     defer free_all(context.temp_allocator)
@@ -66,20 +71,26 @@ warning :: proc(path, src: string, pos: position, str: string, args: ..any, no_p
     offset_from_line := pos.start - line_offset
     error_token_width := int(pos.offset-pos.start)
 
+    fmt.println("     │ ")
+    fmt.printf("% 4d │ ", pos.line)
     if !phobos_build_state.flag_no_display_colors do set_style(.Bold)
-    fmt.printf("    %v", line_string)
-    fmt.print("\n")
-    fmt.print(strings.repeat(" ", int(4+offset_from_line), context.temp_allocator))
+    fmt.printf("%v\n", line_string)
+    if !phobos_build_state.flag_no_display_colors do set_style(.Reset)
+    fmt.print("     │ ")
+    fmt.print(strings.repeat(" ", int(offset_from_line), context.temp_allocator))
     
+    if !phobos_build_state.flag_no_display_colors do set_style(.Bold)
     if !phobos_build_state.flag_no_display_colors do set_style(.FG_Yellow)
-    fmt.print("^")
+    
     if error_token_width > 1 {
+        fmt.print("╰")
         if error_token_width > 2 {
-            fmt.print(strings.repeat("~", error_token_width - 2, context.temp_allocator))
+            fmt.print(strings.repeat("─", error_token_width-2, context.temp_allocator))
         }
-        fmt.print("^")
+        fmt.print("┴╴")
+    } else {
+        fmt.print("↑ ")
     }
-    fmt.print(" ")
     if !phobos_build_state.flag_no_display_colors do set_style(.Reset)
     fmt.printf(str, ..args)
     fmt.print("\n")

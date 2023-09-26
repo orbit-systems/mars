@@ -1,6 +1,6 @@
 module memory;
 
-copy :: fn(to, from: rawptr, len: uint) {
+copy :: fn(to, from: addr, len: uint) {
     
     to_byte   := cast(^u8) to;
     from_byte := cast(^u8) from;
@@ -15,7 +15,7 @@ copy :: fn(to, from: rawptr, len: uint) {
     }
 }
 
-copy_asm :: fn(to, from: rawptr, len: uint) {
+copy_asm :: fn(to, from: addr, len: uint) {
 
     // calling convention states that to, from, and len should be in ra, rb, and rc respectively.
     // safer way would be `asm (to -> "ra", from -> "rb", len -> "rc")` but a bad compiler might add some overhead
@@ -35,7 +35,7 @@ copy_asm :: fn(to, from: rawptr, len: uint) {
 
 }
 
-equal :: fn(block1, block2: rawptr, len: uint) -> bool {
+equal :: fn(block1, block2: addr, len: uint) -> bool {
 
     block1_byte := cast(^u8) block1;
     block2_byte := cast(^u8) block2;
@@ -54,7 +54,7 @@ equal :: fn(block1, block2: rawptr, len: uint) -> bool {
     return true;
 }
 
-set :: fn(dest: rawptr, len: uint, val: u8) {
+set :: fn(dest: addr, len: uint, val: u8) {
 
     cursor := cast(^u8) dest;
     stop   := cursor + cast(^u8) len;

@@ -7,6 +7,8 @@ if is a base type that is the size of a register or smaller, it is passed by reg
 
 if all calling-convention registers are used up, they spill over onto the stack.
 
-// take the function foo as an example:
+take the function foo as an example:
     foo :: fn(a: int, b: int, c: []int, d: int)
-// "a", "b", and "d" are passed through registers ra, rb, and rc. "c" is put on the stack.
+"a", "b", and "d" are passed through registers ra, rb, and rc. "c" is put on the stack.
+
+assume all other registers are clobbered after a function call.

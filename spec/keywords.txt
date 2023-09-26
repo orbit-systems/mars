@@ -29,7 +29,7 @@ if
 import
 int
 module
-rawptr
+addr
 return
 struct
 switch

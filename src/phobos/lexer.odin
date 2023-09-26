@@ -21,6 +21,14 @@ lexer_init :: proc(ctx : ^lexer, path: string, src: string) {
     ctx.pos.offset = 0
     ctx.pos.line   = 1
     ctx.pos.col    = 1
+    // ~3.5 bytes per token - this initializes the token buffer to a reasonably 
+    // accurate guess of the final buffer size.
+    // if the buffer needs to resize, it should only have to resize once.
+
+    // better to overestimate and shrink down then to underestimate and do a big memcopy or smth!
+    buffer_capacity_heuristic := int(f64(len(ctx.src))/3.5)
+    
+    ctx.buffer = make([dynamic]lexer_token, 0, buffer_capacity_heuristic)
 }
 
 lexer_token :: struct {
