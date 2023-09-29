@@ -7,9 +7,9 @@ parser :: struct {
     lex  : ^lexer,
 
     curr_tok_index : int,
-    curr_node : AST,
+    node_stack      : [dynamic]AST, 
 
-    directive_stack : [dynamic]AST // should be consumed after every statement / declaration.
+    directive_stack : [dynamic]AST,
 }
 
 new_parser :: proc(f: ^file, l: ^lexer) -> (p: ^parser) {
@@ -49,7 +49,12 @@ parse_file :: proc(p: ^parser) {
 
     parse_module_decl(p)
 
-    
+    for {
+        parse_stmt(p)
+
+
+        break
+    }
 
 }
 
@@ -89,6 +94,14 @@ parse_module_decl :: proc(p: ^parser) {
     add_global_stmt(p.file, module_declaration)
 
     advance_token(p)
+}
+
+parse_external_block :: proc(p: ^parser) {
+    
+}
+
+parse_stmt :: proc(p: ^parser) {
+    
 }
 
 // merges a start and end position into a single position encompassing both.

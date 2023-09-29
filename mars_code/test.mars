@@ -1,4 +1,4 @@
-module test ;
+module test;
 
 mem     :: import "./memory";
 neptune :: import "./neptune";
