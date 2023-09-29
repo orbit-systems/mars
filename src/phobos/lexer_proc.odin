@@ -5,6 +5,17 @@ import "core:fmt"
 import "core:os"
 import "core:strconv"
 
+construct_token_buffer :: proc(ctx: ^lexer) {
+
+    int_token : lexer_token
+    for int_token.kind != .EOF {
+        int_token = lex_next_token(ctx)
+        append(&ctx.buffer, int_token)
+    }
+
+    shrink(&ctx.buffer)
+}
+
 lex_next_token :: proc(ctx: ^lexer) -> (this_token: lexer_token) {
     if ctx == nil {
         fmt.printf("Nil context provided to lex_next_token\n")
@@ -94,6 +105,10 @@ lex_next_token :: proc(ctx: ^lexer) -> (this_token: lexer_token) {
     case:
         success := scan_operator(ctx, cursor_rune)
         if success == .invalid {
+            if get_substring(ctx.src, ctx.pos)[0] == '\'' {
+                error(ctx.path, ctx.src, ctx.pos, "single quotes not supported")
+
+            }                 
             error(ctx.path, ctx.src, ctx.pos, "invalid operator \"%s\"", get_substring(ctx.src, ctx.pos))
         } else {
             this_token.kind = success

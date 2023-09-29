@@ -122,8 +122,8 @@ type_to_string :: proc(expr: AST, alloc: runtime.Allocator = context.allocator) 
     case ^slice_type:
         return strings.concatenate({"[]",type_to_string(t.entry_type, alloc)}, alloc)
     case ^enum_type:
+        TODO("type_to_string ENUM")
     case ^array_type:
-
         default := context.allocator
         context.allocator = alloc
         str := strings.concatenate({fmt.aprintf("[%d]", t.length), type_to_string(t.entry_type, alloc)}, alloc)
@@ -132,9 +132,9 @@ type_to_string :: proc(expr: AST, alloc: runtime.Allocator = context.allocator) 
         return str
 
     case ^union_type:
-        
+        TODO("type_to_string UNION")
     case ^struct_type:
-
+        TODO("type_to_string STRUCT")
     }
-    return ""
+    return "BAD TYPE"
 }

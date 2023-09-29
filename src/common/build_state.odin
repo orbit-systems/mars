@@ -15,4 +15,5 @@ flag_runtime_setting :: enum {
     none,           // disables runtime and disallows inclusion of runtime functions
     inlined,        // every instance of a runtime function is inlined
     external,       // references to runtime functions are generated but no code is included.
+    replace,        // replace runtime module with another module. this module must have all runtime entities defined.
 }

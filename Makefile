@@ -2,7 +2,7 @@ all: build
 
 SRC_DIR = ./src
 MARS_LOCATION = ./build/mars
-MARS_BUILD_FLAGS = -o:speed
+MARS_BUILD_FLAGS = 
 
 MARS_EXEC_FLAGS = 
 
@@ -15,6 +15,10 @@ endif
 
 clean:
 	@rm -rf ./build
+
+release: clean
+	@mkdir build
+	@odin build $(SRC_DIR) $(MARS_BUILD_FLAGS) -out:$(MARS_LOCATION) -o:speed
 
 build: clean
 	@mkdir build

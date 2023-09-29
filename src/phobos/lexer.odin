@@ -5,16 +5,19 @@ import "core:os"
 import "core:strings"
 
 lexer :: struct {
-    pos     : position,
+    pos : position,
     
     src  : string,
     path : string,
     
-    buffer  : [dynamic]lexer_token,
-    curr_token : uint,
+    buffer     : [dynamic]lexer_token,
 }
 
-lexer_init :: proc(ctx : ^lexer, path: string, src: string) {
+
+
+new_lexer :: proc(path: string, src: string) -> (ctx: ^lexer) {
+
+    ctx = new(lexer)
     ctx.path = path
     ctx.src  = src
     ctx.pos.start  = 0
@@ -29,6 +32,8 @@ lexer_init :: proc(ctx : ^lexer, path: string, src: string) {
     buffer_capacity_heuristic := int(f64(len(ctx.src))/3.5)
     
     ctx.buffer = make([dynamic]lexer_token, 0, buffer_capacity_heuristic)
+
+    return
 }
 
 lexer_token :: struct {

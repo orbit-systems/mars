@@ -6,28 +6,61 @@ program_tree :: struct {
     modules : [dynamic]^module
 }
 
-//
-module :: struct {
-    program  : ^program_tree, // what program is this module contained in?
-    files    : [dynamic]^file,   //
-    name     : string, // internal name. this is the name used in the module declarations.
-    fullpath : string,
+new_program :: proc() -> (prog: ^program_tree) {
+    prog = new(program_tree)
+    prog.modules = make([dynamic]^module)
+
+    return
 }
 
+module :: struct {
+    program  : ^program_tree, // what program is this module contained in?
+    files    : [dynamic]^file,
+
+    global_scope : ^scope_meta,
+
+    name     : string, // internal name. this is the name used in the module declarations.
+    path     : string,
+}
+
+new_module :: proc(program: ^program_tree, path: string) -> (mod: ^module) {
+    mod = new(module)
+    mod.program = program
+    append(&(program.modules), mod)
+    mod.global_scope = new_scope(nil, true)
+    mod.path = path
+
+    return
+}
 
 file :: struct {
     module   : ^module,
-    fullpath : string,
+    path     : string,
+    src      : string,
     imported : [dynamic]int, // indexes into the program_ast modules list
-    root     : AST, // stmt_group_stmt
+    stmts    : [dynamic]AST,
+}
+
+new_file :: proc(mod: ^module, path, src: string) -> (f: ^file) {
+    f = new(file)
+    f.module = mod
+    f.path = path
+    f.src = src
+    return
+}
+
+add_global_stmt :: proc(f: ^file, stmt: AST) {
+    append(&(f.stmts), stmt)
 }
 
 AST :: union {
 
-    ^module_decl_stmt,       // module bruh;
-    //^external_stmt,          // external {};
+    ^scope_meta, // points to a new scope
 
-    //^decl_stmt,              // a : int, a : int = 0, a : int = ---;
+    ^module_decl_stmt,       // module bruh;
+    ^external_stmt,          // external {};
+
+    //^decl_stmt,              // a : int; a : int = 0; a : int = ---;
     //^assign_stmt,            // a = 1 + 2;
     //^compound_assign_stmt,   // a += 3;
 
@@ -51,8 +84,13 @@ AST :: union {
     ^union_type,
     ^enum_type,
 
+
+
     //ident_expr,             // points to entity
     //literal_expr,           // literal value expression
+
+    
+
     // ! basic_literal_expr,
     // ! compound_literal_expr,
     // ! enum_literal_expr,
@@ -74,12 +112,53 @@ AST :: union {
 
 }
 
+// ties the scope tree to the abstract syntax tree
+scope_meta :: struct {
+
+    members : [dynamic]^entity, // entities in this scope level (does not include superscope entities)
+    superscope : ^scope_meta,
+    subscopes  : [dynamic]^scope_meta,
+    is_global : bool,
+
+    next : AST,
+}
+
+new_scope :: proc(super: ^scope_meta, is_global := false) -> (scope: ^scope_meta) {
+    scope = new(scope_meta)
+    scope.superscope = super
+    scope.is_global = is_global
+    return
+}
+
+entity :: struct {
+    scope       : ^scope_meta,
+    identifier  : string,
+    declaration : AST,
+    type        : AST,
+    is_library  : bool,
+    is_const    : bool,
+}
+
 module_decl_stmt :: struct {
-    name : string
+    start, end: ^lexer_token,
+}
+
+new_module_decl_stmt :: proc(s, e: ^lexer_token) -> (node: ^module_decl_stmt) {
+    node = new(module_decl_stmt)
+    node.start = s
+    node.end = e
+    return
+}
+
+external_stmt :: struct {
+    decls      : [dynamic]AST,
+    external   : ^lexer_token,
+    start, end : ^lexer_token,
 }
 
 stmt_group_stmt :: struct {
-    stmts: [dynamic]AST
+    stmts : [dynamic]AST,
+    start, end: ^lexer_token,
 }
 
 basic_literal_expr :: struct {
@@ -89,7 +168,7 @@ basic_literal_expr :: struct {
 }
 
 compound_literal_expr :: struct {
-
+    type: AST,
     // TODO
 }
 

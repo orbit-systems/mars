@@ -14,14 +14,14 @@ import "core:path/filepath"
 
 main :: proc() {
     
-    // the build state contains everything that the compiler needs to know about the action it is performing.
+    // the build state contains everything that the compiler needs to know about the action(s) it is performing.
     // all build flags, settings, compile directory, etc.
-    global_build_state = parse_command_line_args(os.args)
+    build_state = parse_command_line_args(os.args)
     
-    ph.phobos_build_state = global_build_state // propogate build state to frontend
-    dm.deimos_build_state = global_build_state // propogate build state to backend
+    ph.build_state = build_state // propogate build state to frontend
+    dm.build_state = build_state // propogate build state to backend
 
-    ph.construct_complete_AST()
+    ph.parse_program()
 }
 
 parse_command_line_args :: proc(args: []string) -> (build_state: co.build_state) {
@@ -47,14 +47,10 @@ parse_command_line_args :: proc(args: []string) -> (build_state: co.build_state)
         case "-no-color": build_state.flag_no_display_colors = true
         case "-runtime":  
             switch argument.val {
-            case "include":
-                build_state.flag_runtime = .include
-            case "none":
-                build_state.flag_runtime = .none
-            case "inline":
-                build_state.flag_runtime = .inlined
-            case "external":
-                build_state.flag_runtime = .external
+            case "include":  build_state.flag_runtime = .include
+            case "none":     build_state.flag_runtime = .none
+            case "inline":   build_state.flag_runtime = .inlined
+            case "external": build_state.flag_runtime = .external
             }
 
         case:
@@ -63,7 +59,7 @@ parse_command_line_args :: proc(args: []string) -> (build_state: co.build_state)
                 build_state.compile_directory, e = filepath.abs(argument.key)
                 if !e {
                     fmt.printf("ERROR Directory \"%s\" does not exist or is not a directory.\n",argument.key)
-                    os.exit(-1)
+                    os.exit(1)
                 }
                 continue
             }
@@ -75,7 +71,7 @@ parse_command_line_args :: proc(args: []string) -> (build_state: co.build_state)
 }
 
 print_help :: proc() {
-    fmt.printf("you silly. you goober. DIE.\n")
+    fmt.println("uhhhhh help message!")
 }
 
 cmd_arg :: struct {
@@ -83,4 +79,4 @@ cmd_arg :: struct {
     val : string,
 }
 
-global_build_state : co.build_state
+build_state : co.build_state
