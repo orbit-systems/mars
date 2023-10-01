@@ -7,8 +7,10 @@ parser :: struct {
     lex  : ^lexer,
 
     curr_tok_index : int,
-    node_stack      : [dynamic]AST, 
 
+    curr_scope : ^scope_meta,
+
+    node_stack      : [dynamic]AST,
     directive_stack : [dynamic]AST,
 }
 
@@ -27,6 +29,14 @@ current_token :: proc(p: ^parser) -> ^lexer_token {
 }
 
 peek_token :: proc(p: ^parser, offset : int = 1) -> ^lexer_token {
+    return &(p.lex.buffer[p.curr_tok_index + offset])
+}
+
+peek_until :: proc(p: ^parser, kind: token_kind) -> ^lexer_token {
+    offset := 0
+    for (p.lex.buffer[p.curr_tok_index + offset]).kind != kind {
+        offset += 1
+    }
     return &(p.lex.buffer[p.curr_tok_index + offset])
 }
 
@@ -49,6 +59,7 @@ parse_file :: proc(p: ^parser) {
 
     parse_module_decl(p)
 
+    //TODO("fucking everything")
     for {
         parse_stmt(p)
         
@@ -58,7 +69,7 @@ parse_file :: proc(p: ^parser) {
 
 }
 
-parse_module_decl :: proc(p: ^parser) {
+parse_module_decl :: proc(p: ^parser, consume_semicolon := true) {
 
     module_declaration := new_module_decl_stmt(nil,nil)
 
@@ -84,6 +95,15 @@ parse_module_decl :: proc(p: ^parser) {
     p.file.module.name = get_substring(p.file.src, current_token(p).pos)
     
     advance_token(p)
+
+    if !consume_semicolon {
+        
+        module_declaration.end = current_token(p)
+        add_global_stmt(p.file, module_declaration)
+        
+        return
+    }
+
     // module name;
     //            ^
     if current_token(p).kind != .semicolon {
@@ -96,21 +116,30 @@ parse_module_decl :: proc(p: ^parser) {
     advance_token(p)
 }
 
-parse_external_block :: proc(p: ^parser) {
-    
+parse_stmt :: proc(p: ^parser) {
+
+    //TODO("fucking everything")
+
+    #partial switch current_token(p).kind {
+    case .keyword_module:
+        if len(p.node_stack) == 0 {
+            error(p.file.path, p.lex.src, current_token(p).pos, "module already declared", no_print_line = current_token(p).kind == .EOF)
+        }
+        
+    case .semicolon:
+        // empty statment
+        advance_token(p)
+    case .open_bracket:
+        parse_block_stmt(p)
+    case:
+    }
 }
 
-parse_stmt :: proc(p: ^parser) {
-    
+parse_block_stmt :: proc(p: ^parser) {
+
 }
 
 // merges a start and end position into a single position encompassing both.
 merge_pos :: #force_inline proc(start, end : position) -> position {
     return {start.start, end.offset, start.line, start.col}
 }
-
-// expect_token :: proc(ctx: ^lexer, kind: token_kind) {
-//     if ctx.buffer[ctx.curr_token].kind != .semicolon {
-//         error(ctx.buffer[ctx.curr_token].pos, "expected %s, got %s", kind, ctx.buffer[ctx.curr_token].kind)
-//     }
-// }
