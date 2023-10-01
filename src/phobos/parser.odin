@@ -51,10 +51,10 @@ parse_file :: proc(p: ^parser) {
 
     for {
         parse_stmt(p)
-
-
+        
         break
-    }
+    
+}
 
 }
 
