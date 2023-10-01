@@ -11,7 +11,7 @@ ifeq ($(OS),Windows_NT)
 	MARS_EXEC_FLAGS = -no-color
 endif
 
-
+# BRUH LMAO
 
 clean:
 	@rm -rf ./build

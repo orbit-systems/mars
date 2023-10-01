@@ -32,8 +32,7 @@ lex_next_token :: proc(ctx: ^lexer) -> (this_token: lexer_token) {
     // advance to next significant rune
     loop: for {
         if ctx.pos.offset >= len(ctx.src) {
-            this_token = make_EOF(ctx)
-            break loop
+            return make_EOF(ctx)
         }
         cursor_rune = lex_current_char(ctx)
         switch cursor_rune {
@@ -78,6 +77,9 @@ lex_next_token :: proc(ctx: ^lexer) -> (this_token: lexer_token) {
     start_row := ctx.pos.line
     start_col := ctx.pos.col
 
+    if ctx.pos.offset >= len(ctx.src) {
+        return make_EOF(ctx)
+    }
     cursor_rune = lex_advance_cursor(ctx)
 
     // scan actual token
