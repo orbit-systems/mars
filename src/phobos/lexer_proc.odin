@@ -510,6 +510,9 @@ lex_peek_next_char :: proc(ctx: ^lexer) -> (r: u8) {
 lex_current_char :: #force_inline proc(ctx: ^lexer) -> (r: u8) {
     // all because utf8.rune_at discards the damn byte length. fuck you utf8.rune_at. 
     //return utf8.decode_rune_in_string(ctx.src[ctx.pos.offset:])
+
+    if ctx.pos.offset >= len(ctx.src) do return 0
+
     return ctx.src[ctx.pos.offset]
 }
 
