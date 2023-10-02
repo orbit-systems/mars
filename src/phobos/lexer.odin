@@ -152,11 +152,15 @@ token_kind :: enum {
         keyword_import,
         keyword_module,
         keyword_return,
-        keyword_sizeof,
         keyword_struct,
         keyword_switch,
         keyword_union,
         keyword_while,
+
+        keyword_sizeof,
+        keyword_len,
+        keyword_base,
+
     meta_keyword_end,
 
 }

@@ -114,7 +114,9 @@ operators
         | all (u)integer types can cast to floating point types, converting to their closest floating point representation
         | all floating point types can cast to (u)integer types, truncating and mapping to their closest representation
         | enums have the same casting characteristics of its backing type
-        | structs may be cast to other structs if their field type structure is identical (all fields in the same order with the same types)
+        | structs may be cast to other structs if their field type structure is identical (all fields in the same order with the same types).
+        | ^ this is identical to a bitcast, but is more deeply checked by the compiler.
+        | slices can cast to pointers corresponding to their backing type. a slice of type T can cast to pointer of type T. this is the same as using base()
 
         ** values can be bitcast if their byte sizes are the same
         | bitcasting does not modify the value data of a variable,
@@ -129,6 +131,11 @@ operators
     unary reference
         &       generate pointer        using type T in (all): &T -> ^T
         $       dereference pointer     using type T in (all): $^T -> T
+    
+    utility
+        len()       get length of array type, returns uint
+        base()      get base pointer of array type (pointer to array in case of array type, cast to pointer in case of slice type)
+        sizeof()    get the size of a type. can take in a raw type expression or an identifier. this returns an untyped integer.
 
     index
         []      index array             using entity T with type (any array, pointer to any array, slice) and A with type (any int, uint, enum) : T[A]
@@ -199,4 +206,3 @@ program structure
         {
             x := 4; // x already declared
         }
-    

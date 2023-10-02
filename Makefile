@@ -24,6 +24,9 @@ build: clean
 	@mkdir build
 	@odin build $(SRC_DIR) $(MARS_BUILD_FLAGS) -out:$(MARS_LOCATION)
 
+test: build
+	@$(MARS_LOCATION) ./test $(MARS_EXEC_FLAGS)
+
 run: build 
 	@$(MARS_LOCATION) ./mars_code $(MARS_EXEC_FLAGS)
 

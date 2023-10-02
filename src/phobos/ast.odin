@@ -86,7 +86,7 @@ AST :: union {
 
 
 
-    //ident_expr,             // points to entity
+    ^ident_expr,             // points to entity
     //literal_expr,           // literal value expression
 
     
@@ -98,6 +98,12 @@ AST :: union {
     //paren_expr,
     //op_unary_expr,
     //op_binary_expr,
+
+    //cast_expr,
+    //bitcast_expr,
+    //len_expr,
+    //base_expr,
+    //size_of_expr,
     
     //selector_expr,
     //struct_selector_expr,
@@ -248,4 +254,10 @@ enum_type :: struct {
     backing_type   : AST,
     variant_idents : [dynamic]string,
     variant_vals   : [dynamic]AST,
+}
+
+ident_expr :: struct {
+    ident  : string,
+    entity : ^entity,
+    tok    : ^lexer_token,
 }

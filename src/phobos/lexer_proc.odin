@@ -165,10 +165,8 @@ scan_identifier :: proc(ctx: ^lexer, r: u8) -> (success: token_kind) {
 
     switch get_substring(ctx.src, ctx.pos) {
     case "asm":           return .keyword_asm
-    case "bitcast":       return .keyword_bitcast
     case "break":         return .keyword_break
     case "case":          return .keyword_case
-    case "cast":          return .keyword_cast
     case "defer":         return .keyword_defer
     case "enum":          return .keyword_enum
     case "elif":          return .keyword_elif
@@ -181,13 +179,20 @@ scan_identifier :: proc(ctx: ^lexer, r: u8) -> (success: token_kind) {
     case "import":        return .keyword_import
     case "module":        return .keyword_module
     case "return":        return .keyword_return
-    case "sizeof":        return .keyword_sizeof
     case "struct":        return .keyword_struct
     case "switch":        return .keyword_switch
     case "union":         return .keyword_union
     case "while":         return .keyword_while
+
     case "true", "false": return .literal_bool
     case "null":          return .literal_null
+
+    case "bitcast":       return .keyword_bitcast
+    case "cast":          return .keyword_cast
+    case "sizeof":        return .keyword_sizeof
+    case "len":           return .keyword_len
+    case "base":          return .keyword_base
+
     case "_":             return .identifier_discard
     case:                 return .identifier
     }

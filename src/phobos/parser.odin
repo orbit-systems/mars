@@ -52,24 +52,19 @@ advance_until :: proc(p: ^parser, kind: token_kind) -> ^lexer_token {
     return &(p.lex.buffer[p.curr_tok_index])
 }
 
-
-
-
 parse_file :: proc(p: ^parser) {
 
-    parse_module_decl(p)
+    append(&p.file.stmts, parse_module_decl(p))
 
     //TODO("fucking everything")
     for {
-        parse_stmt(p)
-        
+        //parse_stmt(p)
         break
-    
-}
+    }
 
 }
 
-parse_module_decl :: proc(p: ^parser, consume_semicolon := true) {
+parse_module_decl :: proc(p: ^parser) -> (node: AST) {
 
     module_declaration := new_module_decl_stmt(nil,nil)
 
@@ -107,13 +102,19 @@ parse_module_decl :: proc(p: ^parser, consume_semicolon := true) {
     // module name;
     //            ^
     if current_token(p).kind != .semicolon {
-        error(p.file.path, p.lex.src, current_token(p).pos, "expected semicolon after module declaration")
+        error(p.file.path, p.lex.src, current_token(p).pos, "expected semicolon after module declaration, got %s", current_token(p).kind)
     }
 
     module_declaration.end = current_token(p)
-    add_global_stmt(p.file, module_declaration)
+    //
 
     advance_token(p)
+
+    return module_declaration
+}
+
+parse_external_block :: proc(p: ^parser) {
+    
 }
 
 parse_stmt :: proc(p: ^parser) {
@@ -137,6 +138,54 @@ parse_stmt :: proc(p: ^parser) {
 
 parse_block_stmt :: proc(p: ^parser) {
 
+}
+
+parse_unary_expr :: proc(p: ^parser) -> (node: AST) {
+    #partial switch current_token(p).kind {
+    case .and:
+        TODO("AMPERSAND UNARY EXPR")
+    case .identifier:
+        node = new(ident_expr)
+        node.(^ident_expr).ident = get_substring(p.file.src, current_token(p).pos)
+        return
+
+    case:
+        TODO("OOPSIE POOPSIE SANDWICH MADE AN OOPSIE (contact me)")
+    }
+
+    return
+}
+
+parse_unary_expr :: proc(p: ^parser) -> (node: AST) {
+    #partial switch current_token(p).kind {
+    case .and:
+        TODO("AMPERSAND UNARY EXPR")
+    case .identifier:
+        node = new(ident_expr)
+        node.(^ident_expr).ident = get_substring(p.file.src, current_token(p).pos)
+        return
+
+    case:
+        TODO("OOPSIE POOPSIE SANDWICH MADE AN OOPSIE (contact me)")
+    }
+
+    return
+}
+
+parse_unary_expr :: proc(p: ^parser) -> (node: AST) {
+    #partial switch current_token(p).kind {
+    case .and:
+        TODO("AMPERSAND UNARY EXPR")
+    case .identifier:
+        node = new(ident_expr)
+        node.(^ident_expr).ident = get_substring(p.file.src, current_token(p).pos)
+        return
+
+    case:
+        TODO("OOPSIE POOPSIE SANDWICH MADE AN OOPSIE (contact me)")
+    }
+
+    return
 }
 
 // merges a start and end position into a single position encompassing both.
