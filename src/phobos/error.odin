@@ -17,7 +17,10 @@ compiler_output_base :: proc(out_type: string, color: ANSI, path, src: string, p
     fmt.print("\n")
 
     line_offset := get_line_offset(src, pos.line)
-    line_string := src[line_offset:get_line_offset(src, pos.line+1)-1]
+    line_string := src[line_offset:get_line_offset(src, pos.line+1)]
+    if line_string[len(line_string)-1] == '\n' {
+        line_string = src[line_offset:get_line_offset(src, pos.line+1)-1]
+    }
     offset_from_line := pos.start - line_offset
     error_token_width := int(pos.offset-pos.start)
 

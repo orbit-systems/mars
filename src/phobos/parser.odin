@@ -139,8 +139,9 @@ parse_stmt :: proc(p: ^parser) -> (node: AST) {
     return
 }
 
-parse_block_stmt :: proc(p: ^parser) {
-
+parse_block_stmt :: proc(p: ^parser) -> (node: AST) {
+    TODO("bruh")
+    return
 }
 
 parse_expr :: proc(p: ^parser) -> (node: AST) {
@@ -150,11 +151,16 @@ parse_expr :: proc(p: ^parser) -> (node: AST) {
 parse_unary_expr :: proc(p: ^parser) -> (node: AST) {
     #partial switch current_token(p).kind {
     case .open_paren:
-        TODO("parse unary expr on open_paren")
-        
-        if current_token(p).kind != .close_paren {
-            error(p.file.path, p.lex.src, current_token(p).pos, "expected close paren, got %s", current_token(p).kind)
+        node = new(paren_expr)
+        node.(^paren_expr).open = advance_token(p)
+        node.(^paren_expr).child = parse_expr(p)
+        if node == nil {
+            error(p.file.path, p.lex.src, current_token(p).pos, "expected expression inside parenthesis expression")
         }
+        if current_token(p).kind != .close_paren {
+            error(p.file.path, p.lex.src, current_token(p).pos, "expected close paren")
+        }
+        node.(^paren_expr).close = advance_token(p)
     
     case .and, .dollar, .sub, .tilde, .exclam:
         node = new(op_unary_expr)

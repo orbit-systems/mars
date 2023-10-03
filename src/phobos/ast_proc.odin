@@ -7,7 +7,7 @@ import "core:runtime"
 import co "../common"
 
 is_type_expr :: proc(expr : AST) -> bool {
-    //TODO("(sandwich) is_type_expr")
+    TODO("finish")
 
     #partial switch e in expr {
     case 

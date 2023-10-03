@@ -95,7 +95,7 @@ AST :: union {
     // ! compound_literal_expr,
     // ! enum_literal_expr,
 
-    //paren_expr,
+    ^paren_expr,
     ^op_unary_expr,
     ^op_binary_expr,
 
@@ -260,6 +260,11 @@ ident_expr :: struct {
     ident  : string,
     entity : ^entity,
     tok    : ^lexer_token,
+}
+
+paren_expr :: struct {
+    child : AST,
+    open, close : ^lexer_token,
 }
 
 op_unary_expr :: struct {
