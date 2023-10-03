@@ -96,14 +96,14 @@ AST :: union {
     // ! enum_literal_expr,
 
     //paren_expr,
-    //op_unary_expr,
-    //op_binary_expr,
+    ^op_unary_expr,
+    ^op_binary_expr,
 
-    //cast_expr,
-    //bitcast_expr,
-    //len_expr,
-    //base_expr,
-    //size_of_expr,
+    ^cast_expr,
+    ^bitcast_expr,
+    ^len_expr,
+    ^base_expr,
+    ^sizeof_expr,
     
     //selector_expr,
     //struct_selector_expr,
@@ -260,4 +260,36 @@ ident_expr :: struct {
     ident  : string,
     entity : ^entity,
     tok    : ^lexer_token,
+}
+
+op_unary_expr :: struct {
+    op    : ^lexer_token,
+    child : AST,
+}
+
+op_binary_expr :: struct {
+    op       : ^lexer_token,
+    rhs, lhs : AST,
+}
+
+cast_expr :: struct {
+    cast_to : AST, // type expression
+    child   : AST, // what to cast
+}
+
+bitcast_expr :: struct {
+    cast_to : AST, // type expression
+    child   : AST, // what to cast
+}
+
+len_expr :: struct {
+    child : AST,
+}
+
+base_expr :: struct {
+    child : AST,
+}
+
+sizeof_expr :: struct {
+    child : AST,
 }

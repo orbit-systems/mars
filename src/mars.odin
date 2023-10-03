@@ -24,7 +24,7 @@ main :: proc() {
     ph.parse_program()
 }
 
-parse_command_line_args :: proc(args: []string) -> (build_state: co.build_state) {
+parse_command_line_args :: proc(args: []string) -> (build_state: co.build_state_t) {
     if len(args) < 2 {
         print_help()
         os.exit(0)
@@ -79,4 +79,4 @@ cmd_arg :: struct {
     val : string,
 }
 
-build_state : co.build_state
+build_state : co.build_state_t

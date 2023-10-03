@@ -83,9 +83,6 @@ lex_next_token :: proc(ctx: ^lexer) -> (this_token: lexer_token) {
     cursor_rune = lex_advance_cursor(ctx)
 
     // scan actual token
-    if ctx.pos.offset >= len(ctx.src) {
-        return make_EOF(ctx)
-    }
     switch cursor_rune {
     case '0'..='9':
         success := scan_number(ctx, cursor_rune)
@@ -213,6 +210,9 @@ scan_string_literal :: proc(ctx: ^lexer, r: u8) -> (success: token_kind) {
             error(ctx.path, ctx.src, ctx.pos, "string not closed")
         case:
             lex_advance_cursor(ctx)
+        case 0:
+            lex_rewind_cursor(ctx)
+            return .literal_string
         }
     }
     return
@@ -495,6 +495,7 @@ get_substring :: #force_inline proc(src: string, pos: position) -> string {
 //   ^- current rune: 'r'     ->          ^- current rune: 'u'
 // return current rune, move cursor forward
 lex_advance_cursor :: proc(ctx: ^lexer) -> (r: u8) {
+    if ctx.pos.offset >= len(ctx.src) do return ' '
     r = ctx.src[ctx.pos.offset]
     ctx.pos.offset += 1
     ctx.pos.col+=1
@@ -505,7 +506,19 @@ lex_advance_cursor :: proc(ctx: ^lexer) -> (r: u8) {
     return 
 }
 
+lex_rewind_cursor :: proc(ctx: ^lexer) {
+
+    r := ctx.src[ctx.pos.offset]
+    ctx.pos.offset -= 1
+    ctx.pos.col -=1
+    if r == '\n' {
+        ctx.pos.col = 1
+        ctx.pos.line -= 1
+    }
+}
+
 lex_peek_next_char :: proc(ctx: ^lexer) -> (r: u8) {
+    if ctx.pos.offset + 1 >= len(ctx.src) do return ' '
     return ctx.src[ctx.pos.offset+1]
 }
 
@@ -513,11 +526,7 @@ lex_peek_next_char :: proc(ctx: ^lexer) -> (r: u8) {
 //   ^- current rune: 'r'      ->        ^- current rune: 'r'
 // return current rune, keep cursor
 lex_current_char :: #force_inline proc(ctx: ^lexer) -> (r: u8) {
-    // all because utf8.rune_at discards the damn byte length. fuck you utf8.rune_at. 
-    //return utf8.decode_rune_in_string(ctx.src[ctx.pos.offset:])
-
-    if ctx.pos.offset >= len(ctx.src) do return 0
-
+    if ctx.pos.offset >= len(ctx.src) do return ' '
     return ctx.src[ctx.pos.offset]
 }
 

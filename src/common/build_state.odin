@@ -2,7 +2,7 @@ package common
 
 
 
-build_state :: struct {
+build_state_t :: struct {
     compile_directory : string,
     
     
@@ -17,3 +17,5 @@ flag_runtime_setting :: enum {
     external,       // references to runtime functions are generated but no code is included.
     replace,        // replace runtime module with another module. this module must have all runtime entities defined.
 }
+
+build_state : build_state_t

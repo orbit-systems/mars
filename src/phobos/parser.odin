@@ -58,13 +58,13 @@ parse_file :: proc(p: ^parser) {
 
     //TODO("fucking everything")
     for {
-        //parse_stmt(p)
+        node := parse_stmt(p)
         break
     }
 
 }
 
-parse_module_decl :: proc(p: ^parser) -> (node: AST) {
+parse_module_decl :: proc(p: ^parser, consume_semicolon := true) -> (node: AST) {
 
     module_declaration := new_module_decl_stmt(nil,nil)
 
@@ -117,7 +117,7 @@ parse_external_block :: proc(p: ^parser) {
     
 }
 
-parse_stmt :: proc(p: ^parser) {
+parse_stmt :: proc(p: ^parser) -> (node: AST) {
 
     //TODO("fucking everything")
 
@@ -133,60 +133,68 @@ parse_stmt :: proc(p: ^parser) {
     case .open_bracket:
         parse_block_stmt(p)
     case:
+        node = parse_expr(p)
     }
+
+    return
 }
 
 parse_block_stmt :: proc(p: ^parser) {
 
 }
 
+parse_expr :: proc(p: ^parser) -> (node: AST) {
+    return parse_unary_expr(p)
+}
+
 parse_unary_expr :: proc(p: ^parser) -> (node: AST) {
     #partial switch current_token(p).kind {
-    case .and:
-        TODO("AMPERSAND UNARY EXPR")
+    case .open_paren:
+        TODO("parse unary expr on open_paren")
+        
+        if current_token(p).kind != .close_paren {
+            error(p.file.path, p.lex.src, current_token(p).pos, "expected close paren, got %s", current_token(p).kind)
+        }
+    
+    case .and, .dollar, .sub, .tilde, .exclam:
+        node = new(op_unary_expr)
+        node.(^op_unary_expr).op = current_token(p)
+        advance_token(p)
+        node.(^op_unary_expr).child = parse_unary_expr(p)
+        if node.(^op_unary_expr).child == nil {
+            error(p.file.path, p.lex.src, node.(^op_unary_expr).op.pos, "expected expression after unary operation")
+        }
+        return
+    
+    case .keyword_len:
+        node = new(len_expr)
+        
+        if advance_token(p).kind != .open_paren {
+            error(p.file.path, p.lex.src, current_token(p).pos, "expected open paren after \"len\"")
+        }
+        node.(^len_expr).child = parse_expr(p)
+        if node.(^op_unary_expr).child == nil {
+            error(p.file.path, p.lex.src, node.(^op_unary_expr).op.pos, "expected expression inside \"len()\"")
+        }
+        if current_token(p).kind != .close_paren {
+            error(p.file.path, p.lex.src, current_token(p).pos, "unclosed paren after \"len\"")
+        }
+
     case .identifier:
         node = new(ident_expr)
         node.(^ident_expr).ident = get_substring(p.file.src, current_token(p).pos)
+        node.(^ident_expr).tok = current_token(p)
+        advance_token(p)
         return
 
     case:
-        TODO("OOPSIE POOPSIE SANDWICH MADE AN OOPSIE (contact me)")
+        error(p.file.path, p.lex.src, current_token(p).pos, "unrecognized unary operator \"%s\"", get_substring(p.lex.src, current_token(p).pos))
+        //TODO("DOOPSIE POOPSIE SANDWICH MADE AN OOPSIE (contact me)")
     }
 
     return
 }
 
-parse_unary_expr :: proc(p: ^parser) -> (node: AST) {
-    #partial switch current_token(p).kind {
-    case .and:
-        TODO("AMPERSAND UNARY EXPR")
-    case .identifier:
-        node = new(ident_expr)
-        node.(^ident_expr).ident = get_substring(p.file.src, current_token(p).pos)
-        return
-
-    case:
-        TODO("OOPSIE POOPSIE SANDWICH MADE AN OOPSIE (contact me)")
-    }
-
-    return
-}
-
-parse_unary_expr :: proc(p: ^parser) -> (node: AST) {
-    #partial switch current_token(p).kind {
-    case .and:
-        TODO("AMPERSAND UNARY EXPR")
-    case .identifier:
-        node = new(ident_expr)
-        node.(^ident_expr).ident = get_substring(p.file.src, current_token(p).pos)
-        return
-
-    case:
-        TODO("OOPSIE POOPSIE SANDWICH MADE AN OOPSIE (contact me)")
-    }
-
-    return
-}
 
 // merges a start and end position into a single position encompassing both.
 merge_pos :: #force_inline proc(start, end : position) -> position {

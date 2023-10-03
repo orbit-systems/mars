@@ -13,7 +13,7 @@ import "core:path/filepath"
 //         lexer            parser         validator
 // files --------> tokens ---------> AST ------------> AST
 
-build_state : co.build_state
+build_state : co.build_state_t
 
 // build the complete AST of the program, spanning multiple files and modules.
 parse_program :: proc() -> ^program_tree {
