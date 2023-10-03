@@ -1,3 +1,4 @@
 *.exe
 cachegrind*
 build/*
+ols.json

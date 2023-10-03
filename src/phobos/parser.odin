@@ -179,8 +179,21 @@ parse_unary_expr :: proc(p: ^parser) -> (node: AST) {
             error(p.file.path, p.lex.src, current_token(p).pos, "expected open paren after \"len\"")
         }
         node.(^len_expr).child = parse_expr(p)
-        if node.(^op_unary_expr).child == nil {
-            error(p.file.path, p.lex.src, node.(^op_unary_expr).op.pos, "expected expression inside \"len()\"")
+        if node.(^len_expr).child == nil {
+            error(p.file.path, p.lex.src, current_token(p).pos, "expected expression inside \"len()\"")
+        }
+        if current_token(p).kind != .close_paren {
+            error(p.file.path, p.lex.src, current_token(p).pos, "unclosed paren after \"len\"")
+        }
+    case .keyword_base:
+
+        if advance_token(p).kind != .open_paren {
+            error(p.file.path, p.lex.src, current_token(p).pos, "expected open paren after \"len\"")
+        }
+        node = new(base_expr)
+        node.(^base_expr).child = parse_expr(p)
+        if node.(^base_expr).child == nil {
+            error(p.file.path, p.lex.src, current_token(p).pos, "expected expression inside \"base()\"")
         }
         if current_token(p).kind != .close_paren {
             error(p.file.path, p.lex.src, current_token(p).pos, "unclosed paren after \"len\"")
