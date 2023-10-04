@@ -131,6 +131,9 @@ parse_stmt :: proc(p: ^parser) -> (node: AST) {
         advance_token(p)
     case:
         node = parse_expr(p)
+        if node == nil {
+            error(p.file.path, p.lex.src, current_token(p).pos, "fuck", no_print_line = current_token(p).kind == .EOF)
+        }
     }
 
     return
@@ -143,10 +146,39 @@ parse_block_stmt :: proc(p: ^parser) -> (node: AST) {
 
 
 parse_expr :: proc(p: ^parser) -> (node: AST) {
-    return //parse_unary_expr(p)
+
+    // get token
+    tok := current_token(p)
+
+    // get unary prefix expression
+    prefix_expr : AST
+
+    if prefix_expr == nil {
+            error(p.file.path, p.lex.src, current_token(p).pos, "could not parse %s", get_substring(p.file.src, current_token(p).pos), no_print_line = current_token(p).kind == .EOF)
+    }
+
+
+    TODO("FUCK ME")
+    return
 }
 
-// ! BIOHAZARD - OLD UNARY PARSING
+precedence :: proc(p: ^parser, t: ^lexer_token) -> int {
+    #partial switch t.kind {
+    case .open_bracket, .period       : return 6
+    case .mul, .div, .mod, .mod_mod, 
+         .and, .lshift, .rshift, .nor : return 5
+    case .add, .sub, .or, .tilde:       return 4
+    case .equal_equal, .not_equal, 
+         .less_than, .less_equal, 
+         .greater_than, .greater_equal: return 3
+    case .and_and:                      return 2
+    case .or_or, .tilde_tilde:          return 1
+    }
+    //error(p.file.path, p.lex.src, current_token(p).pos, "no precedence information available for %s", t.kind)
+    return 0
+}
+
+// ! BIOHAZARD - OLD PARSING
 
 // parse_unary_expr :: proc(p: ^parser) -> (node: AST) {
 //     #partial switch current_token(p).kind {

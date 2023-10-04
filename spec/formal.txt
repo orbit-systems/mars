@@ -156,7 +156,8 @@ operators
     precendence
         unary operators have highest precedence.
 
-        binary operator precedence:
+        non-unary operator precedence: - note: () is function calls.
+        6   []  .   () 
         5   *   /   %   %%  &   <<   >>  ~|
         4   +   -   |   ~
         3   ==  !=  <   >   <=  >=

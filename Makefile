@@ -8,7 +8,7 @@ MARS_EXEC_FLAGS =
 
 ifeq ($(OS),Windows_NT)
 	MARS_LOCATION = ./build/mars.exe
-	MARS_EXEC_FLAGS = -no-color
+	MARS_EXEC_FLAGS = # -no-color
 endif
 
 # BRUH LMAO
@@ -24,11 +24,8 @@ build: clean
 	@mkdir build
 	@odin build $(SRC_DIR) $(MARS_BUILD_FLAGS) -out:$(MARS_LOCATION)
 
-test: build
-	@$(MARS_LOCATION) ./test $(MARS_EXEC_FLAGS)
-
 run: build 
 	@$(MARS_LOCATION) ./mars_code $(MARS_EXEC_FLAGS)
 
-stresstest: build 
-	@$(MARS_LOCATION) ./mars_code $(MARS_EXEC_FLAGS)
+test: build
+	@$(MARS_LOCATION) ./test $(MARS_EXEC_FLAGS)
