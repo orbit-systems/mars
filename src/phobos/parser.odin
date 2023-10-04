@@ -59,6 +59,7 @@ parse_file :: proc(p: ^parser) {
     //TODO("fucking everything")
     for {
         node := parse_stmt(p)
+        print(node)
         break
     }
 
@@ -145,28 +146,65 @@ parse_block_stmt :: proc(p: ^parser) -> (node: AST) {
 }
 
 
-parse_expr :: proc(p: ^parser) -> (node: AST) {
+// try pratt parsing
+parse_expr :: proc(p: ^parser, precedence := 0) -> (node: AST) {
 
     // get token
     tok := current_token(p)
-
-    // get unary prefix expression
-    prefix_expr : AST
-
-    if prefix_expr == nil {
-            error(p.file.path, p.lex.src, current_token(p).pos, "could not parse %s", get_substring(p.file.src, current_token(p).pos), no_print_line = current_token(p).kind == .EOF)
+    if tok.kind == .close_paren || tok.kind == .EOF || tok.kind == .semicolon {
+        return nil
     }
 
+    // get unary prefix expression
+    left := parse_unary_expr(p)
 
-    TODO("FUCK ME")
+    if left == nil {
+        error(p.file.path, p.lex.src, current_token(p).pos, "tried really hard, but just could not parse \"%s\" (contact me)", get_substring(p.file.src, current_token(p).pos), no_print_line = current_token(p).kind == .EOF)
+    }
+
+    //fmt.println(current_token(p))
+    for precedence < op_precedence(current_token(p)) {
+        tok = current_token(p)
+
+        left = parse_non_unary_expr(p, left, precedence+1)
+    }
+
+    return left
+}
+
+parse_non_unary_expr :: proc(p: ^parser, lhs: AST, precedence: int) -> (node: AST) {
+    #partial switch current_token(p).kind {
+    case .open_bracket: // array index
+        TODO("array indexing")
+    case .period:       // selector
+        TODO("selector expressions")
+    case .open_paren:   // function call
+        TODO("function call")
+
+
+    case .lshift, .rshift, .nor, .or, .tilde, .and,
+         .add, .sub, .mul, .div, .mod, .mod_mod,
+         .equal_equal, .not_equal,
+         .less_than, .less_equal, .greater_than, .greater_equal,
+         .and_and, .or_or, .tilde_tilde:
+
+        node = new(op_binary_expr)
+        node.(^op_binary_expr).op = current_token(p)
+        node.(^op_binary_expr).lhs = lhs
+        advance_token(p)
+        node.(^op_binary_expr).rhs = parse_expr(p, op_precedence(node.(^op_binary_expr).op))
+
+    case:
+        error(p.file.path, p.lex.src, current_token(p).pos, "expected an operator, got \"%s\"", get_substring(p.file.src, current_token(p).pos))
+    }
     return
 }
 
-precedence :: proc(p: ^parser, t: ^lexer_token) -> int {
+op_precedence :: proc(t: ^lexer_token) -> int {
     #partial switch t.kind {
-    case .open_bracket, .period       : return 6
+    case .open_bracket, .period, .open_paren : return 6
     case .mul, .div, .mod, .mod_mod, 
-         .and, .lshift, .rshift, .nor : return 5
+         .and, .lshift, .rshift, .nor:  return 5
     case .add, .sub, .or, .tilde:       return 4
     case .equal_equal, .not_equal, 
          .less_than, .less_equal, 
@@ -176,6 +214,62 @@ precedence :: proc(p: ^parser, t: ^lexer_token) -> int {
     }
     //error(p.file.path, p.lex.src, current_token(p).pos, "no precedence information available for %s", t.kind)
     return 0
+}
+
+parse_unary_expr :: proc(p: ^parser) -> (node: AST) {
+    
+    t := current_token(p)
+
+    #partial switch t.kind {
+    case .open_paren:
+        
+        node = new(paren_expr)
+        node.(^paren_expr).open = current_token(p)
+        
+        advance_token(p)
+        node.(^paren_expr).child = parse_expr(p)
+        
+        node.(^paren_expr).close = current_token(p)
+        advance_token(p)
+
+        if node.(^paren_expr).close.kind != .close_paren {
+            error(p.file.path, p.lex.src, node.(^paren_expr).close.pos, "expected ')', got \"%s\"", get_substring(p.file.src, node.(^paren_expr).close.pos), no_print_line = node.(^paren_expr).close.kind == .EOF)
+        }
+
+    case .sub, .tilde, .exclam, .and, .dollar:
+        //TODO("basic unary operations")
+        
+        node = new(op_unary_expr)
+        node.(^op_unary_expr).op = current_token(p)
+        
+        advance_token(p)
+    
+        node.(^op_unary_expr).child = parse_unary_expr(p)
+
+    case .keyword_cast, .keyword_bitcast:
+        TODO("cast + bitcast")
+    case .keyword_len, .keyword_base, .keyword_sizeof:
+        TODO("len + base + sizeof")
+
+        node = new(len_expr)
+        node.(^len_expr).op = current_token(p)
+        advance_token(p)
+
+    case .identifier, .identifier_discard:
+        node = new(ident_expr)
+        node.(^ident_expr).ident = get_substring(p.file.src, current_token(p).pos)
+        node.(^ident_expr).tok = current_token(p)
+        node.(^ident_expr).is_discard = current_token(p).kind == .identifier_discard
+        advance_token(p)
+    case .literal_int, .literal_float, .literal_bool, .literal_string, .literal_null:
+        TODO("simple literals")
+    case:
+        error(p.file.path, p.lex.src, current_token(p).pos, "\'%s\' is not a unary operator/expression", get_substring(p.file.src, current_token(p).pos), no_print_line = current_token(p).kind == .EOF)
+    case .close_paren, .semicolon:
+        return nil
+    }
+    
+    return
 }
 
 // ! BIOHAZARD - OLD PARSING

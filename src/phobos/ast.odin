@@ -260,6 +260,7 @@ ident_expr :: struct {
     ident  : string,
     entity : ^entity,
     tok    : ^lexer_token,
+    is_discard : bool,
 }
 
 paren_expr :: struct {
@@ -274,7 +275,7 @@ op_unary_expr :: struct {
 
 op_binary_expr :: struct {
     op       : ^lexer_token,
-    rhs, lhs : AST,
+    lhs, rhs : AST,
 }
 
 cast_expr :: struct {

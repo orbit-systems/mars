@@ -77,7 +77,7 @@ operators
         ||      boolean or              with type T in (all booleans): T || T -> T
         ~~      boolean xor             with type T in (all booleans): T ~~ T -> T
 
-    comparison
+    binary comparison
         ==      equality                (*): T == T -> bool
         !=      inequality              (*): T != T -> bool
         <       less than               (**): T < T -> bool
