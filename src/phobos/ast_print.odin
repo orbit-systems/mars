@@ -20,12 +20,12 @@ print_w_lvl :: proc(lvl: int, node: AST){
         printf_lvl(lvl, "paren_expr\n")
         print(lvl+1, n.child)
     case ^ident_expr:
-        printf_lvl(lvl, "ident_expr \'%s\'\n", n.ident)
+        printf_lvl(lvl, "ident_expr '%s'\n", n.ident)
     case ^op_unary_expr:
-        printf_lvl(lvl, "op_unary_expr \'%v\'\n", n.op.kind)
+        printf_lvl(lvl, "op_unary_expr '%v'\n", n.op.kind)
         print(lvl+1, n.child)
     case ^op_binary_expr:
-        printf_lvl(lvl, "op_binary_expr \'%v\'\n", n.op.kind)
+        printf_lvl(lvl, "op_binary_expr '%v'\n", n.op.kind)
         print(lvl+1, n.lhs)
         print(lvl+1, n.rhs)
     case ^array_index_expr:
@@ -42,6 +42,9 @@ print_w_lvl :: proc(lvl: int, node: AST){
         printf_lvl(lvl, "selector_expr\n")
         print(lvl+1, n.source)
         print(lvl+1, n.selector)
+
+    case ^basic_literal_expr:
+        printf_lvl(lvl, "basic_literal_expr '%v'\n", n.tok.kind)
     case nil:
         printf_lvl(lvl, "NIL\n")
     case:

@@ -87,11 +87,10 @@ AST :: union {
 
 
     ^ident_expr,             // points to entity
-    //literal_expr,           // literal value expression
+    ^basic_literal_expr,
 
     
 
-    // ! basic_literal_expr,
     // ! compound_literal_expr,
     // ! enum_literal_expr,
 
@@ -168,9 +167,8 @@ stmt_group_stmt :: struct {
 }
 
 basic_literal_expr :: struct {
-    // TODO
     type  : AST,
-    token : ^lexer_token,
+    tok   : ^lexer_token,
 }
 
 compound_literal_expr :: struct {

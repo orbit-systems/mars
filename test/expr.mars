@@ -1,4 +1,4 @@
 module test;
 
 
-a().b[c]
+1 + 2.0

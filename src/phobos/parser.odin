@@ -190,7 +190,7 @@ parse_non_unary_expr :: proc(p: ^parser, lhs: AST, precedence: int) -> (node: AS
         n.close = current_token(p)
         advance_token(p)
 
-        node = n
+        return n
 
     case .open_paren:   // function call
         //TODO("function call")
@@ -218,7 +218,7 @@ parse_non_unary_expr :: proc(p: ^parser, lhs: AST, precedence: int) -> (node: AS
         n.close = current_token(p)
         advance_token(p)
 
-        node = n
+        return n
     
     case .period:       // selector
         n := new(selector_expr)
@@ -231,7 +231,7 @@ parse_non_unary_expr :: proc(p: ^parser, lhs: AST, precedence: int) -> (node: AS
         }
 
         // TODO("selector expressions")
-        node = n
+        return n
 
     case .lshift, .rshift, .nor, .or, .tilde, .and,
          .add, .sub, .mul, .div, .mod, .mod_mod,
@@ -247,7 +247,7 @@ parse_non_unary_expr :: proc(p: ^parser, lhs: AST, precedence: int) -> (node: AS
         if n.rhs == nil {
             error(p.file.path, p.lex.src, current_token(p).pos, "expected operand after '%s'", get_substring(p.file.src, n.op.pos))
         }
-        node = n
+        return n
 
     case:
         error(p.file.path, p.lex.src, current_token(p).pos, "expected an operator, got '%s'", get_substring(p.file.src, current_token(p).pos))
@@ -360,11 +360,25 @@ parse_unary_expr :: proc(p: ^parser) -> (node: AST) {
         node.(^ident_expr).is_discard = current_token(p).kind == .identifier_discard
         advance_token(p)
     case .literal_int, .literal_float, .literal_bool, .literal_string, .literal_null:
-        TODO("simple literals")
+        n := new(basic_literal_expr)
+        n.tok = current_token(p)
+        n.type = new(basic_type)
+        
+        #partial switch t.kind {
+        case .literal_int:   n.type.(^basic_type)^ = .untyped_int
+        case .literal_float: n.type.(^basic_type)^ = .untyped_float
+        case .literal_bool:  n.type.(^basic_type)^ = .untyped_bool
+        case .literal_string: TODO("string literal processing")
+        case .literal_null:  n.type.(^basic_type)^ = .untyped_null
+        }
+
+        //TODO("simple literals")
+
+        advance_token(p)
+        return n
+
     case:
         error(p.file.path, p.lex.src, current_token(p).pos, "expected operand, got '%s'", get_substring(p.file.src, current_token(p).pos), no_print_line = current_token(p).kind == .EOF)
-    case .close_paren, .semicolon:
-        return nil
     }
     
     return
