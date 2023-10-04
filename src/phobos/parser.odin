@@ -159,7 +159,7 @@ parse_expr :: proc(p: ^parser, precedence := 0) -> (node: AST) {
     left := parse_unary_expr(p)
 
     if left == nil {
-        error(p.file.path, p.lex.src, current_token(p).pos, "tried really hard, but just could not parse \"%s\" (contact me)", get_substring(p.file.src, current_token(p).pos), no_print_line = current_token(p).kind == .EOF)
+        error(p.file.path, p.lex.src, current_token(p).pos, "could not parse '%s' (contact me)", get_substring(p.file.src, current_token(p).pos), no_print_line = current_token(p).kind == .EOF)
     }
 
     //fmt.println(current_token(p))
@@ -185,12 +185,13 @@ parse_non_unary_expr :: proc(p: ^parser, lhs: AST, precedence: int) -> (node: AS
         n.index = parse_expr(p)
 
         if current_token(p).kind != .close_bracket {
-            error(p.file.path, p.lex.src, merge_pos(n.open.pos, current_token(p).pos), "expected ']' after array index expression, got \'%s\'", get_substring(p.file.src, current_token(p).pos))
+            error(p.file.path, p.lex.src, merge_pos(n.open.pos, current_token(p).pos), "expected ']' after array index expression, got '%s'", get_substring(p.file.src, current_token(p).pos))
         }
         n.close = current_token(p)
         advance_token(p)
 
         node = n
+
     case .open_paren:   // function call
         //TODO("function call")
 
@@ -210,7 +211,7 @@ parse_non_unary_expr :: proc(p: ^parser, lhs: AST, precedence: int) -> (node: AS
                 if current_token(p).kind == .close_paren {
                     break
                 }
-                error(p.file.path, p.lex.src, current_token(p).pos, "function args must be separated by a comma")
+                error(p.file.path, p.lex.src, current_token(p).pos, "expected ',' or ')' ")
             }
             advance_token(p)
         }
@@ -220,7 +221,17 @@ parse_non_unary_expr :: proc(p: ^parser, lhs: AST, precedence: int) -> (node: AS
         node = n
     
     case .period:       // selector
-        TODO("selector expressions")
+        n := new(selector_expr)
+        n.op = current_token(p)
+        n.source = lhs
+        advance_token(p) 
+        n.selector = parse_expr(p, op_precedence(p, n.op))
+        if n.selector == nil {
+            error(p.file.path, p.lex.src, current_token(p).pos, "expected operand after '%s'", get_substring(p.file.src, n.op.pos))
+        }
+
+        // TODO("selector expressions")
+        node = n
 
     case .lshift, .rshift, .nor, .or, .tilde, .and,
          .add, .sub, .mul, .div, .mod, .mod_mod,
@@ -233,10 +244,13 @@ parse_non_unary_expr :: proc(p: ^parser, lhs: AST, precedence: int) -> (node: AS
         n.lhs = lhs
         advance_token(p) 
         n.rhs = parse_expr(p, op_precedence(p, n.op))
+        if n.rhs == nil {
+            error(p.file.path, p.lex.src, current_token(p).pos, "expected operand after '%s'", get_substring(p.file.src, n.op.pos))
+        }
         node = n
 
     case:
-        error(p.file.path, p.lex.src, current_token(p).pos, "expected an operator, got \"%s\"", get_substring(p.file.src, current_token(p).pos))
+        error(p.file.path, p.lex.src, current_token(p).pos, "expected an operator, got '%s'", get_substring(p.file.src, current_token(p).pos))
     }
     return
 }
@@ -273,7 +287,7 @@ parse_unary_expr :: proc(p: ^parser) -> (node: AST) {
         advance_token(p)
 
         if node.(^paren_expr).close.kind != .close_paren {
-            error(p.file.path, p.lex.src, node.(^paren_expr).close.pos, "expected ')', got \"%s\"", get_substring(p.file.src, node.(^paren_expr).close.pos))
+            error(p.file.path, p.lex.src, node.(^paren_expr).close.pos, "expected ')', got '%s'", get_substring(p.file.src, node.(^paren_expr).close.pos))
         }
 
     case .sub, .tilde, .exclam, .and, .dollar:
@@ -294,14 +308,14 @@ parse_unary_expr :: proc(p: ^parser) -> (node: AST) {
 
         advance_token(p)
         if current_token(p).kind != .open_paren {
-            error(p.file.path, p.lex.src, current_token(p).pos, "expected '(' after 'len', got \'%s\'", get_substring(p.file.src, current_token(p).pos))
+            error(p.file.path, p.lex.src, current_token(p).pos, "expected '(' after 'len', got '%s'", get_substring(p.file.src, current_token(p).pos))
         }
         
         advance_token(p)
         node.(^len_expr).child = parse_expr(p)
 
         if current_token(p).kind != .close_paren {
-            error(p.file.path, p.lex.src, current_token(p).pos, "expected ')', got \'%s\'", get_substring(p.file.src, current_token(p).pos))
+            error(p.file.path, p.lex.src, current_token(p).pos, "expected ')', got '%s'", get_substring(p.file.src, current_token(p).pos))
         }
         advance_token(p)
 
@@ -311,14 +325,14 @@ parse_unary_expr :: proc(p: ^parser) -> (node: AST) {
 
         advance_token(p)
         if current_token(p).kind != .open_paren {
-            error(p.file.path, p.lex.src, current_token(p).pos, "expected '(' after 'base', got \'%s\'", get_substring(p.file.src, current_token(p).pos))
+            error(p.file.path, p.lex.src, current_token(p).pos, "expected '(' after 'base', got '%s'", get_substring(p.file.src, current_token(p).pos))
         }
 
         advance_token(p)
         node.(^base_expr).child = parse_expr(p)
 
         if current_token(p).kind != .close_paren {
-            error(p.file.path, p.lex.src, current_token(p).pos, "expected ')', got \'%s\'", get_substring(p.file.src, current_token(p).pos), no_print_line = current_token(p).kind == .EOF)
+            error(p.file.path, p.lex.src, current_token(p).pos, "expected ')', got '%s'", get_substring(p.file.src, current_token(p).pos), no_print_line = current_token(p).kind == .EOF)
         }
         advance_token(p)
 
@@ -328,14 +342,14 @@ parse_unary_expr :: proc(p: ^parser) -> (node: AST) {
 
         advance_token(p)
         if current_token(p).kind != .open_paren {
-            error(p.file.path, p.lex.src, current_token(p).pos, "expected '(' after 'base', got \'%s\'", get_substring(p.file.src, current_token(p).pos), no_print_line = current_token(p).kind == .EOF)
+            error(p.file.path, p.lex.src, current_token(p).pos, "expected '(' after 'base', got '%s'", get_substring(p.file.src, current_token(p).pos), no_print_line = current_token(p).kind == .EOF)
         }
 
         advance_token(p)
         node.(^sizeof_expr).child = parse_expr(p)
 
         if current_token(p).kind != .close_paren {
-            error(p.file.path, p.lex.src, current_token(p).pos, "expected ')', got \'%s\'", get_substring(p.file.src, current_token(p).pos), no_print_line = current_token(p).kind == .EOF)
+            error(p.file.path, p.lex.src, current_token(p).pos, "expected ')', got '%s'", get_substring(p.file.src, current_token(p).pos), no_print_line = current_token(p).kind == .EOF)
         }
         advance_token(p)
 
@@ -348,7 +362,7 @@ parse_unary_expr :: proc(p: ^parser) -> (node: AST) {
     case .literal_int, .literal_float, .literal_bool, .literal_string, .literal_null:
         TODO("simple literals")
     case:
-        error(p.file.path, p.lex.src, current_token(p).pos, "\'%s\' is not a unary operator/expression", get_substring(p.file.src, current_token(p).pos), no_print_line = current_token(p).kind == .EOF)
+        error(p.file.path, p.lex.src, current_token(p).pos, "expected operand, got '%s'", get_substring(p.file.src, current_token(p).pos), no_print_line = current_token(p).kind == .EOF)
     case .close_paren, .semicolon:
         return nil
     }

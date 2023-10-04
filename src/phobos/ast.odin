@@ -105,11 +105,11 @@ AST :: union {
     ^base_expr,
     ^sizeof_expr,
     
-    //selector_expr,
     //struct_selector_expr,
     //union_selector_expr,
     //enum_variant_expr,
     //module_selector_expr,
+    ^selector_expr,
     ^array_index_expr,
 
     ^call_expr,
@@ -279,40 +279,46 @@ op_binary_expr :: struct {
 }
 
 cast_expr :: struct {
-    op       : ^lexer_token,
+    op      : ^lexer_token,
     cast_to : AST, // type expression
     child   : AST, // what to cast
 }
 
 bitcast_expr :: struct {
-    op       : ^lexer_token,
+    op      : ^lexer_token,
     cast_to : AST, // type expression
     child   : AST, // what to cast
 }
 
 len_expr :: struct {
-    op       : ^lexer_token,
+    op    : ^lexer_token,
     child : AST,
 }
 
 base_expr :: struct {
-    op       : ^lexer_token,
+    op    : ^lexer_token,
     child : AST,
 }
 
 sizeof_expr :: struct {
-    op       : ^lexer_token,
+    op    : ^lexer_token,
     child : AST,
 }
 
 array_index_expr :: struct {
-    lhs   : AST,
-    index : AST,
+    lhs         : AST,
+    index       : AST,
     open, close : ^lexer_token,
 }
 
 call_expr :: struct {
-    lhs : AST,
-    args : [dynamic]AST,
+    lhs         : AST,
+    args        : [dynamic]AST,
     open, close : ^lexer_token,
+}
+
+selector_expr :: struct {
+    source   : AST,
+    op       : ^lexer_token,
+    selector : AST,
 }

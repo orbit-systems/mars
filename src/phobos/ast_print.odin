@@ -38,6 +38,10 @@ print_w_lvl :: proc(lvl: int, node: AST){
         for a in n.args {
             print(lvl+1, a)
         }
+    case ^selector_expr:
+        printf_lvl(lvl, "selector_expr\n")
+        print(lvl+1, n.source)
+        print(lvl+1, n.selector)
     case nil:
         printf_lvl(lvl, "NIL\n")
     case:
