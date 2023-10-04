@@ -278,23 +278,28 @@ op_binary_expr :: struct {
 }
 
 cast_expr :: struct {
+    op       : ^lexer_token,
     cast_to : AST, // type expression
     child   : AST, // what to cast
 }
 
 bitcast_expr :: struct {
+    op       : ^lexer_token,
     cast_to : AST, // type expression
     child   : AST, // what to cast
 }
 
 len_expr :: struct {
+    op       : ^lexer_token,
     child : AST,
 }
 
 base_expr :: struct {
+    op       : ^lexer_token,
     child : AST,
 }
 
 sizeof_expr :: struct {
+    op       : ^lexer_token,
     child : AST,
 }

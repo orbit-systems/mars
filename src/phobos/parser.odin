@@ -128,10 +128,7 @@ parse_stmt :: proc(p: ^parser) -> (node: AST) {
         }
         
     case .semicolon:
-        // empty statment
         advance_token(p)
-    case .open_bracket:
-        parse_block_stmt(p)
     case:
         node = parse_expr(p)
     }
@@ -144,75 +141,110 @@ parse_block_stmt :: proc(p: ^parser) -> (node: AST) {
     return
 }
 
+
 parse_expr :: proc(p: ^parser) -> (node: AST) {
-    return parse_unary_expr(p)
+    return //parse_unary_expr(p)
 }
 
-parse_unary_expr :: proc(p: ^parser) -> (node: AST) {
-    #partial switch current_token(p).kind {
-    case .open_paren:
-        node = new(paren_expr)
-        node.(^paren_expr).open = advance_token(p)
-        node.(^paren_expr).child = parse_expr(p)
-        if node == nil {
-            error(p.file.path, p.lex.src, current_token(p).pos, "expected expression inside parenthesis expression")
-        }
-        if current_token(p).kind != .close_paren {
-            error(p.file.path, p.lex.src, current_token(p).pos, "expected close paren")
-        }
-        node.(^paren_expr).close = advance_token(p)
+// ! BIOHAZARD - OLD UNARY PARSING
+
+// parse_unary_expr :: proc(p: ^parser) -> (node: AST) {
+//     #partial switch current_token(p).kind {
+//     case .close_paren:
+//         return nil
+//     case .open_paren:
+//         node = new(paren_expr)
+//         node.(^paren_expr).open = current_token(p)
+//         advance_token(p)
+//         if current_token(p).kind == .close_paren {
+//              error(p.file.path, p.lex.src, merge_pos(node.(^paren_expr).open.pos, current_token(p).pos), "expected expression inside ()")
+//         }
+//         node.(^paren_expr).child = parse_expr(p)
+//         if node == nil {
+//             error(p.file.path, p.lex.src, current_token(p).pos, "nil expression after (")
+//         }
+//         if current_token(p).kind != .close_paren {
+//             error(p.file.path, p.lex.src, current_token(p).pos, "expected ')'")
+//         }
+//         node.(^paren_expr).close = current_token(p)
+//         advance_token(p)
+//         return
     
-    case .and, .dollar, .sub, .tilde, .exclam:
-        node = new(op_unary_expr)
-        node.(^op_unary_expr).op = current_token(p)
-        advance_token(p)
-        node.(^op_unary_expr).child = parse_unary_expr(p)
-        if node.(^op_unary_expr).child == nil {
-            error(p.file.path, p.lex.src, node.(^op_unary_expr).op.pos, "expected expression after unary operation")
-        }
-        return
+//     case .keyword_len:
+//         node = new(len_expr)
+//         node.(^len_expr).op = current_token(p)
+
+//         advance_token(p)
+//         if current_token(p).kind != .open_paren {
+//             error(p.file.path, p.lex.src, current_token(p).pos, "expected '(' after len expression")
+//         }
+//         advance_token(p)
+//         node.(^len_expr).child = parse_expr(p)
+//         if node.(^len_expr).child == nil {
+//             error(p.file.path, p.lex.src, merge_pos(node.(^len_expr).op.pos, current_token(p).pos), "expected expression inside \"len()\"")
+//         }
+//         if current_token(p).kind != .close_paren {
+//             error(p.file.path, p.lex.src, current_token(p).pos, "expected ')' after len expression")
+//         }
+//         advance_token(p)
+//         return
+
+//     case .keyword_base:
+//         node = new(base_expr)
+//         node.(^base_expr).op = current_token(p)
+
+//         advance_token(p)
+//         if current_token(p).kind != .open_paren {
+//             error(p.file.path, p.lex.src, current_token(p).pos, "expected '(' after \"base\" expression")
+//         }
+//         advance_token(p)
+//         node.(^base_expr).child = parse_expr(p)
+//         if node.(^base_expr).child == nil {
+//             error(p.file.path, p.lex.src, merge_pos(node.(^base_expr).op.pos, current_token(p).pos), "expected expression inside \"base()\"")
+//         }
+//         if current_token(p).kind != .close_paren {
+//             error(p.file.path, p.lex.src, current_token(p).pos, "expected ')' after base expression")
+//         }
+//         advance_token(p)
+//         return
+
+//     case .keyword_cast:
+//         node = new(cast_expr)
+//         node.(^cast_expr).op = current_token(p)
+
+
+
+
+//     case .keyword_bitcast:
+//         node = new(bitcast_expr)
+//         node.(^bitcast_expr).op = current_token(p)
+
+//     case .and, .dollar, .sub, .tilde, .exclam:
+//         node = new(op_unary_expr)
+//         node.(^op_unary_expr).op = current_token(p)
+//         advance_token(p)
+//         node.(^op_unary_expr).child = parse_unary_expr(p)
+//         if node.(^op_unary_expr).child == nil {
+//             error(p.file.path, p.lex.src, node.(^op_unary_expr).op.pos, "expected expression after unary operation")
+//         }
+//         //advance_token(p)
+//         return
     
-    case .keyword_len:
-        node = new(len_expr)
-        
-        if advance_token(p).kind != .open_paren {
-            error(p.file.path, p.lex.src, current_token(p).pos, "expected open paren after \"len\"")
-        }
-        node.(^len_expr).child = parse_expr(p)
-        if node.(^len_expr).child == nil {
-            error(p.file.path, p.lex.src, current_token(p).pos, "expected expression inside \"len()\"")
-        }
-        if current_token(p).kind != .close_paren {
-            error(p.file.path, p.lex.src, current_token(p).pos, "unclosed paren after \"len\"")
-        }
-    case .keyword_base:
 
-        if advance_token(p).kind != .open_paren {
-            error(p.file.path, p.lex.src, current_token(p).pos, "expected open paren after \"len\"")
-        }
-        node = new(base_expr)
-        node.(^base_expr).child = parse_expr(p)
-        if node.(^base_expr).child == nil {
-            error(p.file.path, p.lex.src, current_token(p).pos, "expected expression inside \"base()\"")
-        }
-        if current_token(p).kind != .close_paren {
-            error(p.file.path, p.lex.src, current_token(p).pos, "unclosed paren after \"len\"")
-        }
+//     case .identifier:
+//         node = new(ident_expr)
+//         node.(^ident_expr).ident = get_substring(p.file.src, current_token(p).pos)
+//         node.(^ident_expr).tok = current_token(p)
+//         advance_token(p)
+//         return
 
-    case .identifier:
-        node = new(ident_expr)
-        node.(^ident_expr).ident = get_substring(p.file.src, current_token(p).pos)
-        node.(^ident_expr).tok = current_token(p)
-        advance_token(p)
-        return
+//     case:
+//         error(p.file.path, p.lex.src, current_token(p).pos, "\"%s\" is not a unary operator", get_substring(p.lex.src, current_token(p).pos))
+//         //TODO("DOOPSIE POOPSIE SANDWICH MADE AN OOPSIE (contact me)")
+//     }
 
-    case:
-        error(p.file.path, p.lex.src, current_token(p).pos, "unrecognized unary operator \"%s\"", get_substring(p.lex.src, current_token(p).pos))
-        //TODO("DOOPSIE POOPSIE SANDWICH MADE AN OOPSIE (contact me)")
-    }
-
-    return
-}
+//     return
+// }
 
 
 // merges a start and end position into a single position encompassing both.
