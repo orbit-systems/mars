@@ -110,9 +110,9 @@ AST :: union {
     //union_selector_expr,
     //enum_variant_expr,
     //module_selector_expr,
-    //array_index_expr,
+    ^array_index_expr,
 
-    //call_expr,
+    ^call_expr,
 
 
 
@@ -188,7 +188,7 @@ enum_literal_expr :: struct {
 
 basic_type :: enum {
     invalid = 0,
-    none,
+    none,       // this is what functions without a return type return. this is also what statements "return".
     unresolved, // type probably exists but hasn't been derived yet - probably used in an implicit type
 
     mars_i8,
@@ -303,4 +303,16 @@ base_expr :: struct {
 sizeof_expr :: struct {
     op       : ^lexer_token,
     child : AST,
+}
+
+array_index_expr :: struct {
+    lhs   : AST,
+    index : AST,
+    open, close : ^lexer_token,
+}
+
+call_expr :: struct {
+    lhs : AST,
+    args : [dynamic]AST,
+    open, close : ^lexer_token,
 }

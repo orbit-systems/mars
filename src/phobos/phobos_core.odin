@@ -58,7 +58,7 @@ parse_program :: proc() -> ^program_tree {
         this_lexer := new_lexer(relative_path, cast(string) file_source)
 
         #no_bounds_check {
-        construct_token_buffer(this_lexer)
+            construct_token_buffer(this_lexer)
         }
         append(&main_module_lexers, this_lexer)
     }

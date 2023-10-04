@@ -28,6 +28,16 @@ print_w_lvl :: proc(lvl: int, node: AST){
         printf_lvl(lvl, "op_binary_expr \'%v\'\n", n.op.kind)
         print(lvl+1, n.lhs)
         print(lvl+1, n.rhs)
+    case ^array_index_expr:
+        printf_lvl(lvl, "array_index_expr\n")
+        print(lvl+1, n.lhs)
+        print(lvl+1, n.index)
+    case ^call_expr:
+        printf_lvl(lvl, "call_expr\n")
+        print(lvl+1, n.lhs)
+        for a in n.args {
+            print(lvl+1, a)
+        }
     case nil:
         printf_lvl(lvl, "NIL\n")
     case:
@@ -37,7 +47,7 @@ print_w_lvl :: proc(lvl: int, node: AST){
 
 printf_lvl :: proc(lvl: int, msg: string, args: ..any) {
     for _ in 0..<lvl {
-        fmt.print("\t")
+        fmt.print("|\t")
     }
     fmt.printf(msg, ..args)
 }

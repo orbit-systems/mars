@@ -42,7 +42,7 @@ peek_until :: proc(p: ^parser, kind: token_kind) -> ^lexer_token {
 
 advance_token :: proc(p: ^parser, offset : int = 1) -> ^lexer_token {
     p.curr_tok_index += offset
-    return &(p.lex.buffer[p.curr_tok_index])
+    return &(p.lex.buffer[p.curr_tok_index-offset])
 }
 
 advance_until :: proc(p: ^parser, kind: token_kind) -> ^lexer_token {
@@ -163,10 +163,10 @@ parse_expr :: proc(p: ^parser, precedence := 0) -> (node: AST) {
     }
 
     //fmt.println(current_token(p))
-    for precedence < op_precedence(current_token(p)) {
+    for precedence < op_precedence(p, current_token(p)) {
         tok = current_token(p)
 
-        left = parse_non_unary_expr(p, left, precedence+1)
+        left = parse_non_unary_expr(p, left, precedence)
     }
 
     return left
@@ -175,12 +175,52 @@ parse_expr :: proc(p: ^parser, precedence := 0) -> (node: AST) {
 parse_non_unary_expr :: proc(p: ^parser, lhs: AST, precedence: int) -> (node: AST) {
     #partial switch current_token(p).kind {
     case .open_bracket: // array index
-        TODO("array indexing")
+        //TODO("array indexing")
+
+        n := new(array_index_expr)
+        n.lhs = lhs
+        n.open = current_token(p)
+
+        advance_token(p)
+        n.index = parse_expr(p)
+
+        if current_token(p).kind != .close_bracket {
+            error(p.file.path, p.lex.src, merge_pos(n.open.pos, current_token(p).pos), "expected ']' after array index expression, got \'%s\'", get_substring(p.file.src, current_token(p).pos))
+        }
+        n.close = current_token(p)
+        advance_token(p)
+
+        node = n
+    case .open_paren:   // function call
+        //TODO("function call")
+
+        n := new(call_expr)
+        n.lhs = lhs
+        n.open = current_token(p)
+        advance_token(p)
+        for {
+            if current_token(p).kind == .close_paren {
+                break
+            }
+
+            arg := parse_expr(p)
+            append(&n.args, arg)
+
+            if current_token(p).kind != .comma {
+                if current_token(p).kind == .close_paren {
+                    break
+                }
+                error(p.file.path, p.lex.src, current_token(p).pos, "function args must be separated by a comma")
+            }
+            advance_token(p)
+        }
+        n.close = current_token(p)
+        advance_token(p)
+
+        node = n
+    
     case .period:       // selector
         TODO("selector expressions")
-    case .open_paren:   // function call
-        TODO("function call")
-
 
     case .lshift, .rshift, .nor, .or, .tilde, .and,
          .add, .sub, .mul, .div, .mod, .mod_mod,
@@ -188,11 +228,12 @@ parse_non_unary_expr :: proc(p: ^parser, lhs: AST, precedence: int) -> (node: AS
          .less_than, .less_equal, .greater_than, .greater_equal,
          .and_and, .or_or, .tilde_tilde:
 
-        node = new(op_binary_expr)
-        node.(^op_binary_expr).op = current_token(p)
-        node.(^op_binary_expr).lhs = lhs
-        advance_token(p)
-        node.(^op_binary_expr).rhs = parse_expr(p, op_precedence(node.(^op_binary_expr).op))
+        n := new(op_binary_expr)
+        n.op = current_token(p)
+        n.lhs = lhs
+        advance_token(p) 
+        n.rhs = parse_expr(p, op_precedence(p, n.op))
+        node = n
 
     case:
         error(p.file.path, p.lex.src, current_token(p).pos, "expected an operator, got \"%s\"", get_substring(p.file.src, current_token(p).pos))
@@ -200,7 +241,7 @@ parse_non_unary_expr :: proc(p: ^parser, lhs: AST, precedence: int) -> (node: AS
     return
 }
 
-op_precedence :: proc(t: ^lexer_token) -> int {
+op_precedence :: proc(p: ^parser, t: ^lexer_token) -> int {
     #partial switch t.kind {
     case .open_bracket, .period, .open_paren : return 6
     case .mul, .div, .mod, .mod_mod, 
@@ -212,7 +253,6 @@ op_precedence :: proc(t: ^lexer_token) -> int {
     case .and_and:                      return 2
     case .or_or, .tilde_tilde:          return 1
     }
-    //error(p.file.path, p.lex.src, current_token(p).pos, "no precedence information available for %s", t.kind)
     return 0
 }
 
@@ -233,7 +273,7 @@ parse_unary_expr :: proc(p: ^parser) -> (node: AST) {
         advance_token(p)
 
         if node.(^paren_expr).close.kind != .close_paren {
-            error(p.file.path, p.lex.src, node.(^paren_expr).close.pos, "expected ')', got \"%s\"", get_substring(p.file.src, node.(^paren_expr).close.pos), no_print_line = node.(^paren_expr).close.kind == .EOF)
+            error(p.file.path, p.lex.src, node.(^paren_expr).close.pos, "expected ')', got \"%s\"", get_substring(p.file.src, node.(^paren_expr).close.pos))
         }
 
     case .sub, .tilde, .exclam, .and, .dollar:
@@ -248,11 +288,55 @@ parse_unary_expr :: proc(p: ^parser) -> (node: AST) {
 
     case .keyword_cast, .keyword_bitcast:
         TODO("cast + bitcast")
-    case .keyword_len, .keyword_base, .keyword_sizeof:
-        TODO("len + base + sizeof")
-
+    case .keyword_len:
         node = new(len_expr)
         node.(^len_expr).op = current_token(p)
+
+        advance_token(p)
+        if current_token(p).kind != .open_paren {
+            error(p.file.path, p.lex.src, current_token(p).pos, "expected '(' after 'len', got \'%s\'", get_substring(p.file.src, current_token(p).pos))
+        }
+        
+        advance_token(p)
+        node.(^len_expr).child = parse_expr(p)
+
+        if current_token(p).kind != .close_paren {
+            error(p.file.path, p.lex.src, current_token(p).pos, "expected ')', got \'%s\'", get_substring(p.file.src, current_token(p).pos))
+        }
+        advance_token(p)
+
+    case .keyword_base:
+        node = new(base_expr)
+        node.(^base_expr).op = current_token(p)
+
+        advance_token(p)
+        if current_token(p).kind != .open_paren {
+            error(p.file.path, p.lex.src, current_token(p).pos, "expected '(' after 'base', got \'%s\'", get_substring(p.file.src, current_token(p).pos))
+        }
+
+        advance_token(p)
+        node.(^base_expr).child = parse_expr(p)
+
+        if current_token(p).kind != .close_paren {
+            error(p.file.path, p.lex.src, current_token(p).pos, "expected ')', got \'%s\'", get_substring(p.file.src, current_token(p).pos), no_print_line = current_token(p).kind == .EOF)
+        }
+        advance_token(p)
+
+    case .keyword_sizeof:
+        node = new(sizeof_expr)
+        node.(^sizeof_expr).op = current_token(p)
+
+        advance_token(p)
+        if current_token(p).kind != .open_paren {
+            error(p.file.path, p.lex.src, current_token(p).pos, "expected '(' after 'base', got \'%s\'", get_substring(p.file.src, current_token(p).pos), no_print_line = current_token(p).kind == .EOF)
+        }
+
+        advance_token(p)
+        node.(^sizeof_expr).child = parse_expr(p)
+
+        if current_token(p).kind != .close_paren {
+            error(p.file.path, p.lex.src, current_token(p).pos, "expected ')', got \'%s\'", get_substring(p.file.src, current_token(p).pos), no_print_line = current_token(p).kind == .EOF)
+        }
         advance_token(p)
 
     case .identifier, .identifier_discard:
