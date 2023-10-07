@@ -214,6 +214,9 @@ basic_type :: enum {
     untyped_float,
     untyped_bool,
     untyped_null,
+
+    internal_lib,
+    internal_alias,
 }
 
 array_type :: struct {

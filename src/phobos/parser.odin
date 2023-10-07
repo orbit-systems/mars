@@ -10,7 +10,6 @@ parser :: struct {
 
     curr_scope : ^scope_meta,
 
-    node_stack      : [dynamic]AST,
     directive_stack : [dynamic]AST,
 }
 
@@ -124,7 +123,7 @@ parse_stmt :: proc(p: ^parser) -> (node: AST) {
 
     #partial switch current_token(p).kind {
     case .keyword_module:
-        if len(p.node_stack) == 0 {
+        if len(p.file.module.name) == 0 {
             error(p.file.path, p.lex.src, current_token(p).pos, "module already declared", no_print_line = current_token(p).kind == .EOF)
         }
         
@@ -384,8 +383,9 @@ parse_unary_expr :: proc(p: ^parser) -> (node: AST) {
     return
 }
 
+
 // merges a start and end position into a single position encompassing both.
-// TODO make this better with min() and max() funcs
+// TODO make this better with min() and max() funcs so that order does not matter
 merge_pos :: #force_inline proc(start, end : position) -> position {
     return {start.start, end.offset, start.line, start.col}
 }

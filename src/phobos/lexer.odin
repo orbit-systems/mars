@@ -163,4 +163,32 @@ token_kind :: enum {
 
     meta_keyword_end,
 
+    meta_type_begin,
+        type_keyword_int,
+        type_keyword_i8,
+        type_keyword_i16,
+        type_keyword_i32,
+        type_keyword_i64,
+
+        type_keyword_uint,
+        type_keyword_u8,
+        type_keyword_u16,
+        type_keyword_u32,
+        type_keyword_u64,
+
+        type_keyword_bool,
+        type_keyword_b8,
+        type_keyword_b16,
+        type_keyword_b32,
+        type_keyword_b64,
+
+        type_keyword_float,
+        type_keyword_f16,
+        type_keyword_f32,
+        type_keyword_f64,
+
+        type_keyword_addr,
+
+    meta_type_end,
+
 }

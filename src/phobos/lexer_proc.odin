@@ -190,8 +190,33 @@ scan_identifier :: proc(ctx: ^lexer, r: u8) -> (success: token_kind) {
     case "len":           return .keyword_len
     case "base":          return .keyword_base
 
-    case "_":             return .identifier_discard
-    case:                 return .identifier
+    case "i8":      return .type_keyword_i8
+    case "i16":     return .type_keyword_i16
+    case "i32":     return .type_keyword_i32
+    case "i64":     return .type_keyword_i64
+    case "int":     return .type_keyword_int
+
+    case "u8":      return .type_keyword_u8
+    case "u16":     return .type_keyword_u16
+    case "u32":     return .type_keyword_u32
+    case "u64":     return .type_keyword_u64
+    case "uint":    return .type_keyword_uint
+
+    case "b8":      return .type_keyword_b8
+    case "b16":     return .type_keyword_b16
+    case "b32":     return .type_keyword_b32
+    case "b64":     return .type_keyword_b64
+    case "bint":    return .type_keyword_bool
+
+    case "f16":     return .type_keyword_f16
+    case "f32":     return .type_keyword_f32
+    case "f64":     return .type_keyword_f64
+    case "float":   return .type_keyword_float
+
+    case "addr":    return .type_keyword_addr
+
+    case "_":       return .identifier_discard
+    case:           return .identifier
     }
 
     return

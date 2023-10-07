@@ -31,7 +31,7 @@ type_size_and_align :: proc(type: AST) -> (int, int) {
 
     #partial switch t in type {
     case ^basic_type:
-        switch t^ {
+        #partial switch t^ {
         case .invalid:
         case .unresolved:
         case .none:
@@ -44,6 +44,8 @@ type_size_and_align :: proc(type: AST) -> (int, int) {
             return 4, 4
         case .mars_i64, .mars_u64, .mars_b64, .mars_f64, .mars_addr: 
             return 8, 8
+        case:
+            return 0, 0
         }
     case ^pointer_type:
         return 8, 8
@@ -91,29 +93,31 @@ type_to_string :: proc(expr: AST, alloc: runtime.Allocator = context.allocator) 
     #partial switch t in expr {
     case ^basic_type:
         switch t^ {
-        case .invalid:       return "(invalid)"
-        case .unresolved:    return "(unresolved)"
-        case .none:          return "(none)"
-        case .untyped_bool:  return "untyped_bool"
-        case .untyped_float: return "untyped_float"
-        case .untyped_int:   return "untyped_int"
-        case .untyped_null:  return "untyped_null"
-        case .mars_i8:       return "i8"
-        case .mars_u8:       return "u8"
-        case .mars_b8:       return "b8"
-        case .mars_i16:      return "i16"
-        case .mars_u16:      return "u16"
-        case .mars_b16:      return "b16"
-        case .mars_f16:      return "f16"
-        case .mars_i32:      return "i32"
-        case .mars_u32:      return "u32"
-        case .mars_b32:      return "b32"
-        case .mars_f32:      return "f32"
-        case .mars_i64:      return "i64"
-        case .mars_u64:      return "u64"
-        case .mars_b64:      return "b64"
-        case .mars_f64:      return "f64"
-        case .mars_addr:     return "addr"
+        case .invalid:          return "(invalid)"
+        case .unresolved:       return "(unresolved)"
+        case .none:             return "(none)"
+        case .untyped_bool:     return "untyped_bool"
+        case .untyped_float:    return "untyped_float"
+        case .untyped_int:      return "untyped_int"
+        case .untyped_null:     return "untyped_null"
+        case .mars_i8:          return "i8"
+        case .mars_u8:          return "u8"
+        case .mars_b8:          return "b8"
+        case .mars_i16:         return "i16"
+        case .mars_u16:         return "u16"
+        case .mars_b16:         return "b16"
+        case .mars_f16:         return "f16"
+        case .mars_i32:         return "i32"
+        case .mars_u32:         return "u32"
+        case .mars_b32:         return "b32"
+        case .mars_f32:         return "f32"
+        case .mars_i64:         return "i64"
+        case .mars_u64:         return "u64"
+        case .mars_b64:         return "b64"
+        case .mars_f64:         return "f64"
+        case .mars_addr:        return "addr"
+        case .internal_lib:     return "internal_lib"
+        case .internal_alias:   return "internal_alias"
         }
     case ^pointer_type:
         return strings.concatenate({"^",type_to_string(t.entry_type, alloc)}, alloc)
