@@ -56,8 +56,9 @@ type_size_and_align :: proc(type: AST) -> (int, int) {
     case ^enum_type:
         return type_size_and_align(t.backing_type)
     case ^array_type:
-        b_size, b_align := type_size_and_align(t.entry_type)
-        return (t.length-1) * co.align_forward(b_size, b_align) + b_size, b_align
+        TODO("array type size and align")
+        // b_size, b_align := type_size_and_align(t.entry_type)
+        // return (t.length-1) * co.align_forward(b_size, b_align) + b_size, b_align
     case ^union_type:
         // maximum size, maximum align
         max_size, max_align : int

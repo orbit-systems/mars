@@ -60,11 +60,11 @@ AST :: union {
     ^module_decl_stmt,       // module bruh;
     ^external_stmt,          // external {};
 
-    //^decl_stmt,              // a : int; a : int = 0; a : int = ---;
-    //^assign_stmt,            // a = 1 + 2;
+    ^decl_stmt,              // a : int; a : int = 0; a : int = ---;
+    ^assign_stmt,            // a = 1 + 2;
     //^compound_assign_stmt,   // a += 3;
 
-    //^expr_stmt,              // (expression); often results in an unused expression error.
+    ^expr_stmt,              // (expression); often results in an unused expression error.
     //^call_stmt,              // func();
     ^stmt_group_stmt,        // groups statements together
 
@@ -166,6 +166,24 @@ stmt_group_stmt :: struct {
     start, end: ^lexer_token,
 }
 
+expr_stmt :: struct {
+    exprs : [dynamic]AST,
+}
+
+decl_stmt :: struct {
+    lhs, types, rhs : [dynamic]AST,
+    is_constant : bool,
+}
+
+assign_stmt :: struct {
+    lhs, rhs : [dynamic]AST,
+}
+
+compound_assign_stmt :: struct {
+    lhs, rhs : [dynamic]AST,
+    op : ^lexer_token,
+}
+
 basic_literal_expr :: struct {
     type  : AST,
     tok   : ^lexer_token,
@@ -184,7 +202,7 @@ enum_literal_expr :: struct {
 
 }
 
-basic_type :: enum {
+basic_type :: enum u8 {
     invalid = 0,
     none,       // this is what functions without a return type return. this is also what statements "return".
     unresolved, // type probably exists but hasn't been derived yet - probably used in an implicit type
@@ -220,7 +238,7 @@ basic_type :: enum {
 }
 
 array_type :: struct {
-    length     : int,
+    length     : AST,
     entry_type : AST,
 }
 
@@ -322,4 +340,5 @@ selector_expr :: struct {
     source   : AST,
     op       : ^lexer_token,
     selector : AST,
+    implicit : bool,
 }
