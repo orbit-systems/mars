@@ -2,8 +2,8 @@ module memory;
 
 copy :: fn(to, from: addr, len: uint) {
     
-    to_byte   := cast(^u8) to;
-    from_byte := cast(^u8) from;
+    to_byte   : ^u8 = to;
+    from_byte : ^u8 = from;
     to_stop   := to_byte + cast(^u8) len
 
     while to_byte != to_stop {
@@ -13,26 +13,6 @@ copy :: fn(to, from: addr, len: uint) {
         from_byte += 1;
         to_byte += 1;
     }
-}
-
-copy_asm :: fn(to, from: addr, len: uint) {
-
-    // calling convention states that to, from, and len should be in ra, rb, and rc respectively.
-    // safer way would be `asm (to -> "ra", from -> "rb", len -> "rc")` but a bad compiler might add some overhead
-    asm () {
-        "add rc, ra, rc",
-        "cmp ra, rc",
-        "beq memcopy_asm_internal_ret",
-        "memcopy_asm_internal_while:",
-            "lb rd, rb, 0",
-            "sb rd, ra, 0",
-            "add ra, ra, 1",
-            "add rb, rb, 1",
-            "cmp ra, rc",
-            "bne memcopy_asm_internal_while",
-        "memcopy_asm_internal_ret:",
-    }
-
 }
 
 equal :: fn(block1, block2: addr, len: uint) -> bool {
@@ -65,7 +45,7 @@ set :: fn(dest: addr, len: uint, val: u8) {
     }
 }
 
-string_eq :: fn(a, b: []u8) -> bool {
+slice_equal :: fn(a, b: []u8) -> bool {
 
     // trivial cases
     if a.len != b.len { return false; }

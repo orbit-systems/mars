@@ -22,8 +22,8 @@ lex_next_token :: proc(ctx: ^lexer) -> (this_token: lexer_token) {
         return //return empty lexer token
     }
 
-    if ctx.src == "" || ctx.path == "" {
-        fmt.printf("CRASH: oopsie poopsie no lexing for you! stupid little shit (contact me)\n")
+    if ctx.path == "" {
+        fmt.printf("lexer crash: contact me\n")
         os.exit(-1)
     }
 

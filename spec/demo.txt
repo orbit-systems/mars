@@ -196,7 +196,7 @@
         value : int = 0;
 
         // this is better practice
-        asm(a -> "ra", b -> "rb", value <-> "rc") {
+        asm (a -> "ra", b -> "rb", value <-> "rc") {
             "addr rc, ra, rb"
         }
 

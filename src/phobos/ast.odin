@@ -9,7 +9,6 @@ program_tree :: struct {
 new_program :: proc() -> (prog: ^program_tree) {
     prog = new(program_tree)
     prog.modules = make([dynamic]^module)
-
     return
 }
 
@@ -58,6 +57,8 @@ AST :: union {
     ^scope_meta, // points to a new scope
 
     ^module_decl_stmt,       // module bruh;
+    ^import_stmt,
+
     ^external_stmt,          // external {};
 
     ^decl_stmt,              // a : int; a : int = 0; a : int = ---;
@@ -155,6 +156,11 @@ new_module_decl_stmt :: proc(s, e: ^lexer_token) -> (node: ^module_decl_stmt) {
     return
 }
 
+import_stmt :: struct {
+    identifier : ^lexer_token,
+    path : string,
+}
+
 external_stmt :: struct {
     decls      : [dynamic]AST,
     external   : ^lexer_token,
@@ -162,8 +168,8 @@ external_stmt :: struct {
 }
 
 stmt_group_stmt :: struct {
-    stmts : [dynamic]AST,
-    start, end: ^lexer_token,
+    stmts      : [dynamic]AST,
+    start, end : ^lexer_token,
 }
 
 expr_stmt :: struct {
@@ -172,7 +178,7 @@ expr_stmt :: struct {
 
 decl_stmt :: struct {
     lhs, types, rhs : [dynamic]AST,
-    is_constant : bool,
+    is_constant     : bool,
 }
 
 assign_stmt :: struct {
@@ -185,17 +191,19 @@ compound_assign_stmt :: struct {
 }
 
 basic_literal_expr :: struct {
-    type  : AST,
-    tok   : ^lexer_token,
+    type : AST,
+    tok  : ^lexer_token,
 }
 
 compound_literal_expr :: struct {
-    type: AST,
+    type            : AST,
+    members         : [dynamic]AST,
+    from_string_lit : bool,
     // TODO
 }
 
 proc_literal_expr :: struct {
-
+    
 }
 
 enum_literal_expr :: struct {
@@ -204,8 +212,8 @@ enum_literal_expr :: struct {
 
 basic_type :: enum u8 {
     invalid = 0,
-    none,       // this is what functions without a return type return. this is also what statements "return".
-    unresolved, // type probably exists but hasn't been derived yet - probably used in an implicit type
+    none,       // this is what functions without a return type "return". this is also what statements "return".
+    unresolved, // type is implicit and hasn't been derived yet
 
     mars_i8,
     mars_i16,
@@ -234,7 +242,8 @@ basic_type :: enum u8 {
     untyped_null,
 
     internal_lib,
-    internal_alias,
+    internal_type,
+    //internal_alias,
 }
 
 array_type :: struct {
@@ -251,11 +260,9 @@ pointer_type :: struct {
 }
 
 funcptr_type :: struct {
-    param_field_idents  : [dynamic]string,
-    param_field_types   : [dynamic]AST,
-    return_field_idents : [dynamic]string,
-    return_field_types  : [dynamic]AST,
-    positional          : bool,
+    param_types   : [dynamic]AST,
+    return_types  : [dynamic]AST,
+    named_returns : bool,
 }
 
 struct_type :: struct {
