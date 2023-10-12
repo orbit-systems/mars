@@ -70,7 +70,7 @@ parse_file :: proc(p: ^parser) {
 
 }
 
-// this function is old, i should update this
+// TODO this function is old, i should update this
 parse_module_decl :: proc(p: ^parser, require_semicolon := true) -> (node: AST) {
 
     module_declaration := new_module_decl_stmt(nil,nil)
@@ -138,6 +138,7 @@ parse_stmt :: proc(p: ^parser, require_semicolon : bool = true) -> (node: AST) {
     case .keyword_for: TODO("for stmt")
     case .keyword_while: TODO("while stmt")
     case .keyword_import: TODO("import stmt")
+    case .keyword_asm: TODO("asm stmt")
     case .keyword_external: TODO("external stmt")
 
 
@@ -156,28 +157,38 @@ parse_stmt :: proc(p: ^parser, require_semicolon : bool = true) -> (node: AST) {
             advance_token(p)
         }
 
-        #partial switch p.current_token.kind {
-        case .colon:
+        switch {
+        case p.current_token.kind == .colon:
             n := new(decl_stmt)
             n.lhs = lhs
             advance_token(p)
-            explicit_types := p.current_token.kind != .equal && p.current_token.kind != .colon
-            if explicit_types {
-                types := make([dynamic]AST)
-                for {
-                    type := parse_expr(p)
-                    if type == nil {
-                        error(p.file.path, p.lex.src, p.current_token.pos, "expected '=' or type expression")
-                    }
+            explicit_type := p.current_token.kind != .equal && p.current_token.kind != .colon
+            // if explicit_type {
+            //     types := make([dynamic]AST)
+            //     for {
+            //         type := parse_expr(p)
+            //         if type != nil {
+            //             error(p.file.path, p.lex.src, p.current_token.pos, "expected '=' or type expression")
+            //         }
 
-                    append(&types, type)
-                    if p.current_token.kind != .comma {
-                        break
-                    }
-                    advance_token(p)
+            //         append(&types, type)
+            //         if p.current_token.kind != .comma {
+            //             break
+            //         }
+            //         advance_token(p)
+            //     }
+            //     n.types = types
+            // }
+            if explicit_type {
+                types := make([dynamic]AST)
+                type := parse_expr(p)
+                if type == nil {
+                    error(p.file.path, p.lex.src, p.current_token.pos, "expected '=' or type expression")
                 }
+                append(&types, type)
                 n.types = types
             }
+
 
             initial_vals := p.current_token.kind == .equal || p.current_token.kind == .colon
             n.is_constant = p.current_token.kind == .colon
@@ -209,7 +220,7 @@ parse_stmt :: proc(p: ^parser, require_semicolon : bool = true) -> (node: AST) {
             }
 
             node = n
-        case .equal:
+        case p.current_token.kind == .equal:
             n := new(assign_stmt)
             n.lhs = lhs
 
@@ -240,7 +251,41 @@ parse_stmt :: proc(p: ^parser, require_semicolon : bool = true) -> (node: AST) {
             node = n
             // TODO("ASSIGN STMT")
         
-        case .semicolon:
+        case p.current_token.kind > .meta_compound_assign_begin && p.current_token.kind < .meta_compound_assign_end:
+
+            n := new(compound_assign_stmt)
+            n.lhs = lhs
+            n.op = p.current_token
+
+            rhs := make([dynamic]AST)
+            advance_token(p)
+            for {
+                expr := parse_expr(p)
+
+                if expr == nil {
+                    error(p.file.path, p.lex.src, p.current_token.pos, "expected expression")
+                }
+
+                append(&rhs, expr)
+                if p.current_token.kind != .comma {
+                    break
+                }
+                advance_token(p)
+            }
+            n.rhs = rhs
+
+            if require_semicolon {
+                if p.current_token.kind != .semicolon {
+                    error(p.file.path, p.lex.src, p.current_token.pos, "expected ';' after declaration")
+                }
+                advance_token(p)
+            }
+
+            node = n
+
+            // TODO("compound assignments")
+
+        case p.current_token.kind == .semicolon:
             n := new(expr_stmt)
             n.exprs = lhs
             node = n
@@ -256,19 +301,25 @@ parse_stmt :: proc(p: ^parser, require_semicolon : bool = true) -> (node: AST) {
     return
 }
 
-// try pratt parsing
 parse_expr :: proc(p: ^parser, precedence := 0) -> (node: AST) {
 
     // get token
     tok := p.current_token
-    if tok.kind == .close_paren || tok.kind == .EOF || tok.kind == .semicolon {
+    if tok.kind == .close_paren || 
+       tok.kind == .close_brace || 
+       tok.kind == .close_bracket || 
+       tok.kind == .EOF || 
+       tok.kind == .comma || 
+       tok.kind == .semicolon {
         return nil
     }
 
     // get unary prefix expression
+    diag := p.current_token
     left := parse_unary_expr(p)
 
     if left == nil {
+        fmt.println(diag)
         error(p.file.path, p.lex.src, p.current_token.pos, "could not parse '%s' (contact me)", get_substring(p.file.src, p.current_token.pos), no_print_line = p.current_token.kind == .EOF)
     }
 
@@ -340,7 +391,6 @@ parse_non_unary_expr :: proc(p: ^parser, lhs: AST, precedence: int) -> (node: AS
             error(p.file.path, p.lex.src, p.current_token.pos, "expected operand after '%s'", get_substring(p.file.src, n.op.pos))
         }
 
-        // TODO("selector expressions")
         return n
 
     case .lshift, .rshift, .nor, .or, .tilde, .and,
@@ -385,6 +435,37 @@ parse_unary_expr :: proc(p: ^parser) -> (node: AST) {
     t := p.current_token
 
     #partial switch t.kind {
+
+    case .open_brace:
+        n := new(compound_literal_expr)
+
+        n.type = new(basic_type)
+        n.type.(^basic_type)^ = .unresolved
+
+        n.open = p.current_token
+
+        advance_token(p)
+
+        for {
+            if p.current_token.kind == .close_brace {
+                break
+            }
+            expr := parse_expr(p)
+            append(&n.members, expr)
+
+            if p.current_token.kind != .comma {
+                if p.current_token.kind == .close_brace {
+                    break
+                }
+                error(p.file.path, p.lex.src, p.current_token.pos, "expected ',' or '}' ")
+            }
+            advance_token(p)
+        }
+        n.close = p.current_token
+
+        node = n
+
+        advance_token(p)
 
     case .uninit:
         n := new(basic_literal_expr)
@@ -546,7 +627,6 @@ parse_unary_expr :: proc(p: ^parser) -> (node: AST) {
 
         return n
 
-        //TODO("POINTER TYPE EXPR")
     case .open_bracket:
 
         advance_token(p)
@@ -572,9 +652,44 @@ parse_unary_expr :: proc(p: ^parser) -> (node: AST) {
         }
     
     case .period:
-        TODO("implicit enum selectors")
+        TODO("implicit selectors")
     case .keyword_struct:
-        TODO("struct type expr")
+        n := new(struct_type)
+
+        advance_token(p)
+        if p.current_token.kind != .open_brace {
+            error(p.file.path, p.lex.src, p.current_token.pos, "expected '{{' after 'struct'")
+        }
+
+        advance_token(p)
+
+        for {
+            if p.current_token.kind == .close_brace {
+                break
+            }
+            
+            decl := parse_stmt(p, require_semicolon = false)
+
+            if _, ok := decl.(^decl_stmt); !ok {
+                error(p.file.path, p.lex.src, p.current_token.pos, "expression must be declaration")
+            }
+
+            append(&n.field_decls, decl)
+
+            if p.current_token.kind != .comma {
+                if p.current_token.kind == .close_brace {
+                    break
+                }
+                error(p.file.path, p.lex.src, p.current_token.pos, "expected ',' or '}' ")
+            }
+            advance_token(p)
+        }
+        
+        advance_token(p)
+
+        node = n
+
+        // TODO("struct type expr")
     case .keyword_union:
         TODO("union type expr")
     case .keyword_enum:

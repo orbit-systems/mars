@@ -1,5 +1,6 @@
 module test;
 
-// import bruh "path";
-
-x := {};
+x :: struct {
+    bruh, sex : int,
+    lmao : int
+};

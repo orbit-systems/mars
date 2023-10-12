@@ -63,7 +63,7 @@ AST :: union {
 
     ^decl_stmt,              // a : int; a : int = 0; a : int = ---;
     ^assign_stmt,            // a = 1 + 2;
-    //^compound_assign_stmt,   // a += 3;
+    ^compound_assign_stmt,   // a += 3;
 
     ^expr_stmt,              // (expression); often results in an unused expression error.
     //^call_stmt,              // func();
@@ -85,16 +85,10 @@ AST :: union {
     ^union_type,
     ^enum_type,
 
-
-
     ^ident_expr,             // points to entity
     ^basic_literal_expr,
-
+    ^compound_literal_expr,
     
-
-    // ! compound_literal_expr,
-    // ! enum_literal_expr,
-
     ^paren_expr,
     ^op_unary_expr,
     ^op_binary_expr,
@@ -196,9 +190,11 @@ basic_literal_expr :: struct {
 }
 
 compound_literal_expr :: struct {
-    type            : AST,
-    members         : [dynamic]AST,
-    from_string_lit : bool,
+    open, close : ^lexer_token,
+    type        : AST,
+    members     : [dynamic]AST,
+    from_string : bool,   // has it been translated from a string literal?
+    string_val  : string, // if it has, this is the direct string value.
     // TODO
 }
 
@@ -267,8 +263,9 @@ funcptr_type :: struct {
 
 struct_type :: struct {
     field_idents  : [dynamic]string,
-    field_offsets : [dynamic]int,
+    // field_offsets : [dynamic]int,
     field_types   : [dynamic]AST,
+    field_decls   : [dynamic]AST,
 }
 
 union_type :: struct {

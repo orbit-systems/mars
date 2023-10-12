@@ -46,6 +46,16 @@ print_w_lvl :: proc(lvl: int, node: AST, p: ^parser){
         for expr in n.rhs {
             print(lvl+2, expr, p)
         }
+    case ^compound_assign_stmt:
+        printf_lvl(lvl, "compound_assign_stmt '%v' (%v)\n",get_substring(p.file.src, n.op.pos), n.op.kind)
+        printf_lvl(lvl+1, "lhs:\n")
+        for expr in n.lhs {
+            print(lvl+2, expr, p)
+        }
+        printf_lvl(lvl+1, "rhs:\n")
+        for expr in n.rhs {
+            print(lvl+2, expr, p)
+        }
 
     case ^module_decl_stmt:
         printf_lvl(lvl, "module_decl_stmt\n")
@@ -55,10 +65,10 @@ print_w_lvl :: proc(lvl: int, node: AST, p: ^parser){
     case ^ident_expr:
         printf_lvl(lvl, "ident_expr '%s'\n", n.ident)
     case ^op_unary_expr:
-        printf_lvl(lvl, "op_unary_expr '%v'\n", n.op.kind)
+        printf_lvl(lvl, "op_unary_expr '%v' (%v)\n",get_substring(p.file.src, n.op.pos), n.op.kind)
         print(lvl+1, n.child, p)
     case ^op_binary_expr:
-        printf_lvl(lvl, "op_binary_expr '%v'\n", n.op.kind)
+        printf_lvl(lvl, "op_binary_expr '%v' (%v)\n",get_substring(p.file.src, n.op.pos), n.op.kind)
         print(lvl+1, n.lhs, p)
         print(lvl+1, n.rhs, p)
     case ^array_index_expr:
@@ -67,19 +77,31 @@ print_w_lvl :: proc(lvl: int, node: AST, p: ^parser){
         print(lvl+1, n.index, p)
     case ^call_expr:
         printf_lvl(lvl, "call_expr\n")
-        print(lvl+1, n.lhs, p)
+
+        printf_lvl(lvl+1, "lhs:\n")
+        print(lvl+2, n.lhs, p)
+
+        printf_lvl(lvl+1, "params:\n")
+
         for a in n.args {
-            print(lvl+1, a, p)
+            print(lvl+2, a, p)
         }
     case ^selector_expr:
         printf_lvl(lvl, "selector_expr\n")
-        print(lvl+1, n.source, p)
-        print(lvl+1, n.selector, p)
+        printf_lvl(lvl+1, "source:\n")
+        print(lvl+2, n.source, p)
+        printf_lvl(lvl+1, "selector:\n")
+        print(lvl+2, n.selector, p)
 
 
     case ^basic_literal_expr:
         printf_lvl(lvl, "basic_literal_expr '%v' (%v)\n", get_substring(p.file.src, n.tok.pos), n.tok.kind)
 
+    case ^compound_literal_expr:
+        printf_lvl(lvl, "compound_literal_expr\n")
+        for a in n.members {
+            print(lvl+1, a, p)
+        }
 
     case ^pointer_type:
         printf_lvl(lvl, "pointer_type\n")

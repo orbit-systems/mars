@@ -144,4 +144,18 @@ type_to_string :: proc(expr: AST, alloc: runtime.Allocator = context.allocator) 
     return "BAD TYPE"
 }
 
+can_cast :: proc(from, to : AST) -> bool{
+    TODO("actually do this")
+    return false
+}
+
+can_bitcast :: proc(from, to : AST) -> bool{
+    TODO("actually do this")
+    return false
+}
+
 // TODO make recursive delete() function for freeing the AST
+
+delete :: proc(node: AST) {
+    TODO("why is it called oven when you of in the cold food of out hot eat the food")
+}
