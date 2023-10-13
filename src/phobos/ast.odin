@@ -258,7 +258,6 @@ pointer_type :: struct {
 funcptr_type :: struct {
     param_types   : [dynamic]AST,
     return_types  : [dynamic]AST,
-    named_returns : bool,
 }
 
 struct_type :: struct {

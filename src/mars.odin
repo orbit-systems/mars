@@ -49,8 +49,9 @@ parse_command_line_args :: proc(args: []string) -> (build_state: co.build_state_
             switch argument.val {
             case "include":  build_state.flag_runtime = .include
             case "none":     build_state.flag_runtime = .none
-            case "inline":   build_state.flag_runtime = .inlined
+            case "inline":   build_state.flag_runtime = .inline
             case "external": build_state.flag_runtime = .external
+            case "replace":  build_state.flag_runtime = .replace
             }
 
         case:

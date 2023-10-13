@@ -656,6 +656,9 @@ parse_unary_expr :: proc(p: ^parser) -> (node: AST) {
     case .keyword_struct:
         n := new(struct_type)
 
+        field_decls := make([dynamic]AST)
+        defer destroy(field_decls)
+
         advance_token(p)
         if p.current_token.kind != .open_brace {
             error(p.file.path, p.lex.src, p.current_token.pos, "expected '{{' after 'struct'")
@@ -673,8 +676,12 @@ parse_unary_expr :: proc(p: ^parser) -> (node: AST) {
             if _, ok := decl.(^decl_stmt); !ok {
                 error(p.file.path, p.lex.src, p.current_token.pos, "expression must be declaration")
             }
+            if len(decl.(^decl_stmt).rhs) != 0 {
+                error(p.file.path, p.lex.src, p.current_token.pos, "struct field cannot have initial values")
+            }
+            
 
-            append(&n.field_decls, decl)
+            append(&field_decls, decl)
 
             if p.current_token.kind != .comma {
                 if p.current_token.kind == .close_brace {
@@ -684,7 +691,15 @@ parse_unary_expr :: proc(p: ^parser) -> (node: AST) {
             }
             advance_token(p)
         }
+
+        // normalize declarations
         
+        for d in field_decls {
+
+        }
+
+        TODO("normalize declarations in structs into individual idents + types")
+
         advance_token(p)
 
         node = n

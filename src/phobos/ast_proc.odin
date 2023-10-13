@@ -144,18 +144,38 @@ type_to_string :: proc(expr: AST, alloc: runtime.Allocator = context.allocator) 
     return "BAD TYPE"
 }
 
-can_cast :: proc(from, to : AST) -> bool{
-    TODO("actually do this")
+can_cast :: proc(from, to : AST) -> bool {
+    TODO("why is it called oven when you of in the cold food of out hot eat the food")
     return false
 }
 
-can_bitcast :: proc(from, to : AST) -> bool{
-    TODO("actually do this")
+can_bitcast :: proc(from, to : AST) -> bool {
+    TODO("why is it called oven when you of in the cold food of out hot eat the food")
     return false
 }
 
-// TODO make recursive delete() function for freeing the AST
 
-delete :: proc(node: AST) {
+// destroy() recursively deletes AST nodes. make sure it isn't cyclic!
+destroy :: proc{destroy_AST, destroy_dynarr_AST}
+
+destroy_AST :: proc(node: AST) {
     TODO("why is it called oven when you of in the cold food of out hot eat the food")
 }
+
+destroy_dynarr_AST :: proc(nodes: [dynamic]AST) {
+    for n in nodes {
+        destroy(n)
+    }
+    delete(nodes)
+
+    TODO("why is it called oven when you of in the cold food of out hot eat the food")
+}
+
+// make_pos :: proc(node: AST) -> position {
+//     switch n in node {
+//     case ^decl_stmt:
+//         return merge_pos(n.lhs[0])
+//     case:
+//         return {}
+//     }
+// }
