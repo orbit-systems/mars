@@ -73,7 +73,7 @@ parse_file :: proc(p: ^parser) {
 // TODO this function is old, i should update this
 parse_module_decl :: proc(p: ^parser, require_semicolon := true) -> (node: AST) {
 
-    module_declaration := new_module_decl_stmt(nil,nil)
+    module_declaration := new(module_decl_stmt)
 
     module_declaration.start = p.current_token
 
@@ -674,10 +674,10 @@ parse_unary_expr :: proc(p: ^parser) -> (node: AST) {
             decl := parse_stmt(p, require_semicolon = false)
 
             if _, ok := decl.(^decl_stmt); !ok {
-                error(p.file.path, p.lex.src, p.current_token.pos, "expression must be declaration")
+                error(p.file.path, p.lex.src, get_pos(decl), "expression must be declaration")
             }
             if len(decl.(^decl_stmt).rhs) != 0 {
-                error(p.file.path, p.lex.src, p.current_token.pos, "struct field cannot have initial values")
+                error(p.file.path, p.lex.src, get_pos(decl), "struct field cannot have initial values")
             }
             
 
@@ -717,16 +717,4 @@ parse_unary_expr :: proc(p: ^parser) -> (node: AST) {
     }
     
     return
-}
-
-
-// merges a start and end position into a single position encompassing both.
-// TODO make this better with min() and max() funcs so that order does not matter
-merge_pos :: #force_inline proc(start, end : position) -> position {
-    return {
-        min(start.start,  end.start),
-        max(start.offset, end.offset),
-        min(start.line,   end.line),
-        min(start.col,    end.col),
-    }
 }

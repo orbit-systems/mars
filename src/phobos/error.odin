@@ -8,6 +8,10 @@ import "core:strings"
 //@(private="file")
 compiler_output_base :: proc(out_type: string, color: ANSI, path, src: string, pos: position, str: string, args: ..any) {
     
+    if pos == {} {
+        TODO("crash: empty pos to error/warn/info")
+    }
+
     if !build_state.flag_no_display_colors do set_style(color)
     if !build_state.flag_no_display_colors do set_style(.Bold)
     fmt.print(out_type)

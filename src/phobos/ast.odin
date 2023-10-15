@@ -143,13 +143,6 @@ module_decl_stmt :: struct {
     start, end: ^lexer_token,
 }
 
-new_module_decl_stmt :: proc(s, e: ^lexer_token) -> (node: ^module_decl_stmt) {
-    node = new(module_decl_stmt)
-    node.start = s
-    node.end = e
-    return
-}
-
 import_stmt :: struct {
     identifier : ^lexer_token,
     path : string,
@@ -308,6 +301,11 @@ cast_expr :: struct {
 
 bitcast_expr :: struct {
     op      : ^lexer_token,
+    cast_to : AST, // type expression
+    child   : AST, // what to cast
+}
+
+implicit_cast_expr :: struct {
     cast_to : AST, // type expression
     child   : AST, // what to cast
 }
