@@ -194,7 +194,7 @@
         value : int = 0
 
         // this is better practice
-        asm(a -> "ra", b -> "rb", value <-> "rc") {
+        asm (a -> "ra", b -> "rb", value <-> "rc") {
             "addr rc, ra, rb"
         }
 
@@ -210,7 +210,7 @@
     read_rf :: fn() -> int {
         value_read : int
 
-        asm(value_read -> "ra") {
+        asm (value_read -> "ra") {
             "add ra, rf, 0"
         }
         // value_read == rf
@@ -219,36 +219,28 @@
     }
 
 
+// SANDWICHMAN is having NEW IDEAS (somebody stop him please)
+
+three ways to declare things:
+    def - define an AST-level entity/alias, similar to a #define or a typedef. 
+          unlike let and mut, def cannot use type annotations (ex. "def x: int = 3" doesn't work)
+    let - creates a compile-time constant entity, similar to constexpr.
+    mut - create a variable (mutable) entity.
+
+def node = struct {
+    a: int,
+    b: *node,
+};
 
 
+let main = fn() {
 
+    let str = "bruh";
+    mut str2 = []u8 {0x62, 0x72, 0x75, 0x68};
 
-
-
-
-
-
-len() :: fn(arr: []int) -> int {
-    return (bitcast([2]int) arr)[1]
-    // gets length value from opaque slice struct
-}
-
-slice() :: fn(arr: []int, start_index, end_index : int = -1) -> []int {
-
-    if start_index == -1 {
-        start_index = 0
-    }
-    if end_index == -1 {
-        end_index = len(arr)
-    }
-
-    new_arr :: struct {
-        ptr : uint,
-        len : uint,
-    }
-
-    return bitcast([]int) new_arr{
-        start_index * #size_of(int) + bitcast(int) &arr,
-        end_index - start_index,
+    if mem.equal(str, str2) {
+        neptune.kprint("equal");
+    } else {
+        neptune.kprint("not equal");
     }
 }
