@@ -5,7 +5,7 @@
 #include "../strslice.h"
 
 
-typedef u8 token_type; enum {
+typedef u8 enum {
     tt_invalid = 0,
     tt_EOF,
 
@@ -147,7 +147,7 @@ typedef u8 token_type; enum {
 
         tt_type_keyword_addr,
     tt_meta_type_end,
-};
+} token_type;
 
 typedef struct token_s {
     string text;
