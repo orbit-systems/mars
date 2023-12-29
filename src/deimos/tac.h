@@ -4,6 +4,8 @@
 #include "strslice.h"
 #include "dynarr.h"
 
+void testTAC();
+
 typedef u8 TAC_type; enum {
 	INVALID_TAC_type = 0,
 
@@ -64,6 +66,7 @@ typedef u8 TAC_arg_type; enum {
 	label,
 	literal_int,
 	literal_float,
+	tac_data,
 };
 
 typedef struct {

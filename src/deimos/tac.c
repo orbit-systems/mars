@@ -11,13 +11,26 @@ TAC_element* createTACelement(TAC_type type, int argcount, TAC_arg* arguments) {
 }
 
 void testTAC() {
-	createTACelement(label_function, 1, &(TAC_arg){label, string_make("main", strlen("main"))});
-	//createTACelement()
-	//createTACelement()
-	//createTACelement()
-	//createTACelement()
-}
+	createTACelement(label_function, 1, &(TAC_arg){label,       to_string("main")});
 
+	createTACelement(load_data,      2,  (TAC_arg[]){
+									 	 (TAC_arg){tac_data,    to_string("t0")},
+										 (TAC_arg){literal_int, to_string("1")}
+										 			});
+
+	createTACelement(load_data,      2,  (TAC_arg[]){
+										 (TAC_arg){tac_data,    to_string("t1")},
+										 (TAC_arg){literal_int, to_string("1")}
+													});
+
+	createTACelement(operator_add,   3,  (TAC_arg[]){
+										 (TAC_arg){tac_data,    to_string("t2")},
+										 (TAC_arg){tac_data,    to_string("t1")},
+										 (TAC_arg){tac_data,    to_string("t0")}
+													});
+
+	createTACelement(function_return, 0, NULL);
+}
 /*
 let main = fn() {
 	let a = 1 + 2;

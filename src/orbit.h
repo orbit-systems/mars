@@ -43,3 +43,5 @@ typedef uint8_t  bool;
 
 #define FOR_RANGE_INCL(iterator, start, end) for (int iterator = (start); iterator <= (end); iterator++)
 #define FOR_RANGE_EXCL(iterator, start, end) for (int iterator = (start); iterator < (end); iterator++)
+
+#include "deimos/tac.h"
