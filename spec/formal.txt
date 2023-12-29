@@ -35,7 +35,7 @@ types
 
     compound
         [N]T            concrete array type with determined length at compile time
-        []T             slice of array defined as struct {base: ^T, len: int}
+        []T             slice of array defined as struct {raw: ^T, len: int}
 
         struct          data structure / record type
         union           sum type (basically a struct with no offset between fields)
@@ -46,40 +46,40 @@ types
 
 operators
     unary numeric
-        -       negation (0 - x)        with type T in (all integers, uintegers, floats, pointers): - T -> T
-        ~       bitwise complement      with type T in (all integers, uintegers, floats, pointers): ~ T -> T
+        -       negation (0 - x)        with type T in (all integers, uintegers, floats, pointers): - <T> -> <T>
+        ~       bitwise complement      with type T in (all integers, uintegers, floats, pointers): ~ <T> -> <T>
 
     unary boolean
-        !       boolean not             with type T in (all booleans): !T -> T
+        !       boolean not             with type T in (all booleans): !<T> -> <T>
 
     binary numeric
-        +       addition                with type T in (all integers, uintegers, floats, pointers): T + T -> T
-        -       subtraction             with type T in (all integers, uintegers, floats, pointers): T - T -> T
-        *       multiplication          with type T in (all integers, uintegers, floats, pointers): T * T -> T
-        /       division                with type T in (all integers, uintegers, floats, pointers): T / T -> T
-        %       modulo (truncated)      with type T in (all integers, uintegers, pointers): T % T -> T
-        %%      remainder (floored)     with type T in (all integers, uintegers, pointers): T %% T -> T
+        +       addition                with type T in (all integers, uintegers, floats, pointers): <T> + <T> -> <T>
+        -       subtraction             with type T in (all integers, uintegers, floats, pointers): <T> - <T> -> <T>
+        *       multiplication          with type T in (all integers, uintegers, floats, pointers): <T> * <T> -> <T>
+        /       division                with type T in (all integers, uintegers, floats, pointers): <T> / <T> -> <T>
+        %       modulo (truncated)      with type T in (all integers, uintegers, pointers): <T> % <T> -> <T>
+        %%      remainder (floored)     with type T in (all integers, uintegers, pointers): <T> %% <T> -> <T>
 
     binary logical
-        &       bitwise and             with type T in (all integers, uintegers, floats, pointers): T ~ T -> T
-        |       bitwise or              with type T in (all integers, uintegers, floats, pointers): T ~ T -> T
-        ~|      bitwise nor             with type T in (all integers, uintegers, floats, pointers): T ~ T -> T
-        ~       bitwise xor             with type T in (all integers, uintegers, floats, pointers): T ~ T -> T
-        <<      left shift              with type T in (all integers, uintegers, floats, pointers): T << (all uintegers) -> T
-        >>      right shift             with type T in (all integers, uintegers, floats, pointers): T >> (all uintegers) -> T
+        &       bitwise and             with type T in (all integers, uintegers, floats, pointers): <T> ~ <T> -> <T>
+        |       bitwise or              with type T in (all integers, uintegers, floats, pointers): <T> ~ <T> -> <T>
+        ~|      bitwise nor             with type T in (all integers, uintegers, floats, pointers): <T> ~ <T> -> <T>
+        ~       bitwise xor             with type T in (all integers, uintegers, floats, pointers): <T> ~ <T> -> <T>
+        <<      left shift              with type T in (all integers, uintegers, floats, pointers): <T> << (all uintegers) -> <T>
+        >>      right shift             with type T in (all integers, uintegers, floats, pointers): <T> >> (all uintegers) -> <T>
 
     binary boolean
-        &&      boolean and             with type T in (all booleans): T && T -> T
-        ||      boolean or              with type T in (all booleans): T || T -> T
-        ~~      boolean xor             with type T in (all booleans): T ~~ T -> T
+        &&      boolean and             with type T in (all booleans): <T> && <T> -> <T>
+        ||      boolean or              with type T in (all booleans): <T> || <T> -> <T>
+        ~~      boolean xor             with type T in (all booleans): <T> ~~ <T> -> <T>
 
     binary comparison
-        ==      equality                (*): T == T -> bool
-        !=      inequality              (*): T != T -> bool
-        <       less than               (**): T < T -> bool
-        <=      less than or equal      (**): T <= T -> bool
-        >       greater than            (**): T > T -> bool
-        >=      greater than or equal   (**): T >= T -> bool
+        ==      equality                (*): <T> == <T> -> <bool>
+        !=      inequality              (*): <T> != <T> -> <bool>
+        <       less than               (**): <T> < <T> -> <bool>
+        <=      less than or equal      (**): <T> <= <T> -> <bool>
+        >       greater than            (**): <T> > <T> -> <bool>
+        >=      greater than or equal   (**): <T> >= <T> -> <bool>
 
         * a type T is comparable if it is a:
         | base, non-compound type (all integers, uintegers, floats, booleans, pointers)
@@ -96,8 +96,8 @@ operators
         note: entities can ONLY compare with others of the same type, no mixing.
 
     unary conversion
-        cast(T)     value cast to type T        (*):  cast(T) X -> T
-        bitcast(T)  raw data cast to type T     (**): bitcast(T) X -> T
+        cast(T)     value cast to type T        (*):  cast(T) <X> -> <T>
+        bitcast(T)  raw data cast to type T     (**): bitcast(T) <X> -> <T>
 
         * type casting rules:
         | all types can cast to themselves.
@@ -124,23 +124,24 @@ operators
         | any enum -> backing type
     
     unary reference
-        &       generate pointer        using type T in (all): &T -> ^T
-        $       dereference pointer     using type T in (all): $^T -> T
+        &       generate pointer        using type T in (all): &<T> -> <^T>
+        $       dereference pointer     using type T in (all): $<^T> -> <T>
     
     unary utility
         len         get length of array or slice type, returns uint
         raw         get base pointer of array type (pointer to array in case of array type, cast to pointer in case of slice type)
     
     unary type info
-        typeof
-        sizeof()    get the size of a type. takes a raw type expression, returns an untyped integer.
-        alignof     get the alignment characteristics of a type. takes a raw type expression, returns an untyped integer
+        typeof      
+        sizeof      get the size of a type. takes a raw type expression, returns an untyped integer.
+        alignof     get the alignment characteristics of a type. takes a raw type expression, returns an untyped integer.
+        offsetof    get the offset of a field from an entity's base address. they should be used for structs/union field selectors, but will return zero for other non-composite types.
 
     index
-        []      index array             using entity T with type (any array, pointer to any array, slice) and A with type (any int, uint, enum) : T[A]
+        []      index array             using entity T with type (any array, pointer to any array, slice) and A with type (any int, uint, enum) : <T>[<A>]
 
     slice
-        [:]     generate slice          using entity T with type (any array, pointer to any array, slice) and A with type (any int, uint, enum) : T[:], T[A:] T[:A], T[A:A]
+        [:]     generate slice          using entity T with type (any array, pointer to any array, slice) and A with type (any int, uint, enum) : <T>[:], <T>[<A>:] <T>[:<A>], <T>[<A>:<A>]
 
 
     selector

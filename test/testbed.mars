@@ -1,6 +1,4 @@
 module test;
 
-x :: struct {
-    bruh, sex : int,
-    lmao : int
-};
+let x = 3;
+mut x = 3;

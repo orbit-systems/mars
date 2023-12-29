@@ -1,6 +1,17 @@
 #include "orbit.h"
 #include "strslice.h"
 
+string string_alloc(size_t len) {
+    char* raw = malloc(len);
+    if (raw == NULL) return NULL_STR;
+
+    return (string){raw, len};
+}
+
+void string_free(string str) {
+    free(str.raw);
+}
+
 int string_cmp(string a, string b) {
     // copied from odin's implementation lmfao
     int res = memcmp(a.raw, b.raw, min(a.len, b.len));
@@ -23,15 +34,4 @@ char* to_cstring(string str) {
     memcpy(cstr, str.raw, str.len);
     cstr[str.len] = '\0';
     return cstr;
-}
-
-string string_alloc(size_t len) {
-    char* raw = malloc(len);
-    if (raw == NULL) return NULL_STR;
-
-    return (string){raw, len};
-}
-
-void string_free(string str) {
-    free(str.raw);
 }

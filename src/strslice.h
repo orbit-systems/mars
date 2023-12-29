@@ -5,7 +5,7 @@
 
 typedef struct string_s {
     char* raw;
-    u64   len;
+    u32   len;
 } string;
 
 #define NULL_STR (string){NULL, 0}
@@ -14,6 +14,9 @@ typedef struct string_s {
 
 #define string_len(s) (s.len)
 #define string_raw(s) (s.raw)
+
+#define is_substring(haystack, needle) (haystack.raw <= needle.raw) && (haystack.raw + haystack.len >= needle.raw + needle.len)
+#define substring(str, start, end) (string){str.raw + start, end - start};
 
 int    string_cmp(string a, string b);
 bool   string_eq(string a, string b);

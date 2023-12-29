@@ -1,5 +1,6 @@
 {
     "files.associations": {
-        "orbit.h": "c"
+        "orbit.h": "c",
+        "sstream": "cpp"
     }
 }
