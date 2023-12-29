@@ -23,9 +23,13 @@ typedef uint8_t  bool;
 #define false 0
 #define true (!false)
 
-#define TODO(msg) \
+#define TODO(msg) do {\
     printf("TODO: \"%s\" at %s:%d\n", (msg), (__FILE__), (__LINE__)); \
-    exit(EXIT_FAILURE)
+    exit(EXIT_FAILURE);} while (0)
+
+#define CRASH(msg) do { \
+    printf("CRASH: \"%s\" at %s:%d\n", (msg), (__FILE__), (__LINE__)); \
+    exit(EXIT_FAILURE);} while (0)
 
 #define max(a,b)             \
 ({                           \

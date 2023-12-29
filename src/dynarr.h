@@ -9,7 +9,7 @@
 
 #define dynarr_init(type, arr, capacity) dynarr_init_##type(arr, capacity)
 #define dynarr_append(type, arr, item) dynarr_append_##type(arr, item)
-#define dynarr_shrink(type, arr) dynarr_init_##type(arr)
+#define dynarr_shrink(type, arr) dynarr_shrink_##type(arr)
 #define dynarr_destroy(type, arr) dynarr_destroy_##type(arr)
 
 #define dynarr_lib_h(type)                                                      \

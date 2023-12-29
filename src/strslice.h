@@ -9,7 +9,7 @@ typedef struct string_s {
 } string;
 
 #define NULL_STR ((string){NULL, 0})
-#define is_null_str(str) ((str) == NULL_STR || (str).raw == NULL)
+#define is_null_str(str) ((str).raw == NULL)
 
 #define string_make(ptr, len) ((string){(ptr), (len)})
 #define string_len(s) (s.len)

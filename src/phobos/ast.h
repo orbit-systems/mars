@@ -1,5 +1,5 @@
 #pragma once
-#define AST_H
+#define PHOBOS_AST_H
 
 #include "../orbit.h"
 #include "lexer.h"
