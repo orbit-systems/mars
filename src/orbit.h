@@ -40,3 +40,6 @@ typedef uint8_t  bool;
     __typeof__ (b) _b = (b); \
     _a < _b ? _a : _b;       \
 })
+
+#define FOR_RANGE_INCL(iterator, start, end) for (int iterator = (start); iterator <= (end); iterator++)
+#define FOR_RANGE_EXCL(iterator, start, end) for (int iterator = (start); iterator < (end); iterator++)

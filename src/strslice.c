@@ -4,12 +4,7 @@
 string string_alloc(size_t len) {
     char* raw = malloc(len);
     if (raw == NULL) return NULL_STR;
-
     return (string){raw, len};
-}
-
-void string_free(string str) {
-    free(str.raw);
 }
 
 int string_cmp(string a, string b) {
@@ -18,10 +13,6 @@ int string_cmp(string a, string b) {
     if (res == 0 && a.len != b.len) return a.len <= b.len ? -1 : 1;
 	else if (a.len == 0 && b.len == 0) return 0;
 	return res;
-}
-
-bool string_eq(string a, string b) {
-    return string_cmp(a,b) == 0;
 }
 
 string to_string(char* cstring) {
@@ -34,4 +25,10 @@ char* to_cstring(string str) {
     memcpy(cstr, str.raw, str.len);
     cstr[str.len] = '\0';
     return cstr;
+}
+
+string string_clone(string str) {
+    string new_str = string_alloc(str.len);
+    if (memmove(new_str.raw, str.raw, str.len) != new_str.raw) return NULL_STR;
+    return new_str;
 }
