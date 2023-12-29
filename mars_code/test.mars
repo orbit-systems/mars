@@ -3,16 +3,14 @@ module test;
 import mem "./memory";
 import neptune "./neptune";
 
-main :: #section("boot") #link_name("__main") fn() {
+let main = fn #section("text.boot") #link_name("__main") () {
     
-    str  := "bruh";
-    str2 := []u8{0x62, 0x72, 0x75, 0x68};
+    let str = "bruh";
+    let str2 = []u8{0x62, 0x72, 0x75, 0x68};
 
-    is_eq := mem.equal(str.base, str2.base, str.len);
-
-    if is_eq {
-        neptune.kprint("equal");
+    if mem::equal(str.base, str2.base, str.len); {
+        neptune::kprint("equal");
     } else {
-        neptune.kprint("not equal");
+        neptune::kprint("not equal");
     }
-}
+};

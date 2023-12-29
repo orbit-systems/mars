@@ -1,31 +1,31 @@
-all: build
+SRCPATHS = src/*.c
+SRC = $(wildcard $(SRCPATHS))
+OBJECTS = $(SRC:src/%.c=build/%.o)
 
-SRC_DIR = ./src
-MARS_LOCATION = ./build/mars
-MARS_BUILD_FLAGS = 
-
-MARS_EXEC_FLAGS = 
+EXECUTABLE_NAME = mars
 
 ifeq ($(OS),Windows_NT)
-	MARS_LOCATION = ./build/mars.exe
-	MARS_EXEC_FLAGS = # -no-color
+	EXECUTABLE_NAME = mars.exe
 endif
 
-# BRUH LMAO
+CC = gcc
+
+DEBUGFLAGS = -g -rdynamic -pg
+ASANFLAGS = -fsanitize=undefined -fsanitize=address
+DONTBEAFUCKINGIDIOT = -Werror -Wall -Wextra -pedantic -Wno-missing-field-initializers -Wno-unused-result
+CFLAGS = -O3
+SHUTTHEFUCKUP = -Wno-unknown-warning-option -Wno-incompatible-pointer-types-discards-qualifiers -Wno-initializer-overrides -Wno-discarded-qualifiers
+
+build/%.o: src/%.c
+	$(CC) -c -o $@ $< $(CFLAGS) -MD $(SHUTTHEFUCKUP)
+
+build: $(OBJECTS)
+	$(CC) $(OBJECTS) -o $(EXECUTABLE_NAME) $(CFLAGS) -MD
+
+debug:
+	$(DEBUGFLAGS) $(DONTBEAFUCKINGIDIOT)
 
 clean:
-	@rm -rf ./build
+	rm -f build/*
 
-release: clean
-	@mkdir build
-	@odin build $(SRC_DIR) $(MARS_BUILD_FLAGS) -out:$(MARS_LOCATION) -o:speed
-
-build: clean
-	@mkdir build
-	@odin build $(SRC_DIR) $(MARS_BUILD_FLAGS) -out:$(MARS_LOCATION)
-
-run: build 
-	@$(MARS_LOCATION) ./mars_code $(MARS_EXEC_FLAGS)
-
-test: build
-	@$(MARS_LOCATION) ./test $(MARS_EXEC_FLAGS)
+-include $(OBJECTS:.o=.d)

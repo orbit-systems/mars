@@ -1,10 +1,10 @@
 module memory;
 
-copy :: fn(to, from: addr, len: uint) {
+let copy = fn(to, from: addr, len: uint) {
     
-    to_byte   : ^u8 = to;
-    from_byte : ^u8 = from;
-    to_stop   := to_byte + cast(^u8) len
+    let to_byte: ^u8 = to;
+    mut from_byte: ^u8 = from;
+    mut to_stop = to_byte + cast(^u8) len
 
     while to_byte != to_stop {
 
@@ -13,11 +13,11 @@ copy :: fn(to, from: addr, len: uint) {
         from_byte += 1;
         to_byte += 1;
     }
-}
+};
 
 equal :: fn(block1, block2: addr, len: uint) -> bool {
 
-    block1_byte := cast(^u8) block1;
+    mut block1_byte = cast(^u8) block1;
     block2_byte := cast(^u8) block2;
     block1_stop := block1_byte + cast(^u8) len;
 
@@ -32,7 +32,7 @@ equal :: fn(block1, block2: addr, len: uint) -> bool {
     }
 
     return true;
-}
+};
 
 set :: fn(dest: addr, len: uint, val: u8) {
 
@@ -43,12 +43,11 @@ set :: fn(dest: addr, len: uint, val: u8) {
         $cursor = val;
         cursor += 1;
     }
-}
+};
 
 slice_equal :: fn(a, b: []u8) -> bool {
 
-    // trivial cases
     if a.len != b.len { return false; }
     
     return equal(a.base, b.base, a.len);
-}
+};
