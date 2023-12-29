@@ -4,27 +4,23 @@ types
         i16
         i32
         i64
-        int :: i64
+        int = i64
 
     unsigned integer
         u8
         u16
         u32
         u64
-        uint :: u64
+        uint = u64
 
     boolean
-        b8
-        b16
-        b32
-        b64
-        bool :: b64
+        bool = single byte
 
     floating point
         f16
         f32
         f64
-        float :: f64
+        float = f64
 
     pointer
         addr            raw address - behaves like ^u8 except cannot dereference.
@@ -38,7 +34,7 @@ types
         (untyped_null)  internal "null" literal - implicitly converts to any pointer
 
     compound
-        [_]T            concrete array type with determined length at compile time
+        [N]T            concrete array type with determined length at compile time
         []T             slice of array defined as struct {base: ^T, len: int}
 
         struct          data structure / record type
@@ -104,11 +100,10 @@ operators
         bitcast(T)  raw data cast to type T     (**): bitcast(T) X -> T
 
         * type casting rules:
-        | all types can cast to themselves. this should not generate code.
+        | all types can cast to themselves.
         | all (u)integer types can cast between each other.
         |       if one is casting to another of smaller size, the most-significant "top" bits are discarded
         |       casts between (u)integers of the same size behave the same as bitcasts
-        | all boolean types can cast between each other
         | all pointer types can cast between each other
         | all pointer types can cast to u64/uint
         | all (u)integer types can cast to floating point types, converting to their closest floating point representation
@@ -116,7 +111,7 @@ operators
         | enums have the same casting characteristics of its backing type
         | structs may be cast to other structs if their field type structure is identical (all fields in the same order with the same types).
         | ^ this is identical to a bitcast, but is more deeply checked by the compiler.
-        | slices can cast to pointers corresponding to their backing type. a slice of type T can cast to pointer of type T. this is the same as using base()
+        | slices can cast to pointers corresponding to their backing type. a slice of type T can cast to pointer of type T.
 
         ** values can be bitcast if their byte sizes are the same
         | bitcasting does not modify the value data of a variable,
@@ -132,10 +127,14 @@ operators
         &       generate pointer        using type T in (all): &T -> ^T
         $       dereference pointer     using type T in (all): $^T -> T
     
-    utility
-        len()       get length of array type, returns uint
-        base()      get base pointer of array type (pointer to array in case of array type, cast to pointer in case of slice type)
-        sizeof()    get the size of a type. can take in a raw type expression or an identifier. this returns an untyped integer.
+    unary utility
+        len         get length of array or slice type, returns uint
+        raw         get base pointer of array type (pointer to array in case of array type, cast to pointer in case of slice type)
+    
+    unary type info
+        typeof
+        sizeof()    get the size of a type. takes a raw type expression, returns an untyped integer.
+        alignof     get the alignment characteristics of a type. takes a raw type expression, returns an untyped integer
 
     index
         []      index array             using entity T with type (any array, pointer to any array, slice) and A with type (any int, uint, enum) : T[A]
@@ -146,6 +145,7 @@ operators
 
     selector
         .       field/variant selection
+        ::      entity from library selection
 
         the selector operate like so:
         | access fields from a struct or a struct pointer : struct.field
@@ -154,10 +154,10 @@ operators
         | access entities from another module: module.entity
 
     precendence
-        unary operators have highest precedence.
+        unary operators have highest precedence, after atomic expressions (struct field selection/array indexes)
 
         non-unary operator precedence: - note: () is function calls.
-        6   []  .   () 
+        6   () 
         5   *   /   %   %%  &   <<   >>  ~|
         4   +   -   |   ~
         3   ==  !=  <   >   <=  >=
@@ -188,22 +188,24 @@ program structure
 
     programs must begin with a module declaration:
         module module_name;
+
+    let name : type = value;
+    let name = value;
     
-    entites (variables, constants, everything with a name) are declared like so:
-        name : type = value;        - variable, specified type, initial value set
-        name := value;              - variable, implicit type, initial value set
-        name : type;                - variable, specified type, default initial value
-        name : type = ---;          - variable, specified type, use unititialized memory
-        name : type : value;        - constant, specified type
-        name :: value;              - constant, implicit type
+    mut name : type;
+    mut name : type = ---;
+    mut name : type = value;
+    mut name = value;
+
+
 
     other modules can be imported as libraries using this syntax as well.
-        lib_name :: import "relative/path/to/module";
+        import lib_name "relative/path/to/module";
     the entity name does not have match the module's internal name.
     
     entity names must be unique and cannot shadow entities from lower scopes.
     e.g. this is not allowed:
-        x := 3;
+        mut x = 3;
         {
-            x := 4; // x already declared
+            mut x = 4; // not allowed, x already declared
         }
