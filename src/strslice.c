@@ -17,9 +17,9 @@ string to_string(char* cstring) {
     return (string){cstring, strlen(cstring)};
 }
 
-// allocates and may return null
 char* to_cstring(string str) {
     char* cstr = malloc(str.len + 1);
+    if (cstr == NULL) return NULL;
     memcpy(cstr, str.raw, str.len);
     cstr[str.len] = '\0';
     return cstr;
