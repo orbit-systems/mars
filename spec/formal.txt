@@ -182,10 +182,14 @@ operators
         <<=     left shift              variable of type T in (all integers, uintegers, floats, pointers): T <<= (all uintegers)
         >>=     right shift             variable of type T in (all integers, uintegers, floats, pointers): T >>= (all uintegers)
 
+    IMPORTANT: expressions are evaluated left-to-right, depth-first. 
+        this must be followed in case of functions that may modify variables used in the expression,
+        such as `modify_x(&x) + x` or something like that.
+
 program structure
 
-    programs are made from modules. modules must be wholly contained within one directory, 
-    there must be no more than one module per directory.
+    programs are made from modules. modules must be wholly contained within one directory.
+    there can be multiple modules in a single directory.
 
     programs must begin with a module declaration:
         module module_name;

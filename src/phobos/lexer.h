@@ -166,7 +166,7 @@ typedef struct lexer_state_s {
 
 lexer_state new_lexer(string path, string src);
 void construct_token_buffer(lexer_state* lex);
-token next_token(lexer_state* lex);
+void append_next_token(lexer_state* lex);
 
 #define can_start_identifier(ch) ((ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z') || ch == '_')
 #define can_start_number(ch) ((ch >= '0' && ch <= '9') || ch == '-')
@@ -178,6 +178,11 @@ token next_token(lexer_state* lex);
 #define valid_0b(ch) (ch == '0' || ch == '1' || ch == '_')
 
 #define current_char(lex) (lex->current_char)
-#define advance_char(lex) (lex->cursor < lex->src.len ? (lex->current_char = lex->src[++lex->cursor]) : '\0')
-#define advance_char_n(lex, n) (lex->cursor + (n) < lex->src.len ? (lex->current_char = lex->src[lex->cursor += (n)]) : '\0')
-#define peek_char(lex, n) ((lex->cursor + (n)) < lex->src.len ? lex->src[lex->cursor + (n)] : '\0')
+#define advance_char(lex) (lex->cursor < lex->src.len ? (lex->current_char = lex->src.raw[++lex->cursor]) : '\0')
+#define advance_char_n(lex, n) (lex->cursor + (n) < lex->src.len ? (lex->current_char = lex->src.raw[lex->cursor += (n)]) : '\0')
+#define peek_char(lex, n) ((lex->cursor + (n)) < lex->src.len ? lex->src.raw[lex->cursor + (n)] : '\0')
+
+
+int skip_block_comment(lexer_state* restrict lex);
+void skip_until_char(lexer_state* restrict lex, char c);
+void skip_whitespace(lexer_state* restrict lex);

@@ -1,4 +1,4 @@
-ra through re is for function parameters, ri through rk is for returns
+ra through re is for function parameters.
 
 parameters that are larger than register size OR non-base types (arrays, structs, etc) are passed on the stack.
 even if a struct is smaller than or the same size as a register, it should still be passed on the stack.
@@ -12,3 +12,5 @@ take the function foo as an example:
 "a", "b", and "d" are passed through registers ra, rb, and rc. "c" is put on the stack.
 
 assume all other registers are clobbered after a function call.
+
+the value passing and value returning conventions are the same/symmetric.

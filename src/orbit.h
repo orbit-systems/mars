@@ -8,6 +8,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
+#include <stdarg.h>
 #include <sys/time.h>
 
 // not gonna use stdbool fuck you
