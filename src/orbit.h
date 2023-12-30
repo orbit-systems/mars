@@ -10,6 +10,15 @@
 #include <math.h>
 #include <stdarg.h>
 #include <sys/time.h>
+#include <sys/stat.h>
+
+#include <unistd.h>
+#ifdef WIN32
+#include <io.h>
+#define F_OK 0
+#define access _access
+#endif
+
 
 // not gonna use stdbool fuck you
 typedef uint64_t u64;
@@ -48,3 +57,6 @@ typedef uint8_t  bool;
 
 #define FOR_RANGE_INCL(iterator, start, end) for (int iterator = (start); iterator <= (end); iterator++)
 #define FOR_RANGE_EXCL(iterator, start, end) for (int iterator = (start); iterator < (end); iterator++)
+
+
+#include "strslice.h"

@@ -1,3 +1,6 @@
+#pragma once
+#define ERROR_H
+
 #include "orbit.h"
 #include "strslice.h"
 

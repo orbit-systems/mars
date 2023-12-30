@@ -14,10 +14,3 @@ let main = fn #section("text.boot") #link_name("__main") () {
         neptune::kprint("not equal");
     }
 };
-
-
-
-let printf = fn(message: []u8, args: []addr) {...}
-
-
-printf("bruh %d, %s", {&variable, &ur_mom, &7})

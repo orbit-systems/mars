@@ -15,11 +15,20 @@ int string_cmp(string a, string b) {
 	return res;
 }
 
+bool string_eq(string a, string b) {
+    if (a.len != b.len) return false;
+    FOR_RANGE_EXCL(i, 0, a.len) {
+        if (a.raw[i] != b.raw[i]) return false;
+    }
+    return true;
+}
+
 string to_string(char* cstring) {
     return (string){cstring, strlen(cstring)};
 }
 
 char* to_cstring(string str) {
+    if (is_null_str(str)) return "";
     char* cstr = malloc(str.len + 1);
     if (cstr == NULL) return NULL;
     memcpy(cstr, str.raw, str.len);

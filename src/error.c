@@ -24,7 +24,8 @@ void error_at_string(string path, string text, string pos, char* message, ...) {
     int line_len;
     line_and_col(text, pos.raw-text.raw, &line_ptr, &line_len, &line, &column);
 
-    printf(" %s @ %d:%d ", path, line, column);
+    printf(" "); printstr(path);
+    printf(" @ %d:%d ", line, column);
 
     set_style(STYLE_Dim);
     printf("-> ");

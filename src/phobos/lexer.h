@@ -169,7 +169,8 @@ void construct_token_buffer(lexer_state* lex);
 void append_next_token(lexer_state* lex);
 
 #define can_start_identifier(ch) ((ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z') || ch == '_')
-#define can_start_number(ch) ((ch >= '0' && ch <= '9') || ch == '-')
+#define can_be_in_identifier(ch) ((ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z') || (ch >= '0' && ch <= '9') || ch == '_')
+#define can_start_number(ch) ((ch >= '0' && ch <= '9'))
 #define valid_digit(ch) ((ch >= '0' && ch <= '9') || (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || (ch == '_'))
 
 #define valid_0x(ch) ((ch >= '0' && ch <= '9') || (ch >= 'a' && ch <= 'f') || (ch >= 'A' && ch <= 'F') || (ch == '_'))
@@ -186,3 +187,8 @@ void append_next_token(lexer_state* lex);
 int skip_block_comment(lexer_state* restrict lex);
 void skip_until_char(lexer_state* restrict lex, char c);
 void skip_whitespace(lexer_state* restrict lex);
+
+token_type scan_ident_or_keyword(lexer_state* restrict lex);
+token_type scan_number(lexer_state* restrict lex);
+token_type scan_string_or_char(lexer_state* restrict lex);
+token_type scan_operator(lexer_state* restrict lex);
