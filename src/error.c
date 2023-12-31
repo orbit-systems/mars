@@ -40,7 +40,7 @@ void error_at_string(string path, string text, string pos, char* message, ...) {
     printf("\n      | ");
     printf("\n % 4d | ", line);
     set_style(STYLE_Reset);
-    printn(line_ptr, line_len);
+    printstr(string_make(line_ptr, line_len));
     set_style(STYLE_Dim);
     printf("\n      | ");
     set_style(STYLE_Reset);
@@ -81,11 +81,11 @@ void warning_at_string(string path, string text, string pos, char* message, ...)
 
     set_style(STYLE_FG_Red);
     set_style(STYLE_Bold);
-    printf("ERROR");
+    printf("WARNING");
     set_style(STYLE_Reset);
 
     set_style(STYLE_Dim);
-    printf(" |");
+    printf("     |");
     set_style(STYLE_Reset);
 
     int line;
@@ -106,12 +106,12 @@ void warning_at_string(string path, string text, string pos, char* message, ...)
     set_style(STYLE_Reset);
 
     set_style(STYLE_Dim);
-    printf("\n      | ");
-    printf("\n % 4d | ", line);
+    printf("\n        | ");
+    printf("\n   % 4d | ", line);
     set_style(STYLE_Reset);
-    printn(line_ptr, line_len);
+    printstr(string_make(line_ptr, line_len));
     set_style(STYLE_Dim);
-    printf("\n      | ");
+    printf("\n        | ");
     set_style(STYLE_Reset);
     
     while (column-- > 1) printf(" ");
@@ -138,16 +138,6 @@ void warning_at_string(string path, string text, string pos, char* message, ...)
 
     exit(EXIT_FAILURE);
 
-}
-
-void printstr(string str) {
-    printn(str.raw, str.len);
-}
-
-void printn(char* text, size_t len) {
-    size_t c = 0;
-    while (text[c] != '\0' && c < len)
-        putchar(text[c++]);
 }
 
 void line_and_col(string text, size_t position, char** last_newline, int* line_len, int* line, int* col) {

@@ -153,7 +153,20 @@ token_type scan_ident_or_keyword(lexer_state* restrict lex) {
 }
 
 token_type scan_number(lexer_state* restrict lex) {
-    TODO("scan_number");
+    // TODO("scan_number");
+
+    advance_char(lex);
+    token_type type = tt_literal_int;
+    while (true) {
+        if (current_char(lex) == '.') {
+            type = tt_literal_float;
+            advance_char(lex);
+        }
+        if (!valid_digit(current_char(lex))) {
+            return type;
+        }
+        advance_char(lex);
+    }
 }
 token_type scan_string_or_char(lexer_state* restrict lex) {
     // TODO("scan_string_or_char");
@@ -169,12 +182,10 @@ token_type scan_string_or_char(lexer_state* restrict lex) {
             advance_char(lex);
             return quote_char == '\"' ? tt_literal_string : tt_literal_char;
         } else if (current_char(lex) == '\n') {
-            if (quote_char == '\"')
-                error_at_string(lex->path, lex->src, substring(lex->src, start_cursor, lex->cursor),
-                    "unclosed string literal (use ` for multi-line strings)");
-            if (quote_char == '\'')
-                error_at_string(lex->path, lex->src, substring(lex->src, start_cursor, lex->cursor),
-                    "unclosed char literal");
+            if (quote_char == '\"') error_at_string(lex->path, lex->src, substring(lex->src, start_cursor, lex->cursor),
+                "unclosed string literal (note: use ` for multi-line strings)");
+            if (quote_char == '\'') error_at_string(lex->path, lex->src, substring(lex->src, start_cursor, lex->cursor),
+                "unclosed char literal");
         }
         advance_char(lex);
     }

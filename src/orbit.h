@@ -72,6 +72,7 @@ int    string_cmp(string a, string b);
 bool   string_eq(string a, string b);
 string to_string(char* cstring);
 char*  to_cstring(string str); // this allocates
+void   printstr(string str);
 
 string string_alloc(size_t len);
 #define string_free(str) free(str.raw)

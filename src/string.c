@@ -42,3 +42,13 @@ string string_clone(string str) {
     if (memmove(new_str.raw, str.raw, str.len) != new_str.raw) return NULL_STR;
     return new_str;
 }
+
+void printn(char* text, size_t len) {
+    size_t c = 0;
+    while (text[c] != '\0' && c < len)
+        putchar(text[c++]);
+}
+
+void printstr(string str) {
+    printn(str.raw, str.len);
+}
