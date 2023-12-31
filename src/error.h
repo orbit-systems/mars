@@ -2,7 +2,6 @@
 #define ERROR_H
 
 #include "orbit.h"
-#include "strslice.h"
 
 enum ANSI_STYLE {
     STYLE_Reset       = 0,

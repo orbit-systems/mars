@@ -2,7 +2,6 @@
 #define MARS_H
 
 #include "orbit.h"
-#include "strslice.h"
 
 typedef struct cmd_arg_s {
     string key;

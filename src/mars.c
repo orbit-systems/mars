@@ -22,9 +22,12 @@ int main(int argc, char** argv) {
 
 
 void print_help() {
-    printf("usage: mars (input directory) [module name] [flags]\n\n");
-    printf("-o:[path]         specify an output path\n");
-    printf("-help             display this text\n");
+    printf("usage: mars (directory) [module name] [flags]\n\n");
+    printf("(directory)         where the target module(s) are.\n");
+    printf("[module name]       specify a module to compile. leave this blank to compile every module in a directory.\n");
+    printf("\n");
+    printf("-o:(path)           specify an output path\n");
+    printf("-help               display this text\n");
 }
 
 cmd_arg make_argument(char* s) {
@@ -42,12 +45,16 @@ void load_arguments(int argc, char* argv[], flag_set* fl) {
         exit(EXIT_SUCCESS);
     }
 
-    // set  default values
+    // set default values
     fl->input_path = NULL_STR;
     fl->module_name = NULL_STR;
     fl->output_path = NULL_STR;
 
     cmd_arg input_directory_arg = make_argument(argv[1]);
+    if (string_eq(input_directory_arg.key, to_string("-help"))) {
+        print_help();
+        exit(EXIT_SUCCESS);
+    }
     if (!is_null_str(input_directory_arg.val)) {
         printf("error: expected an input path, got \"%s\"\n", argv[1]);
         exit(EXIT_FAILURE);

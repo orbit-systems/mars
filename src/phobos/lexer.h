@@ -2,7 +2,6 @@
 #define PHOBOS_LEXER_H
 
 #include "../orbit.h"
-#include "../strslice.h"
 #include "../dynarr.h"
 
 typedef u8 token_type; enum {
@@ -15,41 +14,43 @@ typedef u8 token_type; enum {
     tt_meta_identifer_end,
 
     tt_meta_literal_begin,
-        tt_literal_int,    // 123
-        tt_literal_float,  // 12.3
-        tt_literal_bool,   // true, false
-        tt_literal_string, // "bruh"
-        tt_literal_null,   // null
+        tt_literal_int,     // 123
+        tt_literal_float,   // 12.3
+        tt_literal_bool,    // true, false
+        tt_literal_string,  // "bruh"
+        tt_literal_char,    // 'b'
+        tt_literal_null,    // null
     tt_meta_literal_end,
 
     tt_meta_operator_begin,
-        tt_hash,           // #
-        tt_uninit,         // ---
-        tt_equal,          // =
-        tt_dollar,         // $
-        tt_colon,          // :
-        tt_colon_colon,    // ::
-        tt_semicolon,      // ;
-        tt_period,         // .
-        tt_comma,          // ,
-        tt_exclam,         // !
-        tt_carat,          // ^
-        tt_add,            // +
-        tt_sub,            // -
-        tt_mul,            // *
-        tt_div,            // /
-        tt_mod,            // %
-        tt_mod_mod,        // %%
-        tt_tilde,          // ~
-        tt_and,            // &
-        tt_or,             // |
-        tt_nor,            // ~|
-        tt_lshift,         // <<
-        tt_rshift,         // >>
+        tt_hash,        // #
+        tt_uninit,      // ---
+        tt_equal,       // =
+        tt_dollar,      // $
+        tt_colon,       // :
+        tt_colon_colon, // ::
+        tt_semicolon,   // ;
+        tt_period,      // .
+        tt_comma,       // ,
+        tt_exclam,      // !
+        tt_carat,       // ^
+        tt_at,          // @
+        tt_add,         // +
+        tt_sub,         // -
+        tt_mul,         // *
+        tt_div,         // /
+        tt_mod,         // %
+        tt_mod_mod,     // %%
+        tt_tilde,       // ~
+        tt_and,         // &
+        tt_or,          // |
+        tt_nor,         // ~|
+        tt_lshift,      // <<
+        tt_rshift,      // >>
 
-        tt_and_and,        // &&
-        tt_or_or,          // ||
-        tt_tilde_tilde,    // ~~
+        tt_and_and,     // &&
+        tt_or_or,       // ||
+        tt_tilde_tilde, // ~~
 
         tt_meta_arrow_begin,
             tt_arrow_right,    // ->
@@ -74,12 +75,12 @@ typedef u8 token_type; enum {
         tt_meta_compound_assign_end,
 
         tt_meta_comparison_begin,
-            tt_equal_equal,    // ==
-            tt_not_equal,      // !=
-            tt_less_than,      // <
-            tt_less_equal,     // <=
-            tt_greater_than,   // >
-            tt_greater_equal,  // >=
+            tt_equal_equal,     // ==
+            tt_not_equal,       // !=
+            tt_less_than,       // <
+            tt_less_equal,      // <=
+            tt_greater_than,    // >
+            tt_greater_equal,   // >=
         tt_meta_comparison_end,
 
         tt_open_paren,     // (

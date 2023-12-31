@@ -36,7 +36,7 @@ program_tree* parse_program() {
     lexer_state lex = new_lexer(to_string("path/lmao"), to_string(
         "\n module test;"
         "\n "
-        "\n import mem \"./memory\";"
+        "\n import mem \"./memory;"
         "\n import neptune \"./neptune\";"
         "\n "
         "\n let main = fn #section(\"text.boot\") #link_name(\"__main\") () {"

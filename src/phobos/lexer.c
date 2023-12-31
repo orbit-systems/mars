@@ -156,7 +156,28 @@ token_type scan_number(lexer_state* restrict lex) {
     TODO("scan_number");
 }
 token_type scan_string_or_char(lexer_state* restrict lex) {
-    TODO("scan_string_or_char");
+    // TODO("scan_string_or_char");
+    char quote_char = current_char(lex);
+    u64  start_cursor = lex->cursor;
+
+    advance_char(lex);
+    while (true) {
+        if (current_char(lex) == '\\') {
+            advance_char(lex);
+            advance_char(lex);
+        } else if (current_char(lex) == quote_char) {
+            advance_char(lex);
+            return quote_char == '\"' ? tt_literal_string : tt_literal_char;
+        } else if (current_char(lex) == '\n') {
+            if (quote_char == '\"')
+                error_at_string(lex->path, lex->src, substring(lex->src, start_cursor, lex->cursor),
+                    "unclosed string literal (use ` for multi-line strings)");
+            if (quote_char == '\'')
+                error_at_string(lex->path, lex->src, substring(lex->src, start_cursor, lex->cursor),
+                    "unclosed char literal");
+        }
+        advance_char(lex);
+    }
 }
 token_type scan_operator(lexer_state* restrict lex) {
     // TODO("scan_operator");
@@ -308,6 +329,7 @@ token_type scan_operator(lexer_state* restrict lex) {
     case '.': advance_char(lex); return tt_period;
     case ',': advance_char(lex); return tt_comma;
     case '^': advance_char(lex); return tt_carat;
+    case '@': advance_char(lex); return tt_at;
 
     case '(': advance_char(lex); return tt_open_paren;
     case ')': advance_char(lex); return tt_close_paren;

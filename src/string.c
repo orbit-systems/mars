@@ -1,5 +1,6 @@
 #include "orbit.h"
-#include "strslice.h"
+
+// string functions for orbit.h
 
 string string_alloc(size_t len) {
     char* raw = malloc(len);
