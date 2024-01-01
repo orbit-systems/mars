@@ -1,8 +1,8 @@
-#include "..\orbit.h"
+#include "../orbit.h"
 #include "orbitfs.h"
 
 // NOT GOOD BUT OK FOR TESTING
-#include "..\string.c"
+#include "../string.c"
 
 bool ofs_file_exists(string path) {
 
