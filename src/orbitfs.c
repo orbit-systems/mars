@@ -282,7 +282,7 @@ bool ofs_write_to_file(ofs_file* file, void* buf, size_t len) {
     return (size_written == len);
 }
 
-
+/*
 int ofs_self_test() {
 
     printf("orbitfs test\n");
@@ -465,3 +465,4 @@ int ofs_self_test() {
     }
 
 }
+*/
