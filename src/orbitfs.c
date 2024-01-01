@@ -1,8 +1,5 @@
-#include "../orbit.h"
+#include "orbit.h"
 #include "orbitfs.h"
-
-// NOT GOOD BUT OK FOR TESTING
-#include "../string.c"
 
 bool ofs_file_exists(string path) {
 
@@ -72,14 +69,14 @@ bool ofs_create_file(string path, ofs_file_type type, ofs_file* file) {
     case oft_directory:
         if (can_be_cstring(path)) {
             creation_success = mkdir(path.raw
-            #if (!(defined(_WIN64) || defined(_WIN32)))
+            #if !(defined(MINGW32) || defined(__MINGW32__))
                 , S_IRWXU | S_IRWXG | S_IRWXO
             #endif
             ) == 0;
         } else {
             char* path_cstr = to_cstring(path);
             creation_success = mkdir(path_cstr
-            #if (!(defined(_WIN64) || defined(_WIN32)))
+            #if !(defined(MINGW32) || defined(__MINGW32__))
                 , S_IRWXU | S_IRWXG | S_IRWXO
             #endif
             ) == 0;
@@ -285,10 +282,10 @@ bool ofs_write_to_file(ofs_file* file, void* buf, size_t len) {
     return (size_written == len);
 }
 
-#ifdef ORBIT_FS_RUN_TEST
-int test() {
 
-    printf("orbitfs\n");
+int ofs_self_test() {
+
+    printf("orbitfs test\n");
     {
         printf("\tofs_file_exists\n");
         char* path;
@@ -468,4 +465,3 @@ int test() {
     }
 
 }
-#endif

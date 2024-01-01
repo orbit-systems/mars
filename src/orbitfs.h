@@ -3,7 +3,7 @@
 
 // im gonna try to make a filesystem wrapper lib
 
-#include "../orbit.h"
+#include "orbit.h"
 
 #include <stdio.h>
 #include <unistd.h>
