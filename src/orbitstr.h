@@ -1,7 +1,41 @@
+#pragma once
+#define ORBITSTR_H
+
+// strings and string-related utils.
+
 #include "orbit.h"
 
-// string functions for orbit.h
+typedef struct string_s {
+    char* raw;
+    u32   len;
+} string;
 
+#define NULL_STR ((string){NULL, 0})
+#define is_null_str(str) ((str).raw == NULL)
+
+#define string_make(ptr, len) ((string){(ptr), (len)})
+#define string_len(s) ((s).len)
+#define string_raw(s) ((s).raw)
+#define is_within(haystack, needle) (((haystack).raw <= (needle).raw) && ((haystack).raw + (haystack).len >= (needle).raw + (needle).len))
+#define substring(str, start, end_excl) ((string){(str).raw + (start), (end_excl) - (start)})
+#define substring_len(str, start, len) ((string){(str).raw + (start), (len)})
+#define can_be_cstring(str) ((str).raw[(str).len] == '\0')
+
+int    string_cmp(string a, string b);
+bool   string_eq(string a, string b);
+string to_string(char* cstring);
+char*  to_cstring(string str); // this allocates
+void   printstr(string str);
+
+string string_alloc(size_t len);
+#define string_free(str) free(str.raw)
+
+string string_clone(string str); // this allocates as well
+
+
+// use #define ORBITSTR_IMPLEMENTATION to generate the actual code
+
+#ifdef ORBITSTR_IMPLEMENTATION
 string string_alloc(size_t len) {
     char* raw = malloc(len);
     if (raw == NULL) return NULL_STR;
@@ -53,3 +87,4 @@ void printn(char* text, size_t len) {
 void printstr(string str) {
     printn(str.raw, str.len);
 }
+#endif

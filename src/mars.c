@@ -1,3 +1,7 @@
+// generate the actual code here
+#define ORBITSTR_IMPLEMENTATION
+#define ORBITFS_IMPLEMENTATION
+
 #include "orbit.h"
 #include "mars.h"
 #include "deimos/tac.h"
@@ -10,16 +14,10 @@ int main(int argc, char** argv) {
     load_arguments(argc, argv, &mars_flags);
 
     parse_program();
-
-
-
+    
     //testTAC();
     return 0;
 }
-
-
-
-
 
 void print_help() {
     printf("usage: mars (directory) [module name] [flags]\n\n");
