@@ -71,10 +71,18 @@ bool ofs_create_file(string path, ofs_file_type type, ofs_file* file) {
     switch (type) {
     case oft_directory:
         if (can_be_cstring(path)) {
-            creation_success = mkdir(path.raw) == 0;
+            creation_success = mkdir(path.raw
+            #if (!(defined(_WIN64) || defined(_WIN32)))
+                , S_IRWXU | S_IRWXG | S_IRWXO
+            #endif
+            ) == 0;
         } else {
             char* path_cstr = to_cstring(path);
-            creation_success = mkdir(path_cstr) == 0;
+            creation_success = mkdir(path_cstr
+            #if (!(defined(_WIN64) || defined(_WIN32)))
+                , S_IRWXU | S_IRWXG | S_IRWXO
+            #endif
+            ) == 0;
             free(path_cstr);
         }
         if (!creation_success) return false;
@@ -278,8 +286,6 @@ bool ofs_write_to_file(ofs_file* file, void* buf, size_t len) {
 }
 
 int main() {
-
-    char cwd[PATH_MAX];
 
     printf("orbitfs\n");
     {
