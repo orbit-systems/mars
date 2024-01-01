@@ -30,6 +30,10 @@ test: build
 debug:
 	$(DEBUGFLAGS) $(DONTBEAFUCKINGIDIOT)
 
+test_orbitfs:
+	$(CC) src/orbitfs/orbitfs.c -o orbitfs
+	./orbitfs
+
 clean:
 	rm -rf build/*
 	mkdir build/deimos

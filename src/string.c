@@ -30,6 +30,7 @@ string to_string(char* cstring) {
 
 char* to_cstring(string str) {
     if (is_null_str(str)) return "";
+
     char* cstr = malloc(str.len + 1);
     if (cstr == NULL) return NULL;
     memcpy(cstr, str.raw, str.len);

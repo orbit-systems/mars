@@ -67,6 +67,7 @@ typedef struct string_s {
 #define is_within(haystack, needle) (((haystack).raw <= (needle).raw) && ((haystack).raw + (haystack).len >= (needle).raw + (needle).len))
 #define substring(str, start, end_excl) ((string){(str).raw + (start), (end_excl) - (start)})
 #define substring_len(str, start, len) ((string){(str).raw + (start), (len)})
+#define can_be_cstring(str) ((str).raw[(str).len] == '\0')
 
 int    string_cmp(string a, string b);
 bool   string_eq(string a, string b);
