@@ -13,8 +13,8 @@ int main(int argc, char** argv) {
     
     load_arguments(argc, argv, &mars_flags);
 
-    parse_program();
-    
+    phobos_perform_frontend();
+
     //testTAC();
     return 0;
 }

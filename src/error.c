@@ -1,6 +1,50 @@
 #include "orbit.h"
 #include "error.h"
 
+void general_error(char* message, ...) {
+    char ERROR_MSG_BUFFER[500] = {};
+    va_list args;
+    va_start(args, message);
+    vsprintf(ERROR_MSG_BUFFER, message, args);
+    va_end(args);
+
+    set_style(STYLE_FG_Red);
+    set_style(STYLE_Bold);
+    printf("ERROR");
+    set_style(STYLE_Reset);
+
+    set_style(STYLE_Dim);
+    printf(" | ");
+    set_style(STYLE_Reset);
+
+    printf("%s", ERROR_MSG_BUFFER);
+
+    printf("\n");
+    exit(EXIT_FAILURE);
+}
+
+void general_warning(char* message, ...) {
+    char ERROR_MSG_BUFFER[500] = {};
+    va_list args;
+    va_start(args, message);
+    vsprintf(ERROR_MSG_BUFFER, message, args);
+    va_end(args);
+
+    set_style(STYLE_FG_Yellow);
+    set_style(STYLE_Bold);
+    printf("WARNING");
+    set_style(STYLE_Reset);
+
+    set_style(STYLE_Dim);
+    printf(" | ");
+    set_style(STYLE_Reset);
+
+    printf("%s", ERROR_MSG_BUFFER);
+
+    printf("\n");
+    exit(EXIT_FAILURE);
+}
+
 void error_at_string(string path, string text, string pos, char* message, ...) {
     
     char ERROR_MSG_BUFFER[500] = {};

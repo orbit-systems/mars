@@ -6,4 +6,4 @@
 typedef struct program_tree_s {
 } program_tree;
 
-program_tree* parse_program();
+program_tree* phobos_perform_frontend();

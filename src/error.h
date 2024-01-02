@@ -36,4 +36,7 @@ enum ANSI_STYLE {
 void error_at_string(string path, string text, string pos, char* message, ...);
 void warning_at_string(string path, string text, string pos, char* message, ...);
 
+void general_error(char* message, ...);
+void general_warning(char* message, ...);
+
 void line_and_col(string text, size_t position, char** last_newline, int* line_len, int* line, int* col);
