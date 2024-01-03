@@ -285,7 +285,7 @@ bool fs_delete(fs_file* file) {
 }
 
 size_t fs_subfile_count(fs_file* file) {
-    int count = 0;
+    size_t count = 0;
     if (!fs_is_directory(file)) return 0;
     
     DIR* d;
@@ -300,10 +300,14 @@ size_t fs_subfile_count(fs_file* file) {
     }
     if (!d) return false;
 
-    while ((dir = readdir(d)) != NULL) count++;
+    while ((dir = readdir(d)) != NULL) {
+        if (strcmp(dir->d_name, ".") == 0) continue;
+        if (strcmp(dir->d_name, "..") == 0) continue;
+        count++;
+    }
+
     closedir(d);
-    count -= 2; // account for the . and .. dirs
-    return count;
+    return count; // account for the . and .. dirs
 }
 
 bool fs_get_subfiles(fs_file* file, fs_file* file_array) {
@@ -330,14 +334,14 @@ bool fs_get_subfiles(fs_file* file, fs_file* file_array) {
         free(path_cstr);
     }
 
-    dir = readdir(d); // skip .
-    dir = readdir(d); // skip ..
-
-    for (int i = 0; (dir = readdir(d)) != NULL; i++) {
+    for (int i = 0; (dir = readdir(d)) != NULL;) {
+        if (strcmp(dir->d_name, ".") == 0) continue;
+        if (strcmp(dir->d_name, "..") == 0) continue;
         bool success = fs_get(to_string(dir->d_name), &file_array[i]);
         if (!success) {
             return false;
         }
+        i++;
     }
 
     closedir(d);

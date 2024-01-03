@@ -19,15 +19,17 @@ program_tree* phobos_perform_frontend() {
         general_error("input path \"%s\" is not a directory", to_cstring(mars_flags.input_path));
     }
 
-    size_t input_dir_num_child = fs_subfile_count(&input_dir);
-    if (input_dir_num_child == 0) {
+    size_t subfile_count = fs_subfile_count(&input_dir);
+    if (subfile_count == 0) {
         general_error("input path \"%s\" has no files", to_cstring(mars_flags.input_path));
     }
 
-    fs_file* subfiles = malloc(sizeof(fs_file) * input_dir_num_child);
+    fs_file* subfiles = malloc(sizeof(fs_file) * subfile_count);
     fs_get_subfiles(&input_dir, subfiles);
 
-
+    FOR_RANGE_EXCL(i, 0, subfile_count) {
+        
+    }
 
     lexer_state lex = new_lexer(to_string("path/lmao"), to_string(
         "\n module test;"
