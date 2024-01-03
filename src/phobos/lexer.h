@@ -5,7 +5,7 @@
 #include "../dynarr.h"
 
 typedef u8 token_type; enum {
-    tt_invalid = 0,
+    tt_invalid,
     tt_EOF,
 
     tt_meta_identifer_begin,
@@ -111,6 +111,7 @@ typedef u8 token_type; enum {
         tt_keyword_for,
         tt_keyword_fn,
         tt_keyword_if,
+        tt_keyword_in,
         tt_keyword_import,
         tt_keyword_module,
         tt_keyword_return,

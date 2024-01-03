@@ -71,7 +71,7 @@ bool fs_close(fs_file* file);
 
 // sets *count to how many subfiles/subdirectories are in a directory
 // returns true if the operation was successful.
-size_t fs_subfile_count(fs_file* file);
+int fs_subfile_count(fs_file* file);
 
 // write a file array full of subfiles
 bool fs_get_subfiles(fs_file* file, fs_file* file_array);
@@ -88,10 +88,10 @@ bool fs_read(fs_file* file, void* buf, size_t len);
 bool fs_write(fs_file* file, void* buf, size_t len);
 
 // set file cursor to a specific location.
-bool fs_set_cursor(fs_file* file, size_t new_cursor);
+bool fs_set_cursor(fs_file* file, int new_cursor);
 
 // get the value of the file cursor, relative to how
-size_t fs_get_cursor(fs_file* file);
+int fs_get_cursor(fs_file* file);
 
 
 
@@ -284,8 +284,8 @@ bool fs_delete(fs_file* file) {
     return success && fs_drop(file);
 }
 
-size_t fs_subfile_count(fs_file* file) {
-    size_t count = 0;
+int fs_subfile_count(fs_file* file) {
+    int count = 0;
     if (!fs_is_directory(file)) return 0;
     
     DIR* d;
@@ -348,12 +348,12 @@ bool fs_get_subfiles(fs_file* file, fs_file* file_array) {
     return true;
 }
 
-bool fs_set_cursor(fs_file* file, size_t new_cursor) {
+bool fs_set_cursor(fs_file* file, int new_cursor) {
     if (!file->opened) return false;
     return fseek(file->handle, new_cursor, SEEK_SET) == 0;
 }
 
-size_t fs_get_cursor(fs_file* file) {
+int fs_get_cursor(fs_file* file) {
     if (!file->opened) return 0;
     return ftell(file->handle);
 }

@@ -9,33 +9,33 @@ extern flag_set mars_flags;
 
 program_tree* phobos_perform_frontend() {
 
-    if (!fs_exists(mars_flags.input_path)) {
+    if (!fs_exists(mars_flags.input_path))
         general_error("input directory \"%s\" does not exist", to_cstring(mars_flags.input_path));
-    }
 
     fs_file input_dir = {0};
     fs_get(mars_flags.input_path, &input_dir);
-    if (!fs_is_directory(&input_dir)) {
+    if (!fs_is_directory(&input_dir))
         general_error("input path \"%s\" is not a directory", to_cstring(mars_flags.input_path));
-    }
 
-    size_t subfile_count = fs_subfile_count(&input_dir);
-    if (subfile_count == 0) {
+    int subfile_count = fs_subfile_count(&input_dir);
+    if (subfile_count == 0)
         general_error("input path \"%s\" has no files", to_cstring(mars_flags.input_path));
-    }
 
     fs_file* subfiles = malloc(sizeof(fs_file) * subfile_count);
     fs_get_subfiles(&input_dir, subfiles);
 
+    int mars_file_count = 0;
     FOR_RANGE_EXCL(i, 0, subfile_count) {
 
         // filter out non-files and non-mars files.
         if (!fs_is_regular(&subfiles[i])) continue;
         if (!string_ends_with(subfiles[i].path, to_string(".mars"))) continue;
-
+        mars_file_count++;
 
 
     }
+    if (mars_file_count == 0)
+        general_error("input path \"%s\" has no \".mars\" files", to_cstring(mars_flags.input_path));
 
     FOR_RANGE_EXCL(i, 0, subfile_count) fs_drop(&subfiles[i]);
     free(subfiles);
@@ -63,7 +63,7 @@ program_tree* phobos_perform_frontend() {
     construct_token_buffer(&lex);
     FOR_RANGE_EXCL(i, 0, lex.buffer.len) {
         printstr(lex.buffer.base[i].text);
-        printf(" ");
+        printf(" %d \n", lex.buffer.base[i].type);
     }
 
     return NULL;

@@ -117,6 +117,7 @@ token_type scan_ident_or_keyword(lexer_state* restrict lex) {
     if (string_eq(word, to_string("def")))          return tt_keyword_def;
     if (string_eq(word, to_string("type")))         return tt_keyword_type;
     if (string_eq(word, to_string("if")))           return tt_keyword_if;
+    if (string_eq(word, to_string("in")))           return tt_keyword_in;
     if (string_eq(word, to_string("elif")))         return tt_keyword_elif;
     if (string_eq(word, to_string("else")))         return tt_keyword_else;
     if (string_eq(word, to_string("for")))          return tt_keyword_for;
