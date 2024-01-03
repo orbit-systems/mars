@@ -21,21 +21,28 @@ typedef struct string_s {
 #define substring_len(str, start, len) ((string){(str).raw + (start), (len)})
 #define can_be_cstring(str) ((str).raw[(str).len] == '\0')
 
-int    string_cmp(string a, string b);
-bool   string_eq(string a, string b);
 string to_string(char* cstring);
 char*  to_cstring(string str); // this allocates
 void   printstr(string str);
 
-string string_alloc(size_t len);
+string  string_alloc(size_t len);
 #define string_free(str) free(str.raw)
+string  string_clone(string str); // this allocates as well
 
-string string_clone(string str); // this allocates as well
-
+int  string_cmp(string a, string b);
+bool string_eq(string a, string b);
+bool string_ends_with(string source, string ending);
 
 // use #define ORBITSTR_IMPLEMENTATION to generate the actual code
 
 #ifdef ORBITSTR_IMPLEMENTATION
+
+bool string_ends_with(string source, string ending) {
+    if (source.len < ending.len) return false;
+
+    return string_eq(substring_len(source, source.len-ending.len, ending.len), ending);
+}
+
 string string_alloc(size_t len) {
     char* raw = malloc(len);
     if (raw == NULL) return NULL_STR;

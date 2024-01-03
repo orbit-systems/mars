@@ -28,8 +28,18 @@ program_tree* phobos_perform_frontend() {
     fs_get_subfiles(&input_dir, subfiles);
 
     FOR_RANGE_EXCL(i, 0, subfile_count) {
-        
+
+        // filter out non-files and non-mars files.
+        if (!fs_is_regular(&subfiles[i])) continue;
+        if (!string_ends_with(subfiles[i].path, to_string(".mars"))) continue;
+
+
+
     }
+
+    FOR_RANGE_EXCL(i, 0, subfile_count) fs_drop(&subfiles[i]);
+    free(subfiles);
+    fs_drop(&input_dir);
 
     lexer_state lex = new_lexer(to_string("path/lmao"), to_string(
         "\n module test;"
@@ -42,7 +52,7 @@ program_tree* phobos_perform_frontend() {
         "\n     let str = \"bruh\";"
         "\n     let str2 = []u8{0x62, 0x72, 0x75, 0x68};"
         "\n "
-        "\n     if mem::equal(str.base, str2.base, str.len); {"
+        "\n     if mem::equal(str.base, str2.base, str.len) {"
         "\n         neptune::kprint(\"equal\");"
         "\n     } else {"
         "\n         neptune::kprint(\"not equal\");"
