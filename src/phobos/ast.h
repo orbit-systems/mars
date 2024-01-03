@@ -4,7 +4,13 @@
 #include "../orbit.h"
 #include "lexer.h"
 
+
+
 typedef struct {
     token* start;
     token* end;
-} ast_node_base;
+} ast_base;
+
+typedef struct {
+    ast_base base;
+} ast_identifier;

@@ -1,9 +1,12 @@
 #include "orbit.h"
 #include "../mars.h"
 #include "../error.h"
+#include "../dynarr.h"
 
 #include "phobos.h"
 #include "lexer.h"
+
+dynarr_lib(lexer_state);
 
 extern flag_set mars_flags;
 
@@ -24,6 +27,7 @@ program_tree* phobos_perform_frontend() {
     fs_file* subfiles = malloc(sizeof(fs_file) * subfile_count);
     fs_get_subfiles(&input_dir, subfiles);
 
+
     int mars_file_count = 0;
     FOR_RANGE_EXCL(i, 0, subfile_count) {
 
@@ -32,6 +36,18 @@ program_tree* phobos_perform_frontend() {
         if (!string_ends_with(subfiles[i].path, to_string(".mars"))) continue;
         mars_file_count++;
 
+        string loaded_file = string_alloc(subfiles[i].size);
+
+        fs_open(&subfiles[i], "r");
+        bool read_success = fs_read_entire(&subfiles[i], loaded_file.raw);
+        fs_close(&subfiles[i]);
+        if (!read_success)
+            general_error("cannot load file \"%s\" (it might be opened already?)", to_cstring(subfiles[i].path));
+
+
+        lexer_state lex = new_lexer(subfiles[i].path, loaded_file);
+        construct_token_buffer(&lex);
+        printf("%d tokens\n", lex.buffer.len);
 
     }
     if (mars_file_count == 0)
@@ -40,31 +56,6 @@ program_tree* phobos_perform_frontend() {
     FOR_RANGE_EXCL(i, 0, subfile_count) fs_drop(&subfiles[i]);
     free(subfiles);
     fs_drop(&input_dir);
-
-    lexer_state lex = new_lexer(to_string("path/lmao"), to_string(
-        "\n module test;"
-        "\n "
-        "\n import mem \"./memory\";"
-        "\n import neptune \"./neptune\";"
-        "\n "
-        "\n let main = fn #section(\"text.boot\") #link_name(\"__main\") () {"
-        "\n     "
-        "\n     let str = \"bruh\";"
-        "\n     let str2 = []u8{0x62, 0x72, 0x75, 0x68};"
-        "\n "
-        "\n     if mem::equal(str.base, str2.base, str.len) {"
-        "\n         neptune::kprint(\"equal\");"
-        "\n     } else {"
-        "\n         neptune::kprint(\"not equal\");"
-        "\n     }"
-        "\n };"
-    ));
-
-    construct_token_buffer(&lex);
-    FOR_RANGE_EXCL(i, 0, lex.buffer.len) {
-        printstr(lex.buffer.base[i].text);
-        printf(" %d \n", lex.buffer.base[i].type);
-    }
 
     return NULL;
 }
