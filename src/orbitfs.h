@@ -225,7 +225,6 @@ bool fs_open(fs_file* file, char* mode) {
         handle = fopen(file->path.raw, mode);
     } else {
         char* path_cstr = to_cstring(file->path);
-        printf("((%s))", path_cstr);
         handle = fopen(path_cstr, mode);
         free(path_cstr);
     }

@@ -34,6 +34,8 @@ compilation_unit* phobos_perform_frontend() {
     int mars_file_count = 0;
     FOR_RANGE_EXCL(i, 0, subfile_count) {
 
+        printf("--%s\n", to_cstring(subfiles[i].path));
+
         // filter out non-files and non-mars files.
         if (!fs_is_regular(&subfiles[i])) continue;
         if (!string_ends_with(subfiles[i].path, to_string(".mars"))) continue;
@@ -50,6 +52,7 @@ compilation_unit* phobos_perform_frontend() {
         if (subfiles[i].size != 0) {
             read_success = fs_read_entire(&subfiles[i], loaded_file.raw);
         }
+
         fs_close(&subfiles[i]);
 
         if (!read_success)

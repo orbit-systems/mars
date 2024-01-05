@@ -28,14 +28,24 @@ void   printstr(string str);
 string  string_alloc(size_t len);
 #define string_free(str) free(str.raw)
 string  string_clone(string str); // this allocates as well
+string  string_concat(string a, string b); // allocates
 
 int  string_cmp(string a, string b);
 bool string_eq(string a, string b);
 bool string_ends_with(string source, string ending);
 
-// use #define ORBITSTR_IMPLEMENTATION to generate the actual code
+// use #define ORBITSTR_IMPLEMENTATION before including the header to generate the actual code
 
 #ifdef ORBITSTR_IMPLEMENTATION
+
+string string_concat(string a, string b) {
+    string c = string_alloc(a.len + b.len);
+    FOR_RANGE_EXCL(i, 0, a.len)
+        c.raw[i] = a.raw[i];
+    FOR_RANGE_EXCL(i, 0, b.len)
+        c.raw[a.len] = b.raw[i];
+    return c;
+}
 
 bool string_ends_with(string source, string ending) {
     if (source.len < ending.len) return false;
