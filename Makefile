@@ -27,6 +27,9 @@ build: $(OBJECTS)
 test: build
 	./$(EXECUTABLE_NAME) ./mars_code test
 
+test2: build
+	./$(EXECUTABLE_NAME) ./test test
+
 debug:
 	$(DEBUGFLAGS) $(DONTBEAFUCKINGIDIOT)
 

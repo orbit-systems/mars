@@ -28,7 +28,6 @@ compilation_unit* phobos_perform_frontend() {
     fs_file* subfiles = malloc(sizeof(fs_file) * subfile_count);
     fs_get_subfiles(&input_dir, subfiles);
 
-
     dynarr(lexer_state) lexers;
     dynarr_init_lexer_state(&lexers, subfile_count);
 
@@ -66,13 +65,13 @@ compilation_unit* phobos_perform_frontend() {
     if (mars_file_count == 0)
         general_error("input path \"%s\" has no \".mars\" files", to_cstring(mars_flags.input_path));
 
-    FOR_RANGE_EXCL(i, 0, lexers.len) {
-        printf("\n\n");
-        FOR_RANGE_EXCL(j, 0, lexers.base[i].buffer.len) {
-            printf("%s ", token_type_str[lexers.base[i].buffer.base[j].type]);
-        }
-    }
-    printf("\n");
+    // FOR_RANGE_EXCL(i, 0, lexers.len) {
+    //     printf("\n\n");
+    //     FOR_RANGE_EXCL(j, 0, lexers.base[i].buffer.len) {
+    //         printf("%s ", token_type_str[lexers.base[i].buffer.base[j].type]);
+    //     }
+    // }
+    // printf("\n");
 
     FOR_RANGE_EXCL(i, 0, subfile_count) fs_drop(&subfiles[i]);
     free(subfiles);

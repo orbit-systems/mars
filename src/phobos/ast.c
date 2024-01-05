@@ -1,5 +1,4 @@
 #include "../orbit.h"
-
-#include "parser.h"
+#include "lexer.h"
 #include "ast.h"
 

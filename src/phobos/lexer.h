@@ -132,6 +132,7 @@
     TOKEN(tt_type_keyword_f64,  "f64") \
 \
     TOKEN(tt_type_keyword_addr, "addr") \
+    TOKEN(tt_meta_COUNT, "") \
 
 typedef u8 token_type; enum {
 #define TOKEN(enum, str) enum,
