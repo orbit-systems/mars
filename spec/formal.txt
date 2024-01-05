@@ -34,15 +34,15 @@ types
         (untyped_null)  internal "null" literal - implicitly converts to any pointer
 
     compound
-        [N]T            concrete array type with determined length at compile time
-        []T             slice of array defined as struct {raw: ^T, len: int}
+        [N]T            concrete array type with determined length at compile-time
+        []T             slice of array defined as struct {raw: ^T, len: uint}
 
-        struct          data structure / record type
-        union           sum type (basically a struct with no offset between fields)
+        struct {}       data structure / record type
+        union {}        sum type (basically a struct with no offset between fields)
 
-        enum T          enumeration over type T (default: int). T must be in (all integers, uintegers)
+        enum T {}       enumeration over type T (default: int). T must be in (all integers, uintegers)
 
-    note: types are structural, not nominal. if you declare a structural type the same way under different aliases, they are just the same and are treated as identical by the language.
+    note: types are structural, not nominal. if you declare a structural type the same way under different aliases, they are the same and are treated as identical by the language.
 
 operators
     unary numeric
@@ -61,19 +61,19 @@ operators
         %%      remainder (floored)     with type T in (all integers, uintegers, pointers): <T> %% <T> -> <T>
 
     binary logical
-        &       bitwise and             with type T in (all integers, uintegers, floats, pointers): <T> ~ <T> -> <T>
-        |       bitwise or              with type T in (all integers, uintegers, floats, pointers): <T> ~ <T> -> <T>
-        ~|      bitwise nor             with type T in (all integers, uintegers, floats, pointers): <T> ~ <T> -> <T>
+        &       bitwise and             with type T in (all integers, uintegers, floats, pointers): <T> & <T> -> <T>
+        |       bitwise or              with type T in (all integers, uintegers, floats, pointers): <T> | <T> -> <T>
+        ~|      bitwise nor             with type T in (all integers, uintegers, floats, pointers): <T> ~| <T> -> <T>
         ~       bitwise xor             with type T in (all integers, uintegers, floats, pointers): <T> ~ <T> -> <T>
         <<      left shift              with type T in (all integers, uintegers, floats, pointers): <T> << (all uintegers) -> <T>
         >>      right shift             with type T in (all integers, uintegers, floats, pointers): <T> >> (all uintegers) -> <T>
 
     binary boolean
-        &&      boolean and             with type T in (all booleans): <T> && <T> -> <T>
-        ||      boolean or              with type T in (all booleans): <T> || <T> -> <T>
-        ~~      boolean xor             with type T in (all booleans): <T> ~~ <T> -> <T>
+        &&      boolean and             with type T in (booleans): <T> && <T> -> <T>
+        ||      boolean or              with type T in (bool): <T> || <T> -> <T>
+        ~~      boolean xor             with type T in (bool): <T> ~~ <T> -> <T>
 
-    binary comparison
+    comparison
         ==      equality                (*): <T> == <T> -> <bool>
         !=      inequality              (*): <T> != <T> -> <bool>
         <       less than               (**): <T> < <T> -> <bool>
@@ -111,12 +111,11 @@ operators
         | enums have the same casting characteristics of its backing type
         | structs may be cast to other structs if their field type structure is identical (all fields in the same order with the same types).
         | ^ this is identical to a bitcast, but is more deeply checked by the compiler.
-        | slices can cast to pointers corresponding to their backing type. a slice of type T can cast to pointer of type T.
+        | slices can cast to pointers corresponding to their backing type. a slice of type T can cast to pointer of type T. this is the same as adding the
 
         ** values can be bitcast if their byte sizes are the same
         | bitcasting does not modify the value data of a variable,
-        | but only changes what datatype the value is interpreted as
-        | because of this, bitcasting as an operation does not produce code
+        | but only changes what type the data is interpreted as.
 
         note : the ONLY types that can cast implicitly are:
         | addr -> any pointer type
@@ -125,7 +124,7 @@ operators
     
     unary reference
         &       generate pointer        using type T in (all): &<T> -> <^T>
-        $       dereference pointer     using type T in (all): $<^T> -> <T>
+        @       dereference pointer     using type T in (all): @<^T> -> <T>
     
     unary utility
         len         get length of array or slice type, returns uint
@@ -148,14 +147,16 @@ operators
         .       field/variant selection
         ::      entity from library selection
 
-        the selector operate like so:
-        | access fields from a struct or a struct pointer : struct.field
-        | access fields from a union or a union pointer   : union.field
-        | access variants of enums. can be implicitly typed where the type can be otherwise derived : enum.variant, .variant
-        | access entities from another module: module.entity
+        the selectors operate like so:
+        | access fields from a struct or a struct pointer: a_struct.field
+        | access fields from a union or a union pointer: a_union.field
+        | access variants of enums. can be implicitly typed where the type can be otherwise derived : an_enum.variant, .variant
+        | access hidden fields of a slice: a_slice.raw, a_slice.len
+        |
+        | access entities from other modules: a_module::something
 
     precendence
-        unary operators have highest precedence, after atomic expressions (struct field selection/array indexes)
+        unary operators have highest precedence after atomic expressions (struct field selection/array indexes)
 
         non-unary operator precedence: - note: () is function calls.
         6   () 

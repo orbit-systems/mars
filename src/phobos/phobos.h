@@ -8,7 +8,8 @@
 
 dynarr_lib_h(lexer_state);
 
-typedef struct program_tree_s {
-} program_tree;
+typedef struct {
+    
+} compilation_unit;
 
-program_tree* phobos_perform_frontend();
+compilation_unit* phobos_perform_frontend();

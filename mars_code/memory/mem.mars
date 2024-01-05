@@ -1,13 +1,15 @@
 module memory;
 
+
+
 let copy = fn(to, from: addr, len: uint) {
-    let to_byte: ^u8 = to;
+    mut to_byte: ^u8 = to;
     mut from_byte: ^u8 = from;
-    mut to_stop = to_byte + cast(^u8) len
+    let to_stop = to_byte + cast(^u8) len
 
     while to_byte != to_stop {
 
-        $to_byte = $from_byte;
+        @to_byte = @from_byte;
 
         from_byte += 1;
         to_byte += 1;
@@ -21,7 +23,7 @@ let equal = fn(block1, block2: addr, len: uint) -> bool {
 
     while block1_byte != block1_stop {
 
-        if $block1_byte != $block2_byte {
+        if @block1_byte != @block2_byte {
             return false;
         }
 

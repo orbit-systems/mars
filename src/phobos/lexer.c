@@ -2,6 +2,12 @@
 #include "../error.h"
 #include "lexer.h"
 
+char* token_type_str[] = {
+#define TOKEN(enum, str) str,
+    TOKEN_LIST
+#undef TOKEN
+};
+
 dynarr_lib(token)
 
 lexer_state new_lexer(string path, string src) {
@@ -95,6 +101,8 @@ token_type scan_ident_or_keyword(lexer_state* restrict lex) {
 
     string word = substring(lex->src, beginning, lex->cursor);
 
+    if (string_eq(word, to_string("_")))            return tt_identifier_discard;
+
     if (string_eq(word, to_string("int")))          return tt_type_keyword_int;
     if (string_eq(word, to_string("i8")))           return tt_type_keyword_i8;
     if (string_eq(word, to_string("i16")))          return tt_type_keyword_i16;
@@ -148,7 +156,6 @@ token_type scan_ident_or_keyword(lexer_state* restrict lex) {
 
     if (string_eq(word, to_string("null")))         return tt_literal_null;
 
-    if (string_eq(word, to_string("_")))            return tt_identifier_discard;
 
     return tt_identifier;
 }
@@ -336,7 +343,7 @@ token_type scan_operator(lexer_state* restrict lex) {
         return tt_colon;
     
     case '#': advance_char(lex); return tt_hash;
-    case ';': advance_char(lex); return tt_hash;
+    case ';': advance_char(lex); return tt_semicolon;
     case '$': advance_char(lex); return tt_dollar;
     case '.': advance_char(lex); return tt_period;
     case ',': advance_char(lex); return tt_comma;

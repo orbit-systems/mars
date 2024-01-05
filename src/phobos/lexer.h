@@ -4,152 +4,142 @@
 #include "../orbit.h"
 #include "../dynarr.h"
 
+#define TOKEN_LIST \
+    TOKEN(tt_invalid, "INVALID") \
+    TOKEN(tt_EOF,     "EOF") \
+\
+    TOKEN(tt_identifier, "identifier") \
+    TOKEN(tt_identifier_discard, "_") \
+\
+    TOKEN(tt_literal_int, "integer literal") \
+    TOKEN(tt_literal_float, "float literal") \
+    TOKEN(tt_literal_bool, "bool literal") \
+    TOKEN(tt_literal_string, "string literal") \
+    TOKEN(tt_literal_char, "char literal") \
+    TOKEN(tt_literal_null, "null") \
+\
+    TOKEN(tt_hash,      "#") \
+    TOKEN(tt_uninit,    "---") \
+    TOKEN(tt_equal,     "=") \
+    TOKEN(tt_dollar,    "$") \
+    TOKEN(tt_colon,     ":") \
+    TOKEN(tt_colon_colon, "::") \
+    TOKEN(tt_semicolon, ";") \
+    TOKEN(tt_period,    ".") \
+    TOKEN(tt_comma,     ",") \
+    TOKEN(tt_exclam,    "!") \
+    TOKEN(tt_carat,     "^") \
+    TOKEN(tt_at,        "@") \
+    TOKEN(tt_add,       "+") \
+    TOKEN(tt_sub,       "-") \
+    TOKEN(tt_mul,       "*") \
+    TOKEN(tt_div,       "/") \
+    TOKEN(tt_mod,       "%") \
+    TOKEN(tt_mod_mod,   "%%") \
+    TOKEN(tt_tilde,     "~") \
+    TOKEN(tt_and,       "&") \
+    TOKEN(tt_or,        "|") \
+    TOKEN(tt_nor,       "~|") \
+    TOKEN(tt_lshift,    "<<") \
+    TOKEN(tt_rshift,    ">>") \
+\
+    TOKEN(tt_and_and,       "&&") \
+    TOKEN(tt_or_or,         "||") \
+    TOKEN(tt_tilde_tilde,   "~~") \
+\
+    TOKEN(tt_arrow_right,   "->") \
+    TOKEN(tt_arrow_left,    "<-") \
+    TOKEN(tt_arrow_bidir,   "<->") \
+\
+    TOKEN(tt_add_equal,     "+=") \
+    TOKEN(tt_sub_equal,     "-=") \
+    TOKEN(tt_mul_equal,     "*=") \
+    TOKEN(tt_div_equal,     "/=") \
+    TOKEN(tt_mod_equal,     "%=") \
+    TOKEN(tt_mod_mod_equal, "%%=") \
+\
+    TOKEN(tt_and_equal,     "&=") \
+    TOKEN(tt_or_equal,      "|=") \
+    TOKEN(tt_nor_equal,     "~|=") \
+    TOKEN(tt_xor_equal,     "~=") \
+    TOKEN(tt_lshift_equal,  "<<=") \
+    TOKEN(tt_rshift_equal,  ">>=") \
+\
+    TOKEN(tt_equal_equal,   "==") \
+    TOKEN(tt_not_equal,     "!=") \
+    TOKEN(tt_less_than,     "<") \
+    TOKEN(tt_less_equal,    "<=") \
+    TOKEN(tt_greater_than,  ">") \
+    TOKEN(tt_greater_equal, ">=") \
+\
+    TOKEN(tt_open_paren,    "(") \
+    TOKEN(tt_close_paren,   ")") \
+    TOKEN(tt_open_brace,    "{") \
+    TOKEN(tt_close_brace,   "}") \
+    TOKEN(tt_open_bracket,  "[") \
+    TOKEN(tt_close_bracket, "]") \
+\
+    TOKEN(tt_keyword_let,   "let") \
+    TOKEN(tt_keyword_mut,   "mut") \
+    TOKEN(tt_keyword_def,   "def") \
+    TOKEN(tt_keyword_type,  "type") \
+\
+    TOKEN(tt_keyword_asm,   "asm") \
+    TOKEN(tt_keyword_bitcast, "bitcast") \
+    TOKEN(tt_keyword_break, "break") \
+    TOKEN(tt_keyword_case,  "case") \
+    TOKEN(tt_keyword_cast,  "cast") \
+    TOKEN(tt_keyword_defer, "defer") \
+    TOKEN(tt_keyword_enum,  "enum") \
+    TOKEN(tt_keyword_elif,  "elif") \
+    TOKEN(tt_keyword_else,  "else") \
+    TOKEN(tt_keyword_extern,    "extern") \
+    TOKEN(tt_keyword_fallthrough,   "fallthrough") \
+    TOKEN(tt_keyword_for,   "for") \
+    TOKEN(tt_keyword_fn,    "fn") \
+    TOKEN(tt_keyword_if,    "if") \
+    TOKEN(tt_keyword_in,    "in") \
+    TOKEN(tt_keyword_import,    "import") \
+    TOKEN(tt_keyword_module,    "module") \
+    TOKEN(tt_keyword_return,    "return") \
+    TOKEN(tt_keyword_struct,    "struct") \
+    TOKEN(tt_keyword_switch,    "switch") \
+    TOKEN(tt_keyword_union,     "union") \
+    TOKEN(tt_keyword_while,     "while") \
+\
+    TOKEN(tt_keyword_typeof,    "typeof") \
+    TOKEN(tt_keyword_sizeof,    "sizeof") \
+    TOKEN(tt_keyword_alignof,   "alignof") \
+    TOKEN(tt_keyword_offsetof,  "offsetof") \
+\
+    TOKEN(tt_type_keyword_int,  "int") \
+    TOKEN(tt_type_keyword_i8,   "i8") \
+    TOKEN(tt_type_keyword_i16,  "i16") \
+    TOKEN(tt_type_keyword_i32,  "i32") \
+    TOKEN(tt_type_keyword_i64,  "i64") \
+\
+    TOKEN(tt_type_keyword_uint, "uint") \
+    TOKEN(tt_type_keyword_u8,   "u8") \
+    TOKEN(tt_type_keyword_u16,  "u16") \
+    TOKEN(tt_type_keyword_u32,  "u32") \
+    TOKEN(tt_type_keyword_u64,  "u64") \
+\
+    TOKEN(tt_type_keyword_bool, "bool") \
+\
+    TOKEN(tt_type_keyword_float,"float") \
+    TOKEN(tt_type_keyword_f16,  "f16") \
+    TOKEN(tt_type_keyword_f32,  "f32") \
+    TOKEN(tt_type_keyword_f64,  "f64") \
+\
+    TOKEN(tt_type_keyword_addr, "addr") \
+
 typedef u8 token_type; enum {
-    tt_invalid,
-    tt_EOF,
-
-    tt_meta_identifer_begin,
-        tt_identifier,         // bruh
-        tt_identifier_discard, // _
-    tt_meta_identifer_end,
-
-    tt_meta_literal_begin,
-        tt_literal_int,     // 123
-        tt_literal_float,   // 12.3
-        tt_literal_bool,    // true, false
-        tt_literal_string,  // "bruh"
-        tt_literal_char,    // 'b'
-        tt_literal_null,    // null
-    tt_meta_literal_end,
-
-    tt_meta_operator_begin,
-        tt_hash,        // #
-        tt_uninit,      // ---
-        tt_equal,       // =
-        tt_dollar,      // $
-        tt_colon,       // :
-        tt_colon_colon, // ::
-        tt_semicolon,   // ;
-        tt_period,      // .
-        tt_comma,       // ,
-        tt_exclam,      // !
-        tt_carat,       // ^
-        tt_at,          // @
-        tt_add,         // +
-        tt_sub,         // -
-        tt_mul,         // *
-        tt_div,         // /
-        tt_mod,         // %
-        tt_mod_mod,     // %%
-        tt_tilde,       // ~
-        tt_and,         // &
-        tt_or,          // |
-        tt_nor,         // ~|
-        tt_lshift,      // <<
-        tt_rshift,      // >>
-
-        tt_and_and,     // &&
-        tt_or_or,       // ||
-        tt_tilde_tilde, // ~~
-
-        tt_meta_arrow_begin,
-            tt_arrow_right,    // ->
-            tt_arrow_left,     // <-
-            tt_arrow_bidir,    // <->
-        tt_meta_arrow_end,
-    
-        tt_meta_compound_assign_begin,
-            tt_add_equal,      // +=
-            tt_sub_equal,      // -=
-            tt_mul_equal,      // *=
-            tt_div_equal,      // /=
-            tt_mod_equal,      // %=
-            tt_mod_mod_equal,  // %%=
-
-            tt_and_equal,      // &=
-            tt_or_equal,       // |=
-            tt_nor_equal,      // ~|=
-            tt_xor_equal,      // ~=
-            tt_lshift_equal,   // <<=
-            tt_rshift_equal,   // >>=
-        tt_meta_compound_assign_end,
-
-        tt_meta_comparison_begin,
-            tt_equal_equal,     // ==
-            tt_not_equal,       // !=
-            tt_less_than,       // <
-            tt_less_equal,      // <=
-            tt_greater_than,    // >
-            tt_greater_equal,   // >=
-        tt_meta_comparison_end,
-
-        tt_open_paren,     // (
-        tt_close_paren,    // )
-        tt_open_brace,     // {
-        tt_close_brace,    // }
-        tt_open_bracket,   // [
-        tt_close_bracket,  // ]
-    tt_meta_operator_end,
-
-    tt_meta_keyword_begin,
-        tt_keyword_let,
-        tt_keyword_mut,
-        tt_keyword_def,
-        tt_keyword_type,
-
-        tt_keyword_asm,
-        tt_keyword_bitcast,
-        tt_keyword_break,
-        tt_keyword_case,
-        tt_keyword_cast,
-        tt_keyword_defer,
-        tt_keyword_enum,
-        tt_keyword_elif,
-        tt_keyword_else,
-        tt_keyword_extern,
-        tt_keyword_fallthrough,
-        tt_keyword_for,
-        tt_keyword_fn,
-        tt_keyword_if,
-        tt_keyword_in,
-        tt_keyword_import,
-        tt_keyword_module,
-        tt_keyword_return,
-        tt_keyword_struct,
-        tt_keyword_switch,
-        tt_keyword_union,
-        tt_keyword_while,
-
-        tt_keyword_typeof,
-        tt_keyword_sizeof,
-        tt_keyword_alignof,
-        tt_keyword_offsetof,
-
-    tt_meta_keyword_end,
-
-    tt_meta_type_begin,
-        tt_type_keyword_int,
-        tt_type_keyword_i8,
-        tt_type_keyword_i16,
-        tt_type_keyword_i32,
-        tt_type_keyword_i64,
-
-        tt_type_keyword_uint,
-        tt_type_keyword_u8,
-        tt_type_keyword_u16,
-        tt_type_keyword_u32,
-        tt_type_keyword_u64,
-
-        tt_type_keyword_bool,
-
-        tt_type_keyword_float,
-        tt_type_keyword_f16,
-        tt_type_keyword_f32,
-        tt_type_keyword_f64,
-
-        tt_type_keyword_addr,
-    tt_meta_type_end,
+#define TOKEN(enum, str) enum,
+TOKEN_LIST
+#undef TOKEN
 };
+
+extern char* token_type_str[];
 
 typedef struct token_s {
     string text;
