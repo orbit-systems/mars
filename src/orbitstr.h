@@ -3,6 +3,11 @@
 
 // strings and string-related utils.
 
+// allocates an extra character for null termination outside of the string bounds.
+// probably recommended if you interface a lot with standard C APIs and dont want clone_to_cstring allocations everywhere.
+
+#define CSTRING_COMPATIBILITY_MODE
+
 #include "orbit.h"
 
 typedef struct string_s {
@@ -22,7 +27,7 @@ typedef struct string_s {
 #define can_be_cstring(str) ((str).raw[(str).len] == '\0')
 
 string to_string(char* cstring);
-char*  to_cstring(string str); // this allocates
+char*  clone_to_cstring(string str); // this allocates
 void   printstr(string str);
 
 string  string_alloc(size_t len);
@@ -40,10 +45,8 @@ bool string_ends_with(string source, string ending);
 
 string string_concat(string a, string b) {
     string c = string_alloc(a.len + b.len);
-    FOR_RANGE_EXCL(i, 0, a.len)
-        c.raw[i] = a.raw[i];
-    FOR_RANGE_EXCL(i, 0, b.len)
-        c.raw[a.len] = b.raw[i];
+    FOR_RANGE_EXCL(i, 0, a.len) c.raw[i] = a.raw[i];
+    FOR_RANGE_EXCL(i, 0, b.len) c.raw[a.len + i] = b.raw[i];
     return c;
 }
 
@@ -54,9 +57,22 @@ bool string_ends_with(string source, string ending) {
 }
 
 string string_alloc(size_t len) {
+    #ifdef CSTRING_COMPATIBILITY_MODE
+    char* raw = malloc(len + 1);
+    #else
     char* raw = malloc(len);
+    #endif
+    
     if (raw == NULL) return NULL_STR;
+
+    memset(raw, ' ', len);
+
+    #ifdef CSTRING_COMPATIBILITY_MODE
+    raw[len] = '\0';
+    #endif
+
     return (string){raw, len};
+
 }
 
 int string_cmp(string a, string b) {
@@ -79,9 +95,10 @@ string to_string(char* cstring) {
     return (string){cstring, strlen(cstring)};
 }
 
-char* to_cstring(string str) {
+char* clone_to_cstring(string str) {
     if (is_null_str(str)) return "";
 
+    return str.raw;
     char* cstr = malloc(str.len + 1);
     if (cstr == NULL) return NULL;
     memcpy(cstr, str.raw, str.len);

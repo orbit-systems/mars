@@ -76,7 +76,7 @@ void load_arguments(int argc, char* argv[], flag_set* fl) {
         } else if (string_eq(a.key, to_string("-o"))) {
             fl->output_path = a.val;
         } else {
-            printf("error: unrecognized option \"%s\"\n", to_cstring(a.key));
+            printf("error: unrecognized option \"%s\"\n", clone_to_cstring(a.key));
             exit(EXIT_FAILURE);
         }
     }

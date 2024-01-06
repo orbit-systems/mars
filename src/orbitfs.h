@@ -107,7 +107,7 @@ bool fs_exists(string path) {
     if (can_be_cstring(path)) {
         exists = stat(path.raw, &statbuffer) == 0;
     } else {
-        char* path_cstr = to_cstring(path);
+        char* path_cstr = clone_to_cstring(path);
         exists = stat(path_cstr, &statbuffer) == 0;
         free(path_cstr);
     }
@@ -123,7 +123,7 @@ bool fs_get(string path, fs_file* file) {
         if (can_be_cstring(path)) {
             exists = stat(path.raw, &statbuffer) == 0;
         } else {
-            char* path_cstr = to_cstring(path);
+            char* path_cstr = clone_to_cstring(path);
             exists = stat(path_cstr, &statbuffer) == 0;
             free(path_cstr);
         }
@@ -168,7 +168,7 @@ bool fs_create(string path, fs_file_type type, fs_file* file) {
             #endif
             ) == 0;
         } else {
-            char* path_cstr = to_cstring(path);
+            char* path_cstr = clone_to_cstring(path);
             creation_success = mkdir(path_cstr
             #if !(defined(MINGW32) || defined(__MINGW32__))
                 , S_IRWXU | S_IRWXG | S_IRWXO
@@ -182,7 +182,7 @@ bool fs_create(string path, fs_file_type type, fs_file* file) {
         if (can_be_cstring(path)) {
             handle = fopen(path.raw, "w");
         } else {
-            char* path_cstr = to_cstring(path);
+            char* path_cstr = clone_to_cstring(path);
             handle = fopen(path_cstr, "w");
             free(path_cstr);
         }
@@ -220,15 +220,15 @@ bool fs_drop(fs_file* file) {
 bool fs_open(fs_file* file, char* mode) {
     if (file->opened) return false;
 
+
     FILE* handle = NULL;
     if (can_be_cstring(file->path)) {
         handle = fopen(file->path.raw, mode);
     } else {
-        char* path_cstr = to_cstring(file->path);
+        char* path_cstr = clone_to_cstring(file->path);
         handle = fopen(path_cstr, mode);
         free(path_cstr);
     }
-
 
     if (handle == NULL) return false;
 
@@ -260,7 +260,7 @@ bool fs_delete(fs_file* file) {
         if (can_be_cstring(file->path)) {
             success = rmdir(file->path.raw) == 0;
         } else {
-            char* path_cstr = to_cstring(file->path);
+            char* path_cstr = clone_to_cstring(file->path);
             success = rmdir(path_cstr) == 0;
             free(path_cstr);
         }
@@ -269,7 +269,7 @@ bool fs_delete(fs_file* file) {
         if (can_be_cstring(file->path)) {
             success = remove(file->path.raw) == 0;
         } else {
-            char* path_cstr = to_cstring(file->path);
+            char* path_cstr = clone_to_cstring(file->path);
             success = remove(path_cstr) == 0;
             free(path_cstr);
         }
@@ -293,7 +293,7 @@ int fs_subfile_count(fs_file* file) {
     if (can_be_cstring(file->path)) {
         d = opendir(file->path.raw);
     } else {
-        char* path_cstr = to_cstring(file->path);
+        char* path_cstr = clone_to_cstring(file->path);
         d = opendir(path_cstr);
         free(path_cstr);
     }
@@ -313,37 +313,43 @@ bool fs_get_subfiles(fs_file* file, fs_file* file_array) {
 
     if (!fs_is_directory(file)) return false;
 
-    DIR* d;
-    struct dirent* dir;
+    DIR* directory;
+    struct dirent* dir_entry;
     
     if (can_be_cstring(file->path)) {
-        d = opendir(file->path.raw);
+        directory = opendir(file->path.raw);
     } else {
-        char* path_cstr = to_cstring(file->path);
-        d = opendir(path_cstr);
+        char* path_cstr = clone_to_cstring(file->path);
+        directory = opendir(path_cstr);
         free(path_cstr);
     }
-    if (!d) return false;
+    if (!directory) return false;
 
     if (can_be_cstring(file->path)) {
         chdir(file->path.raw);
     } else {
-        char* path_cstr = to_cstring(file->path);
+        char* path_cstr = clone_to_cstring(file->path);
         chdir(path_cstr);
         free(path_cstr);
     }
 
-    for (int i = 0; (dir = readdir(d)) != NULL;) {
-        if (strcmp(dir->d_name, ".") == 0) continue;
-        if (strcmp(dir->d_name, "..") == 0) continue;
-        bool success = fs_get(to_string(dir->d_name), &file_array[i]);
+    for (int i = 0; (dir_entry = readdir(directory)) != NULL;) {
+        if (strcmp(dir_entry->d_name, ".") == 0) continue;
+        if (strcmp(dir_entry->d_name, "..") == 0) continue;
+        //string temp1 = string_concat(file->path, to_string("/"));
+        //string path = string_concat(temp1, to_string(dir_entry->d_name));
+        //printf("\ny\n[%s]\n\n", dir_entry->d_name);
+        string path = to_string(dir_entry->d_name);
+        bool success = fs_get(path, &file_array[i]);
         if (!success) {
             return false;
         }
+        //string_free(temp1);
+        // string_free(path);
         i++;
     }
 
-    closedir(d);
+    closedir(directory);
     return true;
 }
 
@@ -552,7 +558,7 @@ int fs_self_test() {
         fs_file* subfile_array = malloc(sizeof(fs_file) * count);
         passed = passed && fs_get_subfiles(&f, subfile_array);
         FOR_RANGE_EXCL(i, 0, count) {
-            printf("\t\t- %s\n", to_cstring(subfile_array[i].path));
+            printf("\t\t- %s\n", clone_to_cstring(subfile_array[i].path));
             fs_drop(&subfile_array[i]);
         }
         free(subfile_array);

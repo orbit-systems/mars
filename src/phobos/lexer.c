@@ -26,7 +26,7 @@ void construct_token_buffer(lexer_state* restrict lex) {
 
     while (lex->buffer.base[lex->buffer.len-1].type != tt_EOF) {
         append_next_token(lex);
-        // printf("(%3d %s)\n",lex->buffer.base[lex->buffer.len-1].type, to_cstring(lex->buffer.base[lex->buffer.len-1].text));
+        // printf("(%3d %s)\n",lex->buffer.base[lex->buffer.len-1].type, clone_to_cstring(lex->buffer.base[lex->buffer.len-1].text));
     }
     dynarr_shrink(token, &lex->buffer);
 }
