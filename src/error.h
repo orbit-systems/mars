@@ -33,6 +33,31 @@ enum ANSI_STYLE {
 
 #define set_style(style) printf("\x1b[%dm", style)
 
+#define style_Reset  "\x1b[0m"
+#define style_Bold   "\x1b[1m"
+#define style_Dim    "\x1b[2m"
+#define style_Italic "\x1b[3m"
+
+#define style_FG_Black    "\x1b[30m",
+#define style_FG_Red      "\x1b[31m",
+#define style_FG_Green    "\x1b[32m",
+#define style_FG_Yellow   "\x1b[33m",
+#define style_FG_Blue     "\x1b[34m",
+#define style_FG_Magenta  "\x1b[35m",
+#define style_FG_Cyan     "\x1b[36m",
+#define style_FG_White    "\x1b[37m",
+#define style_FG_Default  "\x1b[39m",
+
+#define style_BG_Black    "\x1b[40m",
+#define style_BG_Red      "\x1b[41m",
+#define style_BG_Green    "\x1b[42m",
+#define style_BG_Yellow   "\x1b[43m",
+#define style_BG_Blue     "\x1b[44m",
+#define style_BG_Magenta  "\x1b[45m",
+#define style_BG_Cyan     "\x1b[46m",
+#define style_BG_White    "\x1b[47m",
+#define style_BG_Default  "\x1b[49m",
+
 void error_at_string(string path, string text, string pos, char* message, ...);
 void warning_at_string(string path, string text, string pos, char* message, ...);
 

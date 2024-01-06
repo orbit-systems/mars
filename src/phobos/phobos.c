@@ -47,8 +47,12 @@ compilation_unit* phobos_perform_frontend() {
         if (subfiles[i].size == 0) loaded_file = to_string(" ");
         else                       loaded_file = string_alloc(subfiles[i].size);
 
-        fs_open(&subfiles[i], "rb"); // wtf windows? for some reason "r" wasn't enough
-        
+        fs_open(&subfiles[i], "r"
+        #if (defined(MINGW32) || defined(__MINGW32__))
+            "b"  /* stupid fucking windows permission that makes it so it doesn't stop loading the file at randomly */
+        #endif
+        );
+
         bool read_success = true;
         if (subfiles[i].size != 0) {
             read_success = fs_read(&subfiles[i], loaded_file.raw, subfiles[i].size);
@@ -72,7 +76,9 @@ compilation_unit* phobos_perform_frontend() {
     FOR_RANGE_EXCL(i, 0, lexers.len) {
         printf("\n\n");
         FOR_RANGE_EXCL(j, 0, lexers.base[i].buffer.len) {
-            printf("%s ", token_type_str[lexers.base[i].buffer.base[j].type]);
+            // printf("%s\n", token_type_str[lexers.base[i].buffer.base[j].type]);
+            printstr(lexers.base[i].buffer.base[j].text);
+            printf(" ");
         }
     }
     printf("\n");
