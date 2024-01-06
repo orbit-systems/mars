@@ -8,16 +8,11 @@ void general_error(char* message, ...) {
     vsprintf(ERROR_MSG_BUFFER, message, args);
     va_end(args);
 
-    set_style(STYLE_FG_Red);
-    set_style(STYLE_Bold);
-    printf("ERROR");
-    set_style(STYLE_Reset);
 
-    set_style(STYLE_Dim);
-    printf(" | ");
-    set_style(STYLE_Reset);
+    printf(style_FG_Red style_Bold "ERROR" style_Reset);
 
-    printf("%s", ERROR_MSG_BUFFER);
+    printf(style_Dim " | " style_Reset "%s", ERROR_MSG_BUFFER);
+
 
     printf("\n");
     exit(EXIT_FAILURE);
@@ -30,16 +25,8 @@ void general_warning(char* message, ...) {
     vsprintf(ERROR_MSG_BUFFER, message, args);
     va_end(args);
 
-    set_style(STYLE_FG_Yellow);
-    set_style(STYLE_Bold);
-    printf("WARNING");
-    set_style(STYLE_Reset);
+    printf(style_FG_Yellow style_Bold "WARNING" style_Reset);
 
-    set_style(STYLE_Dim);
-    printf(" | ");
-    set_style(STYLE_Reset);
-
-    printf("%s", ERROR_MSG_BUFFER);
 
     printf("\n");
     exit(EXIT_FAILURE);
@@ -53,14 +40,11 @@ void error_at_string(string path, string text, string pos, char* message, ...) {
     vsprintf(ERROR_MSG_BUFFER, message, args);
     va_end(args);
 
-    set_style(STYLE_FG_Red);
-    set_style(STYLE_Bold);
-    printf("ERROR");
-    set_style(STYLE_Reset);
+    printf(style_FG_Red style_Bold "ERROR" style_Reset);
 
-    set_style(STYLE_Dim);
-    printf(" |");
-    set_style(STYLE_Reset);
+
+    printf(style_Dim " | " style_Reset);
+
 
     int line;
     int column;
@@ -71,29 +55,24 @@ void error_at_string(string path, string text, string pos, char* message, ...) {
     printf(" "); printstr(path);
     printf(" @ %d:%d ", line, column);
 
-    set_style(STYLE_Dim);
-    printf("-> ");
-    set_style(STYLE_Reset);
+    printf(style_Dim "-> " style_Reset);
 
-    set_style(STYLE_Italic);
-    set_style(STYLE_Bold);
-    printf("%s", ERROR_MSG_BUFFER);
-    set_style(STYLE_Reset);
 
-    set_style(STYLE_Dim);
+    printf(style_Italic style_Bold "%s" style_Reset, ERROR_MSG_BUFFER);
+
+    printf(style_Dim);
     printf("\n      | ");
     printf("\n % 4d | ", line);
-    set_style(STYLE_Reset);
+    printf(style_Reset);
     printstr(string_make(line_ptr, line_len));
-    set_style(STYLE_Dim);
+    printf(style_Dim);
     printf("\n      | ");
-    set_style(STYLE_Reset);
-    
+    printf(style_Reset);
+
     while (column-- > 1) printf(" ");
 
-
-    set_style(STYLE_FG_Red);
-    set_style(STYLE_Bold);
+    printf(style_FG_Red);
+    printf(style_Bold);
     if (pos.len > 0) {
         printf("^");
     }
@@ -104,15 +83,14 @@ void error_at_string(string path, string text, string pos, char* message, ...) {
     if (pos.len > 1) {
         printf("^");
     }
-    set_style(STYLE_Reset);
+    printf(style_Reset);
 
-    set_style(STYLE_Italic);
-    set_style(STYLE_Bold);
+    printf(style_Italic);
+    printf(style_Bold);
     printf(" %s\n", ERROR_MSG_BUFFER);
-    set_style(STYLE_Reset);
+    printf(style_Reset);
 
     exit(EXIT_FAILURE);
-
 }
 
 void warning_at_string(string path, string text, string pos, char* message, ...) {
@@ -123,14 +101,9 @@ void warning_at_string(string path, string text, string pos, char* message, ...)
     vsprintf(ERROR_MSG_BUFFER, message, args);
     va_end(args);
 
-    set_style(STYLE_FG_Red);
-    set_style(STYLE_Bold);
-    printf("WARNING");
-    set_style(STYLE_Reset);
+    printf(style_FG_Yellow style_Bold "WARNING" style_Reset);
 
-    set_style(STYLE_Dim);
-    printf("     |");
-    set_style(STYLE_Reset);
+    printf(style_Dim "     |" style_Reset);
 
     int line;
     int column;
@@ -140,29 +113,26 @@ void warning_at_string(string path, string text, string pos, char* message, ...)
 
     printf(" %s @ %d:%d ", path, line, column);
 
-    set_style(STYLE_Dim);
-    printf("-> ");
-    set_style(STYLE_Reset);
+    printf(style_Dim "-> " style_Reset);
 
-    set_style(STYLE_Italic);
-    set_style(STYLE_Bold);
-    printf("%s", ERROR_MSG_BUFFER);
-    set_style(STYLE_Reset);
 
-    set_style(STYLE_Dim);
+
+    printf(style_Italic style_Bold "%s" style_Reset, ERROR_MSG_BUFFER);
+
+    printf(style_Dim);
     printf("\n        | ");
     printf("\n   % 4d | ", line);
-    set_style(STYLE_Reset);
+    printf(style_Reset);
     printstr(string_make(line_ptr, line_len));
-    set_style(STYLE_Dim);
+    printf(style_Dim);
     printf("\n        | ");
-    set_style(STYLE_Reset);
+    printf(style_Reset);
     
     while (column-- > 1) printf(" ");
 
 
-    set_style(STYLE_FG_Red);
-    set_style(STYLE_Bold);
+    printf(style_FG_Yellow);
+    printf(style_Bold);
     if (pos.len > 0) {
         printf("^");
     }
@@ -173,12 +143,12 @@ void warning_at_string(string path, string text, string pos, char* message, ...)
     if (pos.len > 1) {
         printf("^");
     }
-    set_style(STYLE_Reset);
+    printf(style_Reset);
 
-    set_style(STYLE_Italic);
-    set_style(STYLE_Bold);
+    printf(style_Italic);
+    printf(style_Bold);
     printf(" %s\n", ERROR_MSG_BUFFER);
-    set_style(STYLE_Reset);
+    printf(style_Reset);
 
     exit(EXIT_FAILURE);
 

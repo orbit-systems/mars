@@ -34,8 +34,6 @@ compilation_unit* phobos_perform_frontend() {
     int mars_file_count = 0;
     FOR_RANGE_EXCL(i, 0, subfile_count) {
 
-        printf("--%s\n", clone_to_cstring(subfiles[i].path));
-
         // filter out non-files and non-mars files.
         if (!fs_is_regular(&subfiles[i])) continue;
         if (!string_ends_with(subfiles[i].path, to_string(".mars"))) continue;
@@ -72,16 +70,6 @@ compilation_unit* phobos_perform_frontend() {
     }
     if (mars_file_count == 0)
         general_error("input path \"%s\" has no \".mars\" files", clone_to_cstring(mars_flags.input_path));
-
-    FOR_RANGE_EXCL(i, 0, lexers.len) {
-        printf("\n\n");
-        FOR_RANGE_EXCL(j, 0, lexers.base[i].buffer.len) {
-            // printf("%s\n", token_type_str[lexers.base[i].buffer.base[j].type]);
-            printstr(lexers.base[i].buffer.base[j].text);
-            printf(" ");
-        }
-    }
-    printf("\n");
 
     FOR_RANGE_EXCL(i, 0, subfile_count) fs_drop(&subfiles[i]);
     free(subfiles);
