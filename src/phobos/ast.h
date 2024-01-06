@@ -18,6 +18,21 @@ typedef struct {
         token* tok; \
         }; \
     }) \
+    AST_TYPE(int_lit_expr, "int literal", { \
+        ast_base base; \
+        token* lit; \
+        u64 value; \
+    }) \
+    AST_TYPE(float_lit_expr, "float literal", { \
+        ast_base base; \
+        token* lit; \
+        f64 value; \
+    }) \
+    AST_TYPE(string_lit_expr, "string literal", { \
+        ast_base base; \
+        token* lit; \
+        string value; \
+    }) \
     AST_TYPE(paren_expr, "parenthesis", { \
         ast_base base; \
         AST subexpr; \

@@ -1,7 +1,7 @@
 #pragma once
 #define ORBIT_H
 
-// standard Orbit Systems utility header
+// standard orbit systems utility header
 
 #include <stdlib.h>
 #include <stdint.h>
@@ -20,6 +20,8 @@ typedef int32_t  i32;
 typedef int16_t  i16;
 typedef int8_t   i8;
 typedef uint8_t  bool;
+typedef float    f32;
+typedef double   f64;
 #define false 0
 #define true (!false)
 
