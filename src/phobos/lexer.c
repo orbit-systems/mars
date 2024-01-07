@@ -362,6 +362,7 @@ token_type scan_operator(lexer_state* restrict lex) {
             "unrecognized character");
         break;
     }
+    return tt_invalid;
 }
 
 int skip_block_comment(lexer_state* restrict lex) {

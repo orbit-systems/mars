@@ -211,7 +211,7 @@ bool fs_drop(fs_file* file) {
 
     string_free(file->path);
 
-    *file = (fs_file){};
+    *file = (fs_file){0};
 
     file->handle = NULL;
 

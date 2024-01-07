@@ -2,7 +2,7 @@
 #include "error.h"
 
 void general_error(char* message, ...) {
-    char ERROR_MSG_BUFFER[500] = {};
+    char ERROR_MSG_BUFFER[500] = {0};
     va_list args;
     va_start(args, message);
     vsprintf(ERROR_MSG_BUFFER, message, args);
@@ -19,7 +19,7 @@ void general_error(char* message, ...) {
 }
 
 void general_warning(char* message, ...) {
-    char ERROR_MSG_BUFFER[500] = {};
+    char ERROR_MSG_BUFFER[500] = {0};
     va_list args;
     va_start(args, message);
     vsprintf(ERROR_MSG_BUFFER, message, args);
@@ -34,7 +34,7 @@ void general_warning(char* message, ...) {
 
 void error_at_string(string path, string text, string pos, char* message, ...) {
     
-    char ERROR_MSG_BUFFER[500] = {};
+    char ERROR_MSG_BUFFER[500] = {0};
     va_list args;
     va_start(args, message);
     vsprintf(ERROR_MSG_BUFFER, message, args);
@@ -77,7 +77,7 @@ void error_at_string(string path, string text, string pos, char* message, ...) {
         printf("^");
     }
     if (pos.len > 2) {
-        for (int i = 2; i < pos.len; i++)
+        for (size_t i = 2; i < pos.len; i++)
             printf("~");
     }
     if (pos.len > 1) {
@@ -95,7 +95,7 @@ void error_at_string(string path, string text, string pos, char* message, ...) {
 
 void warning_at_string(string path, string text, string pos, char* message, ...) {
     
-    char ERROR_MSG_BUFFER[500] = {};
+    char ERROR_MSG_BUFFER[500] = {0};
     va_list args;
     va_start(args, message);
     vsprintf(ERROR_MSG_BUFFER, message, args);
@@ -103,7 +103,7 @@ void warning_at_string(string path, string text, string pos, char* message, ...)
 
     printf(style_FG_Yellow style_Bold "WARNING" style_Reset);
 
-    printf(style_Dim "     |" style_Reset);
+    printf(style_Dim "     | " style_Reset);
 
     int line;
     int column;
@@ -111,7 +111,8 @@ void warning_at_string(string path, string text, string pos, char* message, ...)
     int line_len;
     line_and_col(text, pos.raw-text.raw, &line_ptr, &line_len, &line, &column);
 
-    printf(" %s @ %d:%d ", path, line, column);
+    printstr(path);
+    printf(" @ %d:%d ", line, column);
 
     printf(style_Dim "-> " style_Reset);
 
@@ -137,7 +138,7 @@ void warning_at_string(string path, string text, string pos, char* message, ...)
         printf("^");
     }
     if (pos.len > 2) {
-        for (int i = 2; i < pos.len; i++)
+        for (size_t i = 2; i < pos.len; i++)
             printf("~");
     }
     if (pos.len > 1) {
@@ -159,7 +160,7 @@ void line_and_col(string text, size_t position, char** last_newline, int* line_l
     int l = 0;
     int c = 0;
 
-    for (int i = 0; i <= position; i++) {
+    for (size_t i = 0; i <= position; i++) {
         if (text.raw[i] == '\n') {
             *last_newline = &text.raw[i];
             l++;

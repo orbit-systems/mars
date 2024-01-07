@@ -5,9 +5,6 @@
 
 #include "phobos.h"
 #include "lexer.h"
-
-dynarr_lib(lexer_state);
-
 extern flag_set mars_flags;
 
 compilation_unit* phobos_perform_frontend() {
@@ -78,3 +75,5 @@ compilation_unit* phobos_perform_frontend() {
 
     return NULL;
 }
+
+dynarr_lib(lexer_state)

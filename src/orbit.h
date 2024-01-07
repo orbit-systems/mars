@@ -33,22 +33,16 @@ typedef double   f64;
     printf("CRASH: \"%s\" at %s:%d\n", (msg), (__FILE__), (__LINE__)); \
     exit(EXIT_FAILURE);} while (0)
 
-#define max(a,b)            \
-({                          \
-    __typeof__(a) _a = (a); \
-    __typeof__(b) _b = (b); \
-    _a > _b ? _a : _b;      \
-})
+#define max(a,b) ((a) > (b) ? (a) : (b))
+#define min(a,b) ((a) < (b) ? (a) : (b))
 
-#define min(a,b)            \
-({                          \
-    __typeof__(a) _a = (a); \
-    __typeof__(b) _b = (b); \
-    _a < _b ? _a : _b;      \
-})
+#define FOR_RANGE_INCL(iterator, start, end) for (intptr_t iterator = (start); iterator <= (end); iterator++)
+#define FOR_RANGE_EXCL(iterator, start, end) for (intptr_t iterator = (start); iterator < (end); iterator++)
 
-#define FOR_RANGE_INCL(iterator, start, end) for (int iterator = (start); iterator <= (end); iterator++)
-#define FOR_RANGE_EXCL(iterator, start, end) for (int iterator = (start); iterator < (end); iterator++)
+#define FOR_URANGE_INCL(iterator, start, end) for (uintptr_t iterator = (start); iterator <= (end); iterator++)
+#define FOR_URANGE_EXCL(iterator, start, end) for (uintptr_t iterator = (start); iterator < (end); iterator++)
+
+
 
 #define is_pow_2(i) ((i & (i-1)) == 0)
 

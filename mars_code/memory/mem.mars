@@ -45,5 +45,5 @@ let set = fn(dest: addr, len: uint, val: u8) {
 
 let slice_equal = fn(a, b: []u8) -> bool {
     if a.len != b.len { return false; }
-    return equal(a.base, b.base, a.len);
+    return equal(a.raw, b.raw, a.len);
 };

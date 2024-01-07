@@ -12,19 +12,20 @@ CC = gcc
 
 DEBUGFLAGS = -g -rdynamic -pg
 ASANFLAGS = -fsanitize=undefined -fsanitize=address
-DONTBEAFUCKINGIDIOT = -Werror -Wall -Wextra -pedantic -Wno-missing-field-initializers -Wno-unused-result
+DONTBEAFUCKINGIDIOT = -Wall -Wextra -pedantic -Wno-missing-field-initializers -Wno-unused-result
 CFLAGS = -Isrc/ -O3
 SHUTTHEFUCKUP = -Wno-unknown-warning-option -Wno-incompatible-pointer-types-discards-qualifiers -Wno-initializer-overrides -Wno-discarded-qualifiers
 
 build/%.o: src/%.c
-	@echo $<
-	@$(CC) -c -o $@ $< $(CFLAGS) -MD $(SHUTTHEFUCKUP)
+	@echo compiling $<...
+	@$(CC) -c -o $@ $< $(CFLAGS) -MD
 
 build: $(OBJECTS)
 	@-cp build/deimos/* build/
 	@-cp build/phobos/* build/
 	@echo linking...
 	@$(CC) $(OBJECTS) -o $(EXECUTABLE_NAME) $(CFLAGS) -MD
+	@echo $(EXECUTABLE_NAME) built
 	
 
 test: build
@@ -44,7 +45,7 @@ clean:
 	@mkdir build/phobos
 
 printbuildinfo:
-	@echo using $(CC) with flags $(CFLAGS) $(SHUTTHEFUCKUP)
+	@echo using $(CC) with flags $(CFLAGS)
 
 new: clean printbuildinfo build
 

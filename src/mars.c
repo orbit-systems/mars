@@ -80,4 +80,4 @@ void load_arguments(int argc, char* argv[], flag_set* fl) {
             exit(EXIT_FAILURE);
         }
     }
-};
+}

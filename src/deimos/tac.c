@@ -7,7 +7,7 @@ TAC_element* createTACelement(TAC_type type, int argcount, TAC_arg* arguments) {
 	TAC_element int_elem = (TAC_element){.type=type, .arg_len=argcount};
 	for (int i = 0; i < argcount; i++) int_elem.arg[i] = arguments[i];
 	
-
+	return NULL;
 }
 
 void testTAC() {

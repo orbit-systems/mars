@@ -80,4 +80,4 @@ typedef struct {
 	TAC_arg  arg[3];
 } TAC_element;
 
-dynarr_lib_h(TAC_element);
+dynarr_lib_h(TAC_element)
