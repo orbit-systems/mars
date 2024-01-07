@@ -1,0 +1,184 @@
+#include "orbit.h"
+#include "error.h"
+
+void general_error(char* message, ...) {
+    char ERROR_MSG_BUFFER[500] = {0};
+    va_list args;
+    va_start(args, message);
+    vsprintf(ERROR_MSG_BUFFER, message, args);
+    va_end(args);
+
+
+    printf(style_FG_Red style_Bold "ERROR" style_Reset);
+
+    printf(style_Dim " | " style_Reset "%s", ERROR_MSG_BUFFER);
+
+
+    printf("\n");
+    exit(EXIT_FAILURE);
+}
+
+void general_warning(char* message, ...) {
+    char ERROR_MSG_BUFFER[500] = {0};
+    va_list args;
+    va_start(args, message);
+    vsprintf(ERROR_MSG_BUFFER, message, args);
+    va_end(args);
+
+    printf(style_FG_Yellow style_Bold "WARNING" style_Reset);
+
+
+    printf("\n");
+    exit(EXIT_FAILURE);
+}
+
+void error_at_string(string path, string text, string pos, char* message, ...) {
+    
+    char ERROR_MSG_BUFFER[500] = {0};
+    va_list args;
+    va_start(args, message);
+    vsprintf(ERROR_MSG_BUFFER, message, args);
+    va_end(args);
+
+    printf(style_FG_Red style_Bold "ERROR" style_Reset);
+
+
+    printf(style_Dim " | " style_Reset);
+
+
+    int line;
+    int column;
+    char* line_ptr;
+    int line_len;
+    line_and_col(text, pos.raw-text.raw, &line_ptr, &line_len, &line, &column);
+
+    printf(" "); printstr(path);
+    printf(" @ %d:%d ", line, column);
+
+    printf(style_Dim "-> " style_Reset);
+
+
+    printf(style_Italic style_Bold "%s" style_Reset, ERROR_MSG_BUFFER);
+
+    printf(style_Dim);
+    printf("\n      | ");
+    printf("\n % 4d | ", line);
+    printf(style_Reset);
+    printstr(string_make(line_ptr, line_len));
+    printf(style_Dim);
+    printf("\n      | ");
+    printf(style_Reset);
+
+    while (column-- > 1) printf(" ");
+
+    printf(style_FG_Red);
+    printf(style_Bold);
+    if (pos.len > 0) {
+        printf("^");
+    }
+    if (pos.len > 2) {
+        for (size_t i = 2; i < pos.len; i++)
+            printf("~");
+    }
+    if (pos.len > 1) {
+        printf("^");
+    }
+    printf(style_Reset);
+
+    printf(style_Italic);
+    printf(style_Bold);
+    printf(" %s\n", ERROR_MSG_BUFFER);
+    printf(style_Reset);
+
+    exit(EXIT_FAILURE);
+}
+
+void warning_at_string(string path, string text, string pos, char* message, ...) {
+    
+    char ERROR_MSG_BUFFER[500] = {0};
+    va_list args;
+    va_start(args, message);
+    vsprintf(ERROR_MSG_BUFFER, message, args);
+    va_end(args);
+
+    printf(style_FG_Yellow style_Bold "WARNING" style_Reset);
+
+    printf(style_Dim "     | " style_Reset);
+
+    int line;
+    int column;
+    char* line_ptr;
+    int line_len;
+    line_and_col(text, pos.raw-text.raw, &line_ptr, &line_len, &line, &column);
+
+    printstr(path);
+    printf(" @ %d:%d ", line, column);
+
+    printf(style_Dim "-> " style_Reset);
+
+
+
+    printf(style_Italic style_Bold "%s" style_Reset, ERROR_MSG_BUFFER);
+
+    printf(style_Dim);
+    printf("\n        | ");
+    printf("\n   % 4d | ", line);
+    printf(style_Reset);
+    printstr(string_make(line_ptr, line_len));
+    printf(style_Dim);
+    printf("\n        | ");
+    printf(style_Reset);
+    
+    while (column-- > 1) printf(" ");
+
+
+    printf(style_FG_Yellow);
+    printf(style_Bold);
+    if (pos.len > 0) {
+        printf("^");
+    }
+    if (pos.len > 2) {
+        for (size_t i = 2; i < pos.len; i++)
+            printf("~");
+    }
+    if (pos.len > 1) {
+        printf("^");
+    }
+    printf(style_Reset);
+
+    printf(style_Italic);
+    printf(style_Bold);
+    printf(" %s\n", ERROR_MSG_BUFFER);
+    printf(style_Reset);
+
+    exit(EXIT_FAILURE);
+
+}
+
+void line_and_col(string text, size_t position, char** last_newline, int* line_len, int* line, int* col) {
+    
+    int l = 0;
+    int c = 0;
+
+    for (size_t i = 0; i <= position; i++) {
+        if (text.raw[i] == '\n') {
+            *last_newline = &text.raw[i];
+            l++;
+            c = 0;
+            continue;
+        }
+        if (text.raw[i] == '\t') {
+            c += 4;
+            continue;
+        }
+        c++;
+    }
+
+    *last_newline += 1;
+    *line = l + 1;
+    *col = c;
+
+    *line_len = 0;
+    while ((*last_newline)[*line_len] != '\0' && (*last_newline)[*line_len] != '\n') 
+        *line_len += 1;
+}

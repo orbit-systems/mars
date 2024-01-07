@@ -1,14 +1,16 @@
-ra through re is for function parameters, ri through rk is for returns
+ra through re is for function parameters.
 
 parameters that are larger than register size OR non-base types (arrays, structs, etc) are passed on the stack.
-even if a struct is smaller than a register, it should still be passed on the stack.
+even if a struct is smaller than or the same size as a register, it should still be passed on the stack.
 
 if is a base type that is the size of a register or smaller, it is passed by register.
 
 if all calling-convention registers are used up, they spill over onto the stack.
 
 take the function foo as an example:
-    foo :: fn(a: int, b: int, c: []int, d: int)
+    let foo = fn(a: int, b: int, c: []int, d: int)
 "a", "b", and "d" are passed through registers ra, rb, and rc. "c" is put on the stack.
 
 assume all other registers are clobbered after a function call.
+
+the value passing and value returning conventions are the same/symmetric.

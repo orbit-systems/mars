@@ -1,4 +1,9 @@
+.vscode/*
+.vscode
 *.exe
 cachegrind*
 build/*
+build
 ols.json
+mars
+mars.*

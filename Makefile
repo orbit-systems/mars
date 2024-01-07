@@ -1,31 +1,54 @@
-all: build
+SRCPATHS = src/*.c src/deimos/*.c src/phobos/*.c
+SRC = $(wildcard $(SRCPATHS))
+OBJECTS = $(SRC:src/%.c=build/%.o)
 
-SRC_DIR = ./src
-MARS_LOCATION = ./build/mars
-MARS_BUILD_FLAGS = 
-
-MARS_EXEC_FLAGS = 
+EXECUTABLE_NAME = mars
 
 ifeq ($(OS),Windows_NT)
-	MARS_LOCATION = ./build/mars.exe
-	MARS_EXEC_FLAGS = # -no-color
+	EXECUTABLE_NAME = mars.exe
 endif
 
-# BRUH LMAO
+CC = gcc
+LD = gcc
 
-clean:
-	@rm -rf ./build
+DEBUGFLAGS = -g -rdynamic -pg
+ASANFLAGS = -fsanitize=undefined -fsanitize=address
+DONTBEAFUCKINGIDIOT = -Wall -Wextra -pedantic -Wno-missing-field-initializers -Wno-unused-result
+CFLAGS = -Isrc/ -O3
+SHUTTHEFUCKUP = -Wno-unknown-warning-option -Wno-incompatible-pointer-types-discards-qualifiers -Wno-initializer-overrides -Wno-discarded-qualifiers
 
-release: clean
-	@mkdir build
-	@odin build $(SRC_DIR) $(MARS_BUILD_FLAGS) -out:$(MARS_LOCATION) -o:speed
+build/%.o: src/%.c
+	@echo compiling $<...
+	@$(CC) -c -o $@ $< $(CFLAGS) -MD
 
-build: clean
-	@mkdir build
-	@odin build $(SRC_DIR) $(MARS_BUILD_FLAGS) -out:$(MARS_LOCATION)
+build: $(OBJECTS)
+	@-cp build/deimos/* build/
+	@-cp build/phobos/* build/
 
-run: build 
-	@$(MARS_LOCATION) ./mars_code $(MARS_EXEC_FLAGS)
+	@echo linking with $(LD)...
+	@$(LD) $(OBJECTS) -o $(EXECUTABLE_NAME)
+
+	@echo $(EXECUTABLE_NAME) built
+	
 
 test: build
-	@$(MARS_LOCATION) ./test $(MARS_EXEC_FLAGS)
+	./$(EXECUTABLE_NAME) ./mars_code test
+
+test2: build
+	./$(EXECUTABLE_NAME) ./test test
+
+debug:
+	$(DEBUGFLAGS) $(DONTBEAFUCKINGIDIOT)
+
+clean:
+	@rm -rf build
+	@mkdir build
+	@mkdir build/deimos
+	@mkdir build/phobos
+
+printbuildinfo:
+	@echo using $(CC) with flags $(CFLAGS)
+
+new: clean printbuildinfo build
+
+-include $(OBJECTS:.o=.d)

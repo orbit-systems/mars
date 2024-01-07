@@ -4,27 +4,23 @@ types
         i16
         i32
         i64
-        int :: i64
+        int = i64
 
     unsigned integer
         u8
         u16
         u32
         u64
-        uint :: u64
+        uint = u64
 
     boolean
-        b8
-        b16
-        b32
-        b64
-        bool :: b64
+        bool = single byte
 
     floating point
         f16
         f32
         f64
-        float :: f64
+        float = f64
 
     pointer
         addr            raw address - behaves like ^u8 except cannot dereference.
@@ -38,52 +34,52 @@ types
         (untyped_null)  internal "null" literal - implicitly converts to any pointer
 
     compound
-        [_]T            concrete array type with determined length at compile time
-        []T             slice of array defined as struct {base: ^T, len: int}
+        [N]T            concrete array type with determined length at compile-time
+        []T             slice of array defined as struct {raw: ^T, len: uint}
 
-        struct          data structure / record type
-        union           sum type (basically a struct with no offset between fields)
+        struct {}       data structure / record type
+        union {}        sum type (basically a struct with no offset between fields)
 
-        enum T          enumeration over type T (default: int). T must be in (all integers, uintegers)
+        enum T {}       enumeration over type T (default: int). T must be in (all integers, uintegers)
 
-    note: types are structural, not nominal. if you declare a structural type the same way under different aliases, they are just the same and are treated as identical by the language.
+    note: types are structural, not nominal. if you declare a structural type the same way under different aliases, they are the same and are treated as identical by the language.
 
 operators
     unary numeric
-        -       negation (0 - x)        with type T in (all integers, uintegers, floats, pointers): - T -> T
-        ~       bitwise complement      with type T in (all integers, uintegers, floats, pointers): ~ T -> T
+        -       negation (0 - x)        with type T in (all integers, uintegers, floats, pointers): - <T> -> <T>
+        ~       bitwise complement      with type T in (all integers, uintegers, floats, pointers): ~ <T> -> <T>
 
     unary boolean
-        !       boolean not             with type T in (all booleans): !T -> T
+        !       boolean not             with type T in (all booleans): !<T> -> <T>
 
     binary numeric
-        +       addition                with type T in (all integers, uintegers, floats, pointers): T + T -> T
-        -       subtraction             with type T in (all integers, uintegers, floats, pointers): T - T -> T
-        *       multiplication          with type T in (all integers, uintegers, floats, pointers): T * T -> T
-        /       division                with type T in (all integers, uintegers, floats, pointers): T / T -> T
-        %       modulo (truncated)      with type T in (all integers, uintegers, pointers): T % T -> T
-        %%      remainder (floored)     with type T in (all integers, uintegers, pointers): T %% T -> T
+        +       addition                with type T in (all integers, uintegers, floats, pointers): <T> + <T> -> <T>
+        -       subtraction             with type T in (all integers, uintegers, floats, pointers): <T> - <T> -> <T>
+        *       multiplication          with type T in (all integers, uintegers, floats, pointers): <T> * <T> -> <T>
+        /       division                with type T in (all integers, uintegers, floats, pointers): <T> / <T> -> <T>
+        %       modulo (truncated)      with type T in (all integers, uintegers, pointers): <T> % <T> -> <T>
+        %%      remainder (floored)     with type T in (all integers, uintegers, pointers): <T> %% <T> -> <T>
 
     binary logical
-        &       bitwise and             with type T in (all integers, uintegers, floats, pointers): T ~ T -> T
-        |       bitwise or              with type T in (all integers, uintegers, floats, pointers): T ~ T -> T
-        ~|      bitwise nor             with type T in (all integers, uintegers, floats, pointers): T ~ T -> T
-        ~       bitwise xor             with type T in (all integers, uintegers, floats, pointers): T ~ T -> T
-        <<      left shift              with type T in (all integers, uintegers, floats, pointers): T << (all uintegers) -> T
-        >>      right shift             with type T in (all integers, uintegers, floats, pointers): T >> (all uintegers) -> T
+        &       bitwise and             with type T in (all integers, uintegers, floats, pointers): <T> & <T> -> <T>
+        |       bitwise or              with type T in (all integers, uintegers, floats, pointers): <T> | <T> -> <T>
+        ~|      bitwise nor             with type T in (all integers, uintegers, floats, pointers): <T> ~| <T> -> <T>
+        ~       bitwise xor             with type T in (all integers, uintegers, floats, pointers): <T> ~ <T> -> <T>
+        <<      left shift              with type T in (all integers, uintegers, floats, pointers): <T> << (all uintegers) -> <T>
+        >>      right shift             with type T in (all integers, uintegers, floats, pointers): <T> >> (all uintegers) -> <T>
 
     binary boolean
-        &&      boolean and             with type T in (all booleans): T && T -> T
-        ||      boolean or              with type T in (all booleans): T || T -> T
-        ~~      boolean xor             with type T in (all booleans): T ~~ T -> T
+        &&      boolean and             with type T in (booleans): <T> && <T> -> <T>
+        ||      boolean or              with type T in (bool): <T> || <T> -> <T>
+        ~~      boolean xor             with type T in (bool): <T> ~~ <T> -> <T>
 
-    binary comparison
-        ==      equality                (*): T == T -> bool
-        !=      inequality              (*): T != T -> bool
-        <       less than               (**): T < T -> bool
-        <=      less than or equal      (**): T <= T -> bool
-        >       greater than            (**): T > T -> bool
-        >=      greater than or equal   (**): T >= T -> bool
+    comparison
+        ==      equality                (*): <T> == <T> -> <bool>
+        !=      inequality              (*): <T> != <T> -> <bool>
+        <       less than               (**): <T> < <T> -> <bool>
+        <=      less than or equal      (**): <T> <= <T> -> <bool>
+        >       greater than            (**): <T> > <T> -> <bool>
+        >=      greater than or equal   (**): <T> >= <T> -> <bool>
 
         * a type T is comparable if it is a:
         | base, non-compound type (all integers, uintegers, floats, booleans, pointers)
@@ -100,15 +96,14 @@ operators
         note: entities can ONLY compare with others of the same type, no mixing.
 
     unary conversion
-        cast(T)     value cast to type T        (*):  cast(T) X -> T
-        bitcast(T)  raw data cast to type T     (**): bitcast(T) X -> T
+        cast(T)     value cast to type T        (*):  cast(T) <X> -> <T>
+        bitcast(T)  raw data cast to type T     (**): bitcast(T) <X> -> <T>
 
         * type casting rules:
-        | all types can cast to themselves. this should not generate code.
+        | all types can cast to themselves.
         | all (u)integer types can cast between each other.
         |       if one is casting to another of smaller size, the most-significant "top" bits are discarded
         |       casts between (u)integers of the same size behave the same as bitcasts
-        | all boolean types can cast between each other
         | all pointer types can cast between each other
         | all pointer types can cast to u64/uint
         | all (u)integer types can cast to floating point types, converting to their closest floating point representation
@@ -116,12 +111,11 @@ operators
         | enums have the same casting characteristics of its backing type
         | structs may be cast to other structs if their field type structure is identical (all fields in the same order with the same types).
         | ^ this is identical to a bitcast, but is more deeply checked by the compiler.
-        | slices can cast to pointers corresponding to their backing type. a slice of type T can cast to pointer of type T. this is the same as using base()
+        | slices can cast to pointers corresponding to their backing type. a slice of type T can cast to pointer of type T. this is the same as adding the
 
         ** values can be bitcast if their byte sizes are the same
         | bitcasting does not modify the value data of a variable,
-        | but only changes what datatype the value is interpreted as
-        | because of this, bitcasting as an operation does not produce code
+        | but only changes what type the data is interpreted as.
 
         note : the ONLY types that can cast implicitly are:
         | addr -> any pointer type
@@ -129,35 +123,43 @@ operators
         | any enum -> backing type
     
     unary reference
-        &       generate pointer        using type T in (all): &T -> ^T
-        $       dereference pointer     using type T in (all): $^T -> T
+        &       generate pointer        using type T in (all): &<T> -> <^T>
+        @       dereference pointer     using type T in (all): @<^T> -> <T>
     
-    utility
-        len()       get length of array type, returns uint
-        base()      get base pointer of array type (pointer to array in case of array type, cast to pointer in case of slice type)
-        sizeof()    get the size of a type. can take in a raw type expression or an identifier. this returns an untyped integer.
+    unary utility
+        len         get length of array or slice type, returns uint
+        raw         get base pointer of array type (pointer to array in case of array type, cast to pointer in case of slice type)
+    
+    unary type info
+        typeof      
+        sizeof      get the size of a type. takes a raw type expression, returns an untyped integer.
+        alignof     get the alignment characteristics of a type. takes a raw type expression, returns an untyped integer.
+        offsetof    get the offset of a field from an entity's base address. they should be used for structs/union field selectors, but will return zero for other non-composite types.
 
     index
-        []      index array             using entity T with type (any array, pointer to any array, slice) and A with type (any int, uint, enum) : T[A]
+        []      index array             using entity T with type (any array, pointer to any array, slice) and A with type (any int, uint, enum) : <T>[<A>]
 
     slice
-        [:]     generate slice          using entity T with type (any array, pointer to any array, slice) and A with type (any int, uint, enum) : T[:], T[A:] T[:A], T[A:A]
+        [:]     generate slice          using entity T with type (any array, pointer to any array, slice) and A with type (any int, uint, enum) : <T>[:], <T>[<A>:] <T>[:<A>], <T>[<A>:<A>]
 
 
     selector
         .       field/variant selection
+        ::      entity from library selection
 
-        the selector operate like so:
-        | access fields from a struct or a struct pointer : struct.field
-        | access fields from a union or a union pointer   : union.field
-        | access variants of enums. can be implicitly typed where the type can be otherwise derived : enum.variant, .variant
-        | access entities from another module: module.entity
+        the selectors operate like so:
+        | access fields from a struct or a struct pointer: a_struct.field
+        | access fields from a union or a union pointer: a_union.field
+        | access variants of enums. can be implicitly typed where the type can be otherwise derived : an_enum.variant, .variant
+        | access hidden fields of a slice: a_slice.raw, a_slice.len
+        |
+        | access entities from other modules: a_module::something
 
     precendence
-        unary operators have highest precedence.
+        unary operators have highest precedence after atomic expressions (struct field selection/array indexes)
 
         non-unary operator precedence: - note: () is function calls.
-        6   []  .   () 
+        6   () 
         5   *   /   %   %%  &   <<   >>  ~|
         4   +   -   |   ~
         3   ==  !=  <   >   <=  >=
@@ -181,29 +183,35 @@ operators
         <<=     left shift              variable of type T in (all integers, uintegers, floats, pointers): T <<= (all uintegers)
         >>=     right shift             variable of type T in (all integers, uintegers, floats, pointers): T >>= (all uintegers)
 
+    IMPORTANT: expressions are evaluated left-to-right, depth-first. 
+        this must be followed in case of functions that may modify variables used in the expression,
+        such as `modify_x(&x) + x` or something like that.
+
 program structure
 
-    programs are made from modules. modules must be wholly contained within one directory, 
-    there must be no more than one module per directory.
+    programs are made from modules. modules must be wholly contained within one directory.
+    there can be multiple modules in a single directory.
 
     programs must begin with a module declaration:
         module module_name;
+
+    let name : type = value;
+    let name = value;
     
-    entites (variables, constants, everything with a name) are declared like so:
-        name : type = value;        - variable, specified type, initial value set
-        name := value;              - variable, implicit type, initial value set
-        name : type;                - variable, specified type, default initial value
-        name : type = ---;          - variable, specified type, use unititialized memory
-        name : type : value;        - constant, specified type
-        name :: value;              - constant, implicit type
+    mut name : type;
+    mut name : type = ---;
+    mut name : type = value;
+    mut name = value;
+
+
 
     other modules can be imported as libraries using this syntax as well.
-        lib_name :: import "relative/path/to/module";
+        import lib_name "relative/path/to/module";
     the entity name does not have match the module's internal name.
     
     entity names must be unique and cannot shadow entities from lower scopes.
     e.g. this is not allowed:
-        x := 3;
+        mut x = 3;
         {
-            x := 4; // x already declared
+            mut x = 4; // not allowed, x already declared
         }
