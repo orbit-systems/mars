@@ -7,8 +7,8 @@
 #include "arena.h"
 
 typedef struct parser_s {
-    arena_list alloc;
+    arena_list alloca;
 } parser;
 
 // allocate and zero a new AST node with the parser's arena
-AST new_ast_node(ast_type type);
+AST new_ast_node(parser* p, ast_type type);

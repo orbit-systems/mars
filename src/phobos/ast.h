@@ -95,6 +95,7 @@ typedef u16 ast_type; enum {
 typedef struct {
     ast_type type;
     union {
+        void* rawptr;
         ast_base * base;
 #define AST_TYPE(ident, identstr, structdef) struct ast_##ident * ident;
         AST_NODES
@@ -106,3 +107,6 @@ typedef struct {
 #define AST_TYPE(ident, identstr, structdef) typedef struct ast_##ident structdef ast_##ident;
     AST_NODES
 #undef AST_TYPE
+
+extern char* ast_type_str[];
+extern size_t ast_type_size[];
