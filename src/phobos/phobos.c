@@ -25,8 +25,8 @@ compilation_unit* phobos_perform_frontend() {
     fs_file* subfiles = malloc(sizeof(fs_file) * subfile_count);
     fs_get_subfiles(&input_dir, subfiles);
 
-    dynarr(lexer_state) lexers;
-    dynarr_init_lexer_state(&lexers, subfile_count);
+    dynarr(lexer) lexers;
+    dynarr_init_lexer(&lexers, subfile_count);
 
     int mars_file_count = 0;
     FOR_RANGE_EXCL(i, 0, subfile_count) {
@@ -34,13 +34,16 @@ compilation_unit* phobos_perform_frontend() {
         // filter out non-files and non-mars files.
         if (!fs_is_regular(&subfiles[i])) continue;
         if (!string_ends_with(subfiles[i].path, to_string(".mars"))) continue;
+
         mars_file_count++;
 
         string loaded_file;
 
         // stop the lexer from shitting itself
-        if (subfiles[i].size == 0) loaded_file = to_string(" ");
-        else                       loaded_file = string_alloc(subfiles[i].size);
+        if (subfiles[i].size == 0) 
+            loaded_file = to_string(" ");
+        else 
+            loaded_file = string_alloc(subfiles[i].size);
 
         fs_open(&subfiles[i], "r"
         #if (defined(MINGW32) || defined(__MINGW32__))
@@ -60,10 +63,10 @@ compilation_unit* phobos_perform_frontend() {
             general_error("cannot read from \"%s\"", clone_to_cstring(subfiles[i].path));
 
 
-        lexer_state this_lexer = new_lexer(subfiles[i].path, loaded_file);
+        lexer this_lexer = new_lexer(subfiles[i].path, loaded_file);
         construct_token_buffer(&this_lexer);
 
-        dynarr_append(lexer_state, &lexers, this_lexer);
+        dynarr_append(lexer, &lexers, this_lexer);
 
     }
     if (mars_file_count == 0)
@@ -76,4 +79,4 @@ compilation_unit* phobos_perform_frontend() {
     return NULL;
 }
 
-dynarr_lib(lexer_state)
+dynarr_lib(lexer)

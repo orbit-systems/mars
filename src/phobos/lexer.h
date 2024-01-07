@@ -149,17 +149,17 @@ typedef struct token_s {
 
 dynarr_lib_h(token)
 
-typedef struct lexer_state_s {
+typedef struct lexer_s {
     string src;
     string path;
     dynarr(token) buffer;
     u64 cursor;
     char current_char;
-} lexer_state;
+} lexer;
 
-lexer_state new_lexer(string path, string src);
-void construct_token_buffer(lexer_state* lex);
-void append_next_token(lexer_state* lex);
+lexer new_lexer(string path, string src);
+void construct_token_buffer(lexer* lex);
+void append_next_token(lexer* lex);
 
 #define can_start_identifier(ch) ((ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z') || ch == '_')
 #define can_be_in_identifier(ch) ((ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z') || (ch >= '0' && ch <= '9') || ch == '_')
@@ -177,11 +177,11 @@ void append_next_token(lexer_state* lex);
 #define peek_char(lex, n) ((lex->cursor + (n)) < lex->src.len ? lex->src.raw[lex->cursor + (n)] : '\0')
 
 
-int skip_block_comment(lexer_state* restrict lex);
-void skip_until_char(lexer_state* restrict lex, char c);
-void skip_whitespace(lexer_state* restrict lex);
+int skip_block_comment(lexer* restrict lex);
+void skip_until_char(lexer* restrict lex, char c);
+void skip_whitespace(lexer* restrict lex);
 
-token_type scan_ident_or_keyword(lexer_state* restrict lex);
-token_type scan_number(lexer_state* restrict lex);
-token_type scan_string_or_char(lexer_state* restrict lex);
-token_type scan_operator(lexer_state* restrict lex);
+token_type scan_ident_or_keyword(lexer* restrict lex);
+token_type scan_number(lexer* restrict lex);
+token_type scan_string_or_char(lexer* restrict lex);
+token_type scan_operator(lexer* restrict lex);

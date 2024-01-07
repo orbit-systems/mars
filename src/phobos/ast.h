@@ -62,6 +62,14 @@ typedef struct {
         bool has_expl_type; \
         bool is_mut; \
     }) \
+    AST_TYPE(type_stmt, "type declaration", { \
+        ast_base base; \
+        AST lhs; \
+        AST type; \
+        AST rhs; \
+        bool has_expl_type; \
+        bool is_mut; \
+    }) \
     AST_TYPE(assign_stmt, "assignment", { \
         ast_base base; \
         AST lhs; \
@@ -73,8 +81,6 @@ typedef struct {
         AST rhs; \
         token* op; \
     }) \
-
-
 
 // generate the enum tags for the AST tagged union
 typedef u16 ast_type; enum {
@@ -100,5 +106,3 @@ typedef struct {
 #define AST_TYPE(ident, identstr, structdef) typedef struct ast_##ident structdef ast_##ident;
     AST_NODES
 #undef AST_TYPE
-
-#undef AST_NODES

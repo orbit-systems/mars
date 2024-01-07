@@ -10,8 +10,8 @@ char* token_type_str[] = {
 
 dynarr_lib(token)
 
-lexer_state new_lexer(string path, string src) {
-    lexer_state lex;
+lexer new_lexer(string path, string src) {
+    lexer lex;
     lex.path = path;
     lex.src = src;
     lex.current_char = src.raw[0];
@@ -19,7 +19,7 @@ lexer_state new_lexer(string path, string src) {
     return lex;
 }
 
-void construct_token_buffer(lexer_state* restrict lex) {
+void construct_token_buffer(lexer* restrict lex) {
     if (lex == NULL || is_null_str(lex->src) || is_null_str(lex->path)) {
         CRASH("bad lexer provided to construct_token_buffer");
     }
@@ -31,7 +31,7 @@ void construct_token_buffer(lexer_state* restrict lex) {
     dynarr_shrink(token, &lex->buffer);
 }
 
-void append_next_token(lexer_state* restrict lex) {
+void append_next_token(lexer* restrict lex) {
 
     // if the top token is an EOF, early return
     if (lex->buffer.base[lex->buffer.len-1].type == tt_EOF) {
@@ -93,7 +93,7 @@ void append_next_token(lexer_state* restrict lex) {
     });
 }
 
-token_type scan_ident_or_keyword(lexer_state* restrict lex) {
+token_type scan_ident_or_keyword(lexer* restrict lex) {
     u64 beginning = lex->cursor;
     
     advance_char(lex);
@@ -160,7 +160,7 @@ token_type scan_ident_or_keyword(lexer_state* restrict lex) {
     return tt_identifier;
 }
 
-token_type scan_number(lexer_state* restrict lex) {
+token_type scan_number(lexer* restrict lex) {
     // TODO("scan_number");
 
     advance_char(lex);
@@ -176,7 +176,7 @@ token_type scan_number(lexer_state* restrict lex) {
         advance_char(lex);
     }
 }
-token_type scan_string_or_char(lexer_state* restrict lex) {
+token_type scan_string_or_char(lexer* restrict lex) {
     // TODO("scan_string_or_char");
     char quote_char = current_char(lex);
     u64  start_cursor = lex->cursor;
@@ -198,7 +198,7 @@ token_type scan_string_or_char(lexer_state* restrict lex) {
         advance_char(lex);
     }
 }
-token_type scan_operator(lexer_state* restrict lex) {
+token_type scan_operator(lexer* restrict lex) {
     // TODO("scan_operator");
 
     switch (current_char(lex)) {
@@ -365,7 +365,7 @@ token_type scan_operator(lexer_state* restrict lex) {
     return tt_invalid;
 }
 
-int skip_block_comment(lexer_state* restrict lex) {
+int skip_block_comment(lexer* restrict lex) {
     int level = 1;
     while (level != 0) {
         if (lex->cursor >= lex->src.len) {
@@ -384,13 +384,13 @@ int skip_block_comment(lexer_state* restrict lex) {
     return level;
 }
 
-void skip_until_char(lexer_state* restrict lex, char c) {
+void skip_until_char(lexer* restrict lex, char c) {
     while (current_char(lex) != c && lex->cursor < lex->src.len) {
         advance_char(lex);
     }
 }
 
-void skip_whitespace(lexer_state* restrict lex) {
+void skip_whitespace(lexer* restrict lex) {
     while (true) {
         char r = current_char(lex);
         if ((r != ' ' && r != '\t' && r != '\n' && r != '\r' && r != '\v') || lex->cursor >= lex->src.len) {

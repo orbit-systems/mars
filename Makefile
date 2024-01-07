@@ -9,6 +9,7 @@ ifeq ($(OS),Windows_NT)
 endif
 
 CC = gcc
+LD = gcc
 
 DEBUGFLAGS = -g -rdynamic -pg
 ASANFLAGS = -fsanitize=undefined -fsanitize=address
@@ -23,8 +24,10 @@ build/%.o: src/%.c
 build: $(OBJECTS)
 	@-cp build/deimos/* build/
 	@-cp build/phobos/* build/
-	@echo linking...
-	@$(CC) $(OBJECTS) -o $(EXECUTABLE_NAME) $(CFLAGS) -MD
+
+	@echo linking with $(LD)...
+	@$(LD) $(OBJECTS) -o $(EXECUTABLE_NAME)
+
 	@echo $(EXECUTABLE_NAME) built
 	
 
@@ -38,7 +41,6 @@ debug:
 	$(DEBUGFLAGS) $(DONTBEAFUCKINGIDIOT)
 
 clean:
-	@echo cleaning build/
 	@rm -rf build
 	@mkdir build
 	@mkdir build/deimos

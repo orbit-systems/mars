@@ -33,7 +33,8 @@
 
 // #define set_style(style) printf("\x1b[%dm", style)
 
-// use c's string literal concatenation
+
+// use C's string literal concatenation
 
 #define style_Reset  "\x1b[0m"
 #define style_Bold   "\x1b[1m"

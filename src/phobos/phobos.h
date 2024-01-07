@@ -6,7 +6,7 @@
 
 #include "lexer.h"
 
-dynarr_lib_h(lexer_state)
+dynarr_lib_h(lexer)
 
 typedef struct {
     bool stop_complaining;

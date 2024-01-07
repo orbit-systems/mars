@@ -13,8 +13,8 @@ arena arena_make(size_t size);
 void  arena_delete(arena* restrict a);
 void* arena_alloc(arena* restrict a, size_t size, size_t align);
 
-
 dynarr_lib_h(arena)
+
 typedef struct {
     dynarr(arena) list;
     u32 arena_size;
