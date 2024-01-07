@@ -50,5 +50,7 @@ typedef double   f64;
 #define FOR_RANGE_INCL(iterator, start, end) for (int iterator = (start); iterator <= (end); iterator++)
 #define FOR_RANGE_EXCL(iterator, start, end) for (int iterator = (start); iterator < (end); iterator++)
 
+#define is_pow_2(i) ((i & (i-1)) == 0)
+
 #include "orbitstr.h"
 #include "orbitfs.h"
