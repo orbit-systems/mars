@@ -17,12 +17,15 @@ CFLAGS = -Isrc/ -O3
 SHUTTHEFUCKUP = -Wno-unknown-warning-option -Wno-incompatible-pointer-types-discards-qualifiers -Wno-initializer-overrides -Wno-discarded-qualifiers
 
 build/%.o: src/%.c
-	$(CC) -c -o $@ $< $(CFLAGS) -MD $(SHUTTHEFUCKUP)
+	@echo $<
+	@$(CC) -c -o $@ $< $(CFLAGS) -MD $(SHUTTHEFUCKUP)
 
 build: $(OBJECTS)
-	-cp build/deimos/* build/
-	-cp build/phobos/* build/
-	$(CC) $(OBJECTS) -o $(EXECUTABLE_NAME) $(CFLAGS) -MD
+	@-cp build/deimos/* build/
+	@-cp build/phobos/* build/
+	@echo linking...
+	@$(CC) $(OBJECTS) -o $(EXECUTABLE_NAME) $(CFLAGS) -MD
+	
 
 test: build
 	./$(EXECUTABLE_NAME) ./mars_code test
@@ -34,8 +37,15 @@ debug:
 	$(DEBUGFLAGS) $(DONTBEAFUCKINGIDIOT)
 
 clean:
-	rm -rf build/*
-	mkdir build/deimos
-	mkdir build/phobos
+	@echo cleaning build/
+	@rm -rf build
+	@mkdir build
+	@mkdir build/deimos
+	@mkdir build/phobos
+
+printbuildinfo:
+	@echo using $(CC) with flags $(CFLAGS) $(SHUTTHEFUCKUP)
+
+new: clean printbuildinfo build
 
 -include $(OBJECTS:.o=.d)
