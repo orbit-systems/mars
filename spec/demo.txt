@@ -34,7 +34,7 @@
     // array of type T
     []T :: struct {
         _ : ^T,  // base
-        _ : int, // length
+        _ : uint, // length
     }
 
     struct // c-like structs - members are aligned to size-alignment boundaries

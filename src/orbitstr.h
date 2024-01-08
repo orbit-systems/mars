@@ -6,7 +6,7 @@
 // allocates an extra character for null termination outside of the string bounds.
 // probably recommended if you interface a lot with standard C APIs and dont want clone_to_cstring allocations everywhere.
 
-#define CSTRING_COMPATIBILITY_MODE
+// #define CSTRING_COMPATIBILITY_MODE
 
 #include "orbit.h"
 
@@ -25,8 +25,8 @@ typedef struct string_s {
 #define substring(str, start, end_excl) ((string){(str).raw + (start), (end_excl) - (start)})
 #define substring_len(str, start, len) ((string){(str).raw + (start), (len)})
 #define can_be_cstring(str) ((str).raw[(str).len] == '\0')
+#define to_string(cstring) ((string){(cstring), strlen((cstring))})
 
-string to_string(char* cstring);
 char*  clone_to_cstring(string str); // this allocates
 void   printstr(string str);
 
@@ -91,14 +91,9 @@ bool string_eq(string a, string b) {
     return true;
 }
 
-string to_string(char* cstring) {
-    return (string){cstring, strlen(cstring)};
-}
-
 char* clone_to_cstring(string str) {
     if (is_null_str(str)) return "";
 
-    return str.raw;
     char* cstr = malloc(str.len + 1);
     if (cstr == NULL) return NULL;
     memcpy(cstr, str.raw, str.len);

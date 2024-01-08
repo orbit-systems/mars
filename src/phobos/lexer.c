@@ -24,9 +24,10 @@ void construct_token_buffer(lexer* restrict lex) {
         CRASH("bad lexer provided to construct_token_buffer");
     }
 
-    while (lex->buffer.base[lex->buffer.len-1].type != tt_EOF) {
+    while (lex->buffer.raw[lex->buffer.len-1].type != tt_EOF) {
         append_next_token(lex);
-        // printf("(%3d %s)\n",lex->buffer.base[lex->buffer.len-1].type, clone_to_cstring(lex->buffer.base[lex->buffer.len-1].text));
+        // printstr((lex->buffer.raw[lex->buffer.len-1].text));
+        // printf("\n");
     }
     dynarr_shrink(token, &lex->buffer);
 }
@@ -34,7 +35,7 @@ void construct_token_buffer(lexer* restrict lex) {
 void append_next_token(lexer* restrict lex) {
 
     // if the top token is an EOF, early return
-    if (lex->buffer.base[lex->buffer.len-1].type == tt_EOF) {
+    if (lex->buffer.raw[lex->buffer.len-1].type == tt_EOF) {
         return;
     }
     

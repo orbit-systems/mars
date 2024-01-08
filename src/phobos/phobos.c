@@ -1,7 +1,7 @@
 #include "orbit.h"
-#include "../mars.h"
-#include "../error.h"
-#include "../dynarr.h"
+#include "mars.h"
+#include "error.h"
+#include "dynarr.h"
 
 #include "phobos.h"
 #include "lexer.h"
@@ -26,7 +26,7 @@ compilation_unit* phobos_perform_frontend() {
     fs_get_subfiles(&input_dir, subfiles);
 
     dynarr(lexer) lexers;
-    dynarr_init_lexer(&lexers, subfile_count);
+    dynarr_init(lexer, &lexers, subfile_count);
 
     int mars_file_count = 0;
     FOR_RANGE_EXCL(i, 0, subfile_count) {
@@ -72,6 +72,21 @@ compilation_unit* phobos_perform_frontend() {
     if (mars_file_count == 0)
         general_error("input path \"%s\" has no \".mars\" files", clone_to_cstring(mars_flags.input_path));
 
+
+
+    dynarr(parser) parsers;
+    dynarr_init(parser, &parsers, lexers.len);
+
+    FOR_URANGE_EXCL(i, 0, lexers.len) {
+        arena_list alloca = arena_list_make(0x1000); // TODO probably tune this constant
+
+        parser p = make_parser(&lexers.raw[i], alloca);
+        dynarr_append(parser, &parsers, p);
+    }
+
+
+
+    // cleanup
     FOR_RANGE_EXCL(i, 0, subfile_count) fs_drop(&subfiles[i]);
     free(subfiles);
     fs_drop(&input_dir);
@@ -80,3 +95,4 @@ compilation_unit* phobos_perform_frontend() {
 }
 
 dynarr_lib(lexer)
+dynarr_lib(parser)

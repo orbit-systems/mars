@@ -8,7 +8,7 @@ arena arena_make(size_t size) {
     arena a;
     a.raw = malloc(size);
     if (a.raw == NULL) {
-        general_error("internal: arena size %lu too big, cannot allocate", size);
+        general_error("internal: arena size %lu too big, can't allocate", size);
     }
     a.size = (u32) size;
     a.offset = 0;
@@ -27,13 +27,13 @@ void* arena_alloc(arena* restrict a, size_t size, size_t align) {
         return NULL;
     }
     a->offset = new_offset;
-    return (void*)((uintptr_t)a->raw + align_forward(offset, align));
+    return (void*)((size_t)a->raw + align_forward(offset, align));
 }
 
-arena_list arena_list_make(size_t arena_size) {
+arena_list arena_list_make(size_t block_size) {
     arena_list al;
     dynarr_init_arena(&al.list, 1);
-    al.arena_size = arena_size;
+    al.arena_size = block_size;
     
     arena initial_arena = arena_make(al.arena_size);
     dynarr_append_arena(&al.list, initial_arena);
@@ -43,7 +43,7 @@ arena_list arena_list_make(size_t arena_size) {
 
 void arena_list_delete(arena_list* restrict al) {
     FOR_URANGE_EXCL(i, 0, (al->list.len)) {
-        arena_delete(&al->list.base[i]);
+        arena_delete(&al->list.raw[i]);
     }
     dynarr_destroy_arena(&al->list);
     *al = (arena_list){0};
@@ -51,7 +51,7 @@ void arena_list_delete(arena_list* restrict al) {
 
 void* arena_list_alloc(arena_list* restrict al, size_t size, size_t align) {
     // attempt to allocate at the top arena;
-    void* attempt = arena_alloc(&al->list.base[al->list.len-1], size, align);
+    void* attempt = arena_alloc(&al->list.raw[al->list.len-1], size, align);
     if (attempt != NULL) return attempt; // yay!
 
     // FUCK! we need to append another arena block
@@ -59,7 +59,7 @@ void* arena_list_alloc(arena_list* restrict al, size_t size, size_t align) {
     dynarr_append_arena(&al->list, new_arena);
 
     // we're gonna try again
-    attempt = arena_alloc(&al->list.base[al->list.len-1], size, align);
+    attempt = arena_alloc(&al->list.raw[al->list.len-1], size, align);
     return attempt; // this should ideally never be null
 }
 

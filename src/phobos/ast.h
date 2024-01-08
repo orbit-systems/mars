@@ -54,6 +54,26 @@ typedef struct {
         AST lhs; \
         AST rhs; \
     }) \
+    AST_TYPE(selector_expr, "selector", { \
+        ast_base base; \
+        AST lhs; \
+        AST rhs; \
+    }) \
+    AST_TYPE(impl_selector_expr, "implicit selector", { \
+        ast_base base; \
+        AST rhs; \
+    }) \
+    AST_TYPE(array_index_expr, "array index", { \
+        ast_base base; \
+        AST lhs; \
+        AST inside; \
+    }) \
+    AST_TYPE(slice_expr, "slice", { \
+        ast_base base; \
+        AST lhs; \
+        AST inside_left; \
+        AST inside_right; \
+    }) \
     AST_TYPE(decl_stmt, "declaration", { \
         ast_base base; \
         AST lhs; \
@@ -80,6 +100,12 @@ typedef struct {
         AST lhs; \
         AST rhs; \
         token* op; \
+    }) \
+    AST_TYPE(empty_stmt, "empty statement", { \
+        union{ \
+        ast_base base; \
+        token* this; \
+        }; \
     }) \
 
 // generate the enum tags for the AST tagged union

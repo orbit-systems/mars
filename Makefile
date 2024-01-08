@@ -18,14 +18,14 @@ CFLAGS = -Isrc/ -O3
 SHUTTHEFUCKUP = -Wno-unknown-warning-option -Wno-incompatible-pointer-types-discards-qualifiers -Wno-initializer-overrides -Wno-discarded-qualifiers
 
 build/%.o: src/%.c
-	@echo compiling $<...
+	@echo compiling $<
 	@$(CC) -c -o $@ $< $(CFLAGS) -MD
 
 build: $(OBJECTS)
 	@-cp build/deimos/* build/
 	@-cp build/phobos/* build/
 
-	@echo linking with $(LD)...
+	@echo linking with $(LD)
 	@$(LD) $(OBJECTS) -o $(EXECUTABLE_NAME)
 
 	@echo $(EXECUTABLE_NAME) built

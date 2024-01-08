@@ -1,8 +1,8 @@
 module neptune;
 
-len kprint = fn(str: []u8) {
-    mut cursor = str.base
-    mut cursor_end = str.base + cast(^u8) str.len
+let kprint = fn(str: []u8) {
+    mut cursor = str.raw
+    mut cursor_end = str.raw + cast(^u8) str.len
 
     // implementation pending
 };
