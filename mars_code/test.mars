@@ -1,4 +1,4 @@
-module test;
+module 23432432 test;
 
 import mem "./memory:memory";
 import neptune "./neptune:neptune";

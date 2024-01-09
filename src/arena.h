@@ -1,3 +1,6 @@
+#pragma once
+#define ARENA_H
+
 #include "orbit.h"
 #include "dynarr.h"
 

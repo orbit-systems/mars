@@ -5,6 +5,8 @@
 
 #include "phobos.h"
 #include "lexer.h"
+#include "parser.h"
+
 extern flag_set mars_flags;
 
 /*tune this probably*/
@@ -90,8 +92,6 @@ compilation_unit* phobos_perform_frontend() {
         dynarr_append(parser, &parsers, p);
     }
 
-    printf("%d", sizeof(parser));
-
     // cleanup
     FOR_RANGE_EXCL(i, 0, subfile_count) fs_drop(&subfiles[i]);
     free(subfiles);
@@ -102,3 +102,4 @@ compilation_unit* phobos_perform_frontend() {
 
 dynarr_lib(lexer)
 dynarr_lib(parser)
+dynarr_lib(mars_file)

@@ -1,14 +1,15 @@
 #pragma once
 #define PHOBOS_AST_H
 
-#include "../orbit.h"
+#include "orbit.h"
 #include "lexer.h"
+#include "arena.h"
+#include "dynarr.h"
 
 typedef struct {
     token* start;
     token* end;
 } ast_base;
-
 
 // define all the AST node macros
 #define AST_NODES \
@@ -74,6 +75,14 @@ typedef struct {
         AST inside_left; \
         AST inside_right; \
     }) \
+    AST_TYPE(block_stmt, "statement block", { \
+        ast_base base; \
+        AST lhs; \
+        AST type; \
+        AST rhs; \
+        bool has_expl_type; \
+        bool is_mut; \
+    }) \
     AST_TYPE(decl_stmt, "declaration", { \
         ast_base base; \
         AST lhs; \
@@ -104,9 +113,22 @@ typedef struct {
     AST_TYPE(empty_stmt, "empty statement", { \
         union{ \
         ast_base base; \
-        token* this; \
+        token* tok; \
         }; \
     }) \
+\
+\
+\
+    /* we can repurpose the AST structure for some more stuff, like the type graph*/ \
+\
+    /* type of expressions that return multiple types, like multi-return-value functions */ \
+    AST_TYPE(type_multi, "multi-type", { \
+        dynarr(AST) types; \
+    }) \
+    AST_TYPE(type_pointer, "pointer", { \
+        AST underlying; \
+    }) \
+    
 
 // generate the enum tags for the AST tagged union
 typedef u16 ast_type; enum {
@@ -119,7 +141,6 @@ typedef u16 ast_type; enum {
 
 // generate tagged union AST type
 typedef struct {
-    ast_type type;
     union {
         void* rawptr;
         ast_base * base;
@@ -127,7 +148,10 @@ typedef struct {
         AST_NODES
 #undef AST_TYPE
     };
+    ast_type type;
 } AST;
+
+dynarr_lib_h(AST)
 
 // generate AST node typedefs
 #define AST_TYPE(ident, identstr, structdef) typedef struct ast_##ident structdef ast_##ident;
@@ -136,3 +160,6 @@ typedef struct {
 
 extern char* ast_type_str[];
 extern size_t ast_type_size[];
+
+
+AST new_ast_node(arena_list* restrict al, ast_type type);

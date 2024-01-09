@@ -20,26 +20,19 @@ parser make_parser(lexer* restrict l, arena_list alloca) {
     return p;
 }
 
-// allocate and zero a new AST node with the parser's arena
-AST new_ast_node(parser* restrict p, ast_type type) {
-    AST node;
-    void* node_ptr = arena_list_alloc(&p->alloca, ast_type_size[type], 8);
-    if (node_ptr == NULL) {
-        general_error("new_ast_node() could not allocate AST node of type\"%s\"", ast_type_str[type]);
-    }
-    memset(node_ptr, 0, ast_type_size[type]);
-    node.rawptr = node_ptr;
-    node.type = type;
-    return node;
-}
-
 void parse_module_decl(parser* restrict p) {
     if (current_token(p).type != tt_keyword_module)
         error_at_parser(p, "expected \'module\', got %s", token_type_str[current_token(p).type]);
     
     advance_token(p);
+    if (current_token(p).type != tt_identifier)
+        error_at_parser(p, "expected module name, got %s", token_type_str[current_token(p).type]);
+    p->module_name = current_token(p).text;
 
-    if (current_token(p).type != tt_keyword_module)
-        error_at_parser(p, "expected \'module\', got %s", token_type_str[current_token(p).type]);
-        
+    advance_token(p);
+    if (current_token(p).type != tt_semicolon)
+        error_at_parser(p, "expected ';', got %s", token_type_str[current_token(p).type]);
+    
+    advance_token(p);
+    return;
 }
