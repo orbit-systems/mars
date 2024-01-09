@@ -7,6 +7,9 @@
 #include "lexer.h"
 extern flag_set mars_flags;
 
+/*tune this probably*/
+#define PARSER_ARENA_SIZE 0x1000
+
 compilation_unit* phobos_perform_frontend() {
 
     // path checks
@@ -78,13 +81,16 @@ compilation_unit* phobos_perform_frontend() {
     dynarr_init(parser, &parsers, lexers.len);
 
     FOR_URANGE_EXCL(i, 0, lexers.len) {
-        arena_list alloca = arena_list_make(0x1000); // TODO probably tune this constant
+        arena_list alloca = arena_list_make(PARSER_ARENA_SIZE);
 
         parser p = make_parser(&lexers.raw[i], alloca);
+
+        parse_module_decl(&p);
+
         dynarr_append(parser, &parsers, p);
     }
 
-
+    printf("%d", sizeof(parser));
 
     // cleanup
     FOR_RANGE_EXCL(i, 0, subfile_count) fs_drop(&subfiles[i]);

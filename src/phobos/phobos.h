@@ -15,3 +15,7 @@ typedef struct {
 } compilation_unit;
 
 compilation_unit* phobos_perform_frontend();
+
+typedef struct {
+
+} parser_file;

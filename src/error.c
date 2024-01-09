@@ -46,13 +46,13 @@ void error_at_string(string path, string text, string pos, char* message, ...) {
     printf(style_Dim " | " style_Reset);
 
 
-    int line;
-    int column;
-    char* line_ptr;
-    int line_len;
+    int line = 1;
+    int column = 1;
+    char* line_ptr = text.raw - 1;
+    int line_len = 0;
     line_and_col(text, pos.raw-text.raw, &line_ptr, &line_len, &line, &column);
 
-    printf(" "); printstr(path);
+    printstr(path);
     printf(" @ %d:%d ", line, column);
 
     printf(style_Dim "-> " style_Reset);
@@ -105,10 +105,10 @@ void warning_at_string(string path, string text, string pos, char* message, ...)
 
     printf(style_Dim "     | " style_Reset);
 
-    int line;
-    int column;
-    char* line_ptr;
-    int line_len;
+    int line = 1;
+    int column = 1;
+    char* line_ptr = text.raw;
+    int line_len = 0;
     line_and_col(text, pos.raw-text.raw, &line_ptr, &line_len, &line, &column);
 
     printstr(path);
@@ -155,7 +155,7 @@ void warning_at_string(string path, string text, string pos, char* message, ...)
 
 }
 
-void line_and_col(string text, size_t position, char** last_newline, int* line_len, int* line, int* col) {
+void line_and_col(string text, size_t position, char** restrict last_newline, int* restrict line_len, int* restrict line, int* restrict col) {
     
     int l = 0;
     int c = 0;
