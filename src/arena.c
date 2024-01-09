@@ -2,8 +2,6 @@
 #include "arena.h"
 #include "error.h"
 
-dynarr_lib(arena)
-
 arena arena_make(size_t size) {
     arena a;
     a.raw = malloc(size);

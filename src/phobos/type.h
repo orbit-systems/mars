@@ -6,34 +6,22 @@
 #include "arena.h"
 #include "dynarr.h"
 
-typedef u8 mars_basic_type; enum {
-    mtype_basic_invalid,
-
-    mtype_basic_none,
-    
-    mtype_basic_u8,
-    mtype_basic_u16,
-    mtype_basic_u32,
-    mtype_basic_u64,
-
-    mtype_basic_i8,
-    mtype_basic_i16,
-    mtype_basic_i32,
-    mtype_basic_i64,
-
-    mtype_basic_f16,
-    mtype_basic_f32,
-    mtype_basic_f64,
-
-    mtype_basic_bool,
-
-    mtype_basic_addr,
-};
 
 #define TYPE_NODES \
-    TYPE(basic, "basic", { \
-        mars_basic_type kind; \
-    }) \
+    TYPE(basic_none, "none", {}) /* like void */ \
+    TYPE(basic_u8,   "u8",   {}) \
+    TYPE(basic_u16,  "u16",  {}) \
+    TYPE(basic_u32,  "u32",  {}) \
+    TYPE(basic_u64,  "u64",  {}) \
+    TYPE(basic_i8,   "i8",   {}) \
+    TYPE(basic_i16,  "i16",  {}) \
+    TYPE(basic_i32,  "i32",  {}) \
+    TYPE(basic_i64,  "i64",  {}) \
+    TYPE(basic_f16,  "f16",  {}) \
+    TYPE(basic_f32,  "f32",  {}) \
+    TYPE(basic_f64,  "f64",  {}) \
+    TYPE(basic_bool, "bool", {}) \
+    TYPE(basic_addr, "addr", {}) \
 /* type of expressions that return multiple types, like multi-return-value functions */ \
     TYPE(multi, "multi-type", { \
         dynarr(mars_type) subtypes; \
@@ -41,6 +29,7 @@ typedef u8 mars_basic_type; enum {
     TYPE(struct, "struct", { \
         dynarr(mars_type) subtypes; \
         dynarr(size_t)    offsets; \
+        dynarr(string)    idents; \
     }) \
     TYPE(pointer, "pointer", { \
         mars_type underlying; \
@@ -69,6 +58,7 @@ typedef struct mars_type {
 
 dynarr_lib_h(mars_type)
 dynarr_lib_h(size_t)
+dynarr_lib_h(string)
 
 // generate typedefs
 #define TYPE(ident, identstr, structdef) typedef struct mtype_##ident structdef mtype_##ident;

@@ -6,8 +6,7 @@
 #include "phobos.h"
 #include "lexer.h"
 #include "parser.h"
-
-extern flag_set mars_flags;
+#include "type.h"
 
 /*tune this probably*/
 #define PARSER_ARENA_SIZE 0x1000
@@ -78,7 +77,6 @@ compilation_unit* phobos_perform_frontend() {
         general_error("input path \"%s\" has no \".mars\" files", clone_to_cstring(mars_flags.input_path));
 
 
-
     dynarr(parser) parsers;
     dynarr_init(parser, &parsers, lexers.len);
 
@@ -90,7 +88,9 @@ compilation_unit* phobos_perform_frontend() {
         parse_module_decl(&p);
 
         dynarr_append(parser, &parsers, p);
+
     }
+
 
     // cleanup
     FOR_RANGE_EXCL(i, 0, subfile_count) fs_drop(&subfiles[i]);
@@ -99,7 +99,3 @@ compilation_unit* phobos_perform_frontend() {
 
     return NULL;
 }
-
-dynarr_lib(lexer)
-dynarr_lib(parser)
-dynarr_lib(mars_file)

@@ -19,3 +19,5 @@ void load_arguments(int argc, char* argv[], flag_set* fl);
 
 void print_help();
 u8* load_file(FILE* asm_file);
+
+extern flag_set mars_flags;

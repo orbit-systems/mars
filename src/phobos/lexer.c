@@ -8,8 +8,6 @@ char* token_type_str[] = {
 #undef TOKEN
 };
 
-dynarr_lib(token)
-
 lexer new_lexer(string path, string src) {
     lexer lex;
     lex.path = path;

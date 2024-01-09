@@ -21,12 +21,17 @@ parser make_parser(lexer* restrict l, arena_list alloca) {
 }
 
 void parse_module_decl(parser* restrict p) {
+
     if (current_token(p).type != tt_keyword_module)
         error_at_parser(p, "expected \'module\', got %s", token_type_str[current_token(p).type]);
     
+    printf("bruh\n");
+
+
     advance_token(p);
     if (current_token(p).type != tt_identifier)
         error_at_parser(p, "expected module name, got %s", token_type_str[current_token(p).type]);
+
     p->module_name = current_token(p).text;
 
     advance_token(p);
