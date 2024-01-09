@@ -144,7 +144,7 @@ typedef struct {
     union {
         void* rawptr;
         ast_base * base;
-#define AST_TYPE(ident, identstr, structdef) struct ast_##ident * ident;
+#define AST_TYPE(ident, identstr, structdef) struct ast_##ident * as_##ident;
         AST_NODES
 #undef AST_TYPE
     };

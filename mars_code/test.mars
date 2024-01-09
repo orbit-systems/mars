@@ -1,4 +1,4 @@
-module 23432432 test;
+module test;
 
 import mem "./memory:memory";
 import neptune "./neptune:neptune";
@@ -6,7 +6,7 @@ import neptune "./neptune:neptune";
 let main = fn #section("text.boot") #link_name("__main") () {
     
     let str = "bruh";
-    let str2 = []u8{0x62, 0x72, 0x75, 0x68};
+    let str2 = "bruhlmao";
 
     if mem::equal(str.raw, str2.raw, str.len) { 
         neptune::kprint("equal");

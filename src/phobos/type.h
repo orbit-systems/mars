@@ -38,7 +38,7 @@ typedef u8 mars_basic_type; enum {
     TYPE(multi, "multi-type", { \
         dynarr(mars_type) subtypes; \
     }) \
-    TYPE(multi, "struct", { \
+    TYPE(struct, "struct", { \
         dynarr(mars_type) subtypes; \
         dynarr(size_t)    offsets; \
     }) \
@@ -48,29 +48,29 @@ typedef u8 mars_basic_type; enum {
     
 
 // generate the enum tags for the tagged union
-typedef u16 mtype_type; enum {
+typedef u16 mt_type; enum {
     mt_invalid,
-#define TYPE(ident, identstr, structdef) mtype_##ident,
+#define TYPE(ident, identstr, structdef) mt_##ident,
     TYPE_NODES
 #undef TYPE
     mt_COUNT
 };
 
 // generate tagged union AST type
-typedef struct {
+typedef struct mars_type {
     union {
         void* rawptr;
-#define TYPE(ident, identstr, structdef) struct mtype_##ident * ident;
+#define TYPE(ident, identstr, structdef) struct mtype_##ident * as_##ident;
         TYPE_NODES
 #undef TYPE
     };
-    mtype_type type;
+    mt_type type;
 } mars_type;
 
 dynarr_lib_h(mars_type)
 dynarr_lib_h(size_t)
 
-// generate AST node typedefs
+// generate typedefs
 #define TYPE(ident, identstr, structdef) typedef struct mtype_##ident structdef mtype_##ident;
     TYPE_NODES
 #undef TYPE
