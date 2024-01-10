@@ -84,12 +84,13 @@ compilation_unit* phobos_perform_frontend() {
         arena_list alloca = arena_list_make(PARSER_ARENA_SIZE);
 
         parser p = make_parser(&lexers.raw[i], alloca);
-
-        parse_module_decl(&p);
+        parse_file(&p);
 
         dynarr_append(parser, &parsers, p);
 
     }
+
+    printf("%d\n", sizeof(mars_file));
 
 
     // cleanup

@@ -3,9 +3,9 @@ Each node of the MAST is converted to the TAC, which is then used to compile int
 
 An example program and it's AST and TAC conversion, with the aphelion conversion after:
 
-main :: fn() {
-	a := 1 + 2
-	return
+let main = fn() {
+	let a = 1 + 2;
+	return;
 }
 
 root:

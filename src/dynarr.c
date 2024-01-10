@@ -13,6 +13,7 @@
 
 dynarr_lib(arena)
 dynarr_lib(mars_type)
+dynarr_lib(mars_struct_field)
 dynarr_lib(size_t)
 dynarr_lib(string)
 dynarr_lib(AST)

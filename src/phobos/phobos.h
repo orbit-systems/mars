@@ -11,8 +11,8 @@ dynarr_lib_h(lexer)
 dynarr_lib_h(parser)
 
 typedef struct {
+    lexer l;
     parser p;
-    string module_name;
 } mars_file;
 
 dynarr_lib_h(mars_file)

@@ -11,17 +11,17 @@ typedef struct parser {
     dynarr(token) tokens;
     string path;
     string src;
-    string module_name;
-
     size_t current_token;
+
+    AST    module_decl;
+    AST    head;
 } parser;
 
 
 parser make_parser(lexer* restrict l, arena_list alloca);
 
-
-void parse_module_decl(parser* restrict p);
-
+AST parse_module_decl(parser* restrict p);
+void parse_file(parser* restrict p);
 
 #define current_token(p_ptr) ((p)->tokens.raw[(p)->current_token])
 #define advance_token(p_ptr) (((p)->current_token + 1 < (p)->tokens.len) ? ((p)->current_token)++ : 0)

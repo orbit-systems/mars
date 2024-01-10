@@ -20,7 +20,6 @@ let eq = fn(block1, block2: addr, len: uint) -> bool {
     let block1_stop = block1_byte + cast(^u8) len;
 
     while block1_byte != block1_stop {
-
         if @block1_byte != @block2_byte {
             return false;
         }

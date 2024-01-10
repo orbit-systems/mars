@@ -1,8 +1,20 @@
 module neptune;
 
-let kprint = fn(str: []u8) {
-    mut cursor = str.raw
-    mut cursor_end = str.raw + cast(^u8) str.len
+let PUTC_PORT = cast(u16) 100;
 
-    // implementation pending
+let kprintln = fn(str: []u8) {
+    kprint(str);
+    kputc('\n');
+}
+
+let kprint = fn(str: []u8) {
+    for i in 0..<str.len {
+        kputc(str[i]);
+    }
 };
+
+let kputc = fn(c: u8) {
+    asm(c -> "ra", PUTC -> "rb") {
+        "out rb, ra"
+    }
+}

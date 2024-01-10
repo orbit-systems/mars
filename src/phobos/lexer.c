@@ -341,11 +341,23 @@ token_type scan_operator(lexer* restrict lex) {
             return tt_colon_colon;
         }
         return tt_colon;
-    
+    case '.':
+        advance_char(lex);
+        if (current_char(lex) == '.') {
+            if (peek_char(lex, 1) == '<') {
+                advance_char_n(lex, 2);
+                return tt_range_less;
+            }
+            if (peek_char(lex, 1) == '=') {
+                advance_char_n(lex, 2);
+                return tt_range_less;
+            }
+        }
+        return tt_period;
+
     case '#': advance_char(lex); return tt_hash;
     case ';': advance_char(lex); return tt_semicolon;
     case '$': advance_char(lex); return tt_dollar;
-    case '.': advance_char(lex); return tt_period;
     case ',': advance_char(lex); return tt_comma;
     case '^': advance_char(lex); return tt_carat;
     case '@': advance_char(lex); return tt_at;

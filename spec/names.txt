@@ -1,7 +1,0 @@
-name suggestions:
-    mars
-    helios
-    ares
-    aion / aeon
-    atlas
-    juno

@@ -6,9 +6,8 @@
 #include "arena.h"
 #include "dynarr.h"
 
-
 #define TYPE_NODES \
-    TYPE(basic_none, "none", {}) /* like void */ \
+    TYPE(basic_none, "none", {}) \
     TYPE(basic_u8,   "u8",   {}) \
     TYPE(basic_u16,  "u16",  {}) \
     TYPE(basic_u32,  "u32",  {}) \
@@ -23,18 +22,15 @@
     TYPE(basic_bool, "bool", {}) \
     TYPE(basic_addr, "addr", {}) \
     \
-/* type of expressions that return multiple types, like multi-return-value functions */ \
+/* type of expressions that with multiple types, like multi-valued return functions */ \
     TYPE(multi, "multi", { \
         dynarr(mars_type) subtypes; \
     }) \
     TYPE(struct, "struct", { \
-        dynarr(mars_type) subtypes; \
-        dynarr(size_t)    offsets; \
-        dynarr(string)    idents; \
+        dynarr(mars_struct_field) fields;\
     }) \
     TYPE(union, "union", { \
-        dynarr(mars_type) subtypes; \
-        dynarr(string)    idents; \
+        dynarr(mars_struct_field) fields;\
     }) \
     TYPE(pointer, "pointer", { \
         mars_type subtype; \
@@ -52,7 +48,7 @@
     
 
 // generate the enum tags for the tagged union
-typedef u16 mt_type; enum {
+typedef u8 mt_kind; enum {
     mt_invalid,
 #define TYPE(ident, identstr, structdef) mt_##ident,
     TYPE_NODES
@@ -68,17 +64,28 @@ typedef struct mars_type {
         TYPE_NODES
 #undef TYPE
     };
-    mt_type type;
+    mt_kind type;
 } mars_type;
+
+typedef struct {
+    string ident;
+    size_t offset;
+    mars_type type;
+} mars_struct_field;
 
 dynarr_lib_h(mars_type)
 dynarr_lib_h(size_t)
 dynarr_lib_h(string)
+dynarr_lib_h(mars_struct_field)
 
 // generate typedefs
 #define TYPE(ident, identstr, structdef) typedef struct mtype_##ident structdef mtype_##ident;
     TYPE_NODES
 #undef TYPE
 
-extern char* mt_type_str[];
-extern size_t mt_type_size[];
+extern char* mt_kind_str[];
+extern size_t mt_kind_size[];
+
+mars_type new_type_node(arena_list* restrict al, mt_kind type);
+size_t size_of_type(mars_type t);
+size_t align_of_type(mars_type t);

@@ -77,6 +77,15 @@ typedef struct {
     }) \
     \
     \
+    AST_TYPE(module_decl, "module declaration", { \
+        ast_base base; \
+        token* name; \
+    }) \
+    AST_TYPE(import_stmt, "import statement", { \
+        ast_base base; \
+        AST name; \
+        AST path; \
+    }) \
     AST_TYPE(block_stmt, "statement block", { \
         ast_base base; \
         AST lhs; \
@@ -85,15 +94,22 @@ typedef struct {
         bool has_expl_type; \
         bool is_mut; \
     }) \
-    AST_TYPE(decl_stmt, "declaration", { \
+    AST_TYPE(mut_decl_stmt, "mut declaration", { \
         ast_base base; \
         AST lhs; \
         AST type; \
         AST rhs; \
         bool has_expl_type; \
-        bool is_mut; \
+        bool is_static; \
     }) \
-    AST_TYPE(type_stmt, "type declaration", { \
+    AST_TYPE(let_decl_stmt, "let declaration", { \
+        ast_base base; \
+        AST lhs; \
+        AST type; \
+        AST rhs; \
+        bool has_expl_type; \
+    }) \
+    AST_TYPE(type_decl_stmt, "type declaration", { \
         ast_base base; \
         AST lhs; \
         AST type; \

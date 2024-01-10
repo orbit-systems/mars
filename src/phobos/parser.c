@@ -14,27 +14,37 @@ parser make_parser(lexer* restrict l, arena_list alloca) {
     p.tokens = l->buffer;
     p.path   = l->path;
     p.src    = l->src;
-    p.module_name = NULL_STR;
     p.current_token = 0;
 
     return p;
 }
 
-void parse_module_decl(parser* restrict p) {
+AST parse_module_decl(parser* restrict p) {
+
+    AST n = new_ast_node(&p->alloca, astype_module_decl);
 
     if (current_token(p).type != tt_keyword_module)
         error_at_parser(p, "expected \'module\', got %s", token_type_str[current_token(p).type]);
-    
+    n.as_module_decl->base.start = &current_token(p);
+
     advance_token(p);
     if (current_token(p).type != tt_identifier)
         error_at_parser(p, "expected module name, got %s", token_type_str[current_token(p).type]);
 
-    p->module_name = current_token(p).text;
+    n.as_module_decl->name = &current_token(p);
 
     advance_token(p);
     if (current_token(p).type != tt_semicolon)
         error_at_parser(p, "expected ';', got %s", token_type_str[current_token(p).type]);
     
+    n.as_module_decl->base.end = &current_token(p);
     advance_token(p);
-    return;
+    return n;
+}
+
+void parse_file(parser* restrict p) {
+    p->module_decl = parse_module_decl(p);
+
+    p->head = new_ast_node(&p->alloca, astype_block_stmt);
+
 }
