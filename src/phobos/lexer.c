@@ -9,10 +9,11 @@ char* token_type_str[] = {
 };
 
 lexer new_lexer(string path, string src) {
-    lexer lex;
+    lexer lex = {0};
     lex.path = path;
     lex.src = src;
     lex.current_char = src.raw[0];
+    lex.cursor = 0;
     dynarr_init(token, &lex.buffer, src.len/3);
     return lex;
 }
@@ -25,7 +26,6 @@ void construct_token_buffer(lexer* restrict lex) {
     while (lex->buffer.raw[lex->buffer.len-1].type != tt_EOF) {
         append_next_token(lex);
         // printstr((lex->buffer.raw[lex->buffer.len-1].text));
-        // printf("\n");
     }
     dynarr_shrink(token, &lex->buffer);
 }
@@ -139,6 +139,7 @@ token_type scan_ident_or_keyword(lexer* restrict lex) {
     if (string_eq(word, to_string("extern")))       return tt_keyword_extern;
     if (string_eq(word, to_string("fallthrough")))  return tt_keyword_fallthrough;
     if (string_eq(word, to_string("import")))       return tt_keyword_import;
+    if (string_eq(word, to_string("inline")))       return tt_keyword_inline;
     if (string_eq(word, to_string("module")))       return tt_keyword_module;
     if (string_eq(word, to_string("return")))       return tt_keyword_return;
     if (string_eq(word, to_string("struct")))       return tt_keyword_struct;

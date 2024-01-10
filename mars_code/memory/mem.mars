@@ -1,7 +1,5 @@
 module memory;
 
-
-
 let copy = fn(to, from: addr, len: uint) {
     mut to_byte: ^u8 = to;
     mut from_byte: ^u8 = from;
@@ -16,7 +14,7 @@ let copy = fn(to, from: addr, len: uint) {
     }
 };
 
-let equal = fn(block1, block2: addr, len: uint) -> bool {
+let eq = fn(block1, block2: addr, len: uint) -> bool {
     mut block1_byte = cast(^u8) block1;
     mut block2_byte = cast(^u8) block2;
     let block1_stop = block1_byte + cast(^u8) len;
@@ -34,16 +32,16 @@ let equal = fn(block1, block2: addr, len: uint) -> bool {
     return true;
 };
 
+let str_eq = fn(a, b: []u8) -> bool {
+    if a.len != b.len { return false; }
+    return equal(a.raw, b.raw, a.len);
+};
+
 let set = fn(dest: addr, len: uint, val: u8) {
     mut cursor = cast(^u8) dest;
     let stop = cursor + cast(^u8) len;
     while cursor != stop {
-        $cursor = val;
+        @cursor = val;
         cursor += 1;
     }
-};
-
-let slice_equal = fn(a, b: []u8) -> bool {
-    if a.len != b.len { return false; }
-    return equal(a.raw, b.raw, a.len);
 };

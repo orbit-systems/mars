@@ -9,7 +9,7 @@
 
 // construct a parser struct from a lexer and an arena_list allocator
 parser make_parser(lexer* restrict l, arena_list alloca) {
-    parser p;
+    parser p = {0};
     p.alloca = alloca;
     p.tokens = l->buffer;
     p.path   = l->path;
@@ -25,9 +25,6 @@ void parse_module_decl(parser* restrict p) {
     if (current_token(p).type != tt_keyword_module)
         error_at_parser(p, "expected \'module\', got %s", token_type_str[current_token(p).type]);
     
-    printf("bruh\n");
-
-
     advance_token(p);
     if (current_token(p).type != tt_identifier)
         error_at_parser(p, "expected module name, got %s", token_type_str[current_token(p).type]);

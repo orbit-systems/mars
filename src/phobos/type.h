@@ -22,8 +22,9 @@
     TYPE(basic_f64,  "f64",  {}) \
     TYPE(basic_bool, "bool", {}) \
     TYPE(basic_addr, "addr", {}) \
+    \
 /* type of expressions that return multiple types, like multi-return-value functions */ \
-    TYPE(multi, "multi-type", { \
+    TYPE(multi, "multi", { \
         dynarr(mars_type) subtypes; \
     }) \
     TYPE(struct, "struct", { \
@@ -31,8 +32,22 @@
         dynarr(size_t)    offsets; \
         dynarr(string)    idents; \
     }) \
+    TYPE(union, "union", { \
+        dynarr(mars_type) subtypes; \
+        dynarr(string)    idents; \
+    }) \
     TYPE(pointer, "pointer", { \
-        mars_type underlying; \
+        mars_type subtype; \
+    }) \
+    TYPE(slice, "slice", { \
+        mars_type subtype; \
+    }) \
+    TYPE(array, "array", { \
+        mars_type subtype; \
+        size_t length; \
+    }) \
+    TYPE(alias, "alias", { \
+        mars_type subtype; \
     }) \
     
 

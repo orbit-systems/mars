@@ -64,7 +64,7 @@ typedef struct {
         ast_base base; \
         AST rhs; \
     }) \
-    AST_TYPE(array_index_expr, "array index", { \
+    AST_TYPE(index_expr, "array index", { \
         ast_base base; \
         AST lhs; \
         AST inside; \
@@ -75,6 +75,8 @@ typedef struct {
         AST inside_left; \
         AST inside_right; \
     }) \
+    \
+    \
     AST_TYPE(block_stmt, "statement block", { \
         ast_base base; \
         AST lhs; \

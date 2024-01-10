@@ -33,11 +33,6 @@ void general_warning(char* message, ...) {
 }
 
 void error_at_string(string path, string text, string pos, char* message, ...) {
-    
-    printf("\n\n\n");
-    printf("%p\n", text.raw);
-    printf("%p", pos.raw);
-    printf("\n\n\n");
 
     char ERROR_MSG_BUFFER[500] = {0};
     va_list args;
@@ -47,9 +42,7 @@ void error_at_string(string path, string text, string pos, char* message, ...) {
 
     printf(style_FG_Red style_Bold "ERROR" style_Reset);
 
-
     printf(style_Dim " | " style_Reset);
-
 
     int line = 1;
     int column = 1;
@@ -61,7 +54,6 @@ void error_at_string(string path, string text, string pos, char* message, ...) {
     printf(" @ %d:%d ", line, column);
 
     printf(style_Dim "-> " style_Reset);
-
 
     printf(style_Italic style_Bold "%s" style_Reset, ERROR_MSG_BUFFER);
 

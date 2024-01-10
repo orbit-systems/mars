@@ -4,11 +4,11 @@ import mem "./memory:memory";
 import neptune "./neptune:neptune";
 
 let main = fn #section("text.boot") #link_name("__main") () {
-    
-    let str = "bruh";
-    let str2 = "bruhlmao";
 
-    if mem::equal(str.raw, str2.raw, str.len) { 
+    let str = "bruh";
+    let str2 = "bruh2";
+
+    if mem::str_eq(str, str2) { 
         neptune::kprint("equal");
     } else {
         neptune::kprint("not equal");
