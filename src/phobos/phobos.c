@@ -87,11 +87,7 @@ compilation_unit* phobos_perform_frontend() {
         parse_file(&p);
 
         dynarr_append(parser, &parsers, p);
-
     }
-
-    printf("%d\n", sizeof(mars_file));
-
 
     // cleanup
     FOR_RANGE_EXCL(i, 0, subfile_count) fs_drop(&subfiles[i]);

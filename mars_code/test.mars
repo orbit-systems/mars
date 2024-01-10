@@ -3,12 +3,14 @@ module test;
 import mem "./memory";
 import neptune "./neptune";
 
+let string_equal = mem::str_eq;
+
 let main = fn #section("text.boot") #link_name("__main") () {
 
     let str = "bruh";
     let str2 = "bruh2";
 
-    if mem::str_eq(str, str2) { 
+    if string_equal(str, str2) { 
         neptune::kprintln("equal");
     } else {
         neptune::kprintln("not equal");

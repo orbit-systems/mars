@@ -24,7 +24,7 @@ AST parse_module_decl(parser* restrict p) {
     AST n = new_ast_node(&p->alloca, astype_module_decl);
 
     if (current_token(p).type != tt_keyword_module)
-        error_at_parser(p, "expected \'module\', got %s", token_type_str[current_token(p).type]);
+        error_at_parser(p, "expected module declaration, got %s", token_type_str[current_token(p).type]);
     n.as_module_decl->base.start = &current_token(p);
 
     advance_token(p);
@@ -43,8 +43,15 @@ AST parse_module_decl(parser* restrict p) {
 }
 
 void parse_file(parser* restrict p) {
+    
     p->module_decl = parse_module_decl(p);
 
     p->head = new_ast_node(&p->alloca, astype_block_stmt);
 
+}
+
+AST parse_expr(parser* restrict p) {
+    switch (current_token(p).type) {
+
+    }
 }

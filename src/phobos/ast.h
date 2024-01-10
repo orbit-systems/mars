@@ -13,7 +13,7 @@ typedef struct {
 
 // define all the AST node macros
 #define AST_NODES \
-    AST_TYPE(expr_identifier, "identifier", { \
+    AST_TYPE(identifier_expr, "identifier", { \
         union { \
         ast_base base; \
         token* tok; \
@@ -88,25 +88,21 @@ typedef struct {
     }) \
     AST_TYPE(block_stmt, "statement block", { \
         ast_base base; \
-        AST lhs; \
-        AST type; \
-        AST rhs; \
-        bool has_expl_type; \
-        bool is_mut; \
+        dynarr(AST) stmts; \
     }) \
     AST_TYPE(mut_decl_stmt, "mut declaration", { \
         ast_base base; \
-        AST lhs; \
+        dynarr(AST) lhs; \
+        dynarr(AST) rhs; \
         AST type; \
-        AST rhs; \
         bool has_expl_type; \
         bool is_static; \
     }) \
     AST_TYPE(let_decl_stmt, "let declaration", { \
         ast_base base; \
-        AST lhs; \
+        dynarr(AST) lhs; \
+        dynarr(AST) rhs; \
         AST type; \
-        AST rhs; \
         bool has_expl_type; \
     }) \
     AST_TYPE(type_decl_stmt, "type declaration", { \
@@ -119,8 +115,8 @@ typedef struct {
     }) \
     AST_TYPE(assign_stmt, "assignment", { \
         ast_base base; \
-        AST lhs; \
-        AST rhs; \
+        dynarr(AST) lhs; \
+        dynarr(AST) rhs; \
     }) \
     AST_TYPE(comp_assign_stmt, "compound assignment", { \
         ast_base base; \
@@ -133,20 +129,7 @@ typedef struct {
         ast_base base; \
         token* tok; \
         }; \
-    }) \
-\
-\
-\
-    /* we can repurpose the AST structure for some more stuff, like the type graph*/ \
-\
-    /* type of expressions that return multiple types, like multi-return-value functions */ \
-    AST_TYPE(type_multi, "multi-type", { \
-        dynarr(AST) types; \
-    }) \
-    AST_TYPE(type_pointer, "pointer", { \
-        AST underlying; \
-    }) \
-    
+    })
 
 // generate the enum tags for the AST tagged union
 typedef u16 ast_type; enum {
@@ -179,5 +162,5 @@ dynarr_lib_h(AST)
 extern char* ast_type_str[];
 extern size_t ast_type_size[];
 
-
 AST new_ast_node(arena_list* restrict al, ast_type type);
+void dump_tree(AST node, int n);
