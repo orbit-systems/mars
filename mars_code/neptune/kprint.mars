@@ -1,6 +1,6 @@
 module neptune;
 
-let PUTC_PORT = cast(u16) 100;
+let PUTC_PORT : u64 = 100;
 
 let kprintln = fn(str: []u8) {
     kprint(str);
