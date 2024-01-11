@@ -43,6 +43,7 @@
         size_t length; \
     }) \
     TYPE(alias, "alias", { \
+        string name; \
         mars_type subtype; \
     }) \
     
@@ -86,6 +87,6 @@ dynarr_lib_h(mars_struct_field)
 extern char* mt_kind_str[];
 extern size_t mt_kind_size[];
 
-mars_type new_type_node(arena_list* restrict al, mt_kind type);
+mars_type new_type_node(arena* restrict a, mt_kind type);
 size_t size_of_type(mars_type t);
 size_t align_of_type(mars_type t);

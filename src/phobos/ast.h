@@ -124,6 +124,31 @@ typedef struct {
         AST rhs; \
         token* op; \
     }) \
+    AST_TYPE(if_stmt, "if statement", { \
+        ast_base base; \
+        AST condition; \
+        AST if_branch; \
+        AST else_branch; \
+        bool is_elif; \
+    }) \
+    AST_TYPE(while_stmt, "while loop", { \
+        ast_base base; \
+        AST condition; \
+        AST block; \
+    }) \
+    AST_TYPE(for_stmt, "for loop", { \
+        ast_base base; \
+        AST prelude; \
+        AST condition; \
+        AST post_stmt; \
+        AST block; \
+    }) \
+    AST_TYPE(for_in_stmt, "for-in loop", { \
+        ast_base base; \
+        AST indexvar; \
+        AST range; \
+        AST block; \
+    }) \
     AST_TYPE(empty_stmt, "empty statement", { \
         union{ \
         ast_base base; \
@@ -159,8 +184,10 @@ dynarr_lib_h(AST)
     AST_NODES
 #undef AST_TYPE
 
+#define NULL_AST ((AST){0})
+
 extern char* ast_type_str[];
 extern size_t ast_type_size[];
 
-AST new_ast_node(arena_list* restrict al, ast_type type);
+AST new_ast_node(arena* restrict al, ast_type type);
 void dump_tree(AST node, int n);

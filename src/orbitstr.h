@@ -29,6 +29,7 @@ typedef struct string_s {
 
 char*  clone_to_cstring(string str); // this allocates
 void   printstr(string str);
+string strprintf(char* format, ...);
 
 string  string_alloc(size_t len);
 #define string_free(str) free(str.raw)
@@ -42,6 +43,21 @@ bool string_ends_with(string source, string ending);
 // use #define ORBITSTR_IMPLEMENTATION before including the header to generate the actual code
 
 #ifdef ORBITSTR_IMPLEMENTATION
+
+string strprintf(char* format, ...) {
+    string c = NULL_STR;
+    va_list a;
+    va_start(a, format);
+    va_list b;
+    va_copy(b, a);
+    size_t bufferlen = 1 + vsnprintf("", 0, format, a);
+    c = string_alloc(bufferlen);
+    vsnprintf(c.raw, c.len, format, b);
+    c.len--;
+    va_end(a);
+    va_end(b);
+    return c;
+}
 
 string string_concat(string a, string b) {
     string c = string_alloc(a.len + b.len);

@@ -1,5 +1,6 @@
 #include "orbit.h"
 #include "dynarr.h"
+#include "arena.h"
 
 #include "phobos/phobos.h"
 #include "phobos/lexer.h"
@@ -11,7 +12,7 @@
 // but it prevents code duplication and declutters the place.
 // yes yes crucify me for this whatever i dont gibve a shit
 
-dynarr_lib(arena)
+dynarr_lib(arena_block)
 dynarr_lib(mars_type)
 dynarr_lib(mars_struct_field)
 dynarr_lib(size_t)

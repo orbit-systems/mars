@@ -20,10 +20,10 @@ char* ast_type_str[] = {
     "COUNT",
 };
 
-// allocate and zero a new AST node with an arena_list
-AST new_ast_node(arena_list* restrict al, ast_type type) {
+// allocate and zero a new AST node with an arena
+AST new_ast_node(arena* restrict a, ast_type type) {
     AST node;
-    void* node_ptr = arena_list_alloc(al, ast_type_size[type], 8);
+    void* node_ptr = arena_alloc(a, ast_type_size[type], 8);
     if (node_ptr == NULL) {
         general_error("internal: new_ast_node() could not allocate AST node of type '%s' with size %d", ast_type_str[type], ast_type_size[type]);
     }
@@ -37,7 +37,7 @@ void print_indent(int n) {
     FOR_RANGE_EXCL(i, 0, n) printf("    ");
 }
 
-// FOR DEBUGGING PURPOSES!! THIS IS NOT MEMORY SAFE LMFAO
+// FOR DEBUGGING PURPOSES!! THIS IS NOT GOING TO BE MEMORY SAFE LMFAO
 void dump_tree(AST node, int n) {\
 
     print_indent(n);

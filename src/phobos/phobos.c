@@ -81,7 +81,7 @@ compilation_unit* phobos_perform_frontend() {
     dynarr_init(parser, &parsers, lexers.len);
 
     FOR_URANGE_EXCL(i, 0, lexers.len) {
-        arena_list alloca = arena_list_make(PARSER_ARENA_SIZE);
+        arena alloca = arena_make(PARSER_ARENA_SIZE);
 
         parser p = make_parser(&lexers.raw[i], alloca);
         parse_file(&p);

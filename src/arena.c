@@ -2,62 +2,62 @@
 #include "arena.h"
 #include "error.h"
 
-arena arena_make(size_t size) {
-    arena a;
-    a.raw = malloc(size);
-    if (a.raw == NULL) {
-        general_error("internal: arena size %lu too big, can't allocate", size);
+arena_block arena_block_make(size_t size) {
+    arena_block block;
+    block.raw = malloc(size);
+    if (block.raw == NULL) {
+        general_error("internal: arena block size %lu too big, can't allocate", size);
     }
-    a.size = (u32) size;
-    a.offset = 0;
-    return a;
+    block.size = (u32) size;
+    block.offset = 0;
+    return block;
 }
 
-void arena_delete(arena* restrict a) {
-    free(a->raw);
-    *a = (arena){0};
+void arena_block_delete(arena_block* restrict block) {
+    free(block->raw);
+    *block = (arena_block){0};
 }
 
-void* arena_alloc(arena* restrict a, size_t size, size_t align) {
-    u32 offset = a->offset;
-    u32 new_offset = align_forward(a->offset, align) + size;
-    if (new_offset > a->size) {
+void* arena_block_alloc(arena_block* restrict block, size_t size, size_t align) {
+    u32 offset = block->offset;
+    u32 new_offset = align_forward(block->offset, align) + size;
+    if (new_offset > block->size) {
         return NULL;
     }
-    a->offset = new_offset;
-    return (void*)((size_t)a->raw + align_forward(offset, align));
+    block->offset = new_offset;
+    return (void*)((size_t)block->raw + align_forward(offset, align));
 }
 
-arena_list arena_list_make(size_t block_size) {
-    arena_list al;
-    dynarr_init_arena(&al.list, 1);
+arena arena_make(size_t block_size) {
+    arena al;
+    dynarr_init(arena_block, &al.list, 1);
     al.arena_size = block_size;
     
-    arena initial_arena = arena_make(al.arena_size);
-    dynarr_append_arena(&al.list, initial_arena);
+    arena_block initial_arena = arena_block_make(al.arena_size);
+    dynarr_append(arena_block, &al.list, initial_arena);
 
     return al;
 }
 
-void arena_list_delete(arena_list* restrict al) {
+void arena_delete(arena* restrict al) {
     FOR_URANGE_EXCL(i, 0, (al->list.len)) {
-        arena_delete(&al->list.raw[i]);
+        arena_block_delete(&al->list.raw[i]);
     }
-    dynarr_destroy_arena(&al->list);
-    *al = (arena_list){0};
+    dynarr_destroy(arena_block, &al->list);
+    *al = (arena){0};
 }
 
-void* arena_list_alloc(arena_list* restrict al, size_t size, size_t align) {
-    // attempt to allocate at the top arena;
-    void* attempt = arena_alloc(&al->list.raw[al->list.len-1], size, align);
+void* arena_alloc(arena* restrict al, size_t size, size_t align) {
+    // attempt to allocate at the top arena_block;
+    void* attempt = arena_block_alloc(&al->list.raw[al->list.len-1], size, align);
     if (attempt != NULL) return attempt; // yay!
 
-    // FUCK! we need to append another arena block
-    arena new_arena = arena_make(al->arena_size);
-    dynarr_append_arena(&al->list, new_arena);
+    // FUCK! we need to append another arena_block block
+    arena_block new_arena = arena_block_make(al->arena_size);
+    dynarr_append(arena_block, &al->list, new_arena);
 
     // we're gonna try again
-    attempt = arena_alloc(&al->list.raw[al->list.len-1], size, align);
+    attempt = arena_block_alloc(&al->list.raw[al->list.len-1], size, align);
     return attempt; // this should ideally never be null
 }
 

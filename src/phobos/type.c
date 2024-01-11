@@ -20,10 +20,10 @@ char* mt_kind_str[] = {
     "COUNT",
 };
 
-// allocate and zero a new AST node with an arena_list
-mars_type new_type_node(arena_list* restrict al, mt_kind type) {
+// allocate and zero a new AST node with an arena
+mars_type new_type_node(arena* restrict a, mt_kind type) {
     mars_type node;
-    void* node_ptr = arena_list_alloc(al, mt_kind_size[type], 8);
+    void* node_ptr = arena_alloc(a, mt_kind_size[type], 8); // default align to 8
     if (node_ptr == NULL) {
         general_error("new_type_node() could not allocate type node of type '%s' with size %d", mt_kind_str[type], mt_kind_size[type]);
     }
@@ -130,5 +130,66 @@ size_t size_of_type(mars_type t) {
     default:
         general_error("internal: invalid type '%s' (%d) passed to size_of_type()", mt_kind_str[t.type] , t.type);
         return 0;
+    }
+}
+
+// SLOW AND LEAKS A SHIT TON OF MEMORY - THIS SHOULD ONLY BE USED FOR ERRORS AND SHIT
+string type_to_str(mars_type t) {
+    string s = to_string("");
+    switch (t.type) {
+    case mt_basic_none: return to_string("none");
+    case mt_basic_u8:   return to_string("u8");
+    case mt_basic_u16:  return to_string("u16");
+    case mt_basic_u32:  return to_string("u32");
+    case mt_basic_u64:  return to_string("u64");
+    case mt_basic_i8:   return to_string("i8");
+    case mt_basic_i16:  return to_string("i16");
+    case mt_basic_i32:  return to_string("i32");
+    case mt_basic_i64:  return to_string("i64");
+    case mt_basic_f16:  return to_string("f16");
+    case mt_basic_f32:  return to_string("f32");
+    case mt_basic_f64:  return to_string("f64");
+    case mt_basic_addr: return to_string("addr");
+    case mt_basic_bool: return to_string("bool");
+    case mt_alias:      return t.as_alias->name;
+    case mt_multi:
+        s = to_string("(");
+        FOR_URANGE_EXCL(i, 0, t.as_multi->subtypes.len) {
+            s = string_concat(s, type_to_str(t.as_multi->subtypes.raw[i]));
+            if (i != t.as_multi->subtypes.len - 1) {
+                s = string_concat(s, to_string(", "));
+            }
+        }
+        return string_concat(s, to_string(")"));
+    case mt_slice:
+        return string_concat(to_string("[]"), type_to_str(t.as_slice->subtype));
+    case mt_pointer:
+        return string_concat(to_string("^"), type_to_str(t.as_slice->subtype));
+    case mt_array:
+        return string_concat(strprintf("[%ull]", t.as_array->length), type_to_str(t.as_array->subtype));
+    case mt_struct:
+        s = to_string("union {");
+        FOR_URANGE_EXCL(i, 0, t.as_struct->fields.len) {
+            s = string_concat(s, t.as_struct->fields.raw[i].ident);
+            s = string_concat(s, to_string(": "));
+            s = string_concat(s, type_to_str(t.as_struct->fields.raw[i].type));
+            if (i != t.as_multi->subtypes.len - 1) {
+                s = string_concat(s, to_string(", "));
+            }
+        }
+        return string_concat(s, to_string("}"));
+    case mt_union:
+        s = to_string("struct {");
+        FOR_URANGE_EXCL(i, 0, t.as_struct->fields.len) {
+            s = string_concat(s, t.as_struct->fields.raw[i].ident);
+            s = string_concat(s, to_string(": "));
+            s = string_concat(s, type_to_str(t.as_struct->fields.raw[i].type));
+            if (i != t.as_multi->subtypes.len - 1) {
+                s = string_concat(s, to_string(", "));
+            }
+        }
+        return string_concat(s, to_string("}"));
+    default:
+        return to_string("<INVALID TYPE>");
     }
 }

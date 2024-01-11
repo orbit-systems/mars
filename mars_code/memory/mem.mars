@@ -7,7 +7,7 @@ let copy = fn(to, from: addr, len: uint) {
 
     while to_byte != to_stop {
 
-        @to_byte = @from_byte;
+        *to_byte = *from_byte;
 
         from_byte += 1;
         to_byte += 1;
@@ -20,7 +20,7 @@ let eq = fn(block1, block2: addr, len: uint) -> bool {
     let block1_stop = block1_byte + cast(^u8) len;
 
     while block1_byte != block1_stop {
-        if @block1_byte != @block2_byte {
+        if *block1_byte != *block2_byte {
             return false;
         }
 
@@ -40,7 +40,7 @@ let set = fn(dest: addr, len: uint, val: u8) {
     mut cursor = cast(^u8) dest;
     let stop = cursor + cast(^u8) len;
     while cursor != stop {
-        @cursor = val;
+        *cursor = val;
         cursor += 1;
     }
 };

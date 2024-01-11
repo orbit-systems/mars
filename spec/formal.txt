@@ -42,7 +42,7 @@ types
 
         enum T {}       enumeration over type T (default: int). T must be in (all integers, uintegers)
 
-    note: types are structural, not nominal. if you declare a structural type the same way under different aliases, they are the same and are treated as identical by the language.
+    note: structs and unions are automatically distinct types.
 
 operators
     unary numeric
@@ -124,7 +124,7 @@ operators
     
     unary reference
         &       generate pointer        using type T in (all): &<T> -> <^T>
-        @       dereference pointer     using type T in (all): @<^T> -> <T>
+        *       dereference pointer     using type T in (all): *<^T> -> <T>
     
     unary utility
         len         get length of array or slice type, returns uint

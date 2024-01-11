@@ -7,8 +7,8 @@
 #define error_at_parser(p, message, ...) \
     error_at_string(p->path, p->src, current_token(p).text, message, __VA_ARGS__)
 
-// construct a parser struct from a lexer and an arena_list allocator
-parser make_parser(lexer* restrict l, arena_list alloca) {
+// construct a parser struct from a lexer and an arena allocator
+parser make_parser(lexer* restrict l, arena alloca) {
     parser p = {0};
     p.alloca = alloca;
     p.tokens = l->buffer;
@@ -51,7 +51,37 @@ void parse_file(parser* restrict p) {
 }
 
 AST parse_expr(parser* restrict p) {
+    AST n = {0};
+
     switch (current_token(p).type) {
+    case tt_open_paren:
+        n = new_ast_node(&p->alloca, astype_paren_expr);
+        
+        n.as_paren_expr->base.start = &current_token(p); 
+        
+        advance_token(p);
+        n.as_paren_expr->subexpr = parse_expr(p);
+        if (current_token(p).type != tt_close_paren)
+            error_at_parser(p, "expected ')', got %s", token_type_str[current_token(p).type]);
+        
+        n.as_paren_expr->base.end = &current_token(p);
+        break;
+    default:
+    }
+    return n;
+}
+
+AST parse_stmt(parser* restrict p) {
+    AST n = {0};
+
+    switch (current_token(p).type) {
+    case tt_keyword_if:
+        n = new_ast_node(&p->alloca, astype_if_stmt);
 
     }
+}
+
+AST parse_block_stmt(parser* restrict p) {
+    TODO("parse_block_stmt");
+    return NULL_AST;
 }
