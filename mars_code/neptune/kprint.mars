@@ -5,6 +5,7 @@ let PUTC_PORT : u64 = 100;
 let kprintln = fn(str: []u8) {
     kprint(str);
     kputc('\n');
+
 }
 
 let kprint = fn(str: []u8) {

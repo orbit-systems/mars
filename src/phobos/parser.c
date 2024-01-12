@@ -65,19 +65,75 @@ AST parse_expr(parser* restrict p) {
             error_at_parser(p, "expected ')', got %s", token_type_str[current_token(p).type]);
         
         n.as_paren_expr->base.end = &current_token(p);
+        advance_token(p);
         break;
     default:
     }
     return n;
 }
 
+AST parse_elif(parser* restrict p) {
+    AST n = new_ast_node(&p->alloca, astype_if_stmt);
+    n.as_if_stmt->is_elif = true;
+    n.as_if_stmt->base.start = &current_token(p);
+
+    advance_token(p);
+
+    // get condition expression
+    n.as_if_stmt->condition = parse_expr(p);
+        
+    // get block
+    n.as_if_stmt->if_branch = parse_block_stmt(p);
+
+    n.as_if_stmt->base.end = &peek_token(p, -1);
+
+    if (current_token(p).type == tt_keyword_elif) {
+        n.as_if_stmt->else_branch = parse_elif(p);
+    }
+    else if (current_token(p).type == tt_keyword_else) {
+        advance_token(p);
+        n.as_if_stmt->else_branch = parse_block_stmt(p);
+    }
+}
+
 AST parse_stmt(parser* restrict p) {
-    AST n = {0};
+    AST n = NULL_AST;
 
     switch (current_token(p).type) {
     case tt_keyword_if:
         n = new_ast_node(&p->alloca, astype_if_stmt);
+        n.as_if_stmt->base.start = &current_token(p);
 
+        advance_token(p);
+
+        // get condition expression
+        n.as_if_stmt->condition = parse_expr(p);
+        
+        // get block
+        n.as_if_stmt->if_branch = parse_block_stmt(p);
+        
+        n.as_if_stmt->base.end = &peek_token(p, -1);
+
+        if (current_token(p).type == tt_keyword_elif) {
+            n.as_if_stmt->else_branch = parse_elif(p);
+        }
+        else if (current_token(p).type == tt_keyword_else) {
+            advance_token(p);
+            n.as_if_stmt->else_branch = parse_block_stmt(p);
+        }
+
+        break;
+    case tt_semicolon:
+        n = new_ast_node(&p->alloca, astype_empty_stmt);
+        n.as_empty_stmt->base.start = &current_token(p);
+        n.as_empty_stmt->base.end = &current_token(p);
+        break;
+    case tt_open_bracket:
+        n = parse_block_stmt(p);
+        break;
+    default:
+        TODO("EVERYTHING IN PARSE_STMT LMFAO");
+        break;
     }
 }
 
