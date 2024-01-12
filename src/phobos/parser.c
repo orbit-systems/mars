@@ -67,7 +67,10 @@ AST parse_expr(parser* restrict p) {
         n.as_paren_expr->base.end = &current_token(p);
         advance_token(p);
         break;
+    
     default:
+        TODO("probably unimplemented some shit");
+        break;
     }
     return n;
 }
@@ -94,16 +97,17 @@ AST parse_elif(parser* restrict p) {
         advance_token(p);
         n.as_if_stmt->else_branch = parse_block_stmt(p);
     }
+    return n;
 }
 
-AST parse_stmt(parser* restrict p) {
+AST parse_stmt(parser* restrict p, bool require_semicolon) {
     AST n = NULL_AST;
 
     switch (current_token(p).type) {
     case tt_keyword_if:
         n = new_ast_node(&p->alloca, astype_if_stmt);
+        n.as_if_stmt->is_elif = false;
         n.as_if_stmt->base.start = &current_token(p);
-
         advance_token(p);
 
         // get condition expression
@@ -121,7 +125,6 @@ AST parse_stmt(parser* restrict p) {
             advance_token(p);
             n.as_if_stmt->else_branch = parse_block_stmt(p);
         }
-
         break;
     case tt_semicolon:
         n = new_ast_node(&p->alloca, astype_empty_stmt);
@@ -131,13 +134,30 @@ AST parse_stmt(parser* restrict p) {
     case tt_open_bracket:
         n = parse_block_stmt(p);
         break;
+    
     default:
-        TODO("EVERYTHING IN PARSE_STMT LMFAO");
+        TODO("probably unimplemented");
         break;
     }
+    return n;
 }
 
 AST parse_block_stmt(parser* restrict p) {
-    TODO("parse_block_stmt");
-    return NULL_AST;
+    AST n = new_ast_node(&p->alloca, astype_block_stmt);
+    
+    if (current_token(p).type != tt_open_brace)
+        error_at_parser(p, "expected '{', got %s", token_type_str[current_token(p).type]);
+    n.as_block_stmt->base.start = &current_token(p);
+    
+    advance_token(p);
+    while (current_token(p).type != tt_close_brace) {
+        AST stmt = parse_stmt(p, true);
+        dynarr_append(AST, &n.as_block_stmt->stmts, stmt);
+    }
+
+    if (current_token(p).type != tt_close_brace)
+        error_at_parser(p, "expected '}', got %s", token_type_str[current_token(p).type]);
+    n.as_block_stmt->base.end = &current_token(p);
+
+    return n;
 }

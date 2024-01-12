@@ -26,5 +26,6 @@ parser make_parser(lexer* restrict l, arena alloca);
 void parse_file(parser* restrict p);
 
 AST parse_module_decl(parser* restrict p);
-AST parse_stmt(parser* restrict p);
+AST parse_stmt(parser* restrict p, bool require_semicolon);
 AST parse_block_stmt(parser* restrict p);
+AST parse_elif(parser* restrict p);

@@ -15,11 +15,10 @@ DEBUGFLAGS = -g -rdynamic -pg
 ASANFLAGS = -fsanitize=undefined -fsanitize=address
 DONTBEAFUCKINGIDIOT = -Wall -Wextra -pedantic -Wno-missing-field-initializers -Wno-unused-result
 CFLAGS = -O3
-SHUTTHEFUCKUP = -Wno-unknown-warning-option -Wno-incompatible-pointer-types-discards-qualifiers -Wno-initializer-overrides -Wno-discarded-qualifiers
 
 build/%.o: src/%.c
 	@echo compiling $<
-	@$(CC) -c -o $@ $< -Isrc/ $(CFLAGS) -MD
+	@$(CC) -c -o $@ $< -Isrc/ -MD $(CFLAGS)
 
 build: $(OBJECTS)
 	@-cp build/deimos/* build/
@@ -46,9 +45,6 @@ test: build
 
 test2: build
 	./$(EXECUTABLE_NAME) ./test test
-
-debug:
-	$(DEBUGFLAGS) $(DONTBEAFUCKINGIDIOT)
 
 clean:
 	@rm -rf build
