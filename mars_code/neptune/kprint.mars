@@ -19,3 +19,19 @@ let kputc = fn(c: u8) {
         "out rb, ra"
     }
 }
+
+let kprintf = fn(format: []u8, args: []addr) {
+    if args.len == 0 {
+        kprint(format);
+        return;
+    }
+
+    for i in 0..<format.len {
+        
+    }
+}
+
+let print_integer = fn(value: uint, bitsize: uint, signed: bool) {
+    // implementation pending
+    
+}

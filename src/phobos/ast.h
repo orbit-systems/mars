@@ -146,8 +146,11 @@ typedef struct {
     AST_TYPE(for_in_stmt, "for-in loop", { \
         ast_base base; \
         AST indexvar; \
-        AST range; \
+        AST type; \
+        AST to; \
+        AST from; \
         AST block; \
+        bool is_inclusive; \
     }) \
     AST_TYPE(empty_stmt, "empty statement", { \
         union{ \

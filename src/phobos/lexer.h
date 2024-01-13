@@ -86,21 +86,21 @@
     TOKEN(tt_keyword_def,   "def") \
     TOKEN(tt_keyword_type,  "type") \
 \
-    TOKEN(tt_keyword_asm,   "asm") \
-    TOKEN(tt_keyword_bitcast, "bitcast") \
-    TOKEN(tt_keyword_break, "break") \
-    TOKEN(tt_keyword_case,  "case") \
-    TOKEN(tt_keyword_cast,  "cast") \
-    TOKEN(tt_keyword_defer, "defer") \
-    TOKEN(tt_keyword_enum,  "enum") \
-    TOKEN(tt_keyword_elif,  "elif") \
-    TOKEN(tt_keyword_else,  "else") \
+    TOKEN(tt_keyword_asm,       "asm") \
+    TOKEN(tt_keyword_bitcast,   "bitcast") \
+    TOKEN(tt_keyword_break,     "break") \
+    TOKEN(tt_keyword_case,      "case") \
+    TOKEN(tt_keyword_cast,      "cast") \
+    TOKEN(tt_keyword_defer,     "defer") \
+    TOKEN(tt_keyword_enum,      "enum") \
+    TOKEN(tt_keyword_elif,      "elif") \
+    TOKEN(tt_keyword_else,      "else") \
     TOKEN(tt_keyword_extern,    "extern") \
-    TOKEN(tt_keyword_fallthrough,   "fallthrough") \
-    TOKEN(tt_keyword_for,   "for") \
-    TOKEN(tt_keyword_fn,    "fn") \
-    TOKEN(tt_keyword_if,    "if") \
-    TOKEN(tt_keyword_in,    "in") \
+    TOKEN(tt_keyword_fallthrough,"fallthrough") \
+    TOKEN(tt_keyword_for,       "for") \
+    TOKEN(tt_keyword_fn,        "fn") \
+    TOKEN(tt_keyword_if,        "if") \
+    TOKEN(tt_keyword_in,        "in") \
     TOKEN(tt_keyword_import,    "import") \
     TOKEN(tt_keyword_inline,    "inline") \
     TOKEN(tt_keyword_module,    "module") \
@@ -110,7 +110,6 @@
     TOKEN(tt_keyword_union,     "union") \
     TOKEN(tt_keyword_while,     "while") \
 \
-    TOKEN(tt_keyword_typeof,    "typeof") \
     TOKEN(tt_keyword_sizeof,    "sizeof") \
     TOKEN(tt_keyword_alignof,   "alignof") \
     TOKEN(tt_keyword_offsetof,  "offsetof") \

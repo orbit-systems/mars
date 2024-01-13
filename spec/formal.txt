@@ -131,7 +131,6 @@ operators
         raw         get base pointer of array type (pointer to array in case of array type, cast to pointer in case of slice type)
     
     unary type info
-        typeof      
         sizeof      get the size of a type. takes a raw type expression, returns an untyped integer.
         alignof     get the alignment characteristics of a type. takes a raw type expression, returns an untyped integer.
         offsetof    get the offset of a field from an entity's base address. they should be used for structs/union field selectors, but will return zero for other non-composite types.

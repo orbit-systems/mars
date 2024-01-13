@@ -146,7 +146,6 @@ token_type scan_ident_or_keyword(lexer* restrict lex) {
     if (string_eq(word, to_string("switch")))       return tt_keyword_switch;
     if (string_eq(word, to_string("union")))        return tt_keyword_union;
     if (string_eq(word, to_string("while")))        return tt_keyword_while;
-    if (string_eq(word, to_string("typeof")))       return tt_keyword_typeof;
     if (string_eq(word, to_string("sizeof")))       return tt_keyword_sizeof;
     if (string_eq(word, to_string("alignof")))      return tt_keyword_alignof;
     if (string_eq(word, to_string("offsetof")))     return tt_keyword_offsetof;
