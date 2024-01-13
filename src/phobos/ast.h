@@ -18,6 +18,7 @@ typedef struct {
         ast_base base; \
         token* tok; \
         }; \
+        bool is_discard; \
     }) \
     AST_TYPE(int_lit_expr, "int literal", { \
         ast_base base; \
@@ -90,7 +91,7 @@ typedef struct {
         ast_base base; \
         dynarr(AST) stmts; \
     }) \
-    AST_TYPE(decl_stmt, "let declaration", { \
+    AST_TYPE(decl_stmt, "declaration", { \
         ast_base base; \
         dynarr(AST) lhs; \
         dynarr(AST) rhs; \
@@ -98,6 +99,8 @@ typedef struct {
         bool has_expl_type; \
         bool is_mut; \
         bool is_static; \
+        bool is_volatile; \
+        bool is_uninit; \
     }) \
     AST_TYPE(type_decl_stmt, "type declaration", { \
         ast_base base; \

@@ -1,6 +1,6 @@
 module test;
 
-type x = int;
+let x = 3;
 
 import mem "./memory";
 import neptune "./neptune";
