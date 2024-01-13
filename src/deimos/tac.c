@@ -14,7 +14,7 @@ TAC_element* createTACelement(TAC_type type, int argcount, TAC_arg* arguments) {
 	
 	return NULL;
 
-	if (tac_elems.base == NULL) dynarr_init(TAC_element, &tac_elems, 1);
+	if (tac_elems.raw == NULL) dynarr_init(TAC_element, &tac_elems, 1);
 	dynarr_append(TAC_element, &tac_elems, int_elem);
 }
 
@@ -51,7 +51,7 @@ void processTAC() {
 	//we now emit valid assembly
 	string currentLabel = NULL_STR;
 	for (int i = 0; i < tac_elems.len; i++) {
-		TAC_element int_elem = tac_elems.base[i];
+		TAC_element int_elem = tac_elems.raw[i];
 		switch(int_elem.type) {
 			case label_function:
 				printf("FUNCTION %s -> %s:\n", int_elem.arg[0].value.raw, int_elem.arg[0].value.raw);

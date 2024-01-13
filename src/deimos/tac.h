@@ -81,7 +81,6 @@ typedef struct {
 	TAC_arg  arg[3];
 } TAC_element;
 
-dynarr_lib_h(TAC_element);
 typedef u8 TAC_allocation; enum {
 	NONE = 0,
 	TAC_STACK,

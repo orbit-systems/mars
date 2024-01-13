@@ -33,5 +33,5 @@ let kprintf = fn(format: []u8, args: []addr) {
 
 let print_integer = fn(value: uint, bitsize: uint, signed: bool) {
     // implementation pending
-    
 }
+
