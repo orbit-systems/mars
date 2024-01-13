@@ -5,6 +5,7 @@
 #include "dynarr.h"
 
 void testTAC();
+void processTAC();
 
 typedef u8 TAC_type; enum {
 	INVALID_TAC_type = 0,
@@ -66,7 +67,7 @@ typedef u8 TAC_arg_type; enum {
 	label,
 	literal_int,
 	literal_float,
-	tac_data,
+	tac_var,
 };
 
 typedef struct {
@@ -80,4 +81,11 @@ typedef struct {
 	TAC_arg  arg[3];
 } TAC_element;
 
-dynarr_lib_h(TAC_element)
+dynarr_lib_h(TAC_element);
+typedef u8 TAC_allocation; enum {
+	NONE = 0,
+	TAC_STACK,
+	TAC_REGISTER,
+};
+
+dynarr_lib_h(TAC_element);

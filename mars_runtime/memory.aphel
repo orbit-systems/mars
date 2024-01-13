@@ -1,0 +1,37 @@
+bind _mars_runtime_memeq "global"
+type _mars_runtime_memeq "function"
+
+section "code" {
+	_mars_runtime_memeq_code: 
+		//ra - block 1
+		//rb - block 2
+		//rc - length
+		//ra will contain 1 on equality
+
+		addi rc, rc, 1
+		addi ra, ra, -1
+		addi rb, rb, -1 //prepare values for loop
+
+		_mars_runtime_memeq_code.0:
+			addi ra, ra, 1
+			addi rb, rb, 1
+
+			cmpi rc, 0
+			beq _mars_runtime_memeq_code.1 
+
+			addi rc, rc, -1 //we are not at end of length. rc--
+			cmpr ra, rb
+			beq _mars_runtime_memeq_code.0 //is equal, continue to SPIN
+
+		li ra, 0 //is not equal
+		ret
+
+		_mars_runtime_memeq_code.1: //reached end of length
+			li ra, 1
+			ret
+}
+
+section "rodata" {
+	_mars_runtime_memeq:
+		u64	_mars_runtime_memeq_code
+}
