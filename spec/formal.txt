@@ -124,7 +124,7 @@ operators
     
     unary reference
         &       generate pointer        using type T in (all): &<T> -> <^T>
-        *       dereference pointer     using type T in (all): *<^T> -> <T>
+        ^       dereference pointer     using type T in (all): <^T>^ -> <T>
     
     unary utility
         len         get length of array or slice type, returns uint

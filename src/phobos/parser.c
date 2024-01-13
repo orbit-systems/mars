@@ -246,10 +246,11 @@ AST parse_stmt(parser* restrict p, bool expect_semicolon) {
         }
 
         // parse identifier list
+        dynarr_init(AST, &n.as_decl_stmt, 4); // four is probably good right
+        
 
 
-
-        TODO("declarations");
+        TODO("parse_stmt() declarations");
         break;
     default:
         TODO("parse_stmt() unimplemented");
@@ -286,11 +287,11 @@ AST parse_elif(parser* restrict p) {
 
 AST parse_block_stmt(parser* restrict p) {
     AST n = new_ast_node(&p->alloca, astype_block_stmt);
-    
+
     if (current_token.type != tt_open_brace)
         error_at_parser(p, "expected '{', got '%s'", token_type_str[current_token.type]);
     n.as_block_stmt->base.start = &current_token;
-    
+
     advance_token;
     while (current_token.type != tt_close_brace) {
         AST stmt = parse_stmt(p, true);

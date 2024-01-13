@@ -78,6 +78,8 @@ typedef struct {
     }) \
     \
     \
+    \
+    \
     AST_TYPE(module_decl, "module declaration", { \
         ast_base base; \
         token* name; \
@@ -94,7 +96,7 @@ typedef struct {
     AST_TYPE(decl_stmt, "declaration", { \
         ast_base base; \
         dynarr(AST) lhs; \
-        dynarr(AST) rhs; \
+        AST rhs; \
         AST type; \
         bool has_expl_type; \
         bool is_mut; \
@@ -110,7 +112,7 @@ typedef struct {
     AST_TYPE(assign_stmt, "assignment", { \
         ast_base base; \
         dynarr(AST) lhs; \
-        dynarr(AST) rhs; \
+        AST rhs; \
     }) \
     AST_TYPE(comp_assign_stmt, "compound assignment", { \
         ast_base base; \
@@ -159,7 +161,8 @@ typedef struct {
         ast_base base; \
         token* tok; \
         }; \
-    })
+    }) \
+
 
 // generate the enum tags for the AST tagged union
 typedef u16 ast_type; enum {
