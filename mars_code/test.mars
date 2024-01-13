@@ -1,5 +1,7 @@
 module test;
 
+type x = int;
+
 import mem "./memory";
 import neptune "./neptune";
 

@@ -160,8 +160,6 @@ token_type scan_ident_or_keyword(lexer* restrict lex) {
 }
 
 token_type scan_number(lexer* restrict lex) {
-    // TODO("scan_number");
-
     advance_char(lex);
     token_type type = tt_literal_int;
     while (true) {
@@ -176,7 +174,6 @@ token_type scan_number(lexer* restrict lex) {
     }
 }
 token_type scan_string_or_char(lexer* restrict lex) {
-    // TODO("scan_string_or_char");
     char quote_char = current_char(lex);
     u64  start_cursor = lex->cursor;
 
@@ -189,7 +186,7 @@ token_type scan_string_or_char(lexer* restrict lex) {
             return quote_char == '\"' ? tt_literal_string : tt_literal_char;
         } else if (current_char(lex) == '\n') {
             if (quote_char == '\"') error_at_string(lex->path, lex->src, substring(lex->src, start_cursor, lex->cursor),
-                "unclosed string literal (note: use ` for multi-line strings)");
+                "unclosed string literal");
             if (quote_char == '\'') error_at_string(lex->path, lex->src, substring(lex->src, start_cursor, lex->cursor),
                 "unclosed char literal");
         }
@@ -197,8 +194,6 @@ token_type scan_string_or_char(lexer* restrict lex) {
     }
 }
 token_type scan_operator(lexer* restrict lex) {
-    // TODO("scan_operator");
-
     switch (current_char(lex)) {
     case '+':
         advance_char(lex);

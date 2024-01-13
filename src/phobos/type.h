@@ -23,8 +23,8 @@
     TYPE(basic_bool, "bool", {}) \
     TYPE(basic_addr, "addr", {}) \
     \
-/* type of expressions that with multiple types, like multi-valued return functions */ \
-    TYPE(multi, "multi", { \
+    \
+    TYPE(multi, "multi", { /* type of expressions that have multiple types, like multi-valued return functions */ \
         dynarr(mars_type) subtypes; \
     }) \
     TYPE(struct, "struct", { \

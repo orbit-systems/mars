@@ -143,6 +143,14 @@ typedef struct {
         AST block; \
         bool is_inclusive; \
     }) \
+    AST_TYPE(defer_stmt, "defer statement", { \
+        ast_base base; \
+        AST stmt; \
+    }) \
+    AST_TYPE(call_stmt, "call statement", { /* function calls must return nothing */ \
+        ast_base base; \
+        AST function_call; \
+    }) \
     AST_TYPE(empty_stmt, "empty statement", { \
         union{ \
         ast_base base; \

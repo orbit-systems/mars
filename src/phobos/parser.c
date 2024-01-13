@@ -5,7 +5,14 @@
 #include "ast.h"
 
 #define error_at_parser(p, message, ...) \
-    error_at_string(p->path, p->src, current_token(p).text, message __VA_OPT__(,) __VA_ARGS__)
+    error_at_string((p)->path, (p)->src, current_token(p).text, message __VA_OPT__(,) __VA_ARGS__)
+
+#define error_at_token_index(p, index, message, ...) \
+    error_at_string((p)->path, (p)->src, (p)->tokens.raw[index].text, message __VA_OPT__(,) __VA_ARGS__)
+
+#define error_at_token(p, token, message, ...) \
+    error_at_string((p)->path, (p)->src, (token).text, message __VA_OPT__(,) __VA_ARGS__)
+
 
 // construct a parser struct from a lexer and an arena allocator
 parser make_parser(lexer* restrict l, arena alloca) {
@@ -25,6 +32,7 @@ AST parse_module_decl(parser* restrict p) {
 
     if (current_token(p).type != tt_keyword_module)
         error_at_parser(p, "expected module declaration, got %s", token_type_str[current_token(p).type]);
+
     n.as_module_decl->base.start = &current_token(p);
 
     advance_token(p);
@@ -47,7 +55,7 @@ void parse_file(parser* restrict p) {
     p->module_decl = parse_module_decl(p);
 
     p->head = new_ast_node(&p->alloca, astype_block_stmt);
-
+    AST smth = parse_stmt(p, true);
 }
 
 AST parse_expr(parser* restrict p) {
@@ -67,9 +75,8 @@ AST parse_expr(parser* restrict p) {
         n.as_paren_expr->base.end = &current_token(p);
         advance_token(p);
         break;
-
     default:
-        TODO("probably unimplemented some shit");
+        TODO("parse_expr() unimplemented");
         break;
     }
     return n;
@@ -79,6 +86,15 @@ AST parse_stmt(parser* restrict p, bool expect_semicolon) {
     AST n = NULL_AST;
 
     switch (current_token(p).type) {
+    case tt_keyword_defer:
+        n = new_ast_node(&p->alloca, astype_defer_stmt);
+        n.as_defer_stmt->base.start = &current_token(p);
+        advance_token(p);
+
+        n.as_defer_stmt->stmt = parse_stmt(p, expect_semicolon);
+
+        n.as_defer_stmt->base.end = &peek_token(p, -1);
+        break;
     case tt_keyword_if:
         n = new_ast_node(&p->alloca, astype_if_stmt);
         n.as_if_stmt->is_elif = false;
@@ -112,7 +128,7 @@ AST parse_stmt(parser* restrict p, bool expect_semicolon) {
         n.as_while_stmt->base.end = &peek_token(p, -1);
         break;
     case tt_keyword_for:
-        // jank as shit but whatever
+        // jank as shit but whatever, that's future sandwichman's problem
         if ((peek_token(p, 1).type == tt_identifier || peek_token(p, 1).type == tt_identifier_discard) &&
         (peek_token(p, 2).type == tt_colon || peek_token(p, 2).type == tt_keyword_in)) {
             // for-in loop!
@@ -197,18 +213,24 @@ AST parse_stmt(parser* restrict p, bool expect_semicolon) {
         if (is_null_AST(n.as_type_decl_stmt->rhs))
             error_at_parser(p, "expected type expression");
 
-        // type x = []int;
-        //               ^
-
         if (expect_semicolon && current_token(p).type != tt_semicolon)
             error_at_parser(p, "expected ';' after type declaration", token_type_str[current_token(p).type]);
         
         advance_token(p);
         n.as_type_decl_stmt->base.end = &peek_token(p, -1);
+        break;
+    case tt_keyword_let:
+    case tt_keyword_mut:
+        n = new_ast_node(&p->alloca, astype_decl_stmt);
+        n.as_decl_stmt->base.start = &current_token(p);
+        n.as_decl_stmt->is_mut = (current_token(p).type == tt_keyword_mut);
+        
+        advance_token(p);
 
+        TODO("declarations");
         break;
     default:
-        TODO("probably unimplemented");
+        TODO("parse_stmt() unimplemented");
         break;
     }
     return n;
