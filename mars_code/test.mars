@@ -17,10 +17,10 @@ let main = fn #section("text.boot") #link_name("__main") () {
     }
     
     for mut i: u64 = 0; i < 10; i+=1 {
-        neptune::kprintf("%int\n" {&i});
+        neptune::kprintf("%int\n", {&i});
     }
 
     for i: u64 in 0..<10 {
-        neptune::kprintf("%int \n" {&i});
+        neptune::kprintf("%int\n", {&i});
     }
 };

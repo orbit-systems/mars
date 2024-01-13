@@ -184,7 +184,6 @@ token_type scan_string_or_char(lexer* restrict lex) {
     while (true) {
         if (current_char(lex) == '\\') {
             advance_char(lex);
-            advance_char(lex);
         } else if (current_char(lex) == quote_char) {
             advance_char(lex);
             return quote_char == '\"' ? tt_literal_string : tt_literal_char;
