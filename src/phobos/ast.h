@@ -90,28 +90,19 @@ typedef struct {
         ast_base base; \
         dynarr(AST) stmts; \
     }) \
-    AST_TYPE(mut_decl_stmt, "mut declaration", { \
+    AST_TYPE(decl_stmt, "let declaration", { \
         ast_base base; \
         dynarr(AST) lhs; \
         dynarr(AST) rhs; \
         AST type; \
         bool has_expl_type; \
+        bool is_mut; \
         bool is_static; \
-    }) \
-    AST_TYPE(let_decl_stmt, "let declaration", { \
-        ast_base base; \
-        dynarr(AST) lhs; \
-        dynarr(AST) rhs; \
-        AST type; \
-        bool has_expl_type; \
     }) \
     AST_TYPE(type_decl_stmt, "type declaration", { \
         ast_base base; \
         AST lhs; \
-        AST type; \
         AST rhs; \
-        bool has_expl_type; \
-        bool is_mut; \
     }) \
     AST_TYPE(assign_stmt, "assignment", { \
         ast_base base; \
@@ -188,6 +179,7 @@ dynarr_lib_h(AST)
 #undef AST_TYPE
 
 #define NULL_AST ((AST){0})
+#define is_null_AST(node) ((node).type == 0 || (node).rawptr == NULL)
 
 extern char* ast_type_str[];
 extern size_t ast_type_size[];

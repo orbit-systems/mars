@@ -7,6 +7,7 @@
 #include "dynarr.h"
 
 #define TYPE_NODES \
+    TYPE(meta_type,  "type", {}) \
     TYPE(basic_none, "none", {}) \
     TYPE(basic_u8,   "u8",   {}) \
     TYPE(basic_u16,  "u16",  {}) \

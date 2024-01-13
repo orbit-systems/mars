@@ -75,7 +75,7 @@ AST parse_expr(parser* restrict p) {
     return n;
 }
 
-AST parse_stmt(parser* restrict p, bool require_semicolon) {
+AST parse_stmt(parser* restrict p, bool expect_semicolon) {
     AST n = NULL_AST;
 
     switch (current_token(p).type) {
@@ -125,7 +125,7 @@ AST parse_stmt(parser* restrict p, bool require_semicolon) {
             if (current_token(p).type == tt_colon) {
                 advance_token(p);
                 n.as_for_in_stmt->type = parse_expr(p);
-                if (n.as_for_in_stmt->type.rawptr == NULL)
+                if (is_null_AST(n.as_for_in_stmt->type))
                     error_at_parser(p, "expected type expression after ':'");
             }
 
@@ -153,7 +153,7 @@ AST parse_stmt(parser* restrict p, bool require_semicolon) {
             // regular for loop!
             TODO("regular for loop parsing");
             n = new_ast_node(&p->alloca, astype_for_stmt);
-            n.base->start = &current_token();
+            n.as_for_stmt->base.start = &current_token();
             advance_token(p);
 
             n.as_for_stmt->prelude = parse_stmt(p, true);
@@ -167,7 +167,7 @@ AST parse_stmt(parser* restrict p, bool require_semicolon) {
             
             n.as_for_stmt->block = parse_block_stmt(p);
 
-            n.base->end = &peek_token(p, -1);
+            n.as_for_stmt->base.end = &peek_token(p, -1);
         }
         break;
     case tt_semicolon:
@@ -178,7 +178,35 @@ AST parse_stmt(parser* restrict p, bool require_semicolon) {
     case tt_open_bracket:
         n = parse_block_stmt(p);
         break;
-    
+    case tt_keyword_type:
+        n = new_ast_node(&p->alloca, astype_type_decl_stmt);
+        n.as_type_decl_stmt->base.start = &current_token(p);
+
+        advance_token(p);
+        if (current_token(p).type != tt_identifier)
+            error_at_parser(p, "expected identifier, got '%s'", token_type_str[current_token(p).type]);
+
+        n.as_type_decl_stmt->lhs = parse_expr(p);
+        advance_token(p);
+        
+        if (current_token(p).type != tt_equal)
+            error_at_parser(p, "expected '=', got '%s'", token_type_str[current_token(p).type]);
+        advance_token(p);
+
+        n.as_type_decl_stmt->rhs = parse_expr(p);
+        if (is_null_AST(n.as_type_decl_stmt->rhs))
+            error_at_parser(p, "expected type expression");
+
+        // type x = []int;
+        //               ^
+
+        if (expect_semicolon && current_token(p).type != tt_semicolon)
+            error_at_parser(p, "expected ';' after type declaration", token_type_str[current_token(p).type]);
+        
+        advance_token(p);
+        n.as_type_decl_stmt->base.end = &peek_token(p, -1);
+
+        break;
     default:
         TODO("probably unimplemented");
         break;
