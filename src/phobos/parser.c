@@ -68,9 +68,63 @@ AST parse_expr(parser* restrict p) {
     return n;
 }
 
+int op_precedence(token_type type) {
+    switch (type) {
+    case tt_mul:
+    case tt_div:
+    case tt_mod:
+    case tt_mod_mod:
+    case tt_and:
+    case tt_lshift:
+    case tt_rshift:
+    case tt_nor:
+        return 5;
+    case tt_add:
+    case tt_sub:
+    case tt_or:
+    case tt_tilde:
+        return 4;
+    case tt_equal_equal:
+    case tt_not_equal:
+    case tt_less_equal:
+    case tt_less_than:
+    case tt_greater_equal:
+    case tt_greater_than:
+        return 3;
+    case tt_and_and:
+        return 2;
+    case tt_or_or:
+    case tt_tilde_tilde:
+        return 1;
+    }
+    return 0;
+}
+
 AST parse_binary_expr(parser* restrict p, int precedence) {
-    AST n = NULL_AST;
-    n = parse_unary_expr(p);
+    AST lhs = NULL_AST;
+    
+    lhs = parse_unary_expr(p);
+    if (is_null_AST(lhs)) return lhs;
+
+    while (precedence = op_precedence(current_token.type)) {
+        lhs = parse_non_unary_expr(p, lhs, precedence);
+    }
+
+    return lhs;
+}
+
+AST parse_non_unary_expr(parser* restrict p, AST lhs, int precedence) {
+    AST n = new_ast_node(&p->alloca, astype_binary_op_expr);
+    n.as_binary_op_expr->base.start = lhs.base->start;
+    n.as_binary_op_expr->op = &current_token;
+    n.as_binary_op_expr->lhs = lhs;
+    advance_token;
+    
+    n.as_binary_op_expr->rhs = parse_binary_expr(p, op_precedence(n.as_binary_op_expr->op->type));
+    if (is_null_AST(n.as_binary_op_expr->rhs)) {
+        error_at_parser(p, "expected operand");
+    }
+    n.as_binary_op_expr->base.end = n.as_binary_op_expr->rhs.base->start;
     return n;
 }
 
@@ -117,6 +171,41 @@ AST parse_unary_expr(parser* restrict p) {
 
         n.as_cast_expr->base.end = &peek_token(-1);
         break;
+
+    case tt_carat:
+        n = new_ast_node(&p->alloca, astype_pointer_type_expr);
+        n.as_pointer_type_expr->base.start = &current_token;
+        advance_token;
+
+        n.as_pointer_type_expr->subexpr = parse_unary_expr(p);
+
+        n.as_pointer_type_expr->base.end = &peek_token(-1);
+        break;
+    
+    case tt_open_bracket:
+        if (peek_token(1).type == tt_close_bracket) {
+            n = new_ast_node(&p->alloca, astype_slice_type_expr);
+            n.as_slice_type_expr->base.start = &current_token;
+
+            advance_n_tok(2);
+            n.as_slice_type_expr->subexpr = parse_unary_expr(p);
+
+            n.as_slice_type_expr->base.end = &peek_token(-1);
+        } else {
+            n = new_ast_node(&p->alloca, astype_array_type_expr);
+            n.as_array_type_expr->base.start = &current_token;
+            advance_token;
+
+            n.as_array_type_expr->length = parse_expr(p);
+            if (current_token.type != tt_close_bracket)
+                error_at_parser(p, "expected ']', got %s", token_type_str[current_token.type]);
+
+            advance_token;
+            n.as_array_type_expr->subexpr = parse_unary_expr(p);
+            n.as_array_type_expr->base.end = &peek_token(-1);
+        }
+        break;
+
     default:
         n = parse_atomic_expr(p);
     }
@@ -143,10 +232,10 @@ i64 char_lit_value(parser* restrict p) {
     }
 
     switch(t.raw[2]) {
-    case '0':  return '\0';
+    case '0':  return 0;
     case 'a':  return '\a';
     case 'b':  return '\b';
-    case 'e':  return '\e';
+    case 'e':  return 27;
     case 'f':  return '\f';
     case 'n':  return '\n';
     case 'r':  return '\r';
@@ -179,8 +268,8 @@ f64 float_lit_value(parser* restrict p) {
     string t = current_token.text;
     f64 val = 0;
 
-    int decimal_index = 0;
-    for (int i = 0; i < t.len; i++) {
+    u32 decimal_index = 0;
+    for (u32 i = 0; i < t.len; i++) {
         if (t.raw[i] == '.') {
             decimal_index = i;
             break;
@@ -188,9 +277,9 @@ f64 float_lit_value(parser* restrict p) {
         val = val*10 + (f64)ascii_to_digit_val(p, t.raw[i], 10);
     }
 
-    int e_index = -1;
+    u32 e_index = -1;
     f64 factor = 0.1;
-    for (int i = decimal_index+1; i < t.len; i++) {
+    for (u32 i = decimal_index+1; i < t.len; i++) {
         if (t.raw[i] == 'e') {
             e_index = i;
             break;
@@ -422,14 +511,38 @@ AST parse_atomic_expr(parser* restrict p) {
             n.as_literal_expr->value.kind = ev_string;
             n.as_literal_expr->value.as_string = string_lit_value(p);
 
-            printstr(n.as_literal_expr->value.as_string);
-            printf("\n");
+            advance_token;
+            break;
+
+        case tt_type_keyword_addr:
+        case tt_type_keyword_bool:
+        case tt_type_keyword_int:
+        case tt_type_keyword_i8:
+        case tt_type_keyword_i16:
+        case tt_type_keyword_i32:
+        case tt_type_keyword_i64:
+        case tt_type_keyword_uint:
+        case tt_type_keyword_u8:
+        case tt_type_keyword_u16:
+        case tt_type_keyword_u32:
+        case tt_type_keyword_u64:
+        case tt_type_keyword_float:
+        case tt_type_keyword_f16:
+        case tt_type_keyword_f32:
+        case tt_type_keyword_f64:
+            if (!is_null_AST(n)) {
+                out = true;
+                break;
+            }
+
+            n = new_ast_node(&p->alloca, astype_basic_type_expr);
+            n.as_basic_type_expr->base.start = &current_token;
+            n.as_basic_type_expr->base.end = &current_token;
+            n.as_basic_type_expr->lit = &current_token;
 
             advance_token;
             break;
-        case tt_open_brace:
-            TODO("compound literal");
-            break;
+
         case tt_identifier:
         case tt_identifier_discard:
             if (!is_null_AST(n)) {
@@ -500,10 +613,9 @@ AST parse_atomic_expr(parser* restrict p) {
                 
                 AST temp = new_ast_node(&p->alloca, astype_identifier_expr);
 
-                token* ct = &current_token;
-                temp.as_identifier_expr->base.end = ct;
-                temp.as_identifier_expr->base.start = ct;
-                temp.as_identifier_expr->tok = ct;
+                temp.as_identifier_expr->base.end = &current_token;
+                temp.as_identifier_expr->base.start = &current_token;
+                temp.as_identifier_expr->tok = &current_token;
 
                 n.as_impl_selector_expr->rhs = temp;
 
@@ -521,11 +633,10 @@ AST parse_atomic_expr(parser* restrict p) {
 
                 AST ident = new_ast_node(&p->alloca, astype_identifier_expr);
                 
-                token* ct = &current_token;
-                ident.as_identifier_expr->base.end = ct;
-                ident.as_identifier_expr->base.start = ct;
-                ident.as_identifier_expr->tok = ct;
-                temp.as_selector_expr->base.end = ct;
+                ident.as_identifier_expr->base.end = &current_token;
+                ident.as_identifier_expr->base.start = &current_token;
+                ident.as_identifier_expr->tok = &current_token;
+                temp.as_selector_expr->base.end = &current_token;
 
                 temp.as_selector_expr->rhs = ident;
                 temp.as_selector_expr->lhs = n;
@@ -548,11 +659,10 @@ AST parse_atomic_expr(parser* restrict p) {
 
                 AST ident = new_ast_node(&p->alloca, astype_identifier_expr);
                 
-                token* ct = &current_token;
-                ident.as_identifier_expr->base.end = ct;
-                ident.as_identifier_expr->base.start = ct;
-                ident.as_identifier_expr->tok = ct;
-                temp.as_entity_selector_expr->base.end = ct;
+                ident.as_identifier_expr->base.end = &current_token;
+                ident.as_identifier_expr->base.start = &current_token;
+                ident.as_identifier_expr->tok = &current_token;
+                temp.as_entity_selector_expr->base.end = &current_token;
 
                 temp.as_entity_selector_expr->rhs = ident;
                 temp.as_entity_selector_expr->lhs = n;
@@ -613,30 +723,14 @@ AST parse_atomic_expr(parser* restrict p) {
             n = temp;
             advance_token;
             break;
-
-        case tt_type_keyword_addr:
-        case tt_type_keyword_bool:
-        case tt_type_keyword_int:
-        case tt_type_keyword_i8:
-        case tt_type_keyword_i16:
-        case tt_type_keyword_i32:
-        case tt_type_keyword_i64:
-        case tt_type_keyword_uint:
-        case tt_type_keyword_u8:
-        case tt_type_keyword_u16:
-        case tt_type_keyword_u32:
-        case tt_type_keyword_u64:
-        case tt_type_keyword_float:
-        case tt_type_keyword_f16:
-        case tt_type_keyword_f32:
-        case tt_type_keyword_f64:
-            TODO("simple type literals");
-            break;
         
         case tt_keyword_struct:
         case tt_keyword_union:
         case tt_keyword_enum:
             TODO("complex type literals");
+            break;
+        case tt_open_brace:
+            TODO("compound literal");
             break;
 
         default:

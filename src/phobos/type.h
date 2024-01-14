@@ -7,26 +7,26 @@
 #include "dynarr.h"
 
 #define TYPE_NODES \
-    TYPE(meta_type,  "type", {}) \
-    TYPE(basic_none, "none", {}) \
-    TYPE(basic_u8,   "u8",   {}) \
-    TYPE(basic_u16,  "u16",  {}) \
-    TYPE(basic_u32,  "u32",  {}) \
-    TYPE(basic_u64,  "u64",  {}) \
-    TYPE(basic_i8,   "i8",   {}) \
-    TYPE(basic_i16,  "i16",  {}) \
-    TYPE(basic_i32,  "i32",  {}) \
-    TYPE(basic_i64,  "i64",  {}) \
-    TYPE(basic_f16,  "f16",  {}) \
-    TYPE(basic_f32,  "f32",  {}) \
-    TYPE(basic_f64,  "f64",  {}) \
-    TYPE(basic_bool, "bool", {}) \
-    TYPE(basic_addr, "addr", {}) \
-    TYPE(untyped_bool,   "(untyped bool)", {}) \
-    TYPE(untyped_int,    "(untyped int)", {}) \
-    TYPE(untyped_float,  "(untyped float)", {}) \
-    TYPE(untyped_null,   "(untyped null)", {}) \
-    TYPE(untyped_string, "(untyped string)", {}) \
+    TYPE(meta_type,  "type", {char _;}) \
+    TYPE(basic_none, "none", {char _;}) \
+    TYPE(basic_u8,   "u8",   {char _;}) \
+    TYPE(basic_u16,  "u16",  {char _;}) \
+    TYPE(basic_u32,  "u32",  {char _;}) \
+    TYPE(basic_u64,  "u64",  {char _;}) \
+    TYPE(basic_i8,   "i8",   {char _;}) \
+    TYPE(basic_i16,  "i16",  {char _;}) \
+    TYPE(basic_i32,  "i32",  {char _;}) \
+    TYPE(basic_i64,  "i64",  {char _;}) \
+    TYPE(basic_f16,  "f16",  {char _;}) \
+    TYPE(basic_f32,  "f32",  {char _;}) \
+    TYPE(basic_f64,  "f64",  {char _;}) \
+    TYPE(basic_bool, "bool", {char _;}) \
+    TYPE(basic_addr, "addr", {char _;}) \
+    TYPE(untyped_bool,   "(untyped bool)", {char _;}) \
+    TYPE(untyped_int,    "(untyped int)", {char _;}) \
+    TYPE(untyped_float,  "(untyped float)", {char _;}) \
+    TYPE(untyped_null,   "(untyped null)", {char _;}) \
+    TYPE(untyped_string, "(untyped string)", {char _;}) \
     \
     \
     TYPE(multi, "multi", { /* type of expressions that have multiple types, like multi-valued return functions */ \

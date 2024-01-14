@@ -27,5 +27,6 @@ AST parse_elif(parser* restrict p);
 
 AST parse_expr(parser* restrict p);
 AST parse_binary_expr(parser* restrict p, int precedence);
+AST parse_non_unary_expr(parser* restrict p, AST lhs, int precedence);
 AST parse_unary_expr(parser* restrict p);
 AST parse_atomic_expr(parser* restrict p);

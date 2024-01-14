@@ -162,28 +162,31 @@ typedef struct {
         token* tok; \
         }; \
     }) \
-    AST_TYPE(type_lit_expr, "type literal", { \
+    AST_TYPE(basic_type_expr, "type literal", { \
         union { \
             ast_base base; \
             token* lit; \
         }; \
     }) \
-    AST_TYPE(type_struct_expr, "struct type", { \
+    AST_TYPE(struct_type_expr, "struct type", { \
             ast_base base; \
     }) \
-    AST_TYPE(type_union_expr, "union type", { \
+    AST_TYPE(union_type_expr, "union type", { \
             ast_base base; \
     }) \
-    AST_TYPE(type_array_expr, "array type", { \
+    AST_TYPE(enum_type_expr, "enum type", { \
             ast_base base; \
-            AST subexpr; \
-            size_t length; \
     }) \
-    AST_TYPE(type_slice_expr, "slice type", { \
+    AST_TYPE(array_type_expr, "array type", { \
             ast_base base; \
             AST subexpr; \
+            AST length; \
     }) \
-    AST_TYPE(type_pointer_expr, "pointer type", { \
+    AST_TYPE(slice_type_expr, "slice type", { \
+            ast_base base; \
+            AST subexpr; \
+    }) \
+    AST_TYPE(pointer_type_expr, "pointer type", { \
             ast_base base; \
             AST subexpr; \
     }) \
