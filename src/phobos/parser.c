@@ -132,6 +132,9 @@ AST parse_atomic_expr(parser* restrict p) {
             break;
 
         case tt_identifier:
+            if (!is_null_AST(n)) {
+                break;
+            }
             n = new_ast_node(&p->alloca, astype_identifier_expr);
             advance_token;
             break;
@@ -140,8 +143,7 @@ AST parse_atomic_expr(parser* restrict p) {
             if (is_null_AST(n)) {
                 // regular old paren expression
                 n = new_ast_node(&p->alloca, astype_paren_expr);
-                
-                n.as_paren_expr->base.start = &current_token; 
+                n.as_paren_expr->base.start = &current_token;
                 
                 advance_token;
                 n.as_paren_expr->subexpr = parse_expr(p);
@@ -150,10 +152,31 @@ AST parse_atomic_expr(parser* restrict p) {
                 
                 n.as_paren_expr->base.end = &current_token;
                 advance_token;
-                break;
             } else {
                 // function call!
-                TODO("function call expr");
+                AST temp;
+                temp = new_ast_node(&p->alloca, astype_call_expr);
+                temp.as_call_expr->base.start = &current_token;
+                advance_token;
+
+                dynarr_init_AST(&temp.as_call_expr->params, 4);
+                while (current_token.type != tt_close_paren) {
+                    AST expr = parse_expr(p);
+                    printf("\n\n[%s]\n\n", ast_type_str[expr.type]);
+                    dynarr_append_AST(&temp.as_call_expr->params, expr);
+                    if (current_token.type == tt_comma) {
+                        advance_token;
+                        continue;
+                    } else if (current_token.type == tt_close_paren) {
+                        break;
+                    } else {
+                        error_at_parser(p, "expected ',' or ')'");
+                    }
+                }
+
+                temp.as_call_expr->base.end = &current_token;
+                advance_token;
+                n = temp;
             }
             break;
 

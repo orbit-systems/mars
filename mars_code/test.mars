@@ -1,6 +1,6 @@
 module test;
 
-let x = mem.lmao::bruh();
+let x = mem.lmao;
 
 import mem "memory";
 import neptune "neptune";

@@ -22,6 +22,11 @@
     TYPE(basic_f64,  "f64",  {}) \
     TYPE(basic_bool, "bool", {}) \
     TYPE(basic_addr, "addr", {}) \
+    TYPE(untyped_bool,   "(untyped bool)", {}) \
+    TYPE(untyped_int,    "(untyped int)", {}) \
+    TYPE(untyped_float,  "(untyped float)", {}) \
+    TYPE(untyped_null,   "(untyped null)", {}) \
+    TYPE(untyped_string, "(untyped string)", {}) \
     \
     \
     TYPE(multi, "multi", { /* type of expressions that have multiple types, like multi-valued return functions */ \
