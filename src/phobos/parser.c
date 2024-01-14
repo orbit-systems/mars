@@ -60,6 +60,7 @@ void parse_file(parser* restrict p) {
 
     p->head = new_ast_node(&p->alloca, astype_block_stmt);
     AST smth = parse_stmt(p);
+    dump_tree(smth, 0);
 }
 
 AST parse_expr(parser* restrict p) {
@@ -106,7 +107,7 @@ AST parse_binary_expr(parser* restrict p, int precedence) {
     lhs = parse_unary_expr(p);
     if (is_null_AST(lhs)) return lhs;
 
-    while (precedence = op_precedence(current_token.type)) {
+    while (precedence < op_precedence(current_token.type)) {
         lhs = parse_non_unary_expr(p, lhs, precedence);
     }
 
