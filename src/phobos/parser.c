@@ -63,7 +63,7 @@ void parse_file(parser* restrict p) {
 }
 
 AST parse_expr(parser* restrict p) {
-    AST n = {0};
+    AST n = NULL_AST;
 
     switch (current_token.type) {
     case tt_open_paren:
@@ -80,14 +80,16 @@ AST parse_expr(parser* restrict p) {
         advance_token;
         break;
     default:
-        TODO("parse_expr() unimplemented");
+        advance_token;
+        // return nonsense for now
+        return ((AST){.type = 1000, .rawptr = (void*)1000});
         break;
     }
     return n;
 }
 
 AST parse_import_stmt(parser* restrict p) {
-
+    TODO("parse_import_stmt()");
 }
 
 AST parse_stmt(parser* restrict p) {
@@ -296,7 +298,7 @@ AST parse_stmt(parser* restrict p) {
         if (current_token.type == tt_uninit) {
             n.as_decl_stmt->is_uninit = true;
             if (!n.as_decl_stmt->has_expl_type)
-                error_at_parser(p, "cannot uninitialize without a type");
+                error_at_parser(p, "uninitialization requires an explicit type");
             advance_token;
         } else {
             n.as_decl_stmt->rhs = parse_expr(p);

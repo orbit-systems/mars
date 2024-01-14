@@ -49,6 +49,7 @@ void error_at_string(string path, string text, string pos, char* message, ...) {
     char* line_ptr = text.raw - 1;
     int line_len = 0;
     line_and_col(text, pos.raw-text.raw, &line_ptr, &line_len, &line, &column);
+    if (line_ptr[line_len-1] == '\r') line_len--; // stupid windows line breaks
 
     printstr(path);
     printf(" @ %d:%d ", line, column);
@@ -59,7 +60,7 @@ void error_at_string(string path, string text, string pos, char* message, ...) {
 
     printf(style_Dim);
     printf("\n      | ");
-    printf("\n % 4d | ", line);
+    printf("\n %4d | ", line);
     printf(style_Reset);
     printstr(string_make(line_ptr, line_len));
     printf(style_Dim);

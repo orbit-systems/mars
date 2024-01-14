@@ -1,7 +1,5 @@
 module test;
 
-let x = 3;
-
 import mem "memory";
 import neptune "neptune";
 
