@@ -10,7 +10,6 @@ typedef struct cmd_arg_s {
 
 typedef struct flag_set_s {
     string input_path;
-    string module_name;
     string output_path;
 } flag_set;
 

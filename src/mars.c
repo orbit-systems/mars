@@ -45,7 +45,6 @@ void load_arguments(int argc, char* argv[], flag_set* fl) {
 
     // set default values
     fl->input_path = NULL_STR;
-    fl->module_name = NULL_STR;
     fl->output_path = NULL_STR;
 
     cmd_arg input_directory_arg = make_argument(argv[1]);
@@ -63,10 +62,6 @@ void load_arguments(int argc, char* argv[], flag_set* fl) {
 
     int flag_start_index = 2;
     cmd_arg module_name_arg = make_argument(argv[2]);
-    if (is_null_str(module_name_arg.val) && module_name_arg.key.raw[0] != '-') {
-        fl->module_name = module_name_arg.key;
-        flag_start_index++;
-    }
 
     FOR_RANGE_EXCL(i, flag_start_index, argc) {
         cmd_arg a = make_argument(argv[i]);

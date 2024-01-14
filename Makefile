@@ -41,10 +41,10 @@ dbgbuild: $(OBJECTS)
 	
 
 test: build
-	./$(EXECUTABLE_NAME) ./mars_code test
+	./$(EXECUTABLE_NAME) ./mars_code
 
 test2: build
-	./$(EXECUTABLE_NAME) ./test test
+	./$(EXECUTABLE_NAME) ./test
 
 clean:
 	@rm -rf build
