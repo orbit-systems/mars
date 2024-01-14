@@ -595,6 +595,7 @@ AST parse_atomic_expr(parser* restrict p) {
                     }
                 }
 
+                temp.as_call_expr->lhs = n;
                 temp.as_call_expr->base.end = &current_token;
                 advance_token;
                 n = temp;
@@ -727,6 +728,7 @@ AST parse_atomic_expr(parser* restrict p) {
         
         case tt_keyword_struct:
         case tt_keyword_union:
+        case tt_keyword_fn:
         case tt_keyword_enum:
             TODO("complex type literals");
             break;

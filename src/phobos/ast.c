@@ -62,7 +62,7 @@ void dump_tree(AST node, int n) {
         }
         break;
     case astype_paren_expr:
-        printf("parenthesis\n");
+        printf("()\n");
         dump_tree(node.as_paren_expr->subexpr, n+1);
         break;
     case astype_cast_expr:
@@ -72,11 +72,11 @@ void dump_tree(AST node, int n) {
         dump_tree(node.as_cast_expr->rhs, n+1);
         break;
     case astype_unary_op_expr:
-        printf("unary op %s\n", token_type_str[node.as_unary_op_expr->op->type]);
+        printf("unary %s\n", token_type_str[node.as_unary_op_expr->op->type]);
         dump_tree(node.as_unary_op_expr->inside, n+1);
         break;
     case astype_binary_op_expr:
-        printf("binary op %s\n", token_type_str[node.as_binary_op_expr->op->type]);
+        printf("binary %s\n", token_type_str[node.as_binary_op_expr->op->type]);
         dump_tree(node.as_binary_op_expr->lhs, n+1);
         dump_tree(node.as_binary_op_expr->rhs, n+1);
         break;
@@ -95,12 +95,12 @@ void dump_tree(AST node, int n) {
         dump_tree(node.as_impl_selector_expr->rhs, n+1);
         break;
     case astype_index_expr:
-        printf("array index\n");
+        printf("index\n");
         dump_tree(node.as_index_expr->lhs, n+1);
         dump_tree(node.as_index_expr->inside, n+1);
         break;
     case astype_slice_expr:
-        printf("array index\n");
+        printf("slice\n");
         dump_tree(node.as_slice_expr->lhs, n+1);
         dump_tree(node.as_slice_expr->inside_left, n+1);
         dump_tree(node.as_slice_expr->inside_right, n+1);
@@ -114,26 +114,24 @@ void dump_tree(AST node, int n) {
         break;
     
     case astype_module_decl:
-        printf("module declaration '%s'\n", clone_to_cstring(node.as_module_decl->name->text));
+        printf("module %s\n", clone_to_cstring(node.as_module_decl->name->text));
         break;
     case astype_import_stmt:
-        printf("import statement\n");
+        printf("import\n");
         dump_tree(node.as_import_stmt->name, n+1);
         dump_tree(node.as_import_stmt->path, n+1);
         break;
     case astype_block_stmt:
-        printf("block statement\n");
+        printf("{;}\n");
         FOR_URANGE_EXCL(i, 0, node.as_block_stmt->stmts.len) {
             dump_tree(node.as_block_stmt->stmts.raw[i], n+1);
         }
         break;
     case astype_decl_stmt:
         if (node.as_decl_stmt->is_mut) 
-            printf("mut ");
+            printf("mut \n");
         else 
-            printf("let ");
-
-        printf("declaration\n");
+            printf("let \n");
 
         FOR_URANGE_EXCL(i, 0, node.as_decl_stmt->lhs.len) {
             dump_tree(node.as_decl_stmt->lhs.raw[i], n+1);

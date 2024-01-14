@@ -1,10 +1,5 @@
 module test;
 
-import mem "memory";
-import neptune "neptune";
-
-let string_equal = mem::str_eq;
-
 let main = fn #block_symbol("__main") () {
 
     let str = "bruh";
@@ -26,3 +21,8 @@ let main = fn #block_symbol("__main") () {
 
     while true {}
 };
+
+import mem "memory";
+import neptune "neptune";
+
+let string_equal = mem::str_eq;
