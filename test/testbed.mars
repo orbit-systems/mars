@@ -1,3 +1,3 @@
 module test;
 
-let x = '\xFG';
+let x = "\x29FUCK";

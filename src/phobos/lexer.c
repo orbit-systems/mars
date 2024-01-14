@@ -346,6 +346,9 @@ token_type scan_operator(lexer* restrict lex) {
                 advance_char_n(lex, 2);
                 return tt_range_less;
             }
+        } else if (valid_0d(current_char(lex))) {
+            advance_char_n(lex, -2);
+            return scan_number(lex);
         }
         return tt_period;
 

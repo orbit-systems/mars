@@ -124,13 +124,14 @@ AST parse_unary_expr(parser* restrict p) {
 }
 
 i64 ascii_to_digit_val(parser* restrict p, char c, u8 base) {
-    if (c >= '0' && c <= '9') c = c-'0';
-    if (c >= 'a' && c <= 'f') c = c-'a' +10;
-    if (c >= 'A' && c <= 'F') c = c-'A' +10;
+    char val = base;
+    if (c >= '0' && c <= '9') val = c-'0';
+    if (c >= 'a' && c <= 'f') val = c-'a' +10;
+    if (c >= 'A' && c <= 'F') val = c-'A' +10;
     
-    if (c >= base)
+    if (val >= base)
         error_at_parser(p, "invalid base %d digit '%c'", base, c);
-    return c;
+    return val;
 }
 
 i64 char_lit_value(parser* restrict p) {
@@ -174,7 +175,157 @@ i64 char_lit_value(parser* restrict p) {
     return -1;
 }
 
-// a recursive method is probably the best way to do this tbh
+f64 float_lit_value(parser* restrict p) {
+    string t = current_token.text;
+    f64 val = 0;
+
+    int decimal_index = 0;
+    for (int i = 0; i < t.len; i++) {
+        if (t.raw[i] == '.') {
+            decimal_index = i;
+            break;
+        }
+        val = val*10 + (f64)ascii_to_digit_val(p, t.raw[i], 10);
+    }
+
+    int e_index = -1;
+    f64 factor = 0.1;
+    for (int i = decimal_index+1; i < t.len; i++) {
+        if (t.raw[i] == 'e') {
+            e_index = i;
+            break;
+        }
+        val = val + ascii_to_digit_val(p, t.raw[i], 10) * factor;
+        factor *= 0.1;
+    }
+
+    if (e_index == -1) return val;
+    int exp_val = 0;
+    for (int i = e_index+1; i < t.len; i++) {
+        exp_val = exp_val*10 + ascii_to_digit_val(p, t.raw[i], 10);
+    }
+
+    val = val * pow(10.0, exp_val);
+
+    return val;
+}
+
+i64 int_lit_value(parser* restrict p) {
+    string t = current_token.text;
+    i64 val = 0;
+
+    if (t.raw[0] != '0') { // basic base-10 parse
+        FOR_URANGE_EXCL(i, 0, t.len) {
+            val = val * 10 + ascii_to_digit_val(p, t.raw[i], 10);
+        }
+        return val;
+    }
+    
+    if (t.len == 1) return 0; // simple '0'
+
+    u8 base = 10;
+    switch (t.raw[1]) {
+    case 'x':
+    case 'X':
+        base = 16; break;
+    case 'o':
+    case 'O':
+        base = 8; break;
+    case 'b':
+    case 'B':
+        base = 2; break;
+    case 'd':
+    case 'D':
+        break;
+    default:
+        error_at_parser(p, "invalid base prefix '%c'", t.raw[1]);
+    }
+
+    if (t.len < 3) error_at_parser(p, "expected digit after '%c'", t.raw[1]);
+
+    FOR_URANGE_EXCL(i, 2, t.len) {
+        val = val * 10 + ascii_to_digit_val(p, t.raw[i], base);
+    }
+    return val;
+}
+
+string string_lit_value(parser* restrict p) {
+    string t = current_token.text;
+    string val = NULL_STR;
+    size_t val_len = 0;
+
+    // trace string, figure out how long it needs to be
+    FOR_URANGE_EXCL(i, 1, t.len-1) {
+        if (t.raw[i] != '\\') {
+            val_len++;
+            continue;
+        }
+        i++;
+        switch (t.raw[i]) {
+        case 'x':
+            i++;
+            i++;
+        case '0':
+        case 'a':
+        case 'b':
+        case 'e':
+        case 'f':
+        case 'n':
+        case 'r':
+        case 't':
+        case 'v':
+        case '\\':
+        case '\"':
+        case '\'':
+            val_len++;
+            break;
+        default:
+            error_at_parser(p, "invalid escape sequence '\\%c'", t.raw[i]);
+            break;
+        }
+    }
+
+    // allocate
+    val = (string){arena_alloc(&p->alloca, val_len, 1), val_len};
+
+    // fill in string with correct bytes
+    u64 val_i = 0;
+    FOR_URANGE_EXCL(i, 1, t.len-1) {
+        if (t.raw[i] != '\\') {
+            val.raw[val_i] = t.raw[i];
+            val_i++;
+            continue;
+        }
+        i++;
+        switch (t.raw[i]) {
+        case '0': val.raw[val_i] = '\0'; break;
+        case 'a': val.raw[val_i] = '\a'; break;
+        case 'b': val.raw[val_i] = '\b'; break;
+        case 'e': val.raw[val_i] = '\e'; break;
+        case 'f': val.raw[val_i] = '\f'; break;
+        case 'n': val.raw[val_i] = '\n'; break;
+        case 'r': val.raw[val_i] = '\r'; break;
+        case 't': val.raw[val_i] = '\t'; break;
+        case 'v': val.raw[val_i] = '\v'; break;
+        case '\\': val.raw[val_i] = '\\'; break;
+        case '\"': val.raw[val_i] = '\"'; break;
+        case '\'': val.raw[val_i] = '\''; break;
+        case 'x':
+            val.raw[val_i] = ascii_to_digit_val(p, t.raw[i+1], 16) * 0x10 + ascii_to_digit_val(p, t.raw[i+2], 16);
+            i += 2;
+            break;
+        default:
+            error_at_parser(p, "invalid escape sequence '\\%c'", t.raw[i]);
+            break;
+        }
+        val_i++;
+    }
+
+
+    return val;
+}
+
+// no recursion here!! fun
 AST parse_atomic_expr(parser* restrict p) {
     AST n = NULL_AST;
 
@@ -191,8 +342,8 @@ AST parse_atomic_expr(parser* restrict p) {
             n.as_literal_expr->base.start = &current_token;
             n.as_literal_expr->base.end = &current_token;
 
-            n.as_literal_expr->value.kind = ev_bool; 
-            n.as_literal_expr->value.as_bool = string_eq(current_token.text, to_string("true"));
+            n.as_literal_expr->value.kind = ev_pointer; 
+            n.as_literal_expr->value.as_pointer = 0;
 
             advance_token;
             break;
@@ -227,10 +378,54 @@ AST parse_atomic_expr(parser* restrict p) {
             advance_token;
             break;
         case tt_literal_float:
-        case tt_literal_int:
-        case tt_literal_string:
-            TODO("simple literals");
+            if (!is_null_AST(n)) {
+                out = true;
+                break;
+            }
 
+            n = new_ast_node(&p->alloca, astype_literal_expr);
+            n.as_literal_expr->base.start = &current_token;
+            n.as_literal_expr->base.end = &current_token;
+        
+            n.as_literal_expr->value.kind = ev_float;
+            n.as_literal_expr->value.as_float = float_lit_value(p);
+        
+            printf("[%lf]\n", n.as_literal_expr->value.as_float);
+
+            advance_token;
+            break;
+        case tt_literal_int:
+            if (!is_null_AST(n)) {
+                out = true;
+                break;
+            }
+
+            n = new_ast_node(&p->alloca, astype_literal_expr);
+            n.as_literal_expr->base.start = &current_token;
+            n.as_literal_expr->base.end = &current_token;
+        
+            n.as_literal_expr->value.kind = ev_int;
+            n.as_literal_expr->value.as_int = int_lit_value(p);
+
+            advance_token;
+            break;
+        case tt_literal_string:
+            if (!is_null_AST(n)) {
+                out = true;
+                break;
+            }
+
+            n = new_ast_node(&p->alloca, astype_literal_expr);
+            n.as_literal_expr->base.start = &current_token;
+            n.as_literal_expr->base.end = &current_token;
+        
+            n.as_literal_expr->value.kind = ev_string;
+            n.as_literal_expr->value.as_string = string_lit_value(p);
+
+            printstr(n.as_literal_expr->value.as_string);
+            printf("\n");
+
+            advance_token;
             break;
         case tt_open_brace:
             TODO("compound literal");
