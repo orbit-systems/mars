@@ -1,23 +1,21 @@
 module test;
 
-let x = mem.lmao;
-
 import mem "memory";
 import neptune "neptune";
 
 let string_equal = mem::str_eq;
 
-let main = fn #asm_section("text.boot") #block_symbol("__main") () {
+let main = fn #block_symbol("__main") () {
 
     let str = "bruh";
     let str2 = "bruh2";
-    
+
     if mem::str_equal(str, str2) {
         neptune::kprintln("equal");
     } else {
         neptune::kprintln("not equal");
     }
-    
+
     for mut i: u64 = 0; i < 10; i+=1; {
         neptune::kprintf("%int\n", {&i});
     }
@@ -25,4 +23,6 @@ let main = fn #asm_section("text.boot") #block_symbol("__main") () {
     for i: u64 in 0..<10 {
         neptune::kprintf("%int\n", {&i});
     }
+
+    while true {}
 };

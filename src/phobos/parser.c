@@ -64,6 +64,12 @@ void parse_file(parser* restrict p) {
 
 AST parse_expr(parser* restrict p) {
     AST n = NULL_AST;
+    n = parse_binary_expr(p, 0);
+    return n;
+}
+
+AST parse_binary_expr(parser* restrict p, int precedence) {
+    AST n = NULL_AST;
     n = parse_unary_expr(p);
     return n;
 }
@@ -79,6 +85,7 @@ AST parse_unary_expr(parser* restrict p) {
     case tt_keyword_sizeof:
     case tt_keyword_alignof:
     case tt_keyword_offsetof:
+    case tt_keyword_inline:
         n = new_ast_node(&p->alloca, astype_unary_op_expr);
         n.as_unary_op_expr->base.start = &current_token;
         n.as_unary_op_expr->op = &current_token;
@@ -116,26 +123,129 @@ AST parse_unary_expr(parser* restrict p) {
     return n;
 }
 
+i64 ascii_to_digit_val(parser* restrict p, char c, u8 base) {
+    if (c >= '0' && c <= '9') c = c-'0';
+    if (c >= 'a' && c <= 'f') c = c-'a' +10;
+    if (c >= 'A' && c <= 'F') c = c-'A' +10;
+    
+    if (c >= base)
+        error_at_parser(p, "invalid base %d digit '%c'", base, c);
+    return c;
+}
+
+i64 char_lit_value(parser* restrict p) {
+    string t = current_token.text;
+
+    if (t.raw[1] != '\\') { // trivial case
+        if (t.len > 3) error_at_parser(p, "char literal too long");
+        return t.raw[2];
+    }
+
+    switch(t.raw[2]) {
+    case '0':  return '\0';
+    case 'a':  return '\a';
+    case 'b':  return '\b';
+    case 'e':  return '\e';
+    case 'f':  return '\f';
+    case 'n':  return '\n';
+    case 'r':  return '\r';
+    case 't':  return '\t';
+    case 'v':  return '\v';
+    case '\\': return '\\';
+    case '\"': return '\"';
+    case '\'': return '\'';
+    case 'x':
+        if (t.len > 6) error_at_parser(p, "char literal too long");
+        return ascii_to_digit_val(p, t.raw[3], 16) * 0x10 + ascii_to_digit_val(p, t.raw[4], 16);
+    case 'u':
+        if (t.len > 8) error_at_parser(p, "char literal too long");
+        return ascii_to_digit_val(p, t.raw[3], 16) * 0x1000 + ascii_to_digit_val(p, t.raw[4], 16) * 0x0100 + 
+               ascii_to_digit_val(p, t.raw[5], 16) * 0x0010 + ascii_to_digit_val(p, t.raw[6], 16);
+    case 'U':
+        if (t.len > 12) error_at_parser(p, "char literal too long");
+        return ascii_to_digit_val(p, t.raw[3], 16) * 0x10000000 + ascii_to_digit_val(p, t.raw[4], 16) * 0x01000000 + 
+               ascii_to_digit_val(p, t.raw[5], 16) * 0x00100000 + ascii_to_digit_val(p, t.raw[6], 16) * 0x00010000 +
+               ascii_to_digit_val(p, t.raw[7], 16) * 0x00001000 + ascii_to_digit_val(p, t.raw[8], 16) * 0x00000100 + 
+               ascii_to_digit_val(p, t.raw[9], 16) * 0x00000010 + ascii_to_digit_val(p, t.raw[10], 16);
+
+    default:
+        error_at_parser(p, "invalid escape sequence '%s'", clone_to_cstring(substring_len(t, 1, t.len-2)));
+    }
+    return -1;
+}
+
+// a recursive method is probably the best way to do this tbh
 AST parse_atomic_expr(parser* restrict p) {
     AST n = NULL_AST;
 
     bool out = false;
     while (!out) {
         switch (current_token.type) {
+        case tt_literal_null:
+            if (!is_null_AST(n)) {
+                out = true;
+                break;
+            }
+
+            n = new_ast_node(&p->alloca, astype_literal_expr);
+            n.as_literal_expr->base.start = &current_token;
+            n.as_literal_expr->base.end = &current_token;
+
+            n.as_literal_expr->value.kind = ev_bool; 
+            n.as_literal_expr->value.as_bool = string_eq(current_token.text, to_string("true"));
+
+            advance_token;
+            break;
         case tt_literal_bool:
+            if (!is_null_AST(n)) {
+                out = true;
+                break;
+            }
+
+            n = new_ast_node(&p->alloca, astype_literal_expr);
+            n.as_literal_expr->base.start = &current_token;
+            n.as_literal_expr->base.end = &current_token;
+
+            n.as_literal_expr->value.kind = ev_bool;
+            n.as_literal_expr->value.as_bool = string_eq(current_token.text, to_string("true"));
+
+            advance_token;
+            break;
         case tt_literal_char:
+            if (!is_null_AST(n)) {
+                out = true;
+                break;
+            }
+
+            n = new_ast_node(&p->alloca, astype_literal_expr);
+            n.as_literal_expr->base.start = &current_token;
+            n.as_literal_expr->base.end = &current_token;
+
+            n.as_literal_expr->value.kind = ev_int;
+            n.as_literal_expr->value.as_int = char_lit_value(p);
+
+            advance_token;
+            break;
         case tt_literal_float:
         case tt_literal_int:
-        case tt_literal_null:
         case tt_literal_string:
-            TODO("literal parsing");
-            break;
+            TODO("simple literals");
 
+            break;
+        case tt_open_brace:
+            TODO("compound literal");
+            break;
         case tt_identifier:
+        case tt_identifier_discard:
             if (!is_null_AST(n)) {
+                out = true;
                 break;
             }
             n = new_ast_node(&p->alloca, astype_identifier_expr);
+            n.as_identifier_expr->base.end = &current_token;
+            n.as_identifier_expr->base.start = &current_token;
+            n.as_identifier_expr->tok = &current_token;
+            n.as_identifier_expr->is_discard = current_token.type == tt_identifier_discard;
             advance_token;
             break;
 
@@ -144,8 +254,8 @@ AST parse_atomic_expr(parser* restrict p) {
                 // regular old paren expression
                 n = new_ast_node(&p->alloca, astype_paren_expr);
                 n.as_paren_expr->base.start = &current_token;
-                
                 advance_token;
+
                 n.as_paren_expr->subexpr = parse_expr(p);
                 if (current_token.type != tt_close_paren)
                     error_at_parser(p, "expected ')', got %s", token_type_str[current_token.type]);
@@ -156,13 +266,15 @@ AST parse_atomic_expr(parser* restrict p) {
                 // function call!
                 AST temp;
                 temp = new_ast_node(&p->alloca, astype_call_expr);
-                temp.as_call_expr->base.start = &current_token;
+                temp.as_call_expr->base.start = n.base->start;
                 advance_token;
 
                 dynarr_init_AST(&temp.as_call_expr->params, 4);
                 while (current_token.type != tt_close_paren) {
                     AST expr = parse_expr(p);
-                    printf("\n\n[%s]\n\n", ast_type_str[expr.type]);
+                    if (is_null_AST(expr)) {
+                        error_at_parser(p, "expected expression");
+                    }
                     dynarr_append_AST(&temp.as_call_expr->params, expr);
                     if (current_token.type == tt_comma) {
                         advance_token;
@@ -182,6 +294,7 @@ AST parse_atomic_expr(parser* restrict p) {
 
         case tt_period:
             if (is_null_AST(n)) {
+                // implicit selector
                 n = new_ast_node(&p->alloca, astype_impl_selector_expr);
                 
                 n.as_impl_selector_expr->base.start = &current_token;
@@ -192,16 +305,20 @@ AST parse_atomic_expr(parser* restrict p) {
                 
                 AST temp = new_ast_node(&p->alloca, astype_identifier_expr);
 
-                temp.as_identifier_expr->base.end = &current_token;
-                temp.as_identifier_expr->base.start = &current_token;
-                temp.as_identifier_expr->tok = &current_token;
+                token* ct = &current_token;
+                temp.as_identifier_expr->base.end = ct;
+                temp.as_identifier_expr->base.start = ct;
+                temp.as_identifier_expr->tok = ct;
 
                 n.as_impl_selector_expr->rhs = temp;
 
                 n.as_impl_selector_expr->base.end = &current_token;
+                advance_token;
+
             } else {
+                // regular selector
                 AST temp = new_ast_node(&p->alloca, astype_selector_expr);
-                temp.as_selector_expr->base.start = &current_token;
+                temp.as_selector_expr->base.start = n.base->start;
                 advance_token;
 
                 if (current_token.type != tt_identifier)
@@ -218,15 +335,17 @@ AST parse_atomic_expr(parser* restrict p) {
                 temp.as_selector_expr->rhs = ident;
                 temp.as_selector_expr->lhs = n;
                 n = temp;
+                advance_token;
             }
             break;
 
         case tt_colon_colon:
-            if (is_null_AST(n))
+            // entity selection
+            if (is_null_AST(n)) {
                 error_at_parser(p, "expected expression before '::'");
-            else {
+            } else {
                 AST temp = new_ast_node(&p->alloca, astype_entity_selector_expr);
-                temp.as_entity_selector_expr->base.start = &current_token;
+                temp.as_entity_selector_expr->base.start = n.base->start;
                 advance_token;
 
                 if (current_token.type != tt_identifier)
@@ -243,11 +362,86 @@ AST parse_atomic_expr(parser* restrict p) {
                 temp.as_entity_selector_expr->rhs = ident;
                 temp.as_entity_selector_expr->lhs = n;
                 n = temp;
+                advance_token;
             }
             break;
 
         case tt_open_bracket:
-            TODO("slice or index expr");
+
+            if (is_null_AST(n))
+                error_at_parser(p, "expected expression before slice/index expr (THIS SHOULD NEVER HAPPEN - CONTACT SANDWICH)");
+
+            advance_token;
+
+            AST first_expr = parse_expr(p);
+            if (current_token.type == tt_close_bracket) {   // index expr
+                if (is_null_AST(first_expr))
+                    error_at_parser(p, "expected an expression inside '[]'");
+
+                AST temp = new_ast_node(&p->alloca, astype_index_expr);
+                temp.as_index_expr->base.start = n.base->start;
+                temp.as_index_expr->base.end = &current_token;
+                temp.as_index_expr->lhs = n;
+                temp.as_index_expr->inside = first_expr;
+                n = temp;
+                advance_token;
+            } else if (current_token.type == tt_colon) {    // slice expr
+                advance_token;
+                AST temp = new_ast_node(&p->alloca, astype_slice_expr);
+                temp.as_slice_expr->base.start = n.base->start;
+                temp.as_slice_expr->lhs = n;
+                temp.as_slice_expr->inside_left = first_expr;
+
+                temp.as_slice_expr->inside_right = parse_expr(p);
+                if (current_token.type != tt_close_bracket)
+                    error_at_parser(p, "expected closing ']'");
+
+                temp.as_slice_expr->base.end = &current_token;
+                n = temp;
+                advance_token;
+            } else {
+                error_at_parser(p, "expected ':' or ']'");
+            }
+
+            break;
+        
+        case tt_carat: 
+            if (is_null_AST(n))
+                error_at_parser(p, "expected expression before deref (THIS SHOULD NEVER HAPPEN - CONTACT SANDWICH)");
+            
+            AST temp = new_ast_node(&p->alloca, astype_unary_op_expr);
+            temp.as_unary_op_expr->base.start = n.base->start;
+            temp.as_unary_op_expr->base.end = &current_token;
+            temp.as_unary_op_expr->op = &current_token;
+            temp.as_unary_op_expr->inside = n;
+
+            n = temp;
+            advance_token;
+            break;
+
+        case tt_type_keyword_addr:
+        case tt_type_keyword_bool:
+        case tt_type_keyword_int:
+        case tt_type_keyword_i8:
+        case tt_type_keyword_i16:
+        case tt_type_keyword_i32:
+        case tt_type_keyword_i64:
+        case tt_type_keyword_uint:
+        case tt_type_keyword_u8:
+        case tt_type_keyword_u16:
+        case tt_type_keyword_u32:
+        case tt_type_keyword_u64:
+        case tt_type_keyword_float:
+        case tt_type_keyword_f16:
+        case tt_type_keyword_f32:
+        case tt_type_keyword_f64:
+            TODO("simple type literals");
+            break;
+        
+        case tt_keyword_struct:
+        case tt_keyword_union:
+        case tt_keyword_enum:
+            TODO("complex type literals");
             break;
 
         default:

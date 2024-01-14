@@ -20,12 +20,9 @@ typedef struct {
         }; \
         bool is_discard; \
     }) \
-    AST_TYPE(basic_lit_expr, "basic literal", { \
-        union { \
-            ast_base base; \
-            token* lit; \
-        }; \
-        u64 value; \
+    AST_TYPE(literal_expr, "literal", { \
+        ast_base base; \
+        exact_value value; \
     }) \
     AST_TYPE(paren_expr, "parenthesis", { \
         ast_base base; \
@@ -165,6 +162,34 @@ typedef struct {
         token* tok; \
         }; \
     }) \
+    AST_TYPE(type_lit_expr, "type literal", { \
+        union { \
+            ast_base base; \
+            token* lit; \
+        }; \
+    }) \
+    AST_TYPE(type_struct_expr, "struct type", { \
+            ast_base base; \
+    }) \
+    AST_TYPE(type_union_expr, "union type", { \
+            ast_base base; \
+    }) \
+    AST_TYPE(type_array_expr, "array type", { \
+            ast_base base; \
+            AST subexpr; \
+            size_t length; \
+    }) \
+    AST_TYPE(type_slice_expr, "slice type", { \
+            ast_base base; \
+            AST subexpr; \
+    }) \
+    AST_TYPE(type_pointer_expr, "pointer type", { \
+            ast_base base; \
+            AST subexpr; \
+    }) \
+
+
+
 
 
 // generate the enum tags for the AST tagged union
@@ -189,6 +214,31 @@ typedef struct {
 } AST;
 
 dynarr_lib_h(AST)
+
+
+typedef u8 exact_value_kind; enum {
+    ev_invalid,
+    ev_bool,
+    ev_string,
+    ev_int,
+    ev_float,
+    ev_pointer,
+    ev_compound,
+};
+
+typedef struct {
+    union {
+        bool    as_bool;
+        string  as_string;
+        i64     as_int;
+        f64     as_float;
+        u64     as_pointer;
+        dynarr(AST) as_compound;
+    };
+    exact_value_kind kind;
+} exact_value;
+
+
 
 // generate AST node typedefs
 #define AST_TYPE(ident, identstr, structdef) typedef struct ast_##ident structdef ast_##ident;
