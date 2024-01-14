@@ -45,13 +45,6 @@ types
     note: structs and unions are automatically distinct types.
 
 operators
-    unary numeric
-        -       negation (0 - x)        with type T in (all integers, uintegers, floats, pointers): - <T> -> <T>
-        ~       bitwise complement      with type T in (all integers, uintegers, floats, pointers): ~ <T> -> <T>
-
-    unary boolean
-        !       boolean not             with type T in (all booleans): !<T> -> <T>
-
     binary numeric
         +       addition                with type T in (all integers, uintegers, floats, pointers): <T> + <T> -> <T>
         -       subtraction             with type T in (all integers, uintegers, floats, pointers): <T> - <T> -> <T>
@@ -95,11 +88,19 @@ operators
 
         note: entities can ONLY compare with others of the same type, no mixing.
 
+    unary numeric
+        -       negation (0 - x)        with type T in (all integers, uintegers, floats, pointers): - <T> -> <T>
+        ~       bitwise complement      with type T in (all integers, uintegers, floats, pointers): ~ <T> -> <T>
+
+    unary boolean
+        !       boolean not             with type T in (all booleans): !<T> -> <T>
+
+
     unary conversion
         cast(T)     value cast to type T        cast(T) <X> -> <T>
         bitcast(T)  raw data cast to type T     bitcast(T) <X> -> <T>
 
-        * cast() rules:
+        cast() rules:
         | all types can cast to themselves.
         | all (u)integer types can cast between each other.
         |       if one is casting to another of smaller size, the most-significant "top" bits are discarded
@@ -111,10 +112,10 @@ operators
         | enums have the same casting characteristics of its backing type
         | structs may be cast to other structs if their field type structure is identical (all fields in the same order with the same types).
         | ^ this is identical to a bitcast, but is more deeply checked by the compiler.
-        | slices can cast to pointers corresponding to their backing type. a slice of type T can cast to pointer of type T. this is the same as adding the
+        | slices can cast to pointers corresponding to their backing type. a slice of type T can cast to pointer of type T (same thing as appending '.raw')
 
-        * bitcast() rules:
-        | values can be bitcast if their byte sizes are the same
+        bitcast() rules:
+        | values can be bitcast if their byte sizes are the same.
         | bitcasting does not modify the value data of a variable,
         | but only changes what type the data is interpreted as.
 
@@ -126,10 +127,6 @@ operators
     unary reference
         &       generate pointer        using type T in (all): &<T> -> <^T>
         ^       dereference pointer     using type T in (all): <^T>^ -> <T>
-    
-    unary utility
-        len         get length of array or slice type, returns uint
-        raw         get base pointer of array type (pointer to array in case of array type, cast to pointer in case of slice type)
     
     unary type info
         sizeof      get the size of a type. takes a raw type expression, returns an untyped integer.

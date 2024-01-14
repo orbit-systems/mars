@@ -24,3 +24,8 @@ AST parse_module_decl(parser* restrict p);
 AST parse_stmt(parser* restrict p);
 AST parse_block_stmt(parser* restrict p);
 AST parse_elif(parser* restrict p);
+
+AST parse_expr(parser* restrict p);
+AST parse_binary_expr(parser* restrict p, int precedence);
+AST parse_unary_expr(parser* restrict p);
+AST parse_atomic_expr(parser* restrict p);

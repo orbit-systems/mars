@@ -1,5 +1,7 @@
 module test;
 
+let x = mem.lmao::bruh();
+
 import mem "memory";
 import neptune "neptune";
 
@@ -16,7 +18,7 @@ let main = fn #asm_section("text.boot") #block_symbol("__main") () {
         neptune::kprintln("not equal");
     }
     
-    for mut i: u64 = 0; i < 10; i+=1 {
+    for mut i: u64 = 0; i < 10; i+=1; {
         neptune::kprintf("%int\n", {&i});
     }
 

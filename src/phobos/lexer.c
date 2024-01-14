@@ -23,20 +23,21 @@ void construct_token_buffer(lexer* restrict lex) {
         CRASH("bad lexer provided to construct_token_buffer");
     }
 
-    while (lex->buffer.raw[lex->buffer.len-1].type != tt_EOF) {
+    do {
         append_next_token(lex);
-        // printstr((lex->buffer.raw[lex->buffer.len-1].text));
-    }
+    } while (lex->buffer.raw[lex->buffer.len-1].type != tt_EOF);
+
     dynarr_shrink(token, &lex->buffer);
 }
 
 void append_next_token(lexer* restrict lex) {
 
     // if the top token is an EOF, early return
-    if (lex->buffer.raw[lex->buffer.len-1].type == tt_EOF) {
-        return;
-    }
+    // if (lex->buffer.raw[lex->buffer.len-1].type == tt_EOF) {
+    //     return;
+    // }
     
+
     // advance to next significant char
     while (true) {
         switch (current_char(lex)) {
@@ -138,7 +139,6 @@ token_type scan_ident_or_keyword(lexer* restrict lex) {
     if (string_eq(word, to_string("asm")))          return tt_keyword_asm;
     if (string_eq(word, to_string("bitcast")))      return tt_keyword_bitcast;
     if (string_eq(word, to_string("import")))       return tt_keyword_import;
-    if (string_eq(word, to_string("inline")))       return tt_keyword_inline;
     if (string_eq(word, to_string("fallthrough")))  return tt_keyword_fallthrough;
     if (string_eq(word, to_string("module")))       return tt_keyword_module;
     if (string_eq(word, to_string("return")))       return tt_keyword_return;
@@ -146,6 +146,7 @@ token_type scan_ident_or_keyword(lexer* restrict lex) {
     if (string_eq(word, to_string("switch")))       return tt_keyword_switch;
     if (string_eq(word, to_string("union")))        return tt_keyword_union;
     if (string_eq(word, to_string("while")))        return tt_keyword_while;
+    if (string_eq(word, to_string("inline")))       return tt_keyword_inline;
     if (string_eq(word, to_string("sizeof")))       return tt_keyword_sizeof;
     if (string_eq(word, to_string("alignof")))      return tt_keyword_alignof;
     if (string_eq(word, to_string("offsetof")))     return tt_keyword_offsetof;

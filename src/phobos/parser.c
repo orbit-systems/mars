@@ -64,26 +64,173 @@ void parse_file(parser* restrict p) {
 
 AST parse_expr(parser* restrict p) {
     AST n = NULL_AST;
+    n = parse_unary_expr(p);
+    return n;
+}
 
+AST parse_unary_expr(parser* restrict p) {
+    AST n = NULL_AST;
+    
     switch (current_token.type) {
-    case tt_open_paren:
-        n = new_ast_node(&p->alloca, astype_paren_expr);
-        
-        n.as_paren_expr->base.start = &current_token; 
-        
+    case tt_sub:
+    case tt_tilde:
+    case tt_exclam:
+    case tt_and:
+    case tt_keyword_sizeof:
+    case tt_keyword_alignof:
+    case tt_keyword_offsetof:
+        n = new_ast_node(&p->alloca, astype_unary_op_expr);
+        n.as_unary_op_expr->base.start = &current_token;
+        n.as_unary_op_expr->op = &current_token;
         advance_token;
-        n.as_paren_expr->subexpr = parse_expr(p);
-        if (current_token.type != tt_close_paren)
+
+        n.as_unary_op_expr->inside = parse_unary_expr(p);
+
+        n.as_unary_op_expr->base.end = &peek_token(-1);
+        break;
+    
+    case tt_keyword_cast:
+    case tt_keyword_bitcast:
+        n = new_ast_node(&p->alloca, astype_cast_expr);
+        n.as_cast_expr->base.start = &current_token;
+        n.as_cast_expr->is_bitcast = current_token.type == tt_keyword_bitcast;
+        advance_token;
+
+        if (current_token.type != tt_open_paren)
+            error_at_parser(p, "expected '(' after 'cast', got %s", token_type_str[current_token.type]);
+        advance_token;
+
+        n.as_cast_expr->type = parse_expr(p);
+
+        if (current_token.type != tt_open_paren)
             error_at_parser(p, "expected ')', got %s", token_type_str[current_token.type]);
-        
-        n.as_paren_expr->base.end = &current_token;
         advance_token;
+
+        n.as_cast_expr->rhs = parse_unary_expr(p);
+
+        n.as_cast_expr->base.end = &peek_token(-1);
         break;
     default:
-        advance_token;
-        // return nonsense for now
-        return ((AST){.type = 1000, .rawptr = (void*)1000});
-        break;
+        n = parse_atomic_expr(p);
+    }
+    return n;
+}
+
+AST parse_atomic_expr(parser* restrict p) {
+    AST n = NULL_AST;
+
+    bool out = false;
+    while (!out) {
+        switch (current_token.type) {
+        case tt_literal_bool:
+        case tt_literal_char:
+        case tt_literal_float:
+        case tt_literal_int:
+        case tt_literal_null:
+        case tt_literal_string:
+            TODO("literal parsing");
+            break;
+
+        case tt_identifier:
+            n = new_ast_node(&p->alloca, astype_identifier_expr);
+            advance_token;
+            break;
+
+        case tt_open_paren:
+            if (is_null_AST(n)) {
+                // regular old paren expression
+                n = new_ast_node(&p->alloca, astype_paren_expr);
+                
+                n.as_paren_expr->base.start = &current_token; 
+                
+                advance_token;
+                n.as_paren_expr->subexpr = parse_expr(p);
+                if (current_token.type != tt_close_paren)
+                    error_at_parser(p, "expected ')', got %s", token_type_str[current_token.type]);
+                
+                n.as_paren_expr->base.end = &current_token;
+                advance_token;
+                break;
+            } else {
+                // function call!
+                TODO("function call expr");
+            }
+            break;
+
+        case tt_period:
+            if (is_null_AST(n)) {
+                n = new_ast_node(&p->alloca, astype_impl_selector_expr);
+                
+                n.as_impl_selector_expr->base.start = &current_token;
+                advance_token;
+                
+                if (current_token.type != tt_identifier)
+                    error_at_parser(p, "expected identifer after '.'");
+                
+                AST temp = new_ast_node(&p->alloca, astype_identifier_expr);
+
+                temp.as_identifier_expr->base.end = &current_token;
+                temp.as_identifier_expr->base.start = &current_token;
+                temp.as_identifier_expr->tok = &current_token;
+
+                n.as_impl_selector_expr->rhs = temp;
+
+                n.as_impl_selector_expr->base.end = &current_token;
+            } else {
+                AST temp = new_ast_node(&p->alloca, astype_selector_expr);
+                temp.as_selector_expr->base.start = &current_token;
+                advance_token;
+
+                if (current_token.type != tt_identifier)
+                    error_at_parser(p, "expected identifer after '.'");
+
+                AST ident = new_ast_node(&p->alloca, astype_identifier_expr);
+                
+                token* ct = &current_token;
+                ident.as_identifier_expr->base.end = ct;
+                ident.as_identifier_expr->base.start = ct;
+                ident.as_identifier_expr->tok = ct;
+                temp.as_selector_expr->base.end = ct;
+
+                temp.as_selector_expr->rhs = ident;
+                temp.as_selector_expr->lhs = n;
+                n = temp;
+            }
+            break;
+
+        case tt_colon_colon:
+            if (is_null_AST(n))
+                error_at_parser(p, "expected expression before '::'");
+            else {
+                AST temp = new_ast_node(&p->alloca, astype_entity_selector_expr);
+                temp.as_entity_selector_expr->base.start = &current_token;
+                advance_token;
+
+                if (current_token.type != tt_identifier)
+                    error_at_parser(p, "expected identifer after '.'");
+
+                AST ident = new_ast_node(&p->alloca, astype_identifier_expr);
+                
+                token* ct = &current_token;
+                ident.as_identifier_expr->base.end = ct;
+                ident.as_identifier_expr->base.start = ct;
+                ident.as_identifier_expr->tok = ct;
+                temp.as_entity_selector_expr->base.end = ct;
+
+                temp.as_entity_selector_expr->rhs = ident;
+                temp.as_entity_selector_expr->lhs = n;
+                n = temp;
+            }
+            break;
+
+        case tt_open_bracket:
+            TODO("slice or index expr");
+            break;
+
+        default:
+            out = true;
+            break;
+        }
     }
     return n;
 }

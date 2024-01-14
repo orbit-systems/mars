@@ -48,11 +48,16 @@ typedef struct {
     AST_TYPE(unary_op_expr, "unary op", { \
         ast_base base; \
         token* op; \
-        AST rhs; \
+        AST inside; \
     }) \
     AST_TYPE(binary_op_expr, "binary op", { \
         ast_base base; \
         token* op; \
+        AST lhs; \
+        AST rhs; \
+    }) \
+    AST_TYPE(entity_selector_expr, "entity selector", { \
+        ast_base base; \
         AST lhs; \
         AST rhs; \
     }) \

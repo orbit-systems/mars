@@ -102,7 +102,6 @@
     TOKEN(tt_keyword_if,        "if") \
     TOKEN(tt_keyword_in,        "in") \
     TOKEN(tt_keyword_import,    "import") \
-    TOKEN(tt_keyword_inline,    "inline") \
     TOKEN(tt_keyword_module,    "module") \
     TOKEN(tt_keyword_return,    "return") \
     TOKEN(tt_keyword_struct,    "struct") \
@@ -110,6 +109,7 @@
     TOKEN(tt_keyword_union,     "union") \
     TOKEN(tt_keyword_while,     "while") \
 \
+    TOKEN(tt_keyword_inline,    "inline") \
     TOKEN(tt_keyword_sizeof,    "sizeof") \
     TOKEN(tt_keyword_alignof,   "alignof") \
     TOKEN(tt_keyword_offsetof,  "offsetof") \
