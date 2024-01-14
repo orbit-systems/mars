@@ -59,7 +59,7 @@ void parse_file(parser* restrict p) {
     p->module_decl = parse_module_decl(p);
 
     p->head = new_ast_node(&p->alloca, astype_block_stmt);
-    AST smth = parse_stmt(p, true);
+    AST smth = parse_stmt(p);
 }
 
 AST parse_expr(parser* restrict p) {
@@ -90,7 +90,7 @@ AST parse_import_stmt(parser* restrict p) {
 
 }
 
-AST parse_stmt(parser* restrict p, bool expect_semicolon) {
+AST parse_stmt(parser* restrict p) {
     AST n = NULL_AST;
 
     switch (current_token.type) {
@@ -99,10 +99,11 @@ AST parse_stmt(parser* restrict p, bool expect_semicolon) {
         n.as_defer_stmt->base.start = &current_token;
         advance_token;
 
-        n.as_defer_stmt->stmt = parse_stmt(p, expect_semicolon);
+        n.as_defer_stmt->stmt = parse_stmt(p);
 
         n.as_defer_stmt->base.end = &peek_token(-1);
         break;
+    
     case tt_keyword_if:
         n = new_ast_node(&p->alloca, astype_if_stmt);
         n.as_if_stmt->is_elif = false;
@@ -122,6 +123,7 @@ AST parse_stmt(parser* restrict p, bool expect_semicolon) {
             n.as_if_stmt->else_branch = parse_block_stmt(p);
         }
         break;
+    
     case tt_keyword_while:
         n = new_ast_node(&p->alloca, astype_while_stmt);
         n.as_while_stmt->base.start = &current_token;
@@ -135,6 +137,7 @@ AST parse_stmt(parser* restrict p, bool expect_semicolon) {
 
         n.as_while_stmt->base.end = &peek_token(-1);
         break;
+    
     case tt_keyword_for:
         // jank as shit but whatever, that's future sandwichman's problem
         if ((peek_token(1).type == tt_identifier || peek_token(1).type == tt_identifier_discard) &&
@@ -155,8 +158,19 @@ AST parse_stmt(parser* restrict p, bool expect_semicolon) {
 
             if (current_token.type != tt_keyword_in)
                 error_at_parser(p, "expected 'in', got '%s'", token_type_str[current_token.type]);
-
             advance_token;
+
+            // catch #reverse
+            if (current_token.type == tt_hash) {
+                advance_token;
+                if (string_eq(current_token.text, to_string("reverse"))) {
+                    n.as_for_in_stmt->is_reverse = true;
+                    advance_token;
+                } else {
+                    error_at_parser(p, "invalid directive \'%s\' in for-in loop", clone_to_cstring(current_token.text));
+                }
+            }
+
 
             n.as_for_in_stmt->from = parse_expr(p);
             if (current_token.type == tt_range_less) {
@@ -179,28 +193,31 @@ AST parse_stmt(parser* restrict p, bool expect_semicolon) {
             n.as_for_stmt->base.start = &current_token;
             advance_token;
 
-            n.as_for_stmt->prelude = parse_stmt(p, true);
+            n.as_for_stmt->prelude = parse_stmt(p);
             
             n.as_for_stmt->condition = parse_expr(p);
             if (current_token.type != tt_semicolon)
                 error_at_parser(p, "expected ';', got '%s'", token_type_str[current_token.type]);
 
             advance_token;
-            n.as_for_stmt->post_stmt = parse_stmt(p, false);
+            n.as_for_stmt->post_stmt = parse_stmt(p);
             
             n.as_for_stmt->block = parse_block_stmt(p);
 
             n.as_for_stmt->base.end = &peek_token(-1);
         }
         break;
+    
     case tt_semicolon:
         n = new_ast_node(&p->alloca, astype_empty_stmt);
         n.as_empty_stmt->base.start = &current_token;
         n.as_empty_stmt->base.end = &current_token;
         break;
+    
     case tt_open_bracket:
         n = parse_block_stmt(p);
         break;
+    
     case tt_keyword_type:
         n = new_ast_node(&p->alloca, astype_type_decl_stmt);
         n.as_type_decl_stmt->base.start = &current_token;
@@ -220,12 +237,13 @@ AST parse_stmt(parser* restrict p, bool expect_semicolon) {
         if (is_null_AST(n.as_type_decl_stmt->rhs))
             error_at_parser(p, "expected type expression");
 
-        if (expect_semicolon && current_token.type != tt_semicolon)
+        if (current_token.type != tt_semicolon)
             error_at_parser(p, "expected ';' after type declaration", token_type_str[current_token.type]);
         
+        n.as_type_decl_stmt->base.end = &current_token;
         advance_token;
-        n.as_type_decl_stmt->base.end = &peek_token(-1);
         break;
+    
     case tt_keyword_let:
     case tt_keyword_mut:
         n = new_ast_node(&p->alloca, astype_decl_stmt);
@@ -241,17 +259,56 @@ AST parse_stmt(parser* restrict p, bool expect_semicolon) {
             } else if (string_eq(current_token.text, to_string("volatile"))) {
                 n.as_decl_stmt->is_volatile = true;
             } else {
-                error_at_parser(p, "invalid directive \'%s\' for declaration statement", clone_to_cstring(current_token.text));
+                error_at_parser(p, "invalid directive \'%s\' in declaration", clone_to_cstring(current_token.text));
             }
         }
 
         // parse identifier list
-        dynarr_init(AST, &n.as_decl_stmt, 4); // four is probably good right
+        dynarr_init_AST(&n.as_decl_stmt->lhs, 4); // four is probably good right
+        while (current_token.type != tt_identifier || current_token.type != tt_identifier_discard) {
+            dynarr_append_AST(&n.as_decl_stmt->lhs, parse_expr(p));
+            if (current_token.type != tt_comma)
+                break;
+            advance_token;
+        }
+
+        // maybe types?
+        if (current_token.type == tt_colon) {
+            n.as_decl_stmt->has_expl_type = true;
+            advance_token;
+            n.as_decl_stmt->type = parse_expr(p);
+            if (is_null_AST(n.as_decl_stmt->type))
+                error_at_parser(p, "expected type expression");
+        }
+
+        // implicit initialization ONLY if a type has been provided
+        if (current_token.type == tt_semicolon) {
+            if (!n.as_decl_stmt->has_expl_type)
+                error_at_parser(p, "cannot implicitly initialize without a type");
+            break;
+        }
+
+        if (current_token.type != tt_equal)
+            error_at_parser(p, "expected '=', got '%s'", token_type_str[current_token.type]);
         
+        advance_token;
 
+        if (current_token.type == tt_uninit) {
+            n.as_decl_stmt->is_uninit = true;
+            if (!n.as_decl_stmt->has_expl_type)
+                error_at_parser(p, "cannot uninitialize without a type");
+            advance_token;
+        } else {
+            n.as_decl_stmt->rhs = parse_expr(p);
+        }
+        
+        if (current_token.type != tt_semicolon)
+            error_at_parser(p, "expected ';', got '%s'", token_type_str[current_token.type]);
 
-        TODO("parse_stmt() declarations");
+        n.as_decl_stmt->base.end = &current_token;
+        advance_token;
         break;
+    
     default:
         TODO("parse_stmt() unimplemented");
         break;
@@ -294,7 +351,7 @@ AST parse_block_stmt(parser* restrict p) {
 
     advance_token;
     while (current_token.type != tt_close_brace) {
-        AST stmt = parse_stmt(p, true);
+        AST stmt = parse_stmt(p);
         dynarr_append(AST, &n.as_block_stmt->stmts, stmt);
     }
 

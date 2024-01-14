@@ -2,16 +2,16 @@ module test;
 
 let x = 3;
 
-import mem "./memory";
-import neptune "./neptune";
+import mem "memory";
+import neptune "neptune";
 
 let string_equal = mem::str_eq;
 
-let main = fn #section("text.boot") #link_name("__main") () {
+let main = fn #asm_section("text.boot") #block_symbol("__main") () {
 
     let str = "bruh";
     let str2 = "bruh2";
-
+    
     if mem::str_equal(str, str2) {
         neptune::kprintln("equal");
     } else {

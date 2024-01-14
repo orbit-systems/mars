@@ -147,6 +147,7 @@ typedef struct {
         AST from; \
         AST block; \
         bool is_inclusive; \
+        bool is_reverse; \
     }) \
     AST_TYPE(defer_stmt, "defer statement", { \
         ast_base base; \

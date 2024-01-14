@@ -96,10 +96,10 @@ operators
         note: entities can ONLY compare with others of the same type, no mixing.
 
     unary conversion
-        cast(T)     value cast to type T        (*):  cast(T) <X> -> <T>
-        bitcast(T)  raw data cast to type T     (**): bitcast(T) <X> -> <T>
+        cast(T)     value cast to type T        cast(T) <X> -> <T>
+        bitcast(T)  raw data cast to type T     bitcast(T) <X> -> <T>
 
-        * type casting rules:
+        * cast() rules:
         | all types can cast to themselves.
         | all (u)integer types can cast between each other.
         |       if one is casting to another of smaller size, the most-significant "top" bits are discarded
@@ -113,7 +113,8 @@ operators
         | ^ this is identical to a bitcast, but is more deeply checked by the compiler.
         | slices can cast to pointers corresponding to their backing type. a slice of type T can cast to pointer of type T. this is the same as adding the
 
-        ** values can be bitcast if their byte sizes are the same
+        * bitcast() rules:
+        | values can be bitcast if their byte sizes are the same
         | bitcasting does not modify the value data of a variable,
         | but only changes what type the data is interpreted as.
 
@@ -154,8 +155,13 @@ operators
         |
         | access entities from other modules: a_module::something
 
+    function
+        inline  inline a function call
+
+        
+
     precendence
-        unary operators have highest precedence after atomic expressions (struct field selection/array indexes)
+        unary operators have highest precedence after atomic expressions (field selection, array index, pointer deref)
 
         non-unary operator precedence: - note: () is function calls.
         6   () 
@@ -188,8 +194,7 @@ operators
 
 program structure
 
-    programs are made from modules. modules must be wholly contained within one directory.
-    there can be multiple modules in a single directory.
+    programs are made from modules. modules must be wholly contained within one directory, with one module per directory.
 
     programs must begin with a module declaration:
         module module_name;
@@ -207,6 +212,7 @@ program structure
     other modules can be imported as libraries using this syntax as well.
         import lib_name "relative/path/to/module";
     the entity name does not have match the module's internal name.
+    modules may import each other.
     
     entity names must be unique and cannot shadow entities from lower scopes.
     e.g. this is not allowed:
