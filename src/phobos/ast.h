@@ -24,6 +24,16 @@ typedef struct {
         ast_base base; \
         exact_value value; \
     }) \
+    AST_TYPE(comp_literal_expr, "compound literal", {\
+        ast_base base; \
+        AST type; \
+        dynarr(AST) elems; \
+    }) \
+    AST_TYPE(func_literal_expr, "function literal", {\
+        ast_base base; \
+        AST type; \
+        AST code_block; \
+    }) \
     AST_TYPE(paren_expr, "parenthesis", { \
         ast_base base; \
         AST subexpr; \
@@ -162,6 +172,10 @@ typedef struct {
         token* tok; \
         }; \
     }) \
+    \
+    \
+    \
+    \
     AST_TYPE(basic_type_expr, "type literal", { \
         union { \
             ast_base base; \
@@ -170,12 +184,21 @@ typedef struct {
     }) \
     AST_TYPE(struct_type_expr, "struct type", { \
             ast_base base; \
+            dynarr(AST_typed_field) fields; \
     }) \
     AST_TYPE(union_type_expr, "union type", { \
             ast_base base; \
+            dynarr(AST_typed_field) fields; \
+    }) \
+    AST_TYPE(fn_type_expr, "fn type", { \
+            ast_base base; \
+            dynarr(AST_typed_field) parameters; \
+            dynarr(AST_typed_field) returns; \
     }) \
     AST_TYPE(enum_type_expr, "enum type", { \
             ast_base base; \
+            AST backing_type;\
+            dynarr(AST_enum_variant) variants; \
     }) \
     AST_TYPE(array_type_expr, "array type", { \
             ast_base base; \
@@ -190,9 +213,6 @@ typedef struct {
             ast_base base; \
             AST subexpr; \
     }) \
-
-
-
 
 
 // generate the enum tags for the AST tagged union
@@ -216,8 +236,20 @@ typedef struct {
     ast_type type;
 } AST;
 
-dynarr_lib_h(AST)
+typedef struct {
+    AST field;
+    AST type; // may be NULL_AST if the type is the same as the next field
+} AST_typed_field;
 
+
+typedef struct {
+    AST ident;
+    i64 value;
+} AST_enum_variant;
+
+dynarr_lib_h(AST)
+dynarr_lib_h(AST_enum_variant)
+dynarr_lib_h(AST_typed_field)
 
 typedef u8 exact_value_kind; enum {
     ev_invalid,
@@ -240,8 +272,6 @@ typedef struct {
     };
     exact_value_kind kind;
 } exact_value;
-
-
 
 // generate AST node typedefs
 #define AST_TYPE(ident, identstr, structdef) typedef struct ast_##ident structdef ast_##ident;

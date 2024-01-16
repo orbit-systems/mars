@@ -9,6 +9,8 @@
 #define advance_token (((p)->current_tok + 1 < (p)->tokens.len) ? ((p)->current_tok)++ : 0)
 #define advance_n_tok(n) (((p)->current_tok + n < (p)->tokens.len) ? ((p)->current_tok)+=n : 0)
 
+#define str_from_tokens(start, end) ((string){(start).text.raw, (end).text.raw - (start).text.raw + (end).text.len})
+
 #define error_at_parser(p, message, ...) \
     error_at_string((p)->path, (p)->src, current_token.text, message __VA_OPT__(,) __VA_ARGS__)
 
@@ -17,6 +19,9 @@
 
 #define error_at_token(p, token, message, ...) \
     error_at_string((p)->path, (p)->src, (token).text, message __VA_OPT__(,) __VA_ARGS__)
+
+#define error_at_AST(p, node, message, ...) \
+    error_at_string((p)->path, (p)->src, str_from_tokens(*((node).base->start), *((node).base->end)), message __VA_OPT__(,) __VA_ARGS__)
 
 // construct a parser struct from a lexer and an arena allocator
 parser make_parser(lexer* restrict l, arena alloca) {
@@ -104,7 +109,7 @@ int op_precedence(token_type type) {
 AST parse_binary_expr(parser* restrict p, int precedence) {
     AST lhs = NULL_AST;
     
-    lhs = parse_unary_expr(p);
+    lhs = parse_unary_expr(p, false);
     if (is_null_AST(lhs)) return lhs;
 
     while (precedence < op_precedence(current_token.type)) {
@@ -125,11 +130,11 @@ AST parse_non_unary_expr(parser* restrict p, AST lhs, int precedence) {
     if (is_null_AST(n.as_binary_op_expr->rhs)) {
         error_at_parser(p, "expected operand");
     }
-    n.as_binary_op_expr->base.end = n.as_binary_op_expr->rhs.base->start;
+    n.as_binary_op_expr->base.end = n.as_binary_op_expr->rhs.base->end;
     return n;
 }
 
-AST parse_unary_expr(parser* restrict p) {
+AST parse_unary_expr(parser* restrict p, bool type_expr) {
     AST n = NULL_AST;
     
     switch (current_token.type) {
@@ -146,7 +151,7 @@ AST parse_unary_expr(parser* restrict p) {
         n.as_unary_op_expr->op = &current_token;
         advance_token;
 
-        n.as_unary_op_expr->inside = parse_unary_expr(p);
+        n.as_unary_op_expr->inside = parse_unary_expr(p, type_expr);
 
         n.as_unary_op_expr->base.end = &peek_token(-1);
         break;
@@ -168,7 +173,7 @@ AST parse_unary_expr(parser* restrict p) {
             error_at_parser(p, "expected ')', got %s", token_type_str[current_token.type]);
         advance_token;
 
-        n.as_cast_expr->rhs = parse_unary_expr(p);
+        n.as_cast_expr->rhs = parse_unary_expr(p, type_expr);
 
         n.as_cast_expr->base.end = &peek_token(-1);
         break;
@@ -178,7 +183,7 @@ AST parse_unary_expr(parser* restrict p) {
         n.as_pointer_type_expr->base.start = &current_token;
         advance_token;
 
-        n.as_pointer_type_expr->subexpr = parse_unary_expr(p);
+        n.as_pointer_type_expr->subexpr = parse_unary_expr(p, type_expr);
 
         n.as_pointer_type_expr->base.end = &peek_token(-1);
         break;
@@ -189,7 +194,7 @@ AST parse_unary_expr(parser* restrict p) {
             n.as_slice_type_expr->base.start = &current_token;
 
             advance_n_tok(2);
-            n.as_slice_type_expr->subexpr = parse_unary_expr(p);
+            n.as_slice_type_expr->subexpr = parse_unary_expr(p, type_expr);
 
             n.as_slice_type_expr->base.end = &peek_token(-1);
         } else {
@@ -202,13 +207,13 @@ AST parse_unary_expr(parser* restrict p) {
                 error_at_parser(p, "expected ']', got %s", token_type_str[current_token.type]);
 
             advance_token;
-            n.as_array_type_expr->subexpr = parse_unary_expr(p);
+            n.as_array_type_expr->subexpr = parse_unary_expr(p, type_expr);
             n.as_array_type_expr->base.end = &peek_token(-1);
         }
         break;
 
     default:
-        n = parse_atomic_expr(p);
+        n = parse_atomic_expr(p, type_expr);
     }
     return n;
 }
@@ -269,8 +274,16 @@ f64 float_lit_value(parser* restrict p) {
     string t = current_token.text;
     f64 val = 0;
 
+    bool is_negative = false;
+    int digit_start = 0;
+
+    if (t.raw[0] == '-') {
+        is_negative = true;
+        digit_start = 1;
+    }
+
     u32 decimal_index = 0;
-    for (u32 i = 0; i < t.len; i++) {
+    for (u32 i = digit_start; i < t.len; i++) {
         if (t.raw[i] == '.') {
             decimal_index = i;
             break;
@@ -297,24 +310,33 @@ f64 float_lit_value(parser* restrict p) {
 
     val = val * pow(10.0, exp_val);
 
-    return val;
+    return val * (is_negative ? -1 : 1);
 }
 
 i64 int_lit_value(parser* restrict p) {
     string t = current_token.text;
     i64 val = 0;
 
-    if (t.raw[0] != '0') { // basic base-10 parse
-        FOR_URANGE_EXCL(i, 0, t.len) {
+    bool is_negative = false;
+    int digit_start = 0;
+
+    if (t.raw[0] == '-') {
+        is_negative = true;
+        digit_start = 1;
+    }
+
+    if (t.raw[digit_start] != '0') { // basic base-10 parse
+        FOR_URANGE_EXCL(i, digit_start, t.len) {
             val = val * 10 + ascii_to_digit_val(p, t.raw[i], 10);
         }
-        return val;
+        return val * (is_negative ? -1 : 1);
     }
     
     if (t.len == 1) return 0; // simple '0'
+    if (is_negative && t.len == 2) return 0; // simple '-0'
 
     u8 base = 10;
-    switch (t.raw[1]) {
+    switch (t.raw[digit_start+1]) {
     case 'x':
     case 'X':
         base = 16; break;
@@ -328,15 +350,15 @@ i64 int_lit_value(parser* restrict p) {
     case 'D':
         break;
     default:
-        error_at_parser(p, "invalid base prefix '%c'", t.raw[1]);
+        error_at_parser(p, "invalid base prefix '%c'", t.raw[digit_start+1]);
     }
 
-    if (t.len < 3) error_at_parser(p, "expected digit after '%c'", t.raw[1]);
+    if (t.len < 3 + digit_start) error_at_parser(p, "expected digit after '%c'", t.raw[digit_start+1]);
 
-    FOR_URANGE_EXCL(i, 2, t.len) {
+    FOR_URANGE_EXCL(i, 2 + digit_start, t.len) {
         val = val * 10 + ascii_to_digit_val(p, t.raw[i], base);
     }
-    return val;
+    return val * (is_negative ? -1 : 1);
 }
 
 string string_lit_value(parser* restrict p) {
@@ -415,8 +437,29 @@ string string_lit_value(parser* restrict p) {
     return val;
 }
 
-// no recursion here!! fun
-AST parse_atomic_expr(parser* restrict p) {
+// takes a parsed AST node and determines if it could possibly be a type expession
+bool is_possible_type_expr(AST n) {
+    switch (n.type) {
+    case astype_array_type_expr:
+    case astype_slice_type_expr:
+    case astype_pointer_type_expr:
+    case astype_struct_type_expr:
+    case astype_union_type_expr:
+    case astype_enum_type_expr:
+    case astype_fn_type_expr:
+
+    case astype_identifier_expr:
+    case astype_basic_type_expr:
+        return true;
+    default:
+        return false;
+    }
+}
+
+#define is_definitely_not_type_expr_trust_me_bro(ast_node) (!is_possible_type_expr((ast_node)))
+
+// jesus christ
+AST parse_atomic_expr(parser* restrict p, bool type_expr) {
     AST n = NULL_AST;
 
     bool out = false;
@@ -479,8 +522,6 @@ AST parse_atomic_expr(parser* restrict p) {
         
             n.as_literal_expr->value.kind = ev_float;
             n.as_literal_expr->value.as_float = float_lit_value(p);
-        
-            printf("[%lf]\n", n.as_literal_expr->value.as_float);
 
             advance_token;
             break;
@@ -712,7 +753,7 @@ AST parse_atomic_expr(parser* restrict p) {
 
             break;
         
-        case tt_carat: 
+        case tt_carat:
             if (is_null_AST(n))
                 error_at_parser(p, "expected expression before deref (THIS SHOULD NEVER HAPPEN - CONTACT SANDWICH)");
             
@@ -725,15 +766,286 @@ AST parse_atomic_expr(parser* restrict p) {
             n = temp;
             advance_token;
             break;
-        
+
         case tt_keyword_struct:
-        case tt_keyword_union:
-        case tt_keyword_fn:
-        case tt_keyword_enum:
-            TODO("complex type literals");
+            if (!is_null_AST(n)) {
+                out = true;
+                break;
+            }
+            n = new_ast_node(&p->alloca, astype_struct_type_expr);
+
+            n.base->start = &current_token;
+            advance_token;
+
+            if (current_token.type != tt_open_brace)
+                error_at_parser(p, "expected '{' after 'struct'");
+            advance_token;
+
+            if (current_token.type == tt_close_brace) {
+                dynarr_init_AST_typed_field(&n.as_struct_type_expr->fields, 1);
+                advance_token;
+                break;
+            }
+
+            dynarr_init_AST_typed_field(&n.as_struct_type_expr->fields, 8);
+            
+            while (true) {
+
+                AST field = parse_expr(p);
+
+                if (is_null_AST(field))
+                    error_at_parser(p, "expected struct name");
+                if (field.type != astype_identifier_expr)
+                    error_at_AST(p, field, "field must be an identifier");
+                
+                AST type = NULL_AST;
+                if (current_token.type == tt_colon) {
+                    advance_token;
+                    type = parse_expr(p);
+
+                    if (current_token.type == tt_semicolon) {
+                        dynarr_append_AST_typed_field(&n.as_struct_type_expr->fields, (AST_typed_field){
+                            field, type
+                        });
+                        advance_token;
+                        if (current_token.type == tt_close_brace) {
+                            break;
+                        }
+                        continue;
+                    } else {
+                        error_at_parser(p, "expected ';'");
+                    }
+
+                } else if (current_token.type == tt_comma) {
+                    dynarr_append_AST_typed_field(&n.as_struct_type_expr->fields, (AST_typed_field){
+                        field, type
+                    });
+                    advance_token;
+                    if (current_token.type != tt_identifier) {
+                        error_at_parser(p, "expected field name");
+                    }
+                    continue;
+                } else {
+                    error_at_parser(p, "expected ':' or ','");
+                }
+            }
+            n.base->end = &current_token;
+            advance_token;
             break;
+
+        case tt_keyword_union:
+            if (!is_null_AST(n)) {
+                out = true;
+                break;
+            }
+            n = new_ast_node(&p->alloca, astype_union_type_expr);
+
+            n.base->start = &current_token;
+            advance_token;
+
+            if (current_token.type != tt_open_brace)
+                error_at_parser(p, "expected '{' after 'struct'");
+            advance_token;
+
+            if (current_token.type == tt_close_brace) {
+                dynarr_init_AST_typed_field(&n.as_union_type_expr->fields, 1);
+                advance_token;
+                break;
+            }
+
+            dynarr_init_AST_typed_field(&n.as_union_type_expr->fields, 8);
+            
+            while (true) {
+
+                AST field = parse_expr(p);
+
+                if (is_null_AST(field))
+                    error_at_parser(p, "expected field name");
+                if (field.type != astype_identifier_expr)
+                    error_at_AST(p, field, "field must be an identifier");
+                
+                AST type = NULL_AST;
+                if (current_token.type == tt_colon) {
+                    advance_token;
+                    type = parse_expr(p);
+
+                    if (current_token.type == tt_semicolon) {
+                        dynarr_append_AST_typed_field(&n.as_struct_type_expr->fields, (AST_typed_field){
+                            field, type
+                        });
+                        advance_token;
+                        if (current_token.type == tt_close_brace) {
+                            break;
+                        }
+                        continue;
+                    } else {
+                        error_at_parser(p, "expected ';'");
+                    }
+
+                } else if (current_token.type == tt_comma) {
+                    dynarr_append_AST_typed_field(&n.as_union_type_expr->fields, (AST_typed_field){
+                        field, type
+                    });
+                    advance_token;
+                    if (current_token.type != tt_identifier) {
+                        error_at_parser(p, "expected field name");
+                    }
+                    continue;
+                } else {
+                    error_at_parser(p, "expected ':' or ','");
+                }
+            }
+            n.base->end = &current_token;
+            advance_token;
+            break;
+
+        case tt_keyword_enum:
+            if (!is_null_AST(n)) {
+                out = true;
+                break;
+            }
+            n = new_ast_node(&p->alloca, astype_enum_type_expr);
+            n.base->start = &current_token;
+            advance_token;
+
+
+            // parse optional backing type
+            if (current_token.type != tt_open_brace) {
+                AST enum_type = parse_type_expr(p);
+                if (is_null_AST(enum_type)) {
+                    error_at_parser(p, "expected a type");
+                }
+                n.as_enum_type_expr->backing_type = enum_type;
+            }
+
+            if (current_token.type != tt_open_brace)
+                error_at_parser(p, "expected '{'");
+            advance_token;
+
+
+
+            if (current_token.type == tt_close_brace) {
+                dynarr_init_AST_enum_variant(&n.as_enum_type_expr->variants, 1);
+                n.base->end = &current_token;
+                advance_token;
+                break;
+            } else {
+                dynarr_init_AST_enum_variant(&n.as_enum_type_expr->variants, 8); // 8 is probably an ok size
+            }
+
+            u64 value = 0;
+            while (true) {
+
+                AST variant = parse_expr(p);
+                if (is_null_AST(variant))
+                    error_at_parser(p, "expected field name");
+                if (variant.type != astype_identifier_expr)
+                    error_at_AST(p, variant, "enum variant must be an identifier");
+                
+
+                if (current_token.type == tt_equal) {
+                    advance_token;
+                    if (current_token.type != tt_literal_int)
+                        error_at_parser(p, "enum variant value must be an integer literal");
+
+                    value = int_lit_value(p);
+                    advance_token;
+                }
+
+                dynarr_append_AST_enum_variant(&n.as_enum_type_expr->variants, (AST_enum_variant){
+                    variant,
+                    value
+                });
+                
+                value++;
+
+                if (current_token.type == tt_comma) {
+                    advance_token;
+                    if (current_token.type == tt_close_brace) {
+                        break;
+                    } else {
+                        continue;
+                    }
+                } else if (current_token.type == tt_close_brace) {
+                    break;
+                } else {
+                    error_at_parser(p, "expected ',' or '}'");
+                }
+
+            }
+
+            n.base->end = &current_token;
+            advance_token;
+            break;
+
+        case tt_keyword_fn:
+            TODO("fn type expression");
+            break;
+
         case tt_open_brace:
-            TODO("compound literal");
+
+            // if previously parsed expression might be a type and we are looking for a type, return that
+            if (!is_null_AST(n) && type_expr) {
+                out = true;
+                break;
+            }
+
+            // if previously parsed expression exists and isnt a type, return that expression
+            if (!is_null_AST(n) && is_definitely_not_type_expr_trust_me_bro(n)) {
+                out = true;
+                break;
+            }
+
+            if (n.type == astype_fn_type_expr) {
+                AST func_lit = new_ast_node(&p->alloca, astype_func_literal_expr);
+                func_lit.as_func_literal_expr->base.start = n.base->start;
+                func_lit.as_func_literal_expr->type = n;
+                AST code_block = parse_block_stmt(p);
+                func_lit.as_func_literal_expr->base.end = code_block.base->end;
+                n = func_lit;
+                break;
+            }
+
+            AST lit = new_ast_node(&p->alloca, astype_comp_literal_expr);
+            lit.as_comp_literal_expr->type = n;
+            lit.base->start = n.base->start;
+
+            advance_token;
+            if (current_token.type == tt_close_brace) {
+                dynarr_init_AST(&lit.as_comp_literal_expr->elems, 1);
+                lit.base->end = &current_token;
+                break;
+            }
+
+            dynarr_init_AST(&lit.as_comp_literal_expr->elems, 4);
+
+            while (true) {
+                AST expr = parse_expr(p);
+
+                if (is_null_AST(expr))
+                    error_at_parser(p, "expected an expression");
+
+                dynarr_append_AST(&lit.as_comp_literal_expr->elems, expr);
+
+                if (current_token.type == tt_comma) {
+                    advance_token;
+                    if (current_token.type == tt_close_brace) {
+                        break;
+                    } else {
+                        continue;
+                    }
+                } else if (current_token.type == tt_close_brace) {
+        break;
+                    break;
+                } else {
+                    error_at_parser(p, "expected ',' or '}'");
+                }
+            }
+
+            // TODO("enum shittery");
+            lit.base->end = &current_token;
+            n = lit;
+            advance_token;
             break;
 
         default:
@@ -885,7 +1197,6 @@ AST parse_stmt(parser* restrict p) {
             error_at_parser(p, "expected identifier, got '%s'", token_type_str[current_token.type]);
 
         n.as_type_decl_stmt->lhs = parse_expr(p);
-        advance_token;
         
         if (current_token.type != tt_equal)
             error_at_parser(p, "expected '=', got '%s'", token_type_str[current_token.type]);

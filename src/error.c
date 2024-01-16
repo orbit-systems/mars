@@ -83,10 +83,11 @@ void error_at_string(string path, string text, string pos, char* message, ...) {
     }
     printf(style_Reset);
 
-    printf(style_Italic);
-    printf(style_Bold);
-    printf(" %s\n", ERROR_MSG_BUFFER);
-    printf(style_Reset);
+    // printf(style_Italic);
+    // printf(style_Bold);
+    // printf(" %s\n", ERROR_MSG_BUFFER);
+    // printf(style_Reset);
+    printf("\n");
 
     exit(EXIT_FAILURE);
 }
@@ -144,10 +145,11 @@ void warning_at_string(string path, string text, string pos, char* message, ...)
     }
     printf(style_Reset);
 
-    printf(style_Italic);
-    printf(style_Bold);
-    printf(" %s\n", ERROR_MSG_BUFFER);
-    printf(style_Reset);
+    // printf(style_Italic);
+    // printf(style_Bold);
+    // printf(" %s\n", ERROR_MSG_BUFFER);
+    // printf(style_Reset);
+    printf("\n");
 
     exit(EXIT_FAILURE);
 

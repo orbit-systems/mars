@@ -15,6 +15,8 @@
 dynarr_lib(arena_block)
 dynarr_lib(mars_type)
 dynarr_lib(mars_struct_field)
+dynarr_lib(AST_typed_field)
+dynarr_lib(AST_enum_variant)
 dynarr_lib(size_t)
 dynarr_lib(string)
 dynarr_lib(AST)

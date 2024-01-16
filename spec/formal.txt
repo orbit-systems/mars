@@ -148,20 +148,20 @@ operators
         | access fields from a struct or a struct pointer: a_struct.field
         | access fields from a union or a union pointer: a_union.field
         | access variants of enums. can be implicitly typed where the type can be otherwise derived : an_enum.variant, .variant
+        | access a single return value from a multiple-return-value function: some_function().return_val
         | access hidden fields of a slice: a_slice.raw, a_slice.len
         |
         | access entities from other modules: a_module::something
 
     function
-        inline  inline a function call
+        inline  inline a function call - only works with constant functions contained in the current module
 
         
 
     precendence
-        unary operators have highest precedence after atomic expressions (field selection, array index, pointer deref)
+        unary operators have highest precedence after atomic expressions (selection, array index, pointer deref, function call)
 
-        non-unary operator precedence: - note: () is function calls.
-        6   () 
+        non-unary operator precedence. 
         5   *   /   %   %%  &   <<   >>  ~|
         4   +   -   |   ~
         3   ==  !=  <   >   <=  >=

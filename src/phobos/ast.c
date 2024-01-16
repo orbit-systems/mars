@@ -40,25 +40,36 @@ void print_indent(int n) {
 // FOR DEBUGGING PURPOSES!! THIS IS NOT GOING TO BE MEMORY SAFE LMFAO
 void dump_tree(AST node, int n) {
 
-    if (is_null_AST(node)) return;
 
     print_indent(n);
 
+    if (is_null_AST(node)) {
+        printf("[null AST]\n");
+        return;
+    }
+
     switch (node.type) {
     case astype_invalid:
-        printf("[INVALID]\n");
+        printf("[invalid]\n");
         break;
     case astype_identifier_expr:
-        printf("identifier '%s'\n", clone_to_cstring(node.as_identifier_expr->tok->text));
+        printf("ident '%s'\n", clone_to_cstring(node.as_identifier_expr->tok->text));
         break;
     case astype_literal_expr:
         switch (node.as_literal_expr->value.kind) {
         case ev_bool: printf("bool literal\n"); break;
-        case ev_float: printf("bool literal\n"); break;
+        case ev_float: printf("float literal\n"); break;
         case ev_int: printf("int literal\n"); break;
         case ev_pointer: printf("pointer literal\n"); break;
         case ev_string: printf("string literal\n"); break;
         default: printf("[invalid] literal\n"); break;
+        }
+        break;
+    case astype_comp_literal_expr:
+        printf("compound literal\n");
+        dump_tree(node.as_comp_literal_expr->type, n+1);
+        FOR_URANGE_EXCL(i, 0, node.as_comp_literal_expr->elems.len) {
+            dump_tree(node.as_comp_literal_expr->elems.raw[i], n+1);
         }
         break;
     case astype_paren_expr:
@@ -129,17 +140,58 @@ void dump_tree(AST node, int n) {
         break;
     case astype_decl_stmt:
         if (node.as_decl_stmt->is_mut) 
-            printf("mut \n");
+            printf("mut decl\n");
         else 
-            printf("let \n");
+            printf("let decl\n");
 
         FOR_URANGE_EXCL(i, 0, node.as_decl_stmt->lhs.len) {
             dump_tree(node.as_decl_stmt->lhs.raw[i], n+1);
         }
         dump_tree(node.as_decl_stmt->type, n+1);
         dump_tree(node.as_decl_stmt->rhs, n+1);
-
         break;
+    case astype_type_decl_stmt:
+        printf("type decl\n");
+        dump_tree(node.as_type_decl_stmt->lhs, n+1);
+        dump_tree(node.as_type_decl_stmt->rhs, n+1);
+        break;
+    case astype_struct_type_expr:
+        printf("struct type expr\n");
+        FOR_URANGE_EXCL(i, 0, node.as_struct_type_expr->fields.len) {
+            dump_tree(node.as_struct_type_expr->fields.raw[i].field, n+1);
+            dump_tree(node.as_struct_type_expr->fields.raw[i].type, n+1);
+        }
+        break;
+    case astype_union_type_expr:
+        printf("union type expr\n");
+        FOR_URANGE_EXCL(i, 0, node.as_struct_type_expr->fields.len) {
+            dump_tree(node.as_struct_type_expr->fields.raw[i].field, n+1);
+            dump_tree(node.as_struct_type_expr->fields.raw[i].type, n+1);
+        }
+        break;
+    case astype_enum_type_expr:
+        printf("enum type expr\n");
+        dump_tree(node.as_enum_type_expr->backing_type, n+1);
+        FOR_URANGE_EXCL(i, 0, node.as_enum_type_expr->variants.len) {
+            print_indent(n+1);
+            printstr((node.as_enum_type_expr->variants.raw[i].ident.as_identifier_expr->tok->text)); 
+            
+            printf(" = %d\n", node.as_enum_type_expr->variants.raw[i].value);
+        }
+        break;
+    case astype_pointer_type_expr:
+        printf("^ type expr\n");
+        dump_tree(node.as_pointer_type_expr->subexpr, n+1);
+        break;
+    case astype_slice_type_expr:
+        printf("[] type expr\n");
+        dump_tree(node.as_slice_type_expr->subexpr, n+1);
+        break;
+    case astype_basic_type_expr:
+        printstr(node.as_basic_type_expr->lit->text);
+        printf("\n");
+        break;
+
     default:
         general_error("dump_tree(): invalid/implemented node of type %d '%s'", node.type, ast_type_str[node.type]);
         break;

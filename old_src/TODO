@@ -1,2 +1,0 @@
-make error messages actually show up on the correct portions of text 
-(maybe use begin and end tokens for each AST node? or figure it out on the fly? idk)

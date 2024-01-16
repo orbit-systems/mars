@@ -5,7 +5,7 @@ OBJECTS = $(SRC:src/%.c=build/%.o)
 EXECUTABLE_NAME = mars
 
 ifeq ($(OS),Windows_NT)
-	EXECUTABLE_NAME = mars.exe
+	EXECUTABLE_NAME = $(EXECUTABLE_NAME).exe
 endif
 
 CC = gcc
@@ -25,7 +25,7 @@ build: $(OBJECTS)
 	@-cp build/phobos/* build/
 
 	@echo linking with $(LD)
-	@$(LD) $(OBJECTS) -o $(EXECUTABLE_NAME)
+	@$(LD) $(OBJECTS) -o $(EXECUTABLE_NAME) -lm
 
 	@echo $(EXECUTABLE_NAME) built
 	
