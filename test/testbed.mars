@@ -1,11 +1,6 @@
 module test;
 
 
-let x = struct {a: addr; b: int; c: []u8;} {
-    null, 2, "lmao"
-};
-
-
-let one_return = fn( /* params */ ) -> int {...};
-
-let multi_return = fn( /* params */ ) -> (result: int, ok: bool) {...};
+let f = fn(x, y: int, b: int) -> int {
+    return 1;
+}

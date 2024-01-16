@@ -979,13 +979,91 @@ AST parse_atomic_expr(parser* restrict p, bool type_expr) {
             break;
 
         case tt_keyword_fn:
-            TODO("fn type expression");
+            if (!is_null_AST(n)) {
+                out = true;
+                break;
+            }
+            n = new_ast_node(&p->alloca, astype_fn_type_expr);
+            n.base->start = &current_token;
+            advance_token;
+
+            if (current_token.type != tt_open_paren)
+                error_at_parser(p, "expected '(' after 'fn'");
+            advance_token;
+
+
+            dynarr_init_AST_typed_field(&n.as_fn_type_expr->parameters, 4);
+            dynarr_init_AST_typed_field(&n.as_fn_type_expr->returns, 2);
+            
+            while (current_token.type != tt_close_paren) {
+
+                AST field = parse_expr(p);
+
+                if (is_null_AST(field))
+                    error_at_parser(p, "expected parameter name");
+                if (field.type != astype_identifier_expr)
+                    error_at_AST(p, field, "parameter must be an identifier");
+                
+                AST type = NULL_AST;
+                if (current_token.type == tt_colon) {
+                    advance_token;
+                    type = parse_expr(p);
+
+                    if (current_token.type == tt_comma) {
+                        dynarr_append_AST_typed_field(&n.as_fn_type_expr->parameters, (AST_typed_field){
+                            field, type
+                        });
+                        advance_token;
+                        if (current_token.type == tt_close_paren) {
+                            break;
+                        }
+                        continue;
+                    } else if (current_token.type == tt_close_paren) {
+                        break;
+                    } else {
+                        error_at_parser(p, "expected ',' or ')'");
+                    }
+
+                } else if (current_token.type == tt_comma) {
+                    dynarr_append_AST_typed_field(&n.as_fn_type_expr->parameters, (AST_typed_field){
+                        field, type
+                    });
+                    advance_token;
+                    if (current_token.type != tt_identifier) {
+                        error_at_parser(p, "expected parameter name");
+                    }
+                    continue;
+                } else {
+                    error_at_parser(p, "expected ':' or ','");
+                }
+            }
+            n.base->end = &current_token;
+            advance_token;
+
+            // no return type
+            if (current_token.type != tt_arrow_right) {
+                break;
+            }
+            advance_token;
+
+            // if simple, one value return
+            if (current_token.type != tt_open_paren) {
+                AST return_type = parse_type_expr(p);
+                // dump_tree(return_type, 0);
+                if (is_null_AST(return_type))
+                    error_at_parser(p, "expected a type expression");
+                if (!is_possible_type_expr(return_type))
+                    error_at_AST(p, return_type, "return type must be a type expression");
+            }
+
+            TODO("fn not finished");
             break;
 
         case tt_open_brace:
 
-            // if previously parsed expression might be a type and we are looking for a type, return that
-            if (!is_null_AST(n) && type_expr) {
+            // if we are looking for a type expression, return the previously parsed expression
+            // because this aint gonna be a type
+            if (type_expr) {
                 out = true;
                 break;
             }

@@ -51,15 +51,17 @@ void error_at_string(string path, string text, string pos, char* message, ...) {
     line_and_col(text, pos.raw-text.raw, &line_ptr, &line_len, &line, &column);
     if (line_ptr[line_len-1] == '\r') line_len--; // stupid windows line breaks
 
+    printf(style_Italic style_Bold);
     printstr(path);
     printf(" @ %d:%d ", line, column);
+    printf(style_Reset);
 
     printf(style_Dim "-> " style_Reset);
 
     printf(style_Italic style_Bold "%s" style_Reset, ERROR_MSG_BUFFER);
 
     printf(style_Dim);
-    printf("\n      | ");
+    // printf("\n      | ");
     printf("\n %4d | ", line);
     printf(style_Reset);
     printstr(string_make(line_ptr, line_len));
@@ -120,7 +122,7 @@ void warning_at_string(string path, string text, string pos, char* message, ...)
     printf(style_Italic style_Bold "%s" style_Reset, ERROR_MSG_BUFFER);
 
     printf(style_Dim);
-    printf("\n        | ");
+    // printf("\n        | ");
     printf("\n   % 4d | ", line);
     printf(style_Reset);
     printstr(string_make(line_ptr, line_len));
