@@ -65,6 +65,7 @@ void parse_file(parser* restrict p) {
 
     p->head = new_ast_node(&p->alloca, astype_block_stmt);
     AST smth = parse_stmt(p);
+    emit_dot(p->path, smth);
     dump_tree(smth, 0);
 }
 
@@ -169,7 +170,7 @@ AST parse_unary_expr(parser* restrict p, bool type_expr) {
 
         n.as_cast_expr->type = parse_expr(p);
 
-        if (current_token.type != tt_open_paren)
+        if (current_token.type != tt_close_paren)
             error_at_parser(p, "expected ')', got %s", token_type_str[current_token.type]);
         advance_token;
 

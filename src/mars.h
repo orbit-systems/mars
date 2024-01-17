@@ -11,6 +11,7 @@ typedef struct cmd_arg_s {
 typedef struct flag_set_s {
     string input_path;
     string output_path;
+    bool output_dot;
 } flag_set;
 
 cmd_arg make_argument(char* s);

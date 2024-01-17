@@ -11,14 +11,14 @@ endif
 CC = gcc
 LD = gcc
 
-DEBUGFLAGS = -g -rdynamic -pg
+DEBUGFLAGS = -g -lm -O0
 ASANFLAGS = -fsanitize=undefined -fsanitize=address
 DONTBEAFUCKINGIDIOT = -Wall -Wextra -pedantic -Wno-missing-field-initializers -Wno-unused-result
-CFLAGS = -O3 -Wincompatible-pointer-types
+CFLAGS = -O3 -Wincompatible-pointer-types -lm
 
 build/%.o: src/%.c
 	@echo compiling $<
-	@$(CC) -c -o $@ $< -Isrc/ -MD $(CFLAGS)
+	@$(CC) -c -o $@ $< -g -Isrc/ -MD $(CFLAGS)
 
 build: $(OBJECTS)
 	@-cp build/deimos/* build/
@@ -31,13 +31,13 @@ build: $(OBJECTS)
 	
 
 dbgbuild/%.o: src/%.c
-	@$(CC) -c -o $@ $< -Isrc/ -MD $(DEBUGFLAGS)
+	@$(CC) -c -o $@ $< -Isrc/ -MD $(DEBUGFLAGS) 
 
 dbgbuild: $(OBJECTS)
 	@-cp build/deimos/* build/
 	@-cp build/phobos/* build/
 
-	@$(LD) $(OBJECTS) -o $(EXECUTABLE_NAME)
+	@$(LD) $(OBJECTS) -o $(EXECUTABLE_NAME) $(DEBUGFLAGS)
 	
 
 test: build
