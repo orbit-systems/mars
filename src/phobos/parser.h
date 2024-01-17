@@ -14,7 +14,10 @@ typedef struct parser {
     size_t current_tok;
 
     AST    module_decl;
-    AST    head;
+    dynarr(AST) stmts;
+
+    size_t num_nodes;
+
 } parser;
 
 parser make_parser(lexer* restrict l, arena alloca);

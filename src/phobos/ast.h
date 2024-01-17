@@ -287,5 +287,4 @@ typedef struct {
 extern char* ast_type_str[];
 extern size_t ast_type_size[];
 
-AST new_ast_node(arena* restrict a, ast_type type);
 void dump_tree(AST node, int n);

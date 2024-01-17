@@ -90,11 +90,10 @@ compilation_unit* phobos_perform_frontend() {
         long seconds = lex_end.tv_sec - lex_begin.tv_sec;
         long microseconds = lex_end.tv_usec - lex_begin.tv_usec;
         double elapsed = seconds + microseconds*1e-6;
-        double tokens_per_sec = tokens_lexed / elapsed;
         printf(style_FG_Cyan style_Bold "LEXING" style_Reset);
-        printf("\t  time   : %fs\n", elapsed);
-        printf("\t  tokens : %lu\n", tokens_lexed);
-        printf("\t  tok/s  : %.3f\n", tokens_per_sec);
+        printf("\t  time      : %fs\n", elapsed);
+        printf("\t  tokens    : %lu\n", tokens_lexed);
+        printf("\t  tok/s     : %.3f\n", tokens_lexed / elapsed);
     }
 
     dynarr(parser) parsers;
@@ -112,9 +111,11 @@ compilation_unit* phobos_perform_frontend() {
     // timing
     struct timeval parse_begin, parse_end;
     if (mars_flags.print_timings) gettimeofday(&parse_begin, 0);
+    size_t ast_nodes_created = 0;
 
     FOR_URANGE_EXCL(i, 0, parsers.len) {
         parse_file(&parsers.raw[i]);
+        ast_nodes_created += parsers.raw[i].num_nodes;
     }
 
     /* display timing */ 
@@ -123,11 +124,10 @@ compilation_unit* phobos_perform_frontend() {
         long seconds = parse_end.tv_sec - parse_begin.tv_sec;
         long microseconds = parse_end.tv_usec - parse_begin.tv_usec;
         double elapsed = seconds + microseconds*1e-6;
-        double tokens_per_sec = tokens_lexed / elapsed;
         printf(style_FG_Blue style_Bold "PARSING" style_Reset);
-        printf("\t  time   : %fs\n", elapsed);
-        printf("\t  tokens : %lu\n", tokens_lexed);
-        printf("\t  tok/s  : %.3f\n", tokens_per_sec);
+        printf("\t  time      : %fs\n", elapsed);
+        printf("\t  AST nodes : %lu\n", ast_nodes_created);
+        printf("\t  nodes/s   : %.3f\n", ast_nodes_created / elapsed);
     }
 
     // cleanup

@@ -1,5 +1,10 @@
 module test;
 
+import mem "memory";
+import neptune "neptune";
+
+let println = neptune::kprintln;
+let printf = neptune::kprintf;
 
 // #block_symbol sets the symbol of a function's code
 // block to a specific string
@@ -8,24 +13,15 @@ let main = fn #block_symbol("main") () {
     let str = "bruh";
     let str2 = "bruh2";
 
-    if mem::str_equal(str, str2) {
-        neptune::kprintln("equal");
+    if mem::str_eq(str, str2) {
+        println("equal");
     } else {
-        neptune::kprintln("not equal");
-    }
-
-    for mut i: u64 = 0; i < 10; i+=1; {
-        neptune::kprintf("%int\n", {&i});
+        println("not equal");
     }
 
     for i: u64 in 0..<10 {
-        neptune::kprintf("%int\n", {&i});
+        printf("%int\n", {&i});
     }
 
     while true {}
 };
-
-import mem "memory";
-import neptune "neptune";
-
-let string_equal = mem::str_eq;

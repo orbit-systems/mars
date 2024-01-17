@@ -164,6 +164,12 @@ token_type scan_number(lexer* restrict lex) {
     advance_char(lex);
     while (true) {
         if (current_char(lex) == '.') {
+            
+            // really quick, check if its one of the range operators? this causes bugs very often :sob:
+            if (peek_char(lex, 1) == '.') {
+                return tt_literal_int;
+            }
+
             advance_char(lex);
             while (true) {
                 if (current_char(lex) == 'e' && peek_char(lex, 1) == '-') {
@@ -357,7 +363,7 @@ token_type scan_operator(lexer* restrict lex) {
             }
             if (peek_char(lex, 1) == '=') {
                 advance_char_n(lex, 2);
-                return tt_range_less;
+                return tt_range_eq;
             }
         } else if (valid_0d(current_char(lex))) {
             advance_char_n(lex, -2);

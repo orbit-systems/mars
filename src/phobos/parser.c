@@ -4,6 +4,8 @@
 #include "parser.h"
 #include "ast.h"
 
+AST new_ast_node(parser * restrict p, ast_type type);
+
 // sandwichman's BLAZINGLY 🔥🔥 FAST 🚀🚀 parser in RUST 🦀🦀 + AI POWERED with CHATGPT 🤖🧠
 
 #define current_token ((p)->tokens.raw[(p)->current_tok])
@@ -33,13 +35,14 @@ parser make_parser(lexer* restrict l, arena alloca) {
     p.path   = l->path;
     p.src    = l->src;
     p.current_tok = 0;
+    p.num_nodes = 0;
 
     return p;
 }
 
 AST parse_module_decl(parser* restrict p) {
 
-    AST n = new_ast_node(&p->alloca, astype_module_decl);
+    AST n = new_ast_node(p, astype_module_decl);
 
     if (current_token.type != tt_keyword_module)
         error_at_parser(p, "expected module declaration, got %s", token_type_str[current_token.type]);
@@ -65,8 +68,13 @@ void parse_file(parser* restrict p) {
     
     p->module_decl = parse_module_decl(p);
 
-    p->head = new_ast_node(&p->alloca, astype_block_stmt);
-    AST smth = parse_stmt(p);
+    dynarr_init_AST(&p->stmts, 16);
+
+    AST stmt = parse_stmt(p);
+    while (p->tokens.raw[p->current_tok].type != tt_EOF) {
+        AST stmt = parse_stmt(p);
+        dynarr_append_AST(&p->stmts, stmt);
+    }
     // emit_dot(p->path, smth);
     // dump_tree(smth, 0);
 }
@@ -123,7 +131,7 @@ AST parse_binary_expr(parser* restrict p, int precedence) {
 }
 
 AST parse_non_unary_expr(parser* restrict p, AST lhs, int precedence) {
-    AST n = new_ast_node(&p->alloca, astype_binary_op_expr);
+    AST n = new_ast_node(p, astype_binary_op_expr);
     n.as_binary_op_expr->base.start = lhs.base->start;
     n.as_binary_op_expr->op = &current_token;
     n.as_binary_op_expr->lhs = lhs;
@@ -149,7 +157,7 @@ AST parse_unary_expr(parser* restrict p, bool type_expr) {
     case tt_keyword_alignof:
     case tt_keyword_offsetof:
     case tt_keyword_inline:
-        n = new_ast_node(&p->alloca, astype_unary_op_expr);
+        n = new_ast_node(p, astype_unary_op_expr);
         n.as_unary_op_expr->base.start = &current_token;
         n.as_unary_op_expr->op = &current_token;
         advance_token;
@@ -161,7 +169,7 @@ AST parse_unary_expr(parser* restrict p, bool type_expr) {
     
     case tt_keyword_cast:
     case tt_keyword_bitcast:
-        n = new_ast_node(&p->alloca, astype_cast_expr);
+        n = new_ast_node(p, astype_cast_expr);
         n.as_cast_expr->base.start = &current_token;
         n.as_cast_expr->is_bitcast = current_token.type == tt_keyword_bitcast;
         advance_token;
@@ -182,7 +190,7 @@ AST parse_unary_expr(parser* restrict p, bool type_expr) {
         break;
 
     case tt_carat:
-        n = new_ast_node(&p->alloca, astype_pointer_type_expr);
+        n = new_ast_node(p, astype_pointer_type_expr);
         n.as_pointer_type_expr->base.start = &current_token;
         advance_token;
 
@@ -193,7 +201,7 @@ AST parse_unary_expr(parser* restrict p, bool type_expr) {
     
     case tt_open_bracket:
         if (peek_token(1).type == tt_close_bracket) {
-            n = new_ast_node(&p->alloca, astype_slice_type_expr);
+            n = new_ast_node(p, astype_slice_type_expr);
             n.as_slice_type_expr->base.start = &current_token;
 
             advance_n_tok(2);
@@ -201,7 +209,7 @@ AST parse_unary_expr(parser* restrict p, bool type_expr) {
 
             n.as_slice_type_expr->base.end = &peek_token(-1);
         } else {
-            n = new_ast_node(&p->alloca, astype_array_type_expr);
+            n = new_ast_node(p, astype_array_type_expr);
             n.as_array_type_expr->base.start = &current_token;
             advance_token;
 
@@ -479,7 +487,7 @@ AST parse_atomic_expr(parser* restrict p, bool type_expr) {
                 break;
             }
 
-            n = new_ast_node(&p->alloca, astype_literal_expr);
+            n = new_ast_node(p, astype_literal_expr);
             n.as_literal_expr->base.start = &current_token;
             n.as_literal_expr->base.end = &current_token;
 
@@ -494,7 +502,7 @@ AST parse_atomic_expr(parser* restrict p, bool type_expr) {
                 break;
             }
 
-            n = new_ast_node(&p->alloca, astype_literal_expr);
+            n = new_ast_node(p, astype_literal_expr);
             n.as_literal_expr->base.start = &current_token;
             n.as_literal_expr->base.end = &current_token;
 
@@ -509,7 +517,7 @@ AST parse_atomic_expr(parser* restrict p, bool type_expr) {
                 break;
             }
 
-            n = new_ast_node(&p->alloca, astype_literal_expr);
+            n = new_ast_node(p, astype_literal_expr);
             n.as_literal_expr->base.start = &current_token;
             n.as_literal_expr->base.end = &current_token;
 
@@ -524,7 +532,7 @@ AST parse_atomic_expr(parser* restrict p, bool type_expr) {
                 break;
             }
 
-            n = new_ast_node(&p->alloca, astype_literal_expr);
+            n = new_ast_node(p, astype_literal_expr);
             n.as_literal_expr->base.start = &current_token;
             n.as_literal_expr->base.end = &current_token;
         
@@ -539,7 +547,7 @@ AST parse_atomic_expr(parser* restrict p, bool type_expr) {
                 break;
             }
 
-            n = new_ast_node(&p->alloca, astype_literal_expr);
+            n = new_ast_node(p, astype_literal_expr);
             n.as_literal_expr->base.start = &current_token;
             n.as_literal_expr->base.end = &current_token;
         
@@ -554,7 +562,7 @@ AST parse_atomic_expr(parser* restrict p, bool type_expr) {
                 break;
             }
 
-            n = new_ast_node(&p->alloca, astype_literal_expr);
+            n = new_ast_node(p, astype_literal_expr);
             n.as_literal_expr->base.start = &current_token;
             n.as_literal_expr->base.end = &current_token;
         
@@ -585,7 +593,7 @@ AST parse_atomic_expr(parser* restrict p, bool type_expr) {
                 break;
             }
 
-            n = new_ast_node(&p->alloca, astype_basic_type_expr);
+            n = new_ast_node(p, astype_basic_type_expr);
             n.as_basic_type_expr->base.start = &current_token;
             n.as_basic_type_expr->base.end = &current_token;
             n.as_basic_type_expr->lit = &current_token;
@@ -599,7 +607,7 @@ AST parse_atomic_expr(parser* restrict p, bool type_expr) {
                 out = true;
                 break;
             }
-            n = new_ast_node(&p->alloca, astype_identifier_expr);
+            n = new_ast_node(p, astype_identifier_expr);
             n.as_identifier_expr->base.end = &current_token;
             n.as_identifier_expr->base.start = &current_token;
             n.as_identifier_expr->tok = &current_token;
@@ -610,7 +618,7 @@ AST parse_atomic_expr(parser* restrict p, bool type_expr) {
         case tt_open_paren:
             if (is_null_AST(n)) {
                 // regular old paren expression
-                n = new_ast_node(&p->alloca, astype_paren_expr);
+                n = new_ast_node(p, astype_paren_expr);
                 n.as_paren_expr->base.start = &current_token;
                 advance_token;
 
@@ -623,7 +631,7 @@ AST parse_atomic_expr(parser* restrict p, bool type_expr) {
             } else {
                 // function call!
                 AST temp;
-                temp = new_ast_node(&p->alloca, astype_call_expr);
+                temp = new_ast_node(p, astype_call_expr);
                 temp.as_call_expr->base.start = n.base->start;
                 advance_token;
 
@@ -654,7 +662,7 @@ AST parse_atomic_expr(parser* restrict p, bool type_expr) {
         case tt_period:
             if (is_null_AST(n)) {
                 // implicit selector
-                n = new_ast_node(&p->alloca, astype_impl_selector_expr);
+                n = new_ast_node(p, astype_impl_selector_expr);
                 
                 n.as_impl_selector_expr->base.start = &current_token;
                 advance_token;
@@ -662,7 +670,7 @@ AST parse_atomic_expr(parser* restrict p, bool type_expr) {
                 if (current_token.type != tt_identifier)
                     error_at_parser(p, "expected identifer after '.'");
                 
-                AST temp = new_ast_node(&p->alloca, astype_identifier_expr);
+                AST temp = new_ast_node(p, astype_identifier_expr);
 
                 temp.as_identifier_expr->base.end = &current_token;
                 temp.as_identifier_expr->base.start = &current_token;
@@ -675,14 +683,14 @@ AST parse_atomic_expr(parser* restrict p, bool type_expr) {
 
             } else {
                 // regular selector
-                AST temp = new_ast_node(&p->alloca, astype_selector_expr);
+                AST temp = new_ast_node(p, astype_selector_expr);
                 temp.as_selector_expr->base.start = n.base->start;
                 advance_token;
 
                 if (current_token.type != tt_identifier)
                     error_at_parser(p, "expected identifer after '.'");
 
-                AST ident = new_ast_node(&p->alloca, astype_identifier_expr);
+                AST ident = new_ast_node(p, astype_identifier_expr);
                 
                 ident.as_identifier_expr->base.end = &current_token;
                 ident.as_identifier_expr->base.start = &current_token;
@@ -701,14 +709,14 @@ AST parse_atomic_expr(parser* restrict p, bool type_expr) {
             if (is_null_AST(n)) {
                 error_at_parser(p, "expected expression before '::'");
             } else {
-                AST temp = new_ast_node(&p->alloca, astype_entity_selector_expr);
+                AST temp = new_ast_node(p, astype_entity_selector_expr);
                 temp.as_entity_selector_expr->base.start = n.base->start;
                 advance_token;
 
                 if (current_token.type != tt_identifier)
                     error_at_parser(p, "expected identifer after '.'");
 
-                AST ident = new_ast_node(&p->alloca, astype_identifier_expr);
+                AST ident = new_ast_node(p, astype_identifier_expr);
                 
                 ident.as_identifier_expr->base.end = &current_token;
                 ident.as_identifier_expr->base.start = &current_token;
@@ -734,7 +742,7 @@ AST parse_atomic_expr(parser* restrict p, bool type_expr) {
                 if (is_null_AST(first_expr))
                     error_at_parser(p, "expected an expression inside '[]'");
 
-                AST temp = new_ast_node(&p->alloca, astype_index_expr);
+                AST temp = new_ast_node(p, astype_index_expr);
                 temp.as_index_expr->base.start = n.base->start;
                 temp.as_index_expr->base.end = &current_token;
                 temp.as_index_expr->lhs = n;
@@ -743,7 +751,7 @@ AST parse_atomic_expr(parser* restrict p, bool type_expr) {
                 advance_token;
             } else if (current_token.type == tt_colon) {    // slice expr
                 advance_token;
-                AST temp = new_ast_node(&p->alloca, astype_slice_expr);
+                AST temp = new_ast_node(p, astype_slice_expr);
                 temp.as_slice_expr->base.start = n.base->start;
                 temp.as_slice_expr->lhs = n;
                 temp.as_slice_expr->inside_left = first_expr;
@@ -765,7 +773,7 @@ AST parse_atomic_expr(parser* restrict p, bool type_expr) {
             if (is_null_AST(n))
                 error_at_parser(p, "expected expression before deref (THIS SHOULD NEVER HAPPEN - CONTACT SANDWICH)");
             
-            AST temp = new_ast_node(&p->alloca, astype_unary_op_expr);
+            AST temp = new_ast_node(p, astype_unary_op_expr);
             temp.as_unary_op_expr->base.start = n.base->start;
             temp.as_unary_op_expr->base.end = &current_token;
             temp.as_unary_op_expr->op = &current_token;
@@ -780,7 +788,7 @@ AST parse_atomic_expr(parser* restrict p, bool type_expr) {
                 out = true;
                 break;
             }
-            n = new_ast_node(&p->alloca, astype_struct_type_expr);
+            n = new_ast_node(p, astype_struct_type_expr);
 
             n.base->start = &current_token;
             advance_token;
@@ -846,7 +854,7 @@ AST parse_atomic_expr(parser* restrict p, bool type_expr) {
                 out = true;
                 break;
             }
-            n = new_ast_node(&p->alloca, astype_union_type_expr);
+            n = new_ast_node(p, astype_union_type_expr);
 
             n.base->start = &current_token;
             advance_token;
@@ -912,7 +920,7 @@ AST parse_atomic_expr(parser* restrict p, bool type_expr) {
                 out = true;
                 break;
             }
-            n = new_ast_node(&p->alloca, astype_enum_type_expr);
+            n = new_ast_node(p, astype_enum_type_expr);
             n.base->start = &current_token;
             advance_token;
 
@@ -991,14 +999,31 @@ AST parse_atomic_expr(parser* restrict p, bool type_expr) {
                 out = true;
                 break;
             }
-            n = new_ast_node(&p->alloca, astype_fn_type_expr);
+            n = new_ast_node(p, astype_fn_type_expr);
             n.base->start = &current_token;
             advance_token;
 
-            if (current_token.type == tt_hash) {
+            while (current_token.type == tt_hash) {
                 // parse a secondary # tag
                 advance_token;
-                error_at_parser(p, "TODO lmao");
+                if (current_token.type != tt_identifier)
+                    error_at_parser(p, "expected an identifer");
+
+                if (string_eq(current_token.text, to_string("block_symbol"))) {
+                    advance_token;
+                    if (current_token.type != tt_open_paren)
+                        error_at_parser(p, "expected '('");
+                    advance_token;
+
+                    n.as_fn_type_expr->block_symbol_override = parse_expr(p);
+
+                    if (n.as_fn_type_expr->block_symbol_override.type != astype_literal_expr)
+                        error_at_AST(p,n.as_fn_type_expr->block_symbol_override, "expected string literal");
+
+                    if (current_token.type != tt_close_paren)
+                        error_at_parser(p, "expected ')'");
+                    advance_token;
+                }
             }
 
 
@@ -1143,7 +1168,7 @@ AST parse_atomic_expr(parser* restrict p, bool type_expr) {
             }
 
             if (n.type == astype_fn_type_expr) {
-                AST func_lit = new_ast_node(&p->alloca, astype_func_literal_expr);
+                AST func_lit = new_ast_node(p, astype_func_literal_expr);
                 func_lit.as_func_literal_expr->base.start = n.base->start;
                 func_lit.as_func_literal_expr->type = n;
                 AST code_block = parse_block_stmt(p);
@@ -1153,7 +1178,7 @@ AST parse_atomic_expr(parser* restrict p, bool type_expr) {
                 break;
             }
 
-            AST lit = new_ast_node(&p->alloca, astype_comp_literal_expr);
+            AST lit = new_ast_node(p, astype_comp_literal_expr);
             lit.as_comp_literal_expr->type = n;
 
             if (!is_null_AST(n)) {
@@ -1208,15 +1233,41 @@ AST parse_atomic_expr(parser* restrict p, bool type_expr) {
 }
 
 AST parse_import_stmt(parser* restrict p) {
-    TODO("parse_import_stmt()");
+    AST n = new_ast_node(p, astype_import_stmt);
+    n.as_import_stmt->base.start = &current_token;
+    advance_token;
+    
+    if (current_token.type != tt_identifier)
+        error_at_parser(p, "expected identifier for module import");
+
+    n.as_import_stmt->name = parse_expr(p);
+
+    if (n.as_import_stmt->name.type != astype_identifier_expr)
+        error_at_parser(p, "expected an identifer, got an expression");
+
+    if (current_token.type != tt_literal_string)
+        error_at_parser(p, "expected import path");
+    
+    n.as_import_stmt->path = parse_expr(p);
+    
+    n.as_import_stmt->base.end = &current_token;
+
+    if (current_token.type != tt_semicolon)
+        error_at_parser(p, "expected ';'");
+    
+    advance_token;
+    return n;
 }
 
 AST parse_stmt(parser* restrict p) {
     AST n = NULL_AST;
 
     switch (current_token.type) {
+    case tt_keyword_import:
+        n = parse_import_stmt(p);
+        break;
     case tt_keyword_defer:
-        n = new_ast_node(&p->alloca, astype_defer_stmt);
+        n = new_ast_node(p, astype_defer_stmt);
         n.as_defer_stmt->base.start = &current_token;
         advance_token;
 
@@ -1226,7 +1277,7 @@ AST parse_stmt(parser* restrict p) {
         break;
     
     case tt_keyword_if:
-        n = new_ast_node(&p->alloca, astype_if_stmt);
+        n = new_ast_node(p, astype_if_stmt);
         n.as_if_stmt->is_elif = false;
         n.as_if_stmt->base.start = &current_token;
         advance_token;
@@ -1246,7 +1297,7 @@ AST parse_stmt(parser* restrict p) {
         break;
     
     case tt_keyword_while:
-        n = new_ast_node(&p->alloca, astype_while_stmt);
+        n = new_ast_node(p, astype_while_stmt);
         n.as_while_stmt->base.start = &current_token;
         advance_token;
 
@@ -1264,7 +1315,7 @@ AST parse_stmt(parser* restrict p) {
         if ((peek_token(1).type == tt_identifier || peek_token(1).type == tt_identifier_discard) &&
         (peek_token(2).type == tt_colon || peek_token(2).type == tt_keyword_in)) {
             // for-in loop!
-            n = new_ast_node(&p->alloca, astype_for_in_stmt);
+            n = new_ast_node(p, astype_for_in_stmt);
             n.as_for_in_stmt->base.start = &current_token;
             advance_token;
 
@@ -1310,7 +1361,7 @@ AST parse_stmt(parser* restrict p) {
         } else {
             // regular for loop!
             // TODO("regular for loop parsing");
-            n = new_ast_node(&p->alloca, astype_for_stmt);
+            n = new_ast_node(p, astype_for_stmt);
             n.as_for_stmt->base.start = &current_token;
             advance_token;
 
@@ -1333,7 +1384,7 @@ AST parse_stmt(parser* restrict p) {
         break;
     
     case tt_semicolon:
-        n = new_ast_node(&p->alloca, astype_empty_stmt);
+        n = new_ast_node(p, astype_empty_stmt);
         n.as_empty_stmt->base.start = &current_token;
         n.as_empty_stmt->base.end = &current_token;
         break;
@@ -1343,7 +1394,7 @@ AST parse_stmt(parser* restrict p) {
         break;
     
     case tt_keyword_type:
-        n = new_ast_node(&p->alloca, astype_type_decl_stmt);
+        n = new_ast_node(p, astype_type_decl_stmt);
         n.as_type_decl_stmt->base.start = &current_token;
 
         advance_token;
@@ -1369,7 +1420,7 @@ AST parse_stmt(parser* restrict p) {
     
     case tt_keyword_let:
     case tt_keyword_mut:
-        n = new_ast_node(&p->alloca, astype_decl_stmt);
+        n = new_ast_node(p, astype_decl_stmt);
         n.as_decl_stmt->base.start = &current_token;
         n.as_decl_stmt->is_mut = (current_token.type == tt_keyword_mut);
         advance_token;
@@ -1433,11 +1484,35 @@ AST parse_stmt(parser* restrict p) {
         break;
     
     default:
-        TODO("parse_stmt(): unimplemented");
+
+        AST lhs = parse_expr(p);
+        
+        if (is_null_AST(lhs))
+            error_at_parser(p, "expected a statement");
+
+        if (current_token.type == tt_semicolon) {
+            n = new_ast_node(p, astype_expr_stmt);
+
+            n.base->start = lhs.base->start;
+            n.base->end = &current_token;
+
+            n.as_expr_stmt->expression = lhs;
+
+            advance_token;
+            break;
+        }
+
+        switch (current_token.type) {
+        
+        case ',': // 
+
+        case '=':
+
+        }
+        error_at_parser(p, "TODO unimplemented");
         // todo:
         // - assignment statement
         // - compound assignment statement
-        // - import statements
         break;
     }
     return n;
@@ -1445,7 +1520,7 @@ AST parse_stmt(parser* restrict p) {
 
 // only for use within parse_stmt
 AST parse_elif(parser* restrict p) {
-    AST n = new_ast_node(&p->alloca, astype_if_stmt);
+    AST n = new_ast_node(p, astype_if_stmt);
     n.as_if_stmt->is_elif = true;
     n.as_if_stmt->base.start = &current_token;
 
@@ -1470,7 +1545,7 @@ AST parse_elif(parser* restrict p) {
 }
 
 AST parse_block_stmt(parser* restrict p) {
-    AST n = new_ast_node(&p->alloca, astype_block_stmt);
+    AST n = new_ast_node(p, astype_block_stmt);
 
     if (current_token.type != tt_open_brace)
         error_at_parser(p, "expected '{', got '%s'", token_type_str[current_token.type]);
