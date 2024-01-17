@@ -65,7 +65,7 @@ void parse_file(parser* restrict p) {
 
     p->head = new_ast_node(&p->alloca, astype_block_stmt);
     AST smth = parse_stmt(p);
-    //emit_dot(p->path, smth);
+    emit_dot(p->path, smth);
     dump_tree(smth, 0);
 }
 
@@ -1468,6 +1468,8 @@ AST parse_block_stmt(parser* restrict p) {
     if (current_token.type != tt_open_brace)
         error_at_parser(p, "expected '{', got '%s'", token_type_str[current_token.type]);
     n.as_block_stmt->base.start = &current_token;
+
+    dynarr_init(AST, &n.as_block_stmt->stmts, 1);
 
     advance_token;
     while (current_token.type != tt_close_brace) {

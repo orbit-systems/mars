@@ -1,9 +1,0 @@
-digraph G {
-	"let decl_0" -> "identifier_1"
-		"main_2" [shape=box,style=filled,color=".7 .3 1.0"]
-		"identifier_1" -> "main_2"
-	"let decl_0" -> "invalid_2"
-			"let decl_0" -> "function literal_3"
-				"function literal_3" -> "fn type_4"
-					"function literal_3" -> "invalid_5"
-			}
