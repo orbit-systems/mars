@@ -20,13 +20,13 @@ int main(int argc, char** argv) {
 }
 
 void print_help() {
-    printf("usage: mars (directory) [module name] [flags]\n\n");
-    printf("(directory)         where the target module(s) are.\n");
-    printf("[module name]       specify a module to compile. leave this blank to compile every module in a directory.\n");
+    printf("usage: mars (directory) [flags]\n\n");
+    printf("(directory)         where the target module is.\n");
     printf("\n");
     printf("-o:(path)           specify an output path\n");
-    printf("-d                  output a DOT file for AST viewing in graphviz\n");
-    printf("-help               display this text\n");
+    printf("-help               display this text\n\n");
+    printf("-timing             print compiler stage timings\n");
+    printf("-dot                output a DOT file for AST viewing in graphviz\n");
 }
 
 cmd_arg make_argument(char* s) {
@@ -45,9 +45,11 @@ void load_arguments(int argc, char* argv[], flag_set* fl) {
     }
 
     // set default values
-    fl->input_path = NULL_STR;
-    fl->output_path = NULL_STR;
-    fl->output_dot = false;
+    // fl->input_path = NULL_STR;
+    // fl->output_path = NULL_STR;
+    // fl->output_dot = false;
+
+    *fl = (flag_set){0};
 
     cmd_arg input_directory_arg = make_argument(argv[1]);
     if (string_eq(input_directory_arg.key, to_string("-help"))) {
@@ -72,10 +74,12 @@ void load_arguments(int argc, char* argv[], flag_set* fl) {
             exit(EXIT_SUCCESS);
         } else if (string_eq(a.key, to_string("-o"))) {
             fl->output_path = a.val;
-        } else if (string_eq(a.key, to_string("-d"))) {
+        } else if (string_eq(a.key, to_string("-dot"))) {
             fl->output_dot = true;
+        } else if (string_eq(a.key, to_string("-timing"))) {
+            fl->print_timings = true;
         } else {
-            printf("error: unrecognized option \"%s\"\n", clone_to_cstring(a.key));
+            printf("error: unrecognized option \""str_fmt"\"\n", str_arg(a.key));
             exit(EXIT_FAILURE);
         }
     }

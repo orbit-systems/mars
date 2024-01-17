@@ -19,7 +19,7 @@ typedef struct string_s {
 #define is_null_str(str) ((str).raw == NULL)
 
 #define str_fmt "%.*s"
-#define str_arg(str) (int)(str).len, (str).data
+#define str_arg(str) (int)(str).len, (str).raw
 
 #define string_make(ptr, len) ((string){(ptr), (len)})
 #define string_len(s) ((s).len)

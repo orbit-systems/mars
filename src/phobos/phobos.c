@@ -1,7 +1,7 @@
 #include "orbit.h"
 #include "mars.h"
-#include "error.h"
 #include "dynarr.h"
+#include "error.h"
 
 #include "phobos.h"
 #include "lexer.h"
@@ -9,7 +9,7 @@
 #include "type.h"
 
 /*tune this probably*/
-#define PARSER_ARENA_SIZE 0x1000
+#define PARSER_ARENA_SIZE 0x100000
 
 compilation_unit* phobos_perform_frontend() {
 
@@ -68,7 +68,6 @@ compilation_unit* phobos_perform_frontend() {
 
 
         lexer this_lexer = new_lexer(subfiles[i].path, loaded_file);
-        construct_token_buffer(&this_lexer);
 
         dynarr_append(lexer, &lexers, this_lexer);
 
@@ -76,6 +75,27 @@ compilation_unit* phobos_perform_frontend() {
     if (mars_file_count == 0)
         general_error("input path \"%s\" has no \".mars\" files", clone_to_cstring(mars_flags.input_path));
 
+    // timing
+    struct timeval lex_begin, lex_end;
+    if (mars_flags.print_timings) gettimeofday(&lex_begin, 0);        
+    size_t tokens_lexed = 0;
+
+    FOR_URANGE_EXCL(i, 0, lexers.len) {
+        construct_token_buffer(&lexers.raw[i]);
+        tokens_lexed += lexers.raw[i].buffer.len;
+    }
+
+    if (mars_flags.print_timings) {
+        gettimeofday(&lex_end, 0);
+        long seconds = lex_end.tv_sec - lex_begin.tv_sec;
+        long microseconds = lex_end.tv_usec - lex_begin.tv_usec;
+        double elapsed = seconds + microseconds*1e-6;
+        double tokens_per_sec = tokens_lexed / elapsed;
+        printf(style_FG_Cyan style_Bold "LEXING" style_Reset);
+        printf("\t  time   : %fs\n", elapsed);
+        printf("\t  tokens : %lu\n", tokens_lexed);
+        printf("\t  tok/s  : %.3f\n", tokens_per_sec);
+    }
 
     dynarr(parser) parsers;
     dynarr_init(parser, &parsers, lexers.len);
@@ -84,9 +104,30 @@ compilation_unit* phobos_perform_frontend() {
         arena alloca = arena_make(PARSER_ARENA_SIZE);
 
         parser p = make_parser(&lexers.raw[i], alloca);
-        parse_file(&p);
+
 
         dynarr_append(parser, &parsers, p);
+    }
+
+    // timing
+    struct timeval parse_begin, parse_end;
+    if (mars_flags.print_timings) gettimeofday(&parse_begin, 0);
+
+    FOR_URANGE_EXCL(i, 0, parsers.len) {
+        parse_file(&parsers.raw[i]);
+    }
+
+    /* display timing */ 
+    if (mars_flags.print_timings) {
+        gettimeofday(&parse_end, 0);
+        long seconds = parse_end.tv_sec - parse_begin.tv_sec;
+        long microseconds = parse_end.tv_usec - parse_begin.tv_usec;
+        double elapsed = seconds + microseconds*1e-6;
+        double tokens_per_sec = tokens_lexed / elapsed;
+        printf(style_FG_Blue style_Bold "PARSING" style_Reset);
+        printf("\t  time   : %fs\n", elapsed);
+        printf("\t  tokens : %lu\n", tokens_lexed);
+        printf("\t  tok/s  : %.3f\n", tokens_per_sec);
     }
 
     // cleanup

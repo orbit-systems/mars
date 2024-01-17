@@ -4,6 +4,8 @@
 #include "parser.h"
 #include "ast.h"
 
+// sandwichman's BLAZINGLY 🔥🔥 FAST 🚀🚀 parser in RUST 🦀🦀 + AI POWERED with CHATGPT 🤖🧠
+
 #define current_token ((p)->tokens.raw[(p)->current_tok])
 #define peek_token(n) ((p)->tokens.raw[(p)->current_tok + (n)])
 #define advance_token (((p)->current_tok + 1 < (p)->tokens.len) ? ((p)->current_tok)++ : 0)
@@ -65,8 +67,8 @@ void parse_file(parser* restrict p) {
 
     p->head = new_ast_node(&p->alloca, astype_block_stmt);
     AST smth = parse_stmt(p);
-    emit_dot(p->path, smth);
-    dump_tree(smth, 0);
+    // emit_dot(p->path, smth);
+    // dump_tree(smth, 0);
 }
 
 AST parse_expr(parser* restrict p) {

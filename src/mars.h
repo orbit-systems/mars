@@ -12,6 +12,7 @@ typedef struct flag_set_s {
     string input_path;
     string output_path;
     bool output_dot;
+    bool print_timings;
 } flag_set;
 
 cmd_arg make_argument(char* s);

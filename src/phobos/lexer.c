@@ -14,7 +14,7 @@ lexer new_lexer(string path, string src) {
     lex.src = src;
     lex.current_char = src.raw[0];
     lex.cursor = 0;
-    dynarr_init(token, &lex.buffer, src.len/3);
+    dynarr_init(token, &lex.buffer, src.len/3.5);
     return lex;
 }
 
