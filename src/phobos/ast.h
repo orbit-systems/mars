@@ -162,9 +162,9 @@ typedef struct {
         ast_base base; \
         AST stmt; \
     }) \
-    AST_TYPE(call_stmt, "call statement", { /* function calls must return nothing */ \
+    AST_TYPE(expr_stmt, "expression statement", { \
         ast_base base; \
-        AST call; \
+        AST expression; \
     }) \
     AST_TYPE(empty_stmt, "empty statement", { \
         union{ \
@@ -194,7 +194,7 @@ typedef struct {
             ast_base base; \
             dynarr(AST_typed_field) parameters; \
             dynarr(AST_typed_field) returns; \
-            AST block_symbol_override; \
+            AST block_symbol_override; /*this will be a string literal or NULL_STR if not set*/ \
             bool always_inline;\
             bool simple_return; \
     }) \

@@ -1,4 +1,25 @@
 module test;
 
 let main = fn() {
+    let x = 3; let x = 3; let x = 3; let x = 3; let x = 3; let x = 3; 
+    let x = 3; let x = 3; let x = 3; let x = 3; let x = 3; let x = 3; 
+    let x = 3; let x = 3; let x = 3; let x = 3; let x = 3; let x = 3; 
+    let x = 3; let x = 3; let x = 3; let x = 3; let x = 3; let x = 3; 
+    let x = 3; let x = 3; let x = 3; let x = 3; let x = 3; let x = 3; 
+    let x = 3; let x = 3; let x = 3; let x = 3; let x = 3; let x = 3; 
+    let x = 3; let x = 3; let x = 3; let x = 3; let x = 3; let x = 3; 
+    let x = 3; let x = 3; let x = 3; let x = 3; let x = 3; let x = 3; 
+    let x = 3; let x = 3; let x = 3; let x = 3; let x = 3; let x = 3; 
+    let x = 3; let x = 3; let x = 3; let x = 3; let x = 3; let x = 3; 
+    let x = 3; let x = 3; let x = 3; let x = 3; let x = 3; let x = 3; 
+    let x = 3; let x = 3; let x = 3; let x = 3; let x = 3; let x = 3; 
+    let x = 3; let x = 3; let x = 3; let x = 3; let x = 3; let x = 3; 
+    let x = 3; let x = 3; let x = 3; let x = 3; let x = 3; let x = 3; 
+    let x = 3; let x = 3; let x = 3; let x = 3; let x = 3; let x = 3; 
+    let x = 3; let x = 3; let x = 3; let x = 3; let x = 3; let x = 3; 
+    let x = 3; let x = 3; let x = 3; let x = 3; let x = 3; let x = 3; 
+    let x = 3; let x = 3; let x = 3; let x = 3; let x = 3; let x = 3; 
+    let x = 3; let x = 3; let x = 3; let x = 3; let x = 3; let x = 3; 
+    let x = 3; let x = 3; let x = 3; let x = 3; let x = 3; let x = 3; 
+    let x = 3; let x = 3; let x = 3; let x = 3; let x = 3; let x = 3; 
 };

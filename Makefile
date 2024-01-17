@@ -2,10 +2,12 @@ SRCPATHS = src/*.c src/deimos/*.c src/phobos/*.c
 SRC = $(wildcard $(SRCPATHS))
 OBJECTS = $(SRC:src/%.c=build/%.o)
 
-EXECUTABLE_NAME = mars
+PROJECT_NAME = mars
 
 ifeq ($(OS),Windows_NT)
-	EXECUTABLE_NAME = $(EXECUTABLE_NAME).exe
+	EXECUTABLE_NAME = $(PROJECT_NAME).exe
+else
+	EXECUTABLE_NAME = $(PROJECT_NAME)
 endif
 
 CC = gcc

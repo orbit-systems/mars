@@ -65,7 +65,7 @@ void parse_file(parser* restrict p) {
 
     p->head = new_ast_node(&p->alloca, astype_block_stmt);
     AST smth = parse_stmt(p);
-    emit_dot(p->path, smth);
+    //emit_dot(p->path, smth);
     dump_tree(smth, 0);
 }
 
@@ -988,6 +988,14 @@ AST parse_atomic_expr(parser* restrict p, bool type_expr) {
             n.base->start = &current_token;
             advance_token;
 
+            if (current_token.type == tt_hash) {
+                // parse a secondary # tag
+                advance_token;
+                error_at_parser(p, "TODO lmao");
+            }
+
+
+
             if (current_token.type != tt_open_paren)
                 error_at_parser(p, "expected '(' after 'fn'");
             advance_token;
@@ -1133,6 +1141,7 @@ AST parse_atomic_expr(parser* restrict p, bool type_expr) {
                 func_lit.as_func_literal_expr->type = n;
                 AST code_block = parse_block_stmt(p);
                 func_lit.as_func_literal_expr->base.end = code_block.base->end;
+                func_lit.as_func_literal_expr->code_block = code_block;
                 n = func_lit;
                 break;
             }
