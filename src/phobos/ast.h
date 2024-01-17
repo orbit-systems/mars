@@ -176,7 +176,7 @@ typedef struct {
     \
     \
     \
-    AST_TYPE(basic_type_expr, "type literal", { \
+    AST_TYPE(basic_type_expr, "basic type literal", { \
         union { \
             ast_base base; \
             token* lit; \
@@ -194,6 +194,8 @@ typedef struct {
             ast_base base; \
             dynarr(AST_typed_field) parameters; \
             dynarr(AST_typed_field) returns; \
+            AST block_symbol_override; \
+            bool always_inline;\
             bool simple_return; \
     }) \
     AST_TYPE(enum_type_expr, "enum type", { \

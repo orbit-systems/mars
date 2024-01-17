@@ -1420,7 +1420,7 @@ AST parse_stmt(parser* restrict p) {
         // todo:
         // - assignment statement
         // - compound assignment statement
-        // - import statement
+        // - import statements
         break;
     }
     return n;
