@@ -3,7 +3,7 @@ module memory;
 let copy = fn(to, from: addr, len: uint) {
     mut to_byte: ^u8 = to;
     mut from_byte: ^u8 = from;
-    let to_stop = to_byte + cast(^u8) len
+    let to_stop = to_byte + cast(^u8) len;
 
     while to_byte != to_stop {
 

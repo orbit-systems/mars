@@ -25,6 +25,7 @@ void print_help() {
     printf("[module name]       specify a module to compile. leave this blank to compile every module in a directory.\n");
     printf("\n");
     printf("-o:(path)           specify an output path\n");
+    printf("-d                  output a DOT file for AST viewing in graphviz\n");
     printf("-help               display this text\n");
 }
 
@@ -46,6 +47,7 @@ void load_arguments(int argc, char* argv[], flag_set* fl) {
     // set default values
     fl->input_path = NULL_STR;
     fl->output_path = NULL_STR;
+    fl->output_dot = false;
 
     cmd_arg input_directory_arg = make_argument(argv[1]);
     if (string_eq(input_directory_arg.key, to_string("-help"))) {
@@ -70,6 +72,8 @@ void load_arguments(int argc, char* argv[], flag_set* fl) {
             exit(EXIT_SUCCESS);
         } else if (string_eq(a.key, to_string("-o"))) {
             fl->output_path = a.val;
+        } else if (string_eq(a.key, to_string("-d"))) {
+            fl->output_dot = true;
         } else {
             printf("error: unrecognized option \"%s\"\n", clone_to_cstring(a.key));
             exit(EXIT_FAILURE);
