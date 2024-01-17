@@ -162,17 +162,24 @@ token_type scan_ident_or_keyword(lexer* restrict lex) {
 
 token_type scan_number(lexer* restrict lex) {
     advance_char(lex);
-    token_type type = tt_literal_int;
     while (true) {
         if (current_char(lex) == '.') {
-            type = tt_literal_float;
             advance_char(lex);
+            while (true) {
+                if (current_char(lex) == 'e' && peek_char(lex, 1) == '-') {
+                    advance_char_n(lex, 2);
+                }
+                if (!valid_digit(current_char(lex))) {
+                    return tt_literal_float;
+                }
+                advance_char(lex);
+            }
         }
         if (!valid_digit(current_char(lex))) {
-            return type;
+            return tt_literal_int;
         }
         advance_char(lex);
-    }
+    };
 }
 token_type scan_string_or_char(lexer* restrict lex) {
     char quote_char = current_char(lex);

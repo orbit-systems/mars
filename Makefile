@@ -2,12 +2,10 @@ SRCPATHS = src/*.c src/deimos/*.c src/phobos/*.c
 SRC = $(wildcard $(SRCPATHS))
 OBJECTS = $(SRC:src/%.c=build/%.o)
 
-PROJECT_NAME = mars
+EXECUTABLE_NAME = mars
 
 ifeq ($(OS),Windows_NT)
-	EXECUTABLE_NAME = $(PROJECT_NAME).exe
-else
-	EXECUTABLE_NAME = $(PROJECT_NAME)
+	EXECUTABLE_NAME = mars.exe
 endif
 
 CC = gcc
@@ -41,9 +39,9 @@ dbgbuild: $(OBJECTS)
 
 	@$(LD) $(OBJECTS) -o $(EXECUTABLE_NAME) $(DEBUGFLAGS)
 	
-
 test: build
 	./$(EXECUTABLE_NAME) ./mars_code
+	echo $(EXECUTABLE_NAME)
 
 test2: build
 	./$(EXECUTABLE_NAME) ./test

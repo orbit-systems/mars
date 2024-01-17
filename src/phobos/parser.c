@@ -305,15 +305,20 @@ f64 float_lit_value(parser* restrict p) {
         factor *= 0.1;
     }
 
-    if (e_index == -1) return val;
     int exp_val = 0;
+
+    if (e_index == -1) return val;
+    if (t.raw[e_index+1] == '-') e_index++;
+    
     for (int i = e_index+1; i < t.len; i++) {
         exp_val = exp_val*10 + ascii_to_digit_val(p, t.raw[i], 10);
     }
 
-    val = val * pow(10.0, exp_val);
+    val *= pow(10.0, (t.raw[e_index] == '-' ? -exp_val : exp_val));
 
-    return val * (is_negative ? -1 : 1);
+    // printf("\n\n%lf\n\n", (is_negative ? -val : val));
+
+    return (is_negative ? -val : val);
 }
 
 i64 int_lit_value(parser* restrict p) {
