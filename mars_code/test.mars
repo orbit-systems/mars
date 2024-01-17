@@ -1,6 +1,9 @@
 module test;
 
-let main = fn #block_symbol("__main") () {
+
+// #block_symbol sets the symbol of a function's code
+// block to a specific string
+let main = fn #block_symbol("main") () {
 
     let str = "bruh";
     let str2 = "bruh2";

@@ -813,7 +813,7 @@ AST parse_atomic_expr(parser* restrict p, bool type_expr) {
                         }
                         continue;
                     } else {
-                        error_at_parser(p, "expected ';'");
+                        error_at_parser(p, "expected ';' after field definition");
                     }
 
                 } else if (current_token.type == tt_comma) {
@@ -879,7 +879,7 @@ AST parse_atomic_expr(parser* restrict p, bool type_expr) {
                         }
                         continue;
                     } else {
-                        error_at_parser(p, "expected ';'");
+                        error_at_parser(p, "expected ';' after field declaration");
                     }
 
                 } else if (current_token.type == tt_comma) {
@@ -1046,17 +1046,69 @@ AST parse_atomic_expr(parser* restrict p, bool type_expr) {
             }
             advance_token;
 
-            // if simple, one value return
+            // simple return type (single, untyped value)
             if (current_token.type != tt_open_paren) {
                 AST return_type = parse_type_expr(p);
-                // dump_tree(return_type, 0);
                 if (is_null_AST(return_type))
                     error_at_parser(p, "expected a type expression");
                 if (!is_possible_type_expr(return_type))
                     error_at_AST(p, return_type, "return type must be a type expression");
+
+                n.as_fn_type_expr->simple_return = true;
+                dynarr_append_AST_typed_field(&n.as_fn_type_expr->returns, (AST_typed_field){
+                    NULL_AST, return_type
+                });
+                n.base->end = &peek_token(-1);
+                break;
             }
 
-            TODO("fn not finished");
+            // else, complex return
+            advance_token;
+            while (current_token.type != tt_close_paren) {
+
+                AST field = parse_expr(p);
+
+                if (is_null_AST(field))
+                    error_at_parser(p, "expected return variable name");
+                if (field.type != astype_identifier_expr)
+                    error_at_AST(p, field, "return variable must be an identifier");
+                
+                AST type = NULL_AST;
+                if (current_token.type == tt_colon) {
+                    advance_token;
+                    type = parse_expr(p);
+
+                    if (current_token.type == tt_comma) {
+                        dynarr_append_AST_typed_field(&n.as_fn_type_expr->returns, (AST_typed_field){
+                            field, type
+                        });
+                        advance_token;
+                        if (current_token.type == tt_close_paren) {
+                            break;
+                        }
+                        continue;
+                    } else if (current_token.type == tt_close_paren) {
+                        break;
+                    } else {
+                        error_at_parser(p, "expected ',' or ')'");
+                    }
+
+                } else if (current_token.type == tt_comma) {
+                    dynarr_append_AST_typed_field(&n.as_fn_type_expr->returns, (AST_typed_field){
+                        field, type
+                    });
+                    advance_token;
+                    if (current_token.type != tt_identifier) {
+                        error_at_parser(p, "expected return variable name");
+                    }
+                    continue;
+                } else {
+                    error_at_parser(p, "expected ':' or ','");
+                }
+            }
+            n.base->end = &current_token;
+            advance_token;
+
             break;
 
         case tt_open_brace:
@@ -1086,7 +1138,12 @@ AST parse_atomic_expr(parser* restrict p, bool type_expr) {
 
             AST lit = new_ast_node(&p->alloca, astype_comp_literal_expr);
             lit.as_comp_literal_expr->type = n;
-            lit.base->start = n.base->start;
+
+            if (!is_null_AST(n)) {
+                lit.base->start = n.base->start;
+            } else {
+                lit.base->start = &current_token;
+            }
 
             advance_token;
             if (current_token.type == tt_close_brace) {
@@ -1113,7 +1170,6 @@ AST parse_atomic_expr(parser* restrict p, bool type_expr) {
                         continue;
                     }
                 } else if (current_token.type == tt_close_brace) {
-        break;
                     break;
                 } else {
                     error_at_parser(p, "expected ',' or '}'");
@@ -1236,7 +1292,7 @@ AST parse_stmt(parser* restrict p) {
             n.as_for_in_stmt->base.end = &peek_token(-1);
         } else {
             // regular for loop!
-            TODO("regular for loop parsing");
+            // TODO("regular for loop parsing");
             n = new_ast_node(&p->alloca, astype_for_stmt);
             n.as_for_stmt->base.start = &current_token;
             advance_token;
@@ -1244,6 +1300,9 @@ AST parse_stmt(parser* restrict p) {
             n.as_for_stmt->prelude = parse_stmt(p);
             
             n.as_for_stmt->condition = parse_expr(p);
+            if (is_null_AST(n.as_for_stmt->condition))
+                error_at_parser(p, "expected an expression", token_type_str[current_token.type]);
+
             if (current_token.type != tt_semicolon)
                 error_at_parser(p, "expected ';', got '%s'", token_type_str[current_token.type]);
 
@@ -1357,7 +1416,11 @@ AST parse_stmt(parser* restrict p) {
         break;
     
     default:
-        TODO("parse_stmt() unimplemented");
+        TODO("parse_stmt(): unimplemented");
+        // todo:
+        // - assignment statement
+        // - compound assignment statement
+        // - import statement
         break;
     }
     return n;
@@ -1405,6 +1468,6 @@ AST parse_block_stmt(parser* restrict p) {
     if (current_token.type != tt_close_brace)
         error_at_parser(p, "expected '}', got '%s'", token_type_str[current_token.type]);
     n.as_block_stmt->base.end = &current_token;
-
+    advance_token;
     return n;
 }

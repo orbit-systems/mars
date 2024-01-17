@@ -164,7 +164,7 @@ typedef struct {
     }) \
     AST_TYPE(call_stmt, "call statement", { /* function calls must return nothing */ \
         ast_base base; \
-        AST function_call; \
+        AST call; \
     }) \
     AST_TYPE(empty_stmt, "empty statement", { \
         union{ \
@@ -194,6 +194,7 @@ typedef struct {
             ast_base base; \
             dynarr(AST_typed_field) parameters; \
             dynarr(AST_typed_field) returns; \
+            bool simple_return; \
     }) \
     AST_TYPE(enum_type_expr, "enum type", { \
             ast_base base; \

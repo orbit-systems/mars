@@ -1,6 +1,4 @@
 module test;
 
-
-let f = fn(x, y: int, b: int) -> int {
-    return 1;
-}
+let main = fn() {
+};

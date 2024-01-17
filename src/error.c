@@ -181,6 +181,8 @@ void line_and_col(string text, size_t position, char** restrict last_newline, in
     *col = c;
 
     *line_len = 0;
-    while ((*last_newline)[*line_len] != '\0' && (*last_newline)[*line_len] != '\n') 
+    while ((*last_newline)[*line_len] != '\0' && (*last_newline)[*line_len] != '\n') {
+        if (*line_len + *last_newline - text.raw >= text.len) break;
         *line_len += 1;
+    }
 }
