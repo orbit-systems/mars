@@ -189,6 +189,12 @@ operators
         this must be followed in case of functions that may modify variables used in the expression,
         such as `modify_x(&x) + x` or something like that.
 
+name mangling
+    global entities should be mangled like so:
+        (module name)__(entity name)
+    an entity "funct" in module "example" would have the link name:
+        example__funct
+
 program structure
 
     programs are made from modules. modules must be wholly contained within one directory, with one module per directory.

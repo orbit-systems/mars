@@ -1,6 +1,6 @@
 #include "orbit.h"
 #include "arena.h"
-#include "error.h"
+#include "term.h"
 
 arena_block arena_block_make(size_t size) {
     arena_block block;

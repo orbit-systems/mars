@@ -1,5 +1,5 @@
-#include "../orbit.h"
-#include "../error.h"
+#include "orbit.h"
+#include "term.h"
 #include "lexer.h"
 
 char* token_type_str[] = {

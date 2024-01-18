@@ -1,7 +1,7 @@
 #pragma once
 #define ORBIT_H
 
-// standard orbit systems utility header
+// orbit systems utility header
 
 #include <stdlib.h>
 #include <stdint.h>

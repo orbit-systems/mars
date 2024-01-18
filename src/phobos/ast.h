@@ -166,6 +166,18 @@ typedef struct {
         ast_base base; \
         AST expression; \
     }) \
+    AST_TYPE(return_stmt, "return statement", { \
+        ast_base base; \
+        dynarr(AST) returns; \
+    }) \
+    AST_TYPE(break_stmt, "break statement", { \
+        ast_base base; \
+        AST label; \
+    }) \
+    AST_TYPE(continue_stmt, "continue statement", { \
+        ast_base base; \
+        AST label; \
+    }) \
     AST_TYPE(empty_stmt, "empty statement", { \
         union{ \
         ast_base base; \

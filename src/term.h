@@ -1,5 +1,5 @@
 #pragma once
-#define ERROR_H
+#define TERM_H
 
 #include "orbit.h"
 

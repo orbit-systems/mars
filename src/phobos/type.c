@@ -1,6 +1,6 @@
 #include "orbit.h"
 #include "lexer.h"
-#include "error.h"
+#include "term.h"
 #include "arena.h"
 #include "type.h"
 

@@ -41,7 +41,6 @@ dbgbuild: $(OBJECTS)
 	
 test: build
 	./$(EXECUTABLE_NAME) ./mars_code
-	echo $(EXECUTABLE_NAME)
 
 test2: build
 	./$(EXECUTABLE_NAME) ./test

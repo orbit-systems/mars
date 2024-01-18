@@ -1,6 +1,6 @@
 #include "orbit.h"
 #include "orbitfs.h"
-#include "error.h"
+#include "term.h"
 #include "ast.h"
 #include "dot.h"
 

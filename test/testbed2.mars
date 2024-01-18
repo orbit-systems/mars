@@ -1,5 +1,13 @@
 module test;
 
-let some_other_function = fn() {
-    
+type char = u8;
+type string = []u8;
+
+let find = fn(needle: char, haystack: string) -> (index: uint, found: bool) {
+    for i: uint in 0..<haystack.len {
+        if haystack[i] == needle {
+            return i, true;
+        }
+    }
+    return -1, false;
 };

@@ -4,7 +4,7 @@
 
 #include "orbit.h"
 #include "mars.h"
-#include "error.h"
+#include "term.h"
 #include "deimos/tac.h"
 #include "phobos/phobos.h"
 
@@ -16,7 +16,6 @@ int main(int argc, char** argv) {
 
     phobos_perform_frontend();
 
-    //testTAC();
     return 0;
 }
 
@@ -27,7 +26,7 @@ void print_help() {
     printf("-o:(path)           specify an output path\n");
     printf("-help               display this text\n\n");
     printf("-timings            print compiler stage timings\n");
-    printf("-dot                output a DOT file for AST viewing in graphviz\n");
+    printf("-dot                convert the parse tree to a DOT file for graphviz\n");
 }
 
 cmd_arg make_argument(char* s) {
@@ -44,11 +43,6 @@ void load_arguments(int argc, char* argv[], flag_set* fl) {
         print_help();
         exit(EXIT_SUCCESS);
     }
-
-    // set default values
-    // fl->input_path = NULL_STR;
-    // fl->output_path = NULL_STR;
-    // fl->output_dot = false;
 
     *fl = (flag_set){0};
 

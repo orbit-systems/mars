@@ -1,12 +1,12 @@
 #include "orbit.h"
-#include "error.h"
+#include "term.h"
 
 #include "parser.h"
 #include "ast.h"
 
 AST new_ast_node(parser * restrict p, ast_type type);
 
-// sandwichman's BLAZINGLY 🔥🔥 FAST 🚀🚀 parser in RUST 🦀🦀 + AI POWERED with CHATGPT 🤖🧠
+// sandwichman's BLAZINGLY 🔥🔥 FAST 🚀🚀 parser in RUST 🦀🦀 + AI POWERED with CHATGPT 🤖🧠 with BLOCKCHAIN BITCOIN TECHNOLOGY
 
 #define current_token ((p)->tokens.raw[(p)->current_tok])
 #define peek_token(n) ((p)->tokens.raw[(p)->current_tok + (n)])
@@ -1482,7 +1482,8 @@ AST parse_stmt(parser* restrict p) {
         n.as_decl_stmt->base.end = &current_token;
         advance_token;
         break;
-    
+    case tt_keyword_switch:
+        error_at_parser(p, "TODO switch statement");
     default:
 
         AST lhs = parse_expr(p);
@@ -1504,15 +1505,29 @@ AST parse_stmt(parser* restrict p) {
 
         switch (current_token.type) {
         
-        case ',': // 
-
-        case '=':
-
+        case tt_comma: // multi-assign statement
+            error_at_parser(p, "TODO multi-assign statement");
+        case tt_equal: // single-assign statement
+            error_at_parser(p, "TODO assign statement");
+        case tt_add_equal: // compound assign statement
+        case tt_sub_equal:
+        case tt_mul_equal:
+        case tt_div_equal:
+        case tt_mod_equal:
+        case tt_mod_mod_equal:
+        case tt_and_equal:
+        case tt_or_equal:
+        case tt_nor_equal:
+        case tt_xor_equal:
+        case tt_lshift_equal:
+        case tt_rshift_equal:
+            error_at_parser(p, "TODO compound assign statement");
         }
         error_at_parser(p, "TODO unimplemented");
         // todo:
         // - assignment statement
         // - compound assignment statement
+        // - switch statement
         break;
     }
     return n;

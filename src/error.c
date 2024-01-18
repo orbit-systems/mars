@@ -1,5 +1,5 @@
 #include "orbit.h"
-#include "error.h"
+#include "term.h"
 
 void general_error(char* message, ...) {
     char ERROR_MSG_BUFFER[500] = {0};

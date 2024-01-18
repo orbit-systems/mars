@@ -1,7 +1,7 @@
 #include "orbit.h"
 #include "mars.h"
 #include "dynarr.h"
-#include "error.h"
+#include "term.h"
 
 #include "phobos.h"
 #include "lexer.h"

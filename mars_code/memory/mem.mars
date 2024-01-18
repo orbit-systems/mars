@@ -21,7 +21,9 @@ let equal = fn(block1, block2: addr, len: uint) -> bool {
 
     while block1_byte != block1_stop {
 
-        if block1_byte^ != block2_byte^ { return false; }
+        if block1_byte^ != block2_byte^ {
+            return false;
+        }
 
         block1_byte += 1;
         block2_byte += 1;
