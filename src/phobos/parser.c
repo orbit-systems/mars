@@ -1171,9 +1171,11 @@ AST parse_atomic_expr(parser* restrict p, bool type_expr) {
                 AST func_lit = new_ast_node(p, astype_func_literal_expr);
                 func_lit.as_func_literal_expr->base.start = n.base->start;
                 func_lit.as_func_literal_expr->type = n;
+
                 AST code_block = parse_block_stmt(p);
-                func_lit.as_func_literal_expr->base.end = code_block.base->end;
                 func_lit.as_func_literal_expr->code_block = code_block;
+
+                func_lit.as_func_literal_expr->base.end = code_block.base->end;
                 n = func_lit;
                 break;
             }
@@ -1459,6 +1461,8 @@ AST parse_stmt(parser* restrict p) {
         if (current_token.type == tt_semicolon) {
             if (!n.as_decl_stmt->has_expl_type)
                 error_at_parser(p, "cannot implicitly initialize without a type");
+            n.as_decl_stmt->base.end = &current_token;
+            advance_token;
             break;
         }
 
@@ -1484,8 +1488,54 @@ AST parse_stmt(parser* restrict p) {
         break;
     case tt_keyword_switch:
         error_at_parser(p, "TODO switch statement");
-    default:
+    case tt_keyword_break:
+        n = new_ast_node(p, astype_break_stmt);
+        n.base->start = &current_token;
+        advance_token;
+        if (current_token.type != tt_semicolon) {
+            n.as_break_stmt->label = parse_expr(p);
+            if (is_null_AST(n.as_break_stmt->label) || n.as_break_stmt->label.type != tt_identifier)
+                error_at_parser(p, "expected an identifer");
+        }
 
+        if (current_token.type == tt_semicolon)
+            error_at_parser(p, "expected ';'");
+
+        n.base->end = &current_token;
+        advance_token;
+        break;
+    case tt_keyword_continue:
+        n = new_ast_node(p, astype_continue_stmt);
+        n.base->start = &current_token;
+        advance_token;
+        if (current_token.type != tt_semicolon) {
+            n.as_continue_stmt->label = parse_expr(p);
+            if (is_null_AST(n.as_continue_stmt->label) || n.as_continue_stmt->label.type != tt_identifier)
+                error_at_parser(p, "expected an identifer");
+        }
+
+        if (current_token.type == tt_semicolon)
+            error_at_parser(p, "expected ';'");
+
+        n.base->end = &current_token;
+        advance_token;
+        break;
+    case tt_keyword_fallthrough:
+        n = new_ast_node(p, astype_fallthrough_stmt);
+        n.base->start = &current_token;
+        advance_token;
+        if (current_token.type == tt_semicolon)
+            error_at_parser(p, "expected ';'");
+        n.base->end = &current_token;
+        advance_token;
+        break;
+    case tt_keyword_return:
+        n = new_ast_node(p, astype_return_stmt);
+        n.base->start = &current_token;
+        advance_token;
+        error_at_parser(p, "TODO return stmt");
+    default:
+        ;
         AST lhs = parse_expr(p);
         
         if (is_null_AST(lhs))

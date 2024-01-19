@@ -154,7 +154,7 @@ operators
         | access entities from other modules: a_module::something
 
     function
-        inline  inline a function call - only works with constant functions contained in the current module
+        inline  inline a function call - only works with compile-time-constant functions contained in the current module
 
         
 

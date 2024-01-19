@@ -20,8 +20,9 @@ typedef int32_t  i32;
 typedef int16_t  i16;
 typedef int8_t   i8;
 typedef uint8_t  bool;
-typedef float    f32;
-typedef double   f64;
+typedef _Float16 f16;
+typedef _Float32 f32;
+typedef _Float64 f64;
 #define false 0
 #define true (!false)
 
@@ -41,8 +42,6 @@ typedef double   f64;
 
 #define FOR_URANGE_INCL(iterator, start, end) for (uintptr_t iterator = (start); iterator <= (end); iterator++)
 #define FOR_URANGE_EXCL(iterator, start, end) for (uintptr_t iterator = (start); iterator < (end); iterator++)
-
-
 
 #define is_pow_2(i) ((i & (i-1)) == 0)
 

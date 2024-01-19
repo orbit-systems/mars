@@ -11,10 +11,10 @@ endif
 CC = gcc
 LD = gcc
 
-DEBUGFLAGS = -g -lm -O0
+DEBUGFLAGS = -g -O0
 ASANFLAGS = -fsanitize=undefined -fsanitize=address
 DONTBEAFUCKINGIDIOT = -Wall -Wextra -pedantic -Wno-missing-field-initializers -Wno-unused-result
-CFLAGS = -O3 -Wincompatible-pointer-types -lm
+CFLAGS = -O3 -Wincompatible-pointer-types
 
 build/%.o: src/%.c
 	@echo compiling $<

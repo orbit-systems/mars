@@ -1,5 +1,5 @@
 #pragma once
-#define DYNARR2_H
+#define DA_H
 
 // sandwich's shitty """polymorphic""" dynamic array lib V2
 // lean and mean w/ new functions
@@ -26,7 +26,7 @@
 
 #define da_append(da_ptr, element) do { \
     if ((da_ptr)->len == (da_ptr)->cap) { \
-        (da_ptr)->cap *= 2;\
+        (da_ptr)->cap *= 2; \
         (da_ptr)->at = realloc((da_ptr)->at, sizeof((da_ptr)->at[0]) * (da_ptr)->cap); \
         if ((da_ptr)->at == NULL) { \
             printf("(%s:%d) da_append realloc failed for capacity %d", (__FILE__), (__LINE__), (da_ptr)->cap); \
@@ -46,7 +46,7 @@
 } while (0)
 
 #define da_reserve(da_ptr, num_slots) do { \
-    (da_ptr)->cap += num_slots;\
+    (da_ptr)->cap += num_slots; \
     (da_ptr)->at *= realloc((da_ptr)->at, sizeof((da_ptr)->at[0]) * (da_ptr)->cap); \
     if ((da_ptr)->at == NULL) { \
         printf("(%s:%d) da_reserve realloc failed for capacity %d", (__FILE__), (__LINE__), (da_ptr)->cap); \
@@ -54,9 +54,9 @@
     } \
 } while (0)
 
-#define da_destroy(da_ptr) do {\
+#define da_destroy(da_ptr) do { \
     if ((da_ptr)->at == NULL) break; \
-    free((da_ptr)->at)\
+    free((da_ptr)->at); \
 } while (0)
 
 #define da_insert_at(da_ptr, element, index) do { \

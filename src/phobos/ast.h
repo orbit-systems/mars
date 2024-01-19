@@ -178,6 +178,9 @@ typedef struct {
         ast_base base; \
         AST label; \
     }) \
+    AST_TYPE(fallthrough_stmt, "fallthrough statement", { \
+        ast_base base; \
+    }) \
     AST_TYPE(empty_stmt, "empty statement", { \
         union{ \
         ast_base base; \

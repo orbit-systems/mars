@@ -178,7 +178,7 @@ void dump_tree(AST node, int n) {
             print_indent(n+1);
             printstr((node.as_enum_type_expr->variants.raw[i].ident.as_identifier_expr->tok->text)); 
             
-            printf(" = %d\n", node.as_enum_type_expr->variants.raw[i].value);
+            printf(" = %ld\n", node.as_enum_type_expr->variants.raw[i].value);
         }
         break;
     case astype_pointer_type_expr:

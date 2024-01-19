@@ -131,6 +131,7 @@ token_type scan_ident_or_keyword(lexer* restrict lex) {
     if (string_eq(word, to_string("for")))          return tt_keyword_for;
     if (string_eq(word, to_string("fn")))           return tt_keyword_fn;
     if (string_eq(word, to_string("break")))        return tt_keyword_break;
+    if (string_eq(word, to_string("continue")))     return tt_keyword_continue;
     if (string_eq(word, to_string("case")))         return tt_keyword_case;
     if (string_eq(word, to_string("cast")))         return tt_keyword_cast;
     if (string_eq(word, to_string("defer")))        return tt_keyword_defer;

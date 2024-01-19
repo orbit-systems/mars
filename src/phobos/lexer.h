@@ -91,6 +91,7 @@
     TOKEN(tt_keyword_break,     "break") \
     TOKEN(tt_keyword_case,      "case") \
     TOKEN(tt_keyword_cast,      "cast") \
+    TOKEN(tt_keyword_continue,  "continue") \
     TOKEN(tt_keyword_defer,     "defer") \
     TOKEN(tt_keyword_enum,      "enum") \
     TOKEN(tt_keyword_elif,      "elif") \
