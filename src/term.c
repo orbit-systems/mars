@@ -29,7 +29,6 @@ void general_warning(char* message, ...) {
 
 
     printf("\n");
-    exit(EXIT_FAILURE);
 }
 
 void error_at_string(string path, string text, string pos, char* message, ...) {
@@ -104,7 +103,7 @@ void warning_at_string(string path, string text, string pos, char* message, ...)
 
     printf(style_FG_Yellow style_Bold "WARNING" style_Reset);
 
-    printf(style_Dim "     | " style_Reset);
+    printf(style_Dim " | " style_Reset);
 
     int line = 1;
     int column = 1;
@@ -152,8 +151,6 @@ void warning_at_string(string path, string text, string pos, char* message, ...)
     // printf(" %s\n", ERROR_MSG_BUFFER);
     // printf(style_Reset);
     printf("\n");
-
-    exit(EXIT_FAILURE);
 
 }
 
