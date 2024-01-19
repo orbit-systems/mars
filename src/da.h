@@ -19,7 +19,7 @@
 
 #define da_init(da_ptr, capacity) do { \
     size_t c = (capacity); \
-    if (c <= 0) c = 1; \
+    if ((capacity) <= 0) c = 1; \
     (da_ptr)->len = 0; \
     (da_ptr)->cap = c; \
     (da_ptr)->at = malloc(sizeof((da_ptr)->at[0]) * c); \
