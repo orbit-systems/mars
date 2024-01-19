@@ -1371,7 +1371,7 @@ AST parse_stmt(parser* restrict p) {
             
             n.as_for_stmt->condition = parse_expr(p);
             if (is_null_AST(n.as_for_stmt->condition))
-                error_at_parser(p, "expected an expression", token_type_str[current_token.type]);
+                error_at_parser(p, "expected an expression");
 
             if (current_token.type != tt_semicolon)
                 error_at_parser(p, "expected ';', got '%s'", token_type_str[current_token.type]);
@@ -1533,7 +1533,25 @@ AST parse_stmt(parser* restrict p) {
         n = new_ast_node(p, astype_return_stmt);
         n.base->start = &current_token;
         advance_token;
-        error_at_parser(p, "TODO return stmt");
+
+        dynarr_init_AST(&n.as_return_stmt->returns, 2);
+
+        while (current_token.type != tt_semicolon) {
+            AST ret_expr = parse_expr(p);
+            if (is_null_AST(ret_expr))
+                error_at_parser(p, "expected expression");
+            dynarr_append_AST(&n.as_return_stmt->returns, ret_expr);
+            if (current_token.type == tt_comma)
+                advance_token;
+            else if (current_token.type == tt_semicolon)
+                break;
+            else
+                error_at_parser(p, "expected ',' or ';'");
+        }
+        
+        n.base->end = &current_token;
+        advance_token;
+        break;
     default:
         ;
         AST lhs = parse_expr(p);
