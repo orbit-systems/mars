@@ -1,6 +1,9 @@
 #pragma once
 #define DA_H
 
+#include <stdlib.h>
+#include <stdio.h>
+
 // sandwich's shitty """polymorphic""" dynamic array lib V2
 // lean and mean w/ new functions
 
@@ -11,6 +14,8 @@
     size_t len; \
     size_t cap; \
 } da_##type
+
+// the array pointer is called 'at' so that you can use it like 'dynarray.at[i]'
 
 #define da_init(da_ptr, capacity) do { \
     size_t c = (capacity); \
@@ -38,6 +43,7 @@
 
 #define da_shrink(da_ptr) do { \
     if ((da_ptr)->len == (da_ptr)->cap) break; \
+    (da_ptr)->cap = (da_ptr)->len; \
     (da_ptr)->at *= realloc(arr->at, sizeof((da_ptr)->at[0]) * (da_ptr)->cap); \
     if ((da_ptr)->at == NULL) { \
         printf("(%s:%d) da_init realloc failed for capacity %d", (__FILE__), (__LINE__), (da_ptr)->cap); \
