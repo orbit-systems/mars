@@ -4,7 +4,7 @@
 #include "orbit.h"
 #include "lexer.h"
 #include "arena.h"
-#include "dynarr.h"
+#include "da.h"
 
 typedef struct {
     token* start;
@@ -27,7 +27,7 @@ typedef struct {
     AST_TYPE(comp_literal_expr, "compound literal", {\
         ast_base base; \
         AST type; \
-        dynarr(AST) elems; \
+        da(AST) elems; \
     }) \
     AST_TYPE(func_literal_expr, "function literal", {\
         ast_base base; \
@@ -83,7 +83,7 @@ typedef struct {
     AST_TYPE(call_expr, "call", { \
         ast_base base; \
         AST lhs; \
-        dynarr(AST) params; \
+        da(AST) params; \
     }) \
     \
     \
@@ -100,11 +100,11 @@ typedef struct {
     }) \
     AST_TYPE(block_stmt, "statement block", { \
         ast_base base; \
-        dynarr(AST) stmts; \
+        da(AST) stmts; \
     }) \
     AST_TYPE(decl_stmt, "declaration", { \
         ast_base base; \
-        dynarr(AST) lhs; \
+        da(AST) lhs; \
         AST rhs; \
         AST type; \
         bool has_expl_type; \
@@ -120,7 +120,7 @@ typedef struct {
     }) \
     AST_TYPE(assign_stmt, "assignment", { \
         ast_base base; \
-        dynarr(AST) lhs; \
+        da(AST) lhs; \
         AST rhs; \
     }) \
     AST_TYPE(comp_assign_stmt, "compound assignment", { \
@@ -168,7 +168,7 @@ typedef struct {
     }) \
     AST_TYPE(return_stmt, "return statement", { \
         ast_base base; \
-        dynarr(AST) returns; \
+        da(AST) returns; \
     }) \
     AST_TYPE(break_stmt, "break statement", { \
         ast_base base; \
@@ -199,16 +199,16 @@ typedef struct {
     }) \
     AST_TYPE(struct_type_expr, "struct type", { \
             ast_base base; \
-            dynarr(AST_typed_field) fields; \
+            da(AST_typed_field) fields; \
     }) \
     AST_TYPE(union_type_expr, "union type", { \
             ast_base base; \
-            dynarr(AST_typed_field) fields; \
+            da(AST_typed_field) fields; \
     }) \
     AST_TYPE(fn_type_expr, "fn type", { \
             ast_base base; \
-            dynarr(AST_typed_field) parameters; \
-            dynarr(AST_typed_field) returns; \
+            da(AST_typed_field) parameters; \
+            da(AST_typed_field) returns; \
             AST block_symbol_override; /*this will be a string literal or NULL_STR if not set*/ \
             bool always_inline;\
             bool simple_return; \
@@ -216,7 +216,7 @@ typedef struct {
     AST_TYPE(enum_type_expr, "enum type", { \
             ast_base base; \
             AST backing_type;\
-            dynarr(AST_enum_variant) variants; \
+            da(AST_enum_variant) variants; \
     }) \
     AST_TYPE(array_type_expr, "array type", { \
             ast_base base; \
@@ -265,9 +265,9 @@ typedef struct {
     i64 value;
 } AST_enum_variant;
 
-dynarr_lib_h(AST)
-dynarr_lib_h(AST_enum_variant)
-dynarr_lib_h(AST_typed_field)
+da_typedef(AST);
+da_typedef(AST_enum_variant);
+da_typedef(AST_typed_field);
 
 typedef u8 exact_value_kind; enum {
     ev_invalid,
@@ -286,7 +286,7 @@ typedef struct {
         i64     as_int;
         f64     as_float;
         u64     as_pointer;
-        dynarr(AST) as_compound;
+        da(AST) as_compound;
     };
     exact_value_kind kind;
 } exact_value;

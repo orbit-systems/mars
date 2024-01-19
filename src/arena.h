@@ -2,7 +2,7 @@
 #define ARENA_H
 
 #include "orbit.h"
-#include "dynarr.h"
+#include "da.h"
 
 // memory arenas
 
@@ -16,10 +16,10 @@ arena_block arena_block_make(size_t size);
 void  arena_block_delete(arena_block* restrict a);
 void* arena_block_alloc(arena_block* restrict a, size_t size, size_t align);
 
-dynarr_lib_h(arena_block)
+da_typedef(arena_block);
 
 typedef struct {
-    dynarr(arena_block) list;
+    da(arena_block) list;
     u32 arena_size;
 } arena;
 

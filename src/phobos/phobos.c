@@ -1,6 +1,6 @@
 #include "orbit.h"
 #include "mars.h"
-#include "dynarr.h"
+#include "da.h"
 #include "term.h"
 
 #include "phobos.h"
@@ -29,8 +29,8 @@ compilation_unit* phobos_perform_frontend() {
     fs_file* subfiles = malloc(sizeof(fs_file) * subfile_count);
     fs_get_subfiles(&input_dir, subfiles);
 
-    dynarr(lexer) lexers;
-    dynarr_init(lexer, &lexers, subfile_count);
+    da(lexer) lexers;
+    da_init(&lexers, subfile_count);
 
     int mars_file_count = 0;
     FOR_RANGE_EXCL(i, 0, subfile_count) {
@@ -69,7 +69,7 @@ compilation_unit* phobos_perform_frontend() {
 
         lexer this_lexer = new_lexer(subfiles[i].path, loaded_file);
 
-        dynarr_append(lexer, &lexers, this_lexer);
+        da_append(&lexers, this_lexer);
 
     }
     if (mars_file_count == 0)
@@ -81,8 +81,8 @@ compilation_unit* phobos_perform_frontend() {
     size_t tokens_lexed = 0;
 
     FOR_URANGE_EXCL(i, 0, lexers.len) {
-        construct_token_buffer(&lexers.raw[i]);
-        tokens_lexed += lexers.raw[i].buffer.len;
+        construct_token_buffer(&lexers.at[i]);
+        tokens_lexed += lexers.at[i].buffer.len;
     }
 
     if (mars_flags.print_timings) {
@@ -96,16 +96,16 @@ compilation_unit* phobos_perform_frontend() {
         printf("\t  tok/s     : %.3f\n", tokens_lexed / elapsed);
     }
 
-    dynarr(parser) parsers;
-    dynarr_init(parser, &parsers, lexers.len);
+    da(parser) parsers;
+    da_init(&parsers, lexers.len);
 
     FOR_URANGE_EXCL(i, 0, lexers.len) {
         arena alloca = arena_make(PARSER_ARENA_SIZE);
 
-        parser p = make_parser(&lexers.raw[i], alloca);
+        parser p = make_parser(&lexers.at[i], alloca);
 
 
-        dynarr_append(parser, &parsers, p);
+        da_append(&parsers, p);
     }
 
     // timing
@@ -114,8 +114,8 @@ compilation_unit* phobos_perform_frontend() {
     size_t ast_nodes_created = 0;
 
     FOR_URANGE_EXCL(i, 0, parsers.len) {
-        parse_file(&parsers.raw[i]);
-        ast_nodes_created += parsers.raw[i].num_nodes;
+        parse_file(&parsers.at[i]);
+        ast_nodes_created += parsers.at[i].num_nodes;
     }
 
     /* display timing */ 

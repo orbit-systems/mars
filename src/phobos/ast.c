@@ -71,7 +71,7 @@ void dump_tree(AST node, int n) {
         printf("compound literal\n");
         dump_tree(node.as_comp_literal_expr->type, n+1);
         FOR_URANGE_EXCL(i, 0, node.as_comp_literal_expr->elems.len) {
-            dump_tree(node.as_comp_literal_expr->elems.raw[i], n+1);
+            dump_tree(node.as_comp_literal_expr->elems.at[i], n+1);
         }
         break;
     case astype_paren_expr:
@@ -122,7 +122,7 @@ void dump_tree(AST node, int n) {
         printf("function call\n");
         dump_tree(node.as_call_expr->lhs, n+1);
         FOR_URANGE_EXCL(i, 0, node.as_call_expr->params.len) {
-            dump_tree(node.as_call_expr->params.raw[i], n+1);
+            dump_tree(node.as_call_expr->params.at[i], n+1);
         }
         break;
     
@@ -137,7 +137,7 @@ void dump_tree(AST node, int n) {
     case astype_block_stmt:
         printf("{;}\n");
         FOR_URANGE_EXCL(i, 0, node.as_block_stmt->stmts.len) {
-            dump_tree(node.as_block_stmt->stmts.raw[i], n+1);
+            dump_tree(node.as_block_stmt->stmts.at[i], n+1);
         }
         break;
     case astype_decl_stmt:
@@ -147,7 +147,7 @@ void dump_tree(AST node, int n) {
             printf("let decl\n");
 
         FOR_URANGE_EXCL(i, 0, node.as_decl_stmt->lhs.len) {
-            dump_tree(node.as_decl_stmt->lhs.raw[i], n+1);
+            dump_tree(node.as_decl_stmt->lhs.at[i], n+1);
         }
         dump_tree(node.as_decl_stmt->type, n+1);
         dump_tree(node.as_decl_stmt->rhs, n+1);
@@ -160,15 +160,15 @@ void dump_tree(AST node, int n) {
     case astype_struct_type_expr:
         printf("struct type expr\n");
         FOR_URANGE_EXCL(i, 0, node.as_struct_type_expr->fields.len) {
-            dump_tree(node.as_struct_type_expr->fields.raw[i].field, n+1);
-            dump_tree(node.as_struct_type_expr->fields.raw[i].type, n+1);
+            dump_tree(node.as_struct_type_expr->fields.at[i].field, n+1);
+            dump_tree(node.as_struct_type_expr->fields.at[i].type, n+1);
         }
         break;
     case astype_union_type_expr:
         printf("union type expr\n");
         FOR_URANGE_EXCL(i, 0, node.as_struct_type_expr->fields.len) {
-            dump_tree(node.as_struct_type_expr->fields.raw[i].field, n+1);
-            dump_tree(node.as_struct_type_expr->fields.raw[i].type, n+1);
+            dump_tree(node.as_struct_type_expr->fields.at[i].field, n+1);
+            dump_tree(node.as_struct_type_expr->fields.at[i].type, n+1);
         }
         break;
     case astype_enum_type_expr:
@@ -176,9 +176,9 @@ void dump_tree(AST node, int n) {
         dump_tree(node.as_enum_type_expr->backing_type, n+1);
         FOR_URANGE_EXCL(i, 0, node.as_enum_type_expr->variants.len) {
             print_indent(n+1);
-            printstr((node.as_enum_type_expr->variants.raw[i].ident.as_identifier_expr->tok->text)); 
+            printstr((node.as_enum_type_expr->variants.at[i].ident.as_identifier_expr->tok->text)); 
             
-            printf(" = %ld\n", node.as_enum_type_expr->variants.raw[i].value);
+            printf(" = %ld\n", node.as_enum_type_expr->variants.at[i].value);
         }
         break;
     case astype_pointer_type_expr:

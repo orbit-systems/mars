@@ -2,24 +2,24 @@
 #define PHOBOS_H
 
 #include "orbit.h"
-#include "dynarr.h"
+#include "da.h"
 
 #include "lexer.h"
 #include "parser.h"
 
-dynarr_lib_h(lexer)
-dynarr_lib_h(parser)
+da_typedef(lexer);
+da_typedef(parser);
 
 typedef struct {
     lexer l;
     parser p;
 } mars_file;
 
-dynarr_lib_h(mars_file)
+da_typedef(mars_file);
 
 typedef struct {
     string module_name;
-    dynarr(mars_file) files;
+    da(mars_file) files;
 } compilation_unit;
 
 compilation_unit* phobos_perform_frontend();

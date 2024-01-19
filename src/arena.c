@@ -30,34 +30,34 @@ void* arena_block_alloc(arena_block* restrict block, size_t size, size_t align) 
 
 arena arena_make(size_t block_size) {
     arena al;
-    dynarr_init(arena_block, &al.list, 1);
+    da_init(&al.list, 1);
     al.arena_size = block_size;
     
     arena_block initial_arena = arena_block_make(al.arena_size);
-    dynarr_append(arena_block, &al.list, initial_arena);
+    da_append(&al.list, initial_arena);
 
     return al;
 }
 
 void arena_delete(arena* restrict al) {
     FOR_URANGE_EXCL(i, 0, (al->list.len)) {
-        arena_block_delete(&al->list.raw[i]);
+        arena_block_delete(&al->list.at[i]);
     }
-    dynarr_destroy(arena_block, &al->list);
+    da_destroy(&al->list);
     *al = (arena){0};
 }
 
 void* arena_alloc(arena* restrict al, size_t size, size_t align) {
     // attempt to allocate at the top arena_block;
-    void* attempt = arena_block_alloc(&al->list.raw[al->list.len-1], size, align);
+    void* attempt = arena_block_alloc(&al->list.at[al->list.len-1], size, align);
     if (attempt != NULL) return attempt; // yay!
 
     // FUCK! we need to append another arena_block block
     arena_block new_arena = arena_block_make(al->arena_size);
-    dynarr_append(arena_block, &al->list, new_arena);
+    da_append(&al->list, new_arena);
 
     // we're gonna try again
-    attempt = arena_block_alloc(&al->list.raw[al->list.len-1], size, align);
+    attempt = arena_block_alloc(&al->list.at[al->list.len-1], size, align);
     return attempt; // this should ideally never be null
 }
 

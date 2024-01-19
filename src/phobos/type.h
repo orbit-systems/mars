@@ -4,7 +4,7 @@
 #include "orbit.h"
 #include "lexer.h"
 #include "arena.h"
-#include "dynarr.h"
+#include "da.h"
 
 #define TYPE_NODES \
     TYPE(meta_type,  "type", {char _;}) \
@@ -30,13 +30,13 @@
     \
     \
     TYPE(multi, "multi", { /* type of expressions that have multiple types, like multi-valued return functions */ \
-        dynarr(mars_type) subtypes; \
+        da(mars_type) subtypes; \
     }) \
     TYPE(struct, "struct", { \
-        dynarr(mars_struct_field) fields;\
+        da(mars_struct_field) fields;\
     }) \
     TYPE(union, "union", { \
-        dynarr(mars_struct_field) fields;\
+        da(mars_struct_field) fields;\
     }) \
     TYPE(pointer, "pointer", { \
         mars_type subtype; \
@@ -80,10 +80,10 @@ typedef struct {
     mars_type type;
 } mars_struct_field;
 
-dynarr_lib_h(mars_type)
-dynarr_lib_h(size_t)
-dynarr_lib_h(string)
-dynarr_lib_h(mars_struct_field)
+da_typedef(mars_type);
+da_typedef(size_t);
+da_typedef(string);
+da_typedef(mars_struct_field);
 
 // generate typedefs
 #define TYPE(ident, identstr, structdef) typedef struct mtype_##ident structdef mtype_##ident;

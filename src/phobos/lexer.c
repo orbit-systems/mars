@@ -14,7 +14,7 @@ lexer new_lexer(string path, string src) {
     lex.src = src;
     lex.current_char = src.raw[0];
     lex.cursor = 0;
-    dynarr_init(token, &lex.buffer, src.len/3.5);
+    da_init(&lex.buffer, src.len/3.5);
     return lex;
 }
 
@@ -25,15 +25,15 @@ void construct_token_buffer(lexer* restrict lex) {
 
     do {
         append_next_token(lex);
-    } while (lex->buffer.raw[lex->buffer.len-1].type != tt_EOF);
+    } while (lex->buffer.at[lex->buffer.len-1].type != tt_EOF);
 
-    dynarr_shrink(token, &lex->buffer);
+    da_shrink(&lex->buffer);
 }
 
 void append_next_token(lexer* restrict lex) {
 
     // if the top token is an EOF, early return
-    // if (lex->buffer.raw[lex->buffer.len-1].type == tt_EOF) {
+    // if (lex->buffer.at[lex->buffer.len-1].type == tt_EOF) {
     //     return;
     // }
     
@@ -68,7 +68,7 @@ void append_next_token(lexer* restrict lex) {
     skip_insignificant_end:
 
     if (lex->cursor >= lex->src.len) {
-        dynarr_append(token, 
+        da_append(
             &lex->buffer, 
             ((token){substring_len(lex->src, lex->cursor, 1), tt_EOF})
         );
@@ -87,10 +87,10 @@ void append_next_token(lexer* restrict lex) {
         this_type = scan_operator(lex);
     }
 
-    dynarr_append_token(&lex->buffer, (token){
+    da_append(&lex->buffer, ((token){
         .text = substring(lex->src, beginning_cursor, lex->cursor), 
         .type = this_type,
-    });
+    }));
 }
 
 token_type scan_ident_or_keyword(lexer* restrict lex) {

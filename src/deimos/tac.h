@@ -2,7 +2,7 @@
 #define DEIMOS_TAC_H
 
 #include "orbit.h"
-#include "dynarr.h"
+#include "da.h"
 
 void testTAC();
 void processTAC();
@@ -87,4 +87,4 @@ typedef u8 TAC_allocation; enum {
 	TAC_REGISTER,
 };
 
-dynarr_lib_h(TAC_element);
+da_typedef(TAC_element);

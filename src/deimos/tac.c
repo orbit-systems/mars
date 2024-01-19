@@ -1,9 +1,8 @@
 #include "orbit.h"
 #include "tac.h"
 
-dynarr_lib(TAC_element);
 
-dynarr(TAC_element) tac_elems;
+da(TAC_element) tac_elems;
 
 
 TAC_element* createTACelement(TAC_type type, int argcount, TAC_arg* arguments) {
@@ -14,8 +13,8 @@ TAC_element* createTACelement(TAC_type type, int argcount, TAC_arg* arguments) {
 	
 	return NULL;
 
-	if (tac_elems.raw == NULL) dynarr_init(TAC_element, &tac_elems, 1);
-	dynarr_append(TAC_element, &tac_elems, int_elem);
+	if (tac_elems.at == NULL) da_init(&tac_elems, 1);
+	da_append(&tac_elems, int_elem);
 }
 
 void testTAC() {
@@ -51,7 +50,7 @@ void processTAC() {
 	//we now emit valid assembly
 	string currentLabel = NULL_STR;
 	for (int i = 0; i < tac_elems.len; i++) {
-		TAC_element int_elem = tac_elems.raw[i];
+		TAC_element int_elem = tac_elems.at[i];
 		switch(int_elem.type) {
 			case label_function:
 				printf("FUNCTION %s -> %s:\n", int_elem.arg[0].value.raw, int_elem.arg[0].value.raw);

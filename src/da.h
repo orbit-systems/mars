@@ -38,13 +38,13 @@
             exit(1); \
         } \
     } \
-    (da_ptr)->at[(da_ptr)->len++] = element; \
+    (da_ptr)->at[(da_ptr)->len++] = (element); \
 } while (0)
 
 #define da_shrink(da_ptr) do { \
     if ((da_ptr)->len == (da_ptr)->cap) break; \
     (da_ptr)->cap = (da_ptr)->len; \
-    (da_ptr)->at *= realloc(arr->at, sizeof((da_ptr)->at[0]) * (da_ptr)->cap); \
+    (da_ptr)->at = realloc((da_ptr)->at, sizeof((da_ptr)->at[0]) * (da_ptr)->cap); \
     if ((da_ptr)->at == NULL) { \
         printf("(%s:%d) da_init realloc failed for capacity %d", (__FILE__), (__LINE__), (da_ptr)->cap); \
         exit(1); \

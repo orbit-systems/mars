@@ -82,7 +82,7 @@ void recurse_dot(AST node, fs_file* file, int n, int uid) {
 
 	        	recurse_dot(node.as_comp_literal_expr->type, file, n+1, dot_uID());
 	        	FOR_URANGE_EXCL(i, 0, node.as_comp_literal_expr->elems.len) {
-	        	    recurse_dot(node.as_comp_literal_expr->elems.raw[i], file, n+1, dot_uID());
+	        	    recurse_dot(node.as_comp_literal_expr->elems.at[i], file, n+1, dot_uID());
 	        	}
 	    	}
 	        break;
@@ -134,7 +134,7 @@ void recurse_dot(AST node, fs_file* file, int n, int uid) {
 	        //printf("function call\n");
 	        recurse_dot(node.as_call_expr->lhs, file, n+1, dot_uID());
 	        FOR_URANGE_EXCL(i, 0, node.as_call_expr->params.len) {
-	            recurse_dot(node.as_call_expr->params.raw[i], file, n+1, dot_uID());
+	            recurse_dot(node.as_call_expr->params.at[i], file, n+1, dot_uID());
 	        }
 	        break;
 	    
@@ -149,7 +149,7 @@ void recurse_dot(AST node, fs_file* file, int n, int uid) {
 	    case astype_block_stmt:
 	        //printf("{;}\n");
 	        FOR_URANGE_EXCL(i, 0, node.as_block_stmt->stmts.len) {
-	            recurse_dot(node.as_block_stmt->stmts.raw[i], file, n+1, dot_uID());
+	            recurse_dot(node.as_block_stmt->stmts.at[i], file, n+1, dot_uID());
 	        }
 	        break;
 	    case astype_decl_stmt:
@@ -161,9 +161,9 @@ void recurse_dot(AST node, fs_file* file, int n, int uid) {
 	        	    decl_type = "let decl";
 	        	FOR_URANGE_EXCL(i, 0, node.as_decl_stmt->lhs.len) {
 	        		int int_uid = dot_uID();
-	        		sprintf(buffer, "\"%s_%d\" -> \"%s_%d\"\n", decl_type, uid, ast_type_str[node.as_decl_stmt->lhs.raw[i].type], int_uid);
+	        		sprintf(buffer, "\"%s_%d\" -> \"%s_%d\"\n", decl_type, uid, ast_type_str[node.as_decl_stmt->lhs.at[i].type], int_uid);
 	        	    fs_write(file, buffer, strlen(buffer));
-	        	    recurse_dot(node.as_decl_stmt->lhs.raw[i], file, n+1, int_uid);
+	        	    recurse_dot(node.as_decl_stmt->lhs.at[i], file, n+1, int_uid);
 	        	}
 	        	for (int i = 0; i < n; i++) fs_write(file, "\t", 1);
 	        	sprintf(buffer, "\"%s_%d\" -> \"%s_%d\"\n", decl_type, uid, ast_type_str[node.as_decl_stmt->type.type], _dot_uID + 1);
@@ -183,15 +183,15 @@ void recurse_dot(AST node, fs_file* file, int n, int uid) {
 	    case astype_struct_type_expr:
 	        //printf("struct type expr\n");
 	        FOR_URANGE_EXCL(i, 0, node.as_struct_type_expr->fields.len) {
-	            recurse_dot(node.as_struct_type_expr->fields.raw[i].field, file, n+1, dot_uID());
-	            recurse_dot(node.as_struct_type_expr->fields.raw[i].type, file, n+1, dot_uID());
+	            recurse_dot(node.as_struct_type_expr->fields.at[i].field, file, n+1, dot_uID());
+	            recurse_dot(node.as_struct_type_expr->fields.at[i].type, file, n+1, dot_uID());
 	        }
 	        break;
 	    case astype_union_type_expr:
 	        //printf("union type expr\n");
 	        FOR_URANGE_EXCL(i, 0, node.as_struct_type_expr->fields.len) {
-	            recurse_dot(node.as_struct_type_expr->fields.raw[i].field, file, n+1, dot_uID());
-	            recurse_dot(node.as_struct_type_expr->fields.raw[i].type, file, n+1, dot_uID());
+	            recurse_dot(node.as_struct_type_expr->fields.at[i].field, file, n+1, dot_uID());
+	            recurse_dot(node.as_struct_type_expr->fields.at[i].type, file, n+1, dot_uID());
 	        }
 	        break;
 	    case astype_enum_type_expr:
@@ -201,7 +201,7 @@ void recurse_dot(AST node, fs_file* file, int n, int uid) {
 	        fs_write(file, buffer, strlen(buffer));
 	        recurse_dot(node.as_enum_type_expr->backing_type, file, n+1, dot_uID());
 	        FOR_URANGE_EXCL(i, 0, node.as_enum_type_expr->variants.len) {
-	            sprintf(buffer, "\"%s_%d\" -> \"%s = %ld\"\n", ast_type_str[node.type], uid, clone_to_cstring((node.as_enum_type_expr->variants.raw[i].ident.as_identifier_expr->tok->text)), node.as_enum_type_expr->variants.raw[i].value);
+	            sprintf(buffer, "\"%s_%d\" -> \"%s = %ld\"\n", ast_type_str[node.type], uid, clone_to_cstring((node.as_enum_type_expr->variants.at[i].ident.as_identifier_expr->tok->text)), node.as_enum_type_expr->variants.at[i].value);
 	            fs_write(file, buffer, strlen(buffer));
 	        }
 	        break;

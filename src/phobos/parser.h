@@ -8,13 +8,13 @@
 
 typedef struct parser {
     arena alloca;
-    dynarr(token) tokens;
+    da(token) tokens;
     string path;
     string src;
     size_t current_tok;
 
     AST    module_decl;
-    dynarr(AST) stmts;
+    da(AST) stmts;
 
     size_t num_nodes;
 

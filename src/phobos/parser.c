@@ -8,8 +8,8 @@ AST new_ast_node(parser * restrict p, ast_type type);
 
 // sandwichman's BLAZINGLY 🔥🔥 FAST 🚀🚀 parser in RUST 🦀🦀 + AI POWERED with CHATGPT 🤖🧠 with BLOCKCHAIN BITCOIN TECHNOLOGY
 
-#define current_token ((p)->tokens.raw[(p)->current_tok])
-#define peek_token(n) ((p)->tokens.raw[(p)->current_tok + (n)])
+#define current_token ((p)->tokens.at[(p)->current_tok])
+#define peek_token(n) ((p)->tokens.at[(p)->current_tok + (n)])
 #define advance_token (((p)->current_tok + 1 < (p)->tokens.len) ? ((p)->current_tok)++ : 0)
 #define advance_n_tok(n) (((p)->current_tok + n < (p)->tokens.len) ? ((p)->current_tok)+=n : 0)
 
@@ -19,7 +19,7 @@ AST new_ast_node(parser * restrict p, ast_type type);
     error_at_string((p)->path, (p)->src, current_token.text, message __VA_OPT__(,) __VA_ARGS__)
 
 #define error_at_token_index(p, index, message, ...) \
-    error_at_string((p)->path, (p)->src, (p)->tokens.raw[index].text, message __VA_OPT__(,) __VA_ARGS__)
+    error_at_string((p)->path, (p)->src, (p)->tokens.at[index].text, message __VA_OPT__(,) __VA_ARGS__)
 
 #define error_at_token(p, token, message, ...) \
     error_at_string((p)->path, (p)->src, (token).text, message __VA_OPT__(,) __VA_ARGS__)
@@ -68,12 +68,12 @@ void parse_file(parser* restrict p) {
     
     p->module_decl = parse_module_decl(p);
 
-    dynarr_init_AST(&p->stmts, 16);
+    da_init(&p->stmts, 16);
 
     AST stmt = parse_stmt(p);
-    while (p->tokens.raw[p->current_tok].type != tt_EOF) {
+    while (p->tokens.at[p->current_tok].type != tt_EOF) {
         AST stmt = parse_stmt(p);
-        dynarr_append_AST(&p->stmts, stmt);
+        da_append(&p->stmts, stmt);
     }
     // emit_dot(p->path, smth);
     // dump_tree(smth, 0);
@@ -635,13 +635,13 @@ AST parse_atomic_expr(parser* restrict p, bool type_expr) {
                 temp.as_call_expr->base.start = n.base->start;
                 advance_token;
 
-                dynarr_init_AST(&temp.as_call_expr->params, 4);
+                da_init(&temp.as_call_expr->params, 4);
                 while (current_token.type != tt_close_paren) {
                     AST expr = parse_expr(p);
                     if (is_null_AST(expr)) {
                         error_at_parser(p, "expected expression");
                     }
-                    dynarr_append_AST(&temp.as_call_expr->params, expr);
+                    da_append(&temp.as_call_expr->params, expr);
                     if (current_token.type == tt_comma) {
                         advance_token;
                         continue;
@@ -798,12 +798,12 @@ AST parse_atomic_expr(parser* restrict p, bool type_expr) {
             advance_token;
 
             if (current_token.type == tt_close_brace) {
-                dynarr_init_AST_typed_field(&n.as_struct_type_expr->fields, 1);
+                da_init(&n.as_struct_type_expr->fields, 1);
                 advance_token;
                 break;
             }
 
-            dynarr_init_AST_typed_field(&n.as_struct_type_expr->fields, 8);
+            da_init(&n.as_struct_type_expr->fields, 8);
             
             while (true) {
 
@@ -820,9 +820,9 @@ AST parse_atomic_expr(parser* restrict p, bool type_expr) {
                     type = parse_expr(p);
 
                     if (current_token.type == tt_semicolon) {
-                        dynarr_append_AST_typed_field(&n.as_struct_type_expr->fields, (AST_typed_field){
+                        da_append(&n.as_struct_type_expr->fields, ((AST_typed_field){
                             field, type
-                        });
+                        }));
                         advance_token;
                         if (current_token.type == tt_close_brace) {
                             break;
@@ -833,9 +833,9 @@ AST parse_atomic_expr(parser* restrict p, bool type_expr) {
                     }
 
                 } else if (current_token.type == tt_comma) {
-                    dynarr_append_AST_typed_field(&n.as_struct_type_expr->fields, (AST_typed_field){
+                    da_append(&n.as_struct_type_expr->fields, ((AST_typed_field){
                         field, type
-                    });
+                    }));
                     advance_token;
                     if (current_token.type != tt_identifier) {
                         error_at_parser(p, "expected field name");
@@ -864,12 +864,12 @@ AST parse_atomic_expr(parser* restrict p, bool type_expr) {
             advance_token;
 
             if (current_token.type == tt_close_brace) {
-                dynarr_init_AST_typed_field(&n.as_union_type_expr->fields, 1);
+                da_init(&n.as_union_type_expr->fields, 1);
                 advance_token;
                 break;
             }
 
-            dynarr_init_AST_typed_field(&n.as_union_type_expr->fields, 8);
+            da_init(&n.as_union_type_expr->fields, 8);
             
             while (true) {
 
@@ -886,9 +886,9 @@ AST parse_atomic_expr(parser* restrict p, bool type_expr) {
                     type = parse_expr(p);
 
                     if (current_token.type == tt_semicolon) {
-                        dynarr_append_AST_typed_field(&n.as_struct_type_expr->fields, (AST_typed_field){
+                        da_append(&n.as_struct_type_expr->fields, ((AST_typed_field){
                             field, type
-                        });
+                        }));
                         advance_token;
                         if (current_token.type == tt_close_brace) {
                             break;
@@ -899,9 +899,9 @@ AST parse_atomic_expr(parser* restrict p, bool type_expr) {
                     }
 
                 } else if (current_token.type == tt_comma) {
-                    dynarr_append_AST_typed_field(&n.as_union_type_expr->fields, (AST_typed_field){
+                    da_append(&n.as_union_type_expr->fields, ((AST_typed_field){
                         field, type
-                    });
+                    }));
                     advance_token;
                     if (current_token.type != tt_identifier) {
                         error_at_parser(p, "expected field name");
@@ -941,12 +941,12 @@ AST parse_atomic_expr(parser* restrict p, bool type_expr) {
 
 
             if (current_token.type == tt_close_brace) {
-                dynarr_init_AST_enum_variant(&n.as_enum_type_expr->variants, 1);
+                da_init(&n.as_enum_type_expr->variants, 1);
                 n.base->end = &current_token;
                 advance_token;
                 break;
             } else {
-                dynarr_init_AST_enum_variant(&n.as_enum_type_expr->variants, 8); // 8 is probably an ok size
+                da_init(&n.as_enum_type_expr->variants, 8); // 8 is probably an ok size
             }
 
             u64 value = 0;
@@ -968,10 +968,10 @@ AST parse_atomic_expr(parser* restrict p, bool type_expr) {
                     advance_token;
                 }
 
-                dynarr_append_AST_enum_variant(&n.as_enum_type_expr->variants, (AST_enum_variant){
+                da_append(&n.as_enum_type_expr->variants, ((AST_enum_variant){
                     variant,
                     value
-                });
+                }));
                 
                 value++;
 
@@ -1033,8 +1033,8 @@ AST parse_atomic_expr(parser* restrict p, bool type_expr) {
             advance_token;
 
 
-            dynarr_init_AST_typed_field(&n.as_fn_type_expr->parameters, 4);
-            dynarr_init_AST_typed_field(&n.as_fn_type_expr->returns, 2);
+            da_init(&n.as_fn_type_expr->parameters, 4);
+            da_init(&n.as_fn_type_expr->returns, 2);
             
             while (current_token.type != tt_close_paren) {
 
@@ -1051,9 +1051,9 @@ AST parse_atomic_expr(parser* restrict p, bool type_expr) {
                     type = parse_expr(p);
 
                     if (current_token.type == tt_comma) {
-                        dynarr_append_AST_typed_field(&n.as_fn_type_expr->parameters, (AST_typed_field){
+                        da_append(&n.as_fn_type_expr->parameters, ((AST_typed_field){
                             field, type
-                        });
+                        }));
                         advance_token;
                         if (current_token.type == tt_close_paren) {
                             break;
@@ -1066,9 +1066,9 @@ AST parse_atomic_expr(parser* restrict p, bool type_expr) {
                     }
 
                 } else if (current_token.type == tt_comma) {
-                    dynarr_append_AST_typed_field(&n.as_fn_type_expr->parameters, (AST_typed_field){
+                    da_append(&n.as_fn_type_expr->parameters, ((AST_typed_field){
                         field, type
-                    });
+                    }));
                     advance_token;
                     if (current_token.type != tt_identifier) {
                         error_at_parser(p, "expected parameter name");
@@ -1096,9 +1096,9 @@ AST parse_atomic_expr(parser* restrict p, bool type_expr) {
                     error_at_AST(p, return_type, "return type must be a type expression");
 
                 n.as_fn_type_expr->simple_return = true;
-                dynarr_append_AST_typed_field(&n.as_fn_type_expr->returns, (AST_typed_field){
+                da_append(&n.as_fn_type_expr->returns, ((AST_typed_field){
                     NULL_AST, return_type
-                });
+                }));
                 n.base->end = &peek_token(-1);
                 break;
             }
@@ -1120,9 +1120,9 @@ AST parse_atomic_expr(parser* restrict p, bool type_expr) {
                     type = parse_expr(p);
 
                     if (current_token.type == tt_comma) {
-                        dynarr_append_AST_typed_field(&n.as_fn_type_expr->returns, (AST_typed_field){
+                        da_append(&n.as_fn_type_expr->returns, ((AST_typed_field){
                             field, type
-                        });
+                        }));
                         advance_token;
                         if (current_token.type == tt_close_paren) {
                             break;
@@ -1135,9 +1135,9 @@ AST parse_atomic_expr(parser* restrict p, bool type_expr) {
                     }
 
                 } else if (current_token.type == tt_comma) {
-                    dynarr_append_AST_typed_field(&n.as_fn_type_expr->returns, (AST_typed_field){
+                    da_append(&n.as_fn_type_expr->returns, ((AST_typed_field){
                         field, type
-                    });
+                    }));
                     advance_token;
                     if (current_token.type != tt_identifier) {
                         error_at_parser(p, "expected return variable name");
@@ -1191,12 +1191,12 @@ AST parse_atomic_expr(parser* restrict p, bool type_expr) {
 
             advance_token;
             if (current_token.type == tt_close_brace) {
-                dynarr_init_AST(&lit.as_comp_literal_expr->elems, 1);
+                da_init(&lit.as_comp_literal_expr->elems, 1);
                 lit.base->end = &current_token;
                 break;
             }
 
-            dynarr_init_AST(&lit.as_comp_literal_expr->elems, 4);
+            da_init(&lit.as_comp_literal_expr->elems, 4);
 
             while (true) {
                 AST expr = parse_expr(p);
@@ -1204,7 +1204,7 @@ AST parse_atomic_expr(parser* restrict p, bool type_expr) {
                 if (is_null_AST(expr))
                     error_at_parser(p, "expected an expression");
 
-                dynarr_append_AST(&lit.as_comp_literal_expr->elems, expr);
+                da_append(&lit.as_comp_literal_expr->elems, expr);
 
                 if (current_token.type == tt_comma) {
                     advance_token;
@@ -1440,9 +1440,9 @@ AST parse_stmt(parser* restrict p) {
         }
 
         // parse identifier list
-        dynarr_init_AST(&n.as_decl_stmt->lhs, 4); // four is probably good right
+        da_init(&n.as_decl_stmt->lhs, 4); // four is probably good right
         while (current_token.type != tt_identifier || current_token.type != tt_identifier_discard) {
-            dynarr_append_AST(&n.as_decl_stmt->lhs, parse_expr(p));
+            da_append(&n.as_decl_stmt->lhs, parse_expr(p));
             if (current_token.type != tt_comma)
                 break;
             advance_token;
@@ -1534,13 +1534,13 @@ AST parse_stmt(parser* restrict p) {
         n.base->start = &current_token;
         advance_token;
 
-        dynarr_init_AST(&n.as_return_stmt->returns, 2);
+        da_init(&n.as_return_stmt->returns, 2);
 
         while (current_token.type != tt_semicolon) {
             AST ret_expr = parse_expr(p);
             if (is_null_AST(ret_expr))
                 error_at_parser(p, "expected expression");
-            dynarr_append_AST(&n.as_return_stmt->returns, ret_expr);
+            da_append(&n.as_return_stmt->returns, ret_expr);
             if (current_token.type == tt_comma)
                 advance_token;
             else if (current_token.type == tt_semicolon)
@@ -1634,12 +1634,12 @@ AST parse_block_stmt(parser* restrict p) {
         error_at_parser(p, "expected '{', got '%s'", token_type_str[current_token.type]);
     n.as_block_stmt->base.start = &current_token;
 
-    dynarr_init(AST, &n.as_block_stmt->stmts, 1);
+    da_init(&n.as_block_stmt->stmts, 1);
 
     advance_token;
     while (current_token.type != tt_close_brace) {
         AST stmt = parse_stmt(p);
-        dynarr_append(AST, &n.as_block_stmt->stmts, stmt);
+        da_append(&n.as_block_stmt->stmts, stmt);
     }
 
     if (current_token.type != tt_close_brace)

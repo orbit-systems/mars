@@ -2,7 +2,7 @@
 #define PHOBOS_LEXER_H
 
 #include "orbit.h"
-#include "dynarr.h"
+#include "da.h"
 
 #define TOKEN_LIST \
     TOKEN(tt_invalid, "INVALID") \
@@ -150,12 +150,12 @@ typedef struct token_s {
     token_type type;
 } token;
 
-dynarr_lib_h(token)
+da_typedef(token);
 
 typedef struct lexer_s {
     string src;
     string path;
-    dynarr(token) buffer;
+    da(token) buffer;
     u64 cursor;
     char current_char;
 } lexer;
