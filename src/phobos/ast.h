@@ -214,6 +214,7 @@ typedef struct {
     AST_TYPE(struct_type_expr, "struct type", { \
             ast_base base; \
             da(AST_typed_field) fields; \
+            bool smart_pack;\
     }) \
     AST_TYPE(union_type_expr, "union type", { \
             ast_base base; \

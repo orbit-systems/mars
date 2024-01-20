@@ -6,8 +6,9 @@ import neptune "neptune";
 let println = neptune::kprintln;
 let printf = neptune::kprintf;
 
-// #block_symbol sets the symbol of a function's code
-// block to a specific string
+// #block_symbol sets the assembly label of a 
+// function's code block to something specific
+
 let main = fn #block_symbol("main") () {
 
     let str = "bruh";
@@ -29,3 +30,4 @@ let main = fn #block_symbol("main") () {
 
     while true {}
 };
+

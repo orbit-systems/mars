@@ -781,6 +781,19 @@ AST parse_atomic_expr(parser* restrict p, bool no_cl) {
             n.base->start = &current_token;
             advance_token;
 
+            while (current_token.type == tt_hash) {
+                advance_token;
+                if (current_token.type != tt_identifier)
+                    error_at_parser(p, "expected an identifer");
+
+                if (string_eq(current_token.text, to_string("smart_pack"))) {
+                    n.as_struct_type_expr->smart_pack = true;
+                    advance_token;
+                } else {
+                    error_at_parser(p, "unrecognized directive '"str_fmt"'", str_arg(current_token.text));
+                }
+            }
+
             if (current_token.type != tt_open_brace)
                 error_at_parser(p, "expected '{' after 'struct'");
             advance_token;
@@ -1580,7 +1593,7 @@ AST parse_stmt(parser* restrict p) {
         break;
     } break;
     case tt_keyword_asm: {
-        error_at_parser(p, "TODO assembly blocks");
+        error_at_parser(p, "TODO inline assembly");
     } break;
     default: {
         AST lhs = parse_expr(p, true);
