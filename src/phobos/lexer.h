@@ -163,28 +163,3 @@ typedef struct lexer_s {
 lexer new_lexer(string path, string src);
 void construct_token_buffer(lexer* lex);
 void append_next_token(lexer* lex);
-
-#define can_start_identifier(ch) ((ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z') || ch == '_')
-#define can_be_in_identifier(ch) ((ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z') || (ch >= '0' && ch <= '9') || ch == '_')
-#define can_start_number(ch) ((ch >= '0' && ch <= '9'))
-#define valid_digit(ch) ((ch >= '0' && ch <= '9') || (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || (ch == '_'))
-
-#define valid_0x(ch) ((ch >= '0' && ch <= '9') || (ch >= 'a' && ch <= 'f') || (ch >= 'A' && ch <= 'F') || (ch == '_'))
-#define valid_0d(ch) ((ch >= '0' && ch <= '9') || (ch == '_'))
-#define valid_0o(ch) ((ch >= '0' && ch <= '7') || (ch == '_'))
-#define valid_0b(ch) (ch == '0' || ch == '1' || ch == '_')
-
-#define current_char(lex) (lex->current_char)
-#define advance_char(lex) (lex->cursor < lex->src.len ? (lex->current_char = lex->src.raw[++lex->cursor]) : '\0')
-#define advance_char_n(lex, n) (lex->cursor + (n) < lex->src.len ? (lex->current_char = lex->src.raw[lex->cursor += (n)]) : '\0')
-#define peek_char(lex, n) ((lex->cursor + (n)) < lex->src.len ? lex->src.raw[lex->cursor + (n)] : '\0')
-
-
-int skip_block_comment(lexer* restrict lex);
-void skip_until_char(lexer* restrict lex, char c);
-void skip_whitespace(lexer* restrict lex);
-
-token_type scan_ident_or_keyword(lexer* restrict lex);
-token_type scan_number(lexer* restrict lex);
-token_type scan_string_or_char(lexer* restrict lex);
-token_type scan_operator(lexer* restrict lex);

@@ -23,6 +23,8 @@ typedef struct parser {
 parser make_parser(lexer* restrict l, arena alloca);
 void parse_file(parser* restrict p);
 
+#define new_ast_node_p(p, type) ((p)->num_nodes++, new_ast_node(&(p)->alloca, (type)))
+
 AST parse_module_decl(parser* restrict p);
 AST parse_stmt(parser* restrict p);
 AST parse_block_stmt(parser* restrict p);

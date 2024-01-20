@@ -2,4 +2,5 @@ module test;
 
 let main = fn() {
     let x = -0.1;
+    a += 1;
 };

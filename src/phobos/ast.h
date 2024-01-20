@@ -136,6 +136,16 @@ typedef struct {
         AST else_branch; \
         bool is_elif; \
     }) \
+    AST_TYPE(switch_stmt, "switch statement", { \
+        ast_base base; \
+        AST expr; \
+        da(AST) cases; \
+    }) \
+    AST_TYPE(case, "case statement", { \
+        ast_base base; \
+        da(AST) matches; \
+        AST block; \
+    }) \
     AST_TYPE(while_stmt, "while loop", { \
         ast_base base; \
         AST condition; \
@@ -145,7 +155,7 @@ typedef struct {
         ast_base base; \
         AST prelude; \
         AST condition; \
-        AST post_stmt; \
+        AST update; \
         AST block; \
     }) \
     AST_TYPE(for_in_stmt, "for-in loop", { \
@@ -157,6 +167,10 @@ typedef struct {
         AST block; \
         bool is_inclusive; \
         bool is_reverse; \
+    }) \
+    AST_TYPE(extern_stmt, "extern statement", { \
+        ast_base base; \
+        AST decl; \
     }) \
     AST_TYPE(defer_stmt, "defer statement", { \
         ast_base base; \
@@ -302,4 +316,5 @@ typedef struct {
 extern char* ast_type_str[];
 extern size_t ast_type_size[];
 
+AST new_ast_node(arena* restrict alloca, ast_type type);
 void dump_tree(AST node, int n);

@@ -7,8 +7,7 @@ let PUTC_PORT: uint = 100;
 let kprintln = fn(str: []u8) {
     kprint(str);
     kputc('\n');
-
-}
+};
 
 let kprint = fn(str: []u8) {
     for i in 0..<str.len {
@@ -17,10 +16,10 @@ let kprint = fn(str: []u8) {
 };
 
 let kputc = fn(c: u8) {
-    asm(c -> "ra", PUTC -> "rb") {
-        "out rb, ra",
-    }
-}
+    // asm(c -> "ra", PUTC -> "rb") {
+    //     "out rb, ra",
+    // }
+};
 
 let kprintf = fn(format: []u8, args: []addr) {
     if args.len == 0 {
@@ -35,7 +34,7 @@ let kprintf = fn(format: []u8, args: []addr) {
             continue;
         }
         i += 1;
-        
+
         if mem::str_equal(format[i:i+3], "int") {
             print_integer(cast(uint) &cast(^int)args[current_arg], 64, true, 10);
             i += 2;
@@ -49,9 +48,8 @@ let kprintf = fn(format: []u8, args: []addr) {
             continue;
         }        
     }
-}
+};
 
 let print_integer = fn(value: uint, bitsize: uint, signed: bool, base: u8) {
     // implementation pending
-}
-
+};

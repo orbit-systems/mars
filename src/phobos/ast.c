@@ -22,16 +22,15 @@ char* ast_type_str[] = {
 };
 
 // allocate and zero a new AST node with an arena
-AST new_ast_node(parser* restrict p, ast_type type) {
+AST new_ast_node(arena* restrict alloca, ast_type type) {
     AST node;
-    void* node_ptr = arena_alloc(&p->alloca, ast_type_size[type], 8);
+    void* node_ptr = arena_alloc(alloca, ast_type_size[type], 8);
     if (node_ptr == NULL) {
-        general_error("internal: new_ast_node() could not allocate AST node of type '%s' with size %d", ast_type_str[type], ast_type_size[type]);
+        general_error("internal: new_ast_node_p() could not allocate AST node of type '%s' with size %d", ast_type_str[type], ast_type_size[type]);
     }
     memset(node_ptr, 0, ast_type_size[type]);
     node.rawptr = node_ptr;
     node.type = type;
-    p->num_nodes += 1;
     return node;
 }
 
