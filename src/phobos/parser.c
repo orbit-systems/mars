@@ -70,18 +70,19 @@ void parse_file(parser* restrict p) {
 
     da_init(&p->stmts, 16);
 
-    AST stmt = parse_stmt(p);
-    while (p->tokens.at[p->current_tok].type != tt_EOF) {
+    while (current_token.type != tt_EOF) {
         AST stmt = parse_stmt(p);
+        if (is_null_AST(stmt)) break;
         da_append(&p->stmts, stmt);
     }
-    // emit_dot(p->path, smth);
-    // dump_tree(smth, 0);
 }
 
-AST parse_expr(parser* restrict p) {
+
+// cl = compound literals
+// this can cause syntatic ambiguity with conditionals so its nice to be able to turn these off
+AST parse_expr(parser* restrict p, bool no_cl) {
     AST n = NULL_AST;
-    n = parse_binary_expr(p, 0);
+    n = parse_binary_expr(p, 0, no_cl);
     return n;
 }
 
@@ -117,27 +118,27 @@ int op_precedence(token_type type) {
     return 0;
 }
 
-AST parse_binary_expr(parser* restrict p, int precedence) {
+AST parse_binary_expr(parser* restrict p, int precedence, bool no_cl) {
     AST lhs = NULL_AST;
     
-    lhs = parse_unary_expr(p, false);
+    lhs = parse_unary_expr(p, no_cl);
     if (is_null_AST(lhs)) return lhs;
 
     while (precedence < op_precedence(current_token.type)) {
-        lhs = parse_non_unary_expr(p, lhs, precedence);
+        lhs = parse_non_unary_expr(p, lhs, precedence, no_cl);
     }
 
     return lhs;
 }
 
-AST parse_non_unary_expr(parser* restrict p, AST lhs, int precedence) {
+AST parse_non_unary_expr(parser* restrict p, AST lhs, int precedence, bool no_cl) {
     AST n = new_ast_node(p, astype_binary_op_expr);
     n.as_binary_op_expr->base.start = lhs.base->start;
     n.as_binary_op_expr->op = &current_token;
     n.as_binary_op_expr->lhs = lhs;
     advance_token;
     
-    n.as_binary_op_expr->rhs = parse_binary_expr(p, op_precedence(n.as_binary_op_expr->op->type));
+    n.as_binary_op_expr->rhs = parse_binary_expr(p, op_precedence(n.as_binary_op_expr->op->type), no_cl);
     if (is_null_AST(n.as_binary_op_expr->rhs)) {
         error_at_parser(p, "expected operand");
     }
@@ -145,7 +146,7 @@ AST parse_non_unary_expr(parser* restrict p, AST lhs, int precedence) {
     return n;
 }
 
-AST parse_unary_expr(parser* restrict p, bool type_expr) {
+AST parse_unary_expr(parser* restrict p, bool no_cl) {
     AST n = NULL_AST;
     
     switch (current_token.type) {
@@ -162,7 +163,7 @@ AST parse_unary_expr(parser* restrict p, bool type_expr) {
         n.as_unary_op_expr->op = &current_token;
         advance_token;
 
-        n.as_unary_op_expr->inside = parse_unary_expr(p, type_expr);
+        n.as_unary_op_expr->inside = parse_unary_expr(p, no_cl);
 
         n.as_unary_op_expr->base.end = &peek_token(-1);
         break;
@@ -178,13 +179,13 @@ AST parse_unary_expr(parser* restrict p, bool type_expr) {
             error_at_parser(p, "expected '(' after 'cast', got %s", token_type_str[current_token.type]);
         advance_token;
 
-        n.as_cast_expr->type = parse_expr(p);
+        n.as_cast_expr->type = parse_expr(p, false);
 
         if (current_token.type != tt_close_paren)
             error_at_parser(p, "expected ')', got %s", token_type_str[current_token.type]);
         advance_token;
 
-        n.as_cast_expr->rhs = parse_unary_expr(p, type_expr);
+        n.as_cast_expr->rhs = parse_unary_expr(p, no_cl);
 
         n.as_cast_expr->base.end = &peek_token(-1);
         break;
@@ -194,7 +195,7 @@ AST parse_unary_expr(parser* restrict p, bool type_expr) {
         n.as_pointer_type_expr->base.start = &current_token;
         advance_token;
 
-        n.as_pointer_type_expr->subexpr = parse_unary_expr(p, type_expr);
+        n.as_pointer_type_expr->subexpr = parse_unary_expr(p, no_cl);
 
         n.as_pointer_type_expr->base.end = &peek_token(-1);
         break;
@@ -205,7 +206,7 @@ AST parse_unary_expr(parser* restrict p, bool type_expr) {
             n.as_slice_type_expr->base.start = &current_token;
 
             advance_n_tok(2);
-            n.as_slice_type_expr->subexpr = parse_unary_expr(p, type_expr);
+            n.as_slice_type_expr->subexpr = parse_unary_expr(p, no_cl);
 
             n.as_slice_type_expr->base.end = &peek_token(-1);
         } else {
@@ -213,18 +214,18 @@ AST parse_unary_expr(parser* restrict p, bool type_expr) {
             n.as_array_type_expr->base.start = &current_token;
             advance_token;
 
-            n.as_array_type_expr->length = parse_expr(p);
+            n.as_array_type_expr->length = parse_expr(p, no_cl);
             if (current_token.type != tt_close_bracket)
                 error_at_parser(p, "expected ']', got %s", token_type_str[current_token.type]);
 
             advance_token;
-            n.as_array_type_expr->subexpr = parse_unary_expr(p, type_expr);
+            n.as_array_type_expr->subexpr = parse_unary_expr(p, no_cl);
             n.as_array_type_expr->base.end = &peek_token(-1);
         }
         break;
 
     default:
-        n = parse_atomic_expr(p, type_expr);
+        n = parse_atomic_expr(p, no_cl);
     }
     return n;
 }
@@ -467,15 +468,16 @@ bool is_possible_type_expr(AST n) {
     case astype_identifier_expr:
     case astype_basic_type_expr:
         return true;
+        break;
     default:
-        return false;
     }
+    return false;
 }
 
 #define is_definitely_not_type_expr_trust_me_bro(ast_node) (!is_possible_type_expr((ast_node)))
 
 // jesus christ
-AST parse_atomic_expr(parser* restrict p, bool type_expr) {
+AST parse_atomic_expr(parser* restrict p, bool no_cl) {
     AST n = NULL_AST;
 
     bool out = false;
@@ -622,7 +624,7 @@ AST parse_atomic_expr(parser* restrict p, bool type_expr) {
                 n.as_paren_expr->base.start = &current_token;
                 advance_token;
 
-                n.as_paren_expr->subexpr = parse_expr(p);
+                n.as_paren_expr->subexpr = parse_expr(p, false);
                 if (current_token.type != tt_close_paren)
                     error_at_parser(p, "expected ')', got %s", token_type_str[current_token.type]);
                 
@@ -637,7 +639,7 @@ AST parse_atomic_expr(parser* restrict p, bool type_expr) {
 
                 da_init(&temp.as_call_expr->params, 4);
                 while (current_token.type != tt_close_paren) {
-                    AST expr = parse_expr(p);
+                    AST expr = parse_expr(p, false);
                     if (is_null_AST(expr)) {
                         error_at_parser(p, "expected expression");
                     }
@@ -737,7 +739,7 @@ AST parse_atomic_expr(parser* restrict p, bool type_expr) {
 
             advance_token;
 
-            AST first_expr = parse_expr(p);
+            AST first_expr = parse_expr(p, false);
             if (current_token.type == tt_close_bracket) {   // index expr
                 if (is_null_AST(first_expr))
                     error_at_parser(p, "expected an expression inside '[]'");
@@ -756,7 +758,7 @@ AST parse_atomic_expr(parser* restrict p, bool type_expr) {
                 temp.as_slice_expr->lhs = n;
                 temp.as_slice_expr->inside_left = first_expr;
 
-                temp.as_slice_expr->inside_right = parse_expr(p);
+                temp.as_slice_expr->inside_right = parse_expr(p, false);
                 if (current_token.type != tt_close_bracket)
                     error_at_parser(p, "expected closing ']'");
 
@@ -807,7 +809,7 @@ AST parse_atomic_expr(parser* restrict p, bool type_expr) {
             
             while (true) {
 
-                AST field = parse_expr(p);
+                AST field = parse_expr(p, true);
 
                 if (is_null_AST(field))
                     error_at_parser(p, "expected struct name");
@@ -817,7 +819,7 @@ AST parse_atomic_expr(parser* restrict p, bool type_expr) {
                 AST type = NULL_AST;
                 if (current_token.type == tt_colon) {
                     advance_token;
-                    type = parse_expr(p);
+                    type = parse_expr(p, true);
 
                     if (current_token.type == tt_semicolon) {
                         da_append(&n.as_struct_type_expr->fields, ((AST_typed_field){
@@ -873,7 +875,7 @@ AST parse_atomic_expr(parser* restrict p, bool type_expr) {
             
             while (true) {
 
-                AST field = parse_expr(p);
+                AST field = parse_expr(p, true);
 
                 if (is_null_AST(field))
                     error_at_parser(p, "expected field name");
@@ -883,7 +885,7 @@ AST parse_atomic_expr(parser* restrict p, bool type_expr) {
                 AST type = NULL_AST;
                 if (current_token.type == tt_colon) {
                     advance_token;
-                    type = parse_expr(p);
+                    type = parse_expr(p, true);
 
                     if (current_token.type == tt_semicolon) {
                         da_append(&n.as_struct_type_expr->fields, ((AST_typed_field){
@@ -952,7 +954,7 @@ AST parse_atomic_expr(parser* restrict p, bool type_expr) {
             u64 value = 0;
             while (true) {
 
-                AST variant = parse_expr(p);
+                AST variant = parse_expr(p, true);
                 if (is_null_AST(variant))
                     error_at_parser(p, "expected field name");
                 if (variant.type != astype_identifier_expr)
@@ -1015,7 +1017,7 @@ AST parse_atomic_expr(parser* restrict p, bool type_expr) {
                         error_at_parser(p, "expected '('");
                     advance_token;
 
-                    n.as_fn_type_expr->block_symbol_override = parse_expr(p);
+                    n.as_fn_type_expr->block_symbol_override = parse_expr(p, false);
 
                     if (n.as_fn_type_expr->block_symbol_override.type != astype_literal_expr)
                         error_at_AST(p,n.as_fn_type_expr->block_symbol_override, "expected string literal");
@@ -1038,7 +1040,7 @@ AST parse_atomic_expr(parser* restrict p, bool type_expr) {
             
             while (current_token.type != tt_close_paren) {
 
-                AST field = parse_expr(p);
+                AST field = parse_expr(p, true);
 
                 if (is_null_AST(field))
                     error_at_parser(p, "expected parameter name");
@@ -1048,7 +1050,7 @@ AST parse_atomic_expr(parser* restrict p, bool type_expr) {
                 AST type = NULL_AST;
                 if (current_token.type == tt_colon) {
                     advance_token;
-                    type = parse_expr(p);
+                    type = parse_expr(p, true);
 
                     if (current_token.type == tt_comma) {
                         da_append(&n.as_fn_type_expr->parameters, ((AST_typed_field){
@@ -1107,7 +1109,7 @@ AST parse_atomic_expr(parser* restrict p, bool type_expr) {
             advance_token;
             while (current_token.type != tt_close_paren) {
 
-                AST field = parse_expr(p);
+                AST field = parse_expr(p, true);
 
                 if (is_null_AST(field))
                     error_at_parser(p, "expected return variable name");
@@ -1117,7 +1119,7 @@ AST parse_atomic_expr(parser* restrict p, bool type_expr) {
                 AST type = NULL_AST;
                 if (current_token.type == tt_colon) {
                     advance_token;
-                    type = parse_expr(p);
+                    type = parse_expr(p, true);
 
                     if (current_token.type == tt_comma) {
                         da_append(&n.as_fn_type_expr->returns, ((AST_typed_field){
@@ -1154,9 +1156,7 @@ AST parse_atomic_expr(parser* restrict p, bool type_expr) {
 
         case tt_open_brace:
 
-            // if we are looking for a type expression, return the previously parsed expression
-            // because this aint gonna be a type
-            if (type_expr) {
+            if (no_cl) {
                 out = true;
                 break;
             }
@@ -1193,13 +1193,15 @@ AST parse_atomic_expr(parser* restrict p, bool type_expr) {
             if (current_token.type == tt_close_brace) {
                 da_init(&lit.as_comp_literal_expr->elems, 1);
                 lit.base->end = &current_token;
+                n = lit;
+                advance_token;
                 break;
             }
 
             da_init(&lit.as_comp_literal_expr->elems, 4);
 
             while (true) {
-                AST expr = parse_expr(p);
+                AST expr = parse_expr(p, false);
 
                 if (is_null_AST(expr))
                     error_at_parser(p, "expected an expression");
@@ -1242,7 +1244,7 @@ AST parse_import_stmt(parser* restrict p) {
     if (current_token.type != tt_identifier)
         error_at_parser(p, "expected identifier for module import");
 
-    n.as_import_stmt->name = parse_expr(p);
+    n.as_import_stmt->name = parse_expr(p, true);
 
     if (n.as_import_stmt->name.type != astype_identifier_expr)
         error_at_parser(p, "expected an identifer, got an expression");
@@ -1250,7 +1252,7 @@ AST parse_import_stmt(parser* restrict p) {
     if (current_token.type != tt_literal_string)
         error_at_parser(p, "expected import path");
     
-    n.as_import_stmt->path = parse_expr(p);
+    n.as_import_stmt->path = parse_expr(p, true);
     
     n.as_import_stmt->base.end = &current_token;
 
@@ -1284,7 +1286,7 @@ AST parse_stmt(parser* restrict p) {
         n.as_if_stmt->base.start = &current_token;
         advance_token;
 
-        n.as_if_stmt->condition = parse_expr(p);
+        n.as_if_stmt->condition = parse_expr(p, true);
         n.as_if_stmt->if_branch = parse_block_stmt(p);
         
         n.as_if_stmt->base.end = &peek_token(-1);
@@ -1303,7 +1305,7 @@ AST parse_stmt(parser* restrict p) {
         n.as_while_stmt->base.start = &current_token;
         advance_token;
 
-        n.as_while_stmt->condition = parse_expr(p);
+        n.as_while_stmt->condition = parse_expr(p, true);
         if (n.as_while_stmt->condition.rawptr == NULL) {
 
         }
@@ -1321,11 +1323,11 @@ AST parse_stmt(parser* restrict p) {
             n.as_for_in_stmt->base.start = &current_token;
             advance_token;
 
-            n.as_for_in_stmt->indexvar = parse_expr(p);
+            n.as_for_in_stmt->indexvar = parse_expr(p, true);
 
             if (current_token.type == tt_colon) {
                 advance_token;
-                n.as_for_in_stmt->type = parse_expr(p);
+                n.as_for_in_stmt->type = parse_expr(p, true);
                 if (is_null_AST(n.as_for_in_stmt->type))
                     error_at_parser(p, "expected type expression after ':'");
             }
@@ -1346,7 +1348,7 @@ AST parse_stmt(parser* restrict p) {
             }
 
 
-            n.as_for_in_stmt->from = parse_expr(p);
+            n.as_for_in_stmt->from = parse_expr(p, true);
             if (current_token.type == tt_range_less) {
                 n.as_for_in_stmt->is_inclusive = false;
             } else if (current_token.type == tt_range_eq) {
@@ -1356,7 +1358,7 @@ AST parse_stmt(parser* restrict p) {
             }
             advance_token;
             
-            n.as_for_in_stmt->to = parse_expr(p);
+            n.as_for_in_stmt->to = parse_expr(p, true);
             n.as_for_in_stmt->block = parse_block_stmt(p);
             
             n.as_for_in_stmt->base.end = &peek_token(-1);
@@ -1369,7 +1371,7 @@ AST parse_stmt(parser* restrict p) {
 
             n.as_for_stmt->prelude = parse_stmt(p);
             
-            n.as_for_stmt->condition = parse_expr(p);
+            n.as_for_stmt->condition = parse_expr(p, true);
             if (is_null_AST(n.as_for_stmt->condition))
                 error_at_parser(p, "expected an expression");
 
@@ -1403,13 +1405,13 @@ AST parse_stmt(parser* restrict p) {
         if (current_token.type != tt_identifier)
             error_at_parser(p, "expected identifier, got '%s'", token_type_str[current_token.type]);
 
-        n.as_type_decl_stmt->lhs = parse_expr(p);
+        n.as_type_decl_stmt->lhs = parse_expr(p, true);
         
         if (current_token.type != tt_equal)
             error_at_parser(p, "expected '=', got '%s'", token_type_str[current_token.type]);
         advance_token;
 
-        n.as_type_decl_stmt->rhs = parse_expr(p);
+        n.as_type_decl_stmt->rhs = parse_expr(p, true);
         if (is_null_AST(n.as_type_decl_stmt->rhs))
             error_at_parser(p, "expected type expression");
 
@@ -1442,7 +1444,7 @@ AST parse_stmt(parser* restrict p) {
         // parse identifier list
         da_init(&n.as_decl_stmt->lhs, 4); // four is probably good right
         while (current_token.type != tt_identifier || current_token.type != tt_identifier_discard) {
-            da_append(&n.as_decl_stmt->lhs, parse_expr(p));
+            da_append(&n.as_decl_stmt->lhs, parse_expr(p, true));
             if (current_token.type != tt_comma)
                 break;
             advance_token;
@@ -1452,7 +1454,7 @@ AST parse_stmt(parser* restrict p) {
         if (current_token.type == tt_colon) {
             n.as_decl_stmt->has_expl_type = true;
             advance_token;
-            n.as_decl_stmt->type = parse_expr(p);
+            n.as_decl_stmt->type = parse_expr(p, true);
             if (is_null_AST(n.as_decl_stmt->type))
                 error_at_parser(p, "expected type expression");
         }
@@ -1477,7 +1479,7 @@ AST parse_stmt(parser* restrict p) {
                 error_at_parser(p, "uninitialization requires an explicit type");
             advance_token;
         } else {
-            n.as_decl_stmt->rhs = parse_expr(p);
+            n.as_decl_stmt->rhs = parse_expr(p, false);
         }
         
         if (current_token.type != tt_semicolon)
@@ -1493,7 +1495,7 @@ AST parse_stmt(parser* restrict p) {
         n.base->start = &current_token;
         advance_token;
         if (current_token.type != tt_semicolon) {
-            n.as_break_stmt->label = parse_expr(p);
+            n.as_break_stmt->label = parse_expr(p, false);
             if (is_null_AST(n.as_break_stmt->label) || n.as_break_stmt->label.type != tt_identifier)
                 error_at_parser(p, "expected an identifer");
         }
@@ -1509,7 +1511,7 @@ AST parse_stmt(parser* restrict p) {
         n.base->start = &current_token;
         advance_token;
         if (current_token.type != tt_semicolon) {
-            n.as_continue_stmt->label = parse_expr(p);
+            n.as_continue_stmt->label = parse_expr(p, false);
             if (is_null_AST(n.as_continue_stmt->label) || n.as_continue_stmt->label.type != tt_identifier)
                 error_at_parser(p, "expected an identifer");
         }
@@ -1537,7 +1539,7 @@ AST parse_stmt(parser* restrict p) {
         da_init(&n.as_return_stmt->returns, 2);
 
         while (current_token.type != tt_semicolon) {
-            AST ret_expr = parse_expr(p);
+            AST ret_expr = parse_expr(p, false);
             if (is_null_AST(ret_expr))
                 error_at_parser(p, "expected expression");
             da_append(&n.as_return_stmt->returns, ret_expr);
@@ -1554,10 +1556,10 @@ AST parse_stmt(parser* restrict p) {
         break;
     default:
         ;
-        AST lhs = parse_expr(p);
+        AST lhs = parse_expr(p, true);
         
         if (is_null_AST(lhs))
-            error_at_parser(p, "expected a statement");
+            return lhs;
 
         if (current_token.type == tt_semicolon) {
             n = new_ast_node(p, astype_expr_stmt);
@@ -1610,7 +1612,7 @@ AST parse_elif(parser* restrict p) {
     advance_token;
 
     // get condition expression
-    n.as_if_stmt->condition = parse_expr(p);
+    n.as_if_stmt->condition = parse_expr(p, true);
         
     // get block
     n.as_if_stmt->if_branch = parse_block_stmt(p);
