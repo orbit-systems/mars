@@ -201,6 +201,10 @@ typedef struct {
         token* tok; \
         }; \
     }) \
+    AST_TYPE(label_stmt, "label", { \
+        ast_base base; \
+        AST label; \
+    }) \
     \
     \
     \

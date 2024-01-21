@@ -49,12 +49,7 @@ compilation_unit* phobos_perform_frontend() {
         else 
             loaded_file = string_alloc(subfiles[i].size);
 
-        fs_open(&subfiles[i], "r"
-        #if (defined(MINGW32) || defined(__MINGW32__))
-            "b"  /* stupid fucking windows permission that makes it so it doesn't stop loading the bullshit file */
-                 /* can you tell im angry about this */
-        #endif
-        );
+        fs_open(&subfiles[i], "rb");
 
         bool read_success = true;
         if (subfiles[i].size != 0) {

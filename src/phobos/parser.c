@@ -1257,6 +1257,7 @@ AST parse_import_stmt(parser* restrict p) {
     return n;
 }
 
+
 AST parse_stmt(parser* restrict p) {
     AST n = NULL_AST;
 
@@ -1431,8 +1432,6 @@ AST parse_stmt(parser* restrict p) {
         // error_at_parser(p, "TODO switch statement");
 
     } break;
-    case tt_keyword_case:
-        error_at_parser(p, "'case' only allowed with a switch statement");
     case tt_semicolon: {
         n = new_ast_node_p(p, astype_empty_stmt);
         n.as_empty_stmt->base.start = &current_token;
@@ -1595,6 +1594,7 @@ AST parse_stmt(parser* restrict p) {
     case tt_keyword_asm: {
         error_at_parser(p, "TODO inline assembly");
     } break;
+    case tt_keyword_case: error_at_parser(p, "'case' only allowed with a switch statement");
     default: {
         AST lhs = parse_expr(p, true);
         
@@ -1670,6 +1670,14 @@ AST parse_stmt(parser* restrict p) {
 
             n.as_assign_stmt->base.end = &current_token;
             advance_token;
+        } break;
+        case tt_colon: {    // statement label
+            n = new_ast_node_p(p, astype_label_stmt);
+            n.as_label_stmt->base.start = lhs.base->start;
+            n.as_label_stmt->base.end = &current_token;
+            n.as_label_stmt->label = lhs;
+            advance_token;
+            break;
         } break;
         case tt_add_equal: // compound assign statement
         case tt_sub_equal:
