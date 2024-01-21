@@ -70,10 +70,9 @@ string string_concat(string a, string b) {
     return c;
 }
 
-string string_concat_buf(string buf, string a, string b) {
+void string_concat_buf(string buf, string a, string b) {
     FOR_RANGE_EXCL(i, 0, a.len) buf.raw[i] = a.raw[i];
     FOR_RANGE_EXCL(i, 0, b.len) buf.raw[a.len + i] = b.raw[i];
-    return c;
 }
 
 bool string_ends_with(string source, string ending) {
