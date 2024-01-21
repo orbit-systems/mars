@@ -1,33 +1,21 @@
-format ELF
 
-section "text" 
-	__mars_runtime_memeq_code: 
-		//ra - block 1
-		//rb - block 2
-		//rc - length
-		//ra will contain 1 on equality
-
-		addi rc, rc, 1
-		addi ra, ra, -1
-		addi rb, rb, -1 //prepare values for loop
-
-		__mars_runtime_memeq_code.0:
-			addi ra, ra, 1
-			addi rb, rb, 1
-
-			cmpi rc, 0
-			beq __mars_runtime_memeq_code.1 
-
-			addi rc, rc, -1 //we are not at end of length. rc--
-			cmpr ra, rb
-			beq __mars_runtime_memeq_code.0 //is equal, continue to SPIN
-
-		li ra, 0 //is not equal
-		ret
-
-		__mars_runtime_memeq_code.1: //reached end of length
-			li ra, 1
-			ret
-
-extrn '_mars_runtime_memeq_code' as __mars_runtime_memeq_code
-_mars_runtime_memeq_code = rva __mars_runtime_memeq_code
+		addr rc, rb, rc
+		bra  .memeq.L2
+	.memeq.L4:
+		lbs  rd, ra, -1
+		lbs  re, rb, 0
+		addi rb, rb, 1
+		cmp  rd, re
+		fbf
+		beq  .memeq.L5
+	.memeq.L2:
+		addi ra, ra,1
+		cmp  rb, rc
+		fbf
+		beq  .memeq.L4
+		llis ra, 1
+		bra .end;
+	.memeq.L5:
+		llis ra, 0
+		bra .end;
+	.end

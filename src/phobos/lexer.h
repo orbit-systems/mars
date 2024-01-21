@@ -100,6 +100,7 @@
     TOKEN(tt_keyword_fallthrough,"fallthrough") \
     TOKEN(tt_keyword_for,       "for") \
     TOKEN(tt_keyword_fn,        "fn") \
+    TOKEN(tt_keyword_goto,      "goto") \
     TOKEN(tt_keyword_if,        "if") \
     TOKEN(tt_keyword_in,        "in") \
     TOKEN(tt_keyword_import,    "import") \

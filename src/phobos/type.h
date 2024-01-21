@@ -25,7 +25,7 @@
     TYPE(untyped_bool,   "(untyped bool)", {char _;}) \
     TYPE(untyped_int,    "(untyped int)", {char _;}) \
     TYPE(untyped_float,  "(untyped float)", {char _;}) \
-    TYPE(untyped_null,   "(untyped null)", {char _;}) \
+    TYPE(untyped_pointer,"(untyped pointer)", {char _;}) \
     TYPE(untyped_string, "(untyped string)", {char _;}) \
     \
     \

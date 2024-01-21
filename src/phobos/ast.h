@@ -192,6 +192,10 @@ typedef struct {
         ast_base base; \
         AST label; \
     }) \
+    AST_TYPE(goto_stmt, "goto statement", { \
+        ast_base base; \
+        AST label; \
+    }) \
     AST_TYPE(fallthrough_stmt, "fallthrough statement", { \
         ast_base base; \
     }) \

@@ -138,6 +138,13 @@ string type_to_str(mars_type t) {
     string s = to_string("");
     switch (t.type) {
     case mt_basic_none: return to_string("none");
+
+    case mt_untyped_bool:    return to_string("(untyped bool)");
+    case mt_untyped_float:   return to_string("(untyped float)");
+    case mt_untyped_int:     return to_string("(untyped int)");
+    case mt_untyped_string:  return to_string("(untyped string)");
+    case mt_untyped_pointer: return to_string("(untyped pointer)");
+
     case mt_basic_u8:   return to_string("u8");
     case mt_basic_u16:  return to_string("u16");
     case mt_basic_u32:  return to_string("u32");

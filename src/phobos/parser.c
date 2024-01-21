@@ -1546,8 +1546,8 @@ AST parse_stmt(parser* restrict p) {
         advance_token;
         if (current_token.type != tt_semicolon) {
             n.as_break_stmt->label = parse_expr(p, false);
-            if (is_null_AST(n.as_break_stmt->label) || n.as_break_stmt->label.type != tt_identifier)
-                error_at_parser(p, "expected an identifer");
+            if (is_null_AST(n.as_break_stmt->label) || n.as_break_stmt->label.type != astype_identifier_expr)
+                error_at_token(p, *n.base->start, "expected an identifer");
         }
 
         if (current_token.type != tt_semicolon)
@@ -1562,8 +1562,24 @@ AST parse_stmt(parser* restrict p) {
         advance_token;
         if (current_token.type != tt_semicolon) {
             n.as_continue_stmt->label = parse_expr(p, false);
-            if (is_null_AST(n.as_continue_stmt->label) || n.as_continue_stmt->label.type != tt_identifier)
-                error_at_parser(p, "expected an identifer");
+            if (is_null_AST(n.as_continue_stmt->label) || n.as_continue_stmt->label.type != astype_identifier_expr)
+                error_at_token(p, *n.base->start, "expected an identifer");
+        }
+
+        if (current_token.type != tt_semicolon)
+            error_at_parser(p, "expected ';'");
+
+        n.base->end = &current_token;
+        advance_token;
+    } break;
+    case tt_keyword_goto: {
+        n = new_ast_node_p(p, astype_goto_stmt);
+        n.base->start = &current_token;
+        advance_token;
+        if (current_token.type != tt_semicolon) {
+            n.as_goto_stmt->label = parse_expr(p, false);
+            if (is_null_AST(n.as_goto_stmt->label) || n.as_goto_stmt->label.type != astype_identifier_expr)
+                error_at_token(p, *n.base->start, "expected an identifer");
         }
 
         if (current_token.type != tt_semicolon)
