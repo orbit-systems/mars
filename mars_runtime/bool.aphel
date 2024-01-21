@@ -1,0 +1,5 @@
+// boolean normalization - take a boolean value in ra, set it to 1 if it is not zero.
+
+cmp ra, 0
+fli
+setfe ra

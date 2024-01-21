@@ -6,12 +6,12 @@
 		lbs  re, rb, 0
 		addi rb, rb, 1
 		cmp  rd, re
-		fbf
+		fli
 		beq  .memeq.L5
 	.memeq.L2:
 		addi ra, ra,1
 		cmp  rb, rc
-		fbf
+		fli
 		beq  .memeq.L4
 		llis ra, 1
 		bra .end;
