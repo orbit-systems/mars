@@ -38,6 +38,7 @@ string  string_alloc(size_t len);
 #define string_free(str) free(str.raw)
 string  string_clone(string str); // this allocates as well
 string  string_concat(string a, string b); // allocates
+void  string_concat_buf(string buf, string a, string b); // this does not
 
 int  string_cmp(string a, string b);
 bool string_eq(string a, string b);
@@ -66,6 +67,12 @@ string string_concat(string a, string b) {
     string c = string_alloc(a.len + b.len);
     FOR_RANGE_EXCL(i, 0, a.len) c.raw[i] = a.raw[i];
     FOR_RANGE_EXCL(i, 0, b.len) c.raw[a.len + i] = b.raw[i];
+    return c;
+}
+
+string string_concat_buf(string buf, string a, string b) {
+    FOR_RANGE_EXCL(i, 0, a.len) buf.raw[i] = a.raw[i];
+    FOR_RANGE_EXCL(i, 0, b.len) buf.raw[a.len + i] = b.raw[i];
     return c;
 }
 

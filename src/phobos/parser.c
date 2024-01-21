@@ -571,10 +571,14 @@ AST parse_atomic_expr(parser* restrict p, bool no_cl) {
             // this leaks memory but it kind of doesnt matter cause they're really tiny! 
             // otherwise the malloc/free overhead is pretty big
             while (current_token.type == tt_literal_string) {
-                value = string_concat(value, string_lit_value(p));
+                string str = string_lit_value(p);
+                string new_value = (string){arena_alloc(&p->alloca, value.len + str.len, 1), value.len + str.len};
+                string_concat_buf(new_value, value, str);
+                value = new_value;
                 advance_token;
             }
 
+            n.as_literal_expr->value.as_string = value;
             n.as_literal_expr->base.end = &peek_token(-1);
 
         } break;
