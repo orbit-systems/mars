@@ -20,13 +20,10 @@ let main = fn #block_symbol("main") () {
         println("not equal");
     }
 
-    for mut i = 0; i < 10; i += 1; {
-        printf("%int\n", {&i});
-    }
-
-    for i in 0..<10 {
-        printf("%int\n", {&i});
-    }
+    for mut i = 0; i < 10; i += 1; { printf("%int, ", {&i}); }
+    for i in 0..<10                { printf("%int, ", {&i}); }
+    for i in 0..=9                 { printf("%int, ", {&i}); }
+    for i: u64 in 0..<10           { printf("%u64, ", {&i}); }
 
     while true {}
 };

@@ -561,12 +561,22 @@ AST parse_atomic_expr(parser* restrict p, bool no_cl) {
 
             n = new_ast_node_p(p, astype_literal_expr);
             n.as_literal_expr->base.start = &current_token;
-            n.as_literal_expr->base.end = &current_token;
         
             n.as_literal_expr->value.kind = ev_string;
-            n.as_literal_expr->value.as_string = string_lit_value(p);
+            // n.as_literal_expr->value.as_string = string_lit_value(p);
 
+            string value = NULL_STR;
+            value = string_lit_value(p);
             advance_token;
+            // this leaks memory but it kind of doesnt matter cause they're really tiny! 
+            // otherwise the malloc/free overhead is pretty big
+            while (current_token.type == tt_literal_string) {
+                value = string_concat(value, string_lit_value(p));
+                advance_token;
+            }
+
+            n.as_literal_expr->base.end = &peek_token(-1);
+
         } break;
         case tt_type_keyword_addr:
         case tt_type_keyword_bool:

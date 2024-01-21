@@ -5,7 +5,7 @@ type string = []u8;
 
 let find = fn(needle: char, haystack: string) -> (index: uint, found: bool) {
     
-    loop: for i: uint in 0..<haystack.len {
+    for i: u64 in 0..<haystack.len {
         if haystack[i] == needle {
             return i, true;
         }

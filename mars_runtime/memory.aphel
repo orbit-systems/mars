@@ -1,7 +1,5 @@
 format ELF
 
-
-
 section "text" 
 	__mars_runtime_memeq_code: 
 		//ra - block 1
