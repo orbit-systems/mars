@@ -20,9 +20,8 @@ typedef int32_t  i32;
 typedef int16_t  i16;
 typedef int8_t   i8;
 typedef uint8_t  bool;
-typedef _Float16 f16;
-typedef _Float32 f32;
-typedef _Float64 f64;
+typedef float f32;
+typedef double f64;
 #define false 0
 #define true (!false)
 
