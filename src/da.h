@@ -6,6 +6,7 @@
 
 // sandwich's shitty """polymorphic""" dynamic array lib V2
 // lean and mean w/ new functions
+// all the functions are now macros, inspired by mista zozin himself (https://github.com/tsoding)
 
 #define da(type) da_##type
 
