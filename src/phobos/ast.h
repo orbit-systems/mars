@@ -13,6 +13,10 @@ typedef struct {
 
 // define all the AST node macros
 #define AST_NODES \
+    AST_TYPE(meta_scope, "[META] scope tree linkage point", { \
+        struct scope * this_scope; \
+        AST sub; \
+    }) \
     AST_TYPE(identifier_expr, "identifier", { \
         union { \
         ast_base base; \
@@ -24,12 +28,12 @@ typedef struct {
         ast_base base; \
         exact_value value; \
     }) \
-    AST_TYPE(comp_literal_expr, "compound literal", {\
+    AST_TYPE(comp_literal_expr, "compound literal", { \
         ast_base base; \
         AST type; \
         da(AST) elems; \
     }) \
-    AST_TYPE(func_literal_expr, "function literal", {\
+    AST_TYPE(func_literal_expr, "function literal", { \
         ast_base base; \
         AST type; \
         AST code_block; \

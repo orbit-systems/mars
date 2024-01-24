@@ -35,7 +35,6 @@ parser make_parser(lexer* restrict l, arena alloca) {
     p.src    = l->src;
     p.current_tok = 0;
     p.num_nodes = 0;
-
     return p;
 }
 
@@ -283,11 +282,6 @@ f64 float_lit_value(parser* restrict p) {
 
     bool is_negative = false;
     int digit_start = 0;
-
-    if (t.raw[0] == '-') {
-        is_negative = true;
-        digit_start = 1;
-    }
 
     u32 decimal_index = 0;
     for (u32 i = digit_start; i < t.len; i++) {

@@ -245,11 +245,6 @@ token_type scan_operator(lexer* restrict lex) {
     case '-':
         advance_char(lex);
 
-        if (can_start_number(current_char(lex))) {
-            advance_char_n(lex, -1);
-            return scan_number(lex);
-        }
-
         if (current_char(lex) == '=') {
             advance_char(lex);
             return tt_sub_equal;

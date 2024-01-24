@@ -7,8 +7,10 @@
 #include "da.h"
 
 #define TYPE_NODES \
-    TYPE(meta_type,  "type", {char _;}) \
-    TYPE(basic_none, "none", {char _;}) \
+    TYPE(meta_type,  "type expression", {char _;}) /* for type expressions */ \
+    TYPE(meta_stmt,  "statement", {char _;}) /* for statements */ \
+    \
+    TYPE(basic_none, "none", {char _;}) /* idk this is probably useful somehow */ \
     TYPE(basic_u8,   "u8",   {char _;}) \
     TYPE(basic_u16,  "u16",  {char _;}) \
     TYPE(basic_u32,  "u32",  {char _;}) \
@@ -22,12 +24,11 @@
     TYPE(basic_f64,  "f64",  {char _;}) \
     TYPE(basic_bool, "bool", {char _;}) \
     TYPE(basic_addr, "addr", {char _;}) \
-    TYPE(untyped_bool,   "(untyped bool)", {char _;}) \
-    TYPE(untyped_int,    "(untyped int)", {char _;}) \
-    TYPE(untyped_float,  "(untyped float)", {char _;}) \
-    TYPE(untyped_pointer,"(untyped pointer)", {char _;}) \
-    TYPE(untyped_string, "(untyped string)", {char _;}) \
-    \
+    TYPE(untyped_bool,   "untyped bool", {char _;}) \
+    TYPE(untyped_int,    "untyped int", {char _;}) \
+    TYPE(untyped_float,  "untyped float", {char _;}) \
+    TYPE(untyped_pointer,"untyped pointer", {char _;}) \
+    TYPE(untyped_string, "untyped string", {char _;}) \
     \
     TYPE(multi, "multi", { /* type of expressions that have multiple types, like multi-valued return functions */ \
         da(mars_type) subtypes; \

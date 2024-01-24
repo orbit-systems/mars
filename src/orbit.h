@@ -27,11 +27,11 @@ typedef double f64;
 
 #define TODO(msg) do {\
     printf("\x1b[36m\x1b[1mTODO\x1b[0m: \"%s\" at %s:%d\n", (msg), (__FILE__), (__LINE__)); \
-    exit(EXIT_FAILURE);} while (0)
+    exit(EXIT_FAILURE); } while (0)
 
 #define CRASH(msg) do { \
     printf("\x1b[31m\x1b[1mCRASH\x1b[0m: \"%s\" at %s:%d\n", (msg), (__FILE__), (__LINE__)); \
-    exit(EXIT_FAILURE);} while (0)
+    exit(EXIT_FAILURE); } while (0)
 
 #define max(a,b) ((a) > (b) ? (a) : (b))
 #define min(a,b) ((a) < (b) ? (a) : (b))
