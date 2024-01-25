@@ -27,4 +27,3 @@ let main = fn #block_symbol("main") () {
 
     while true {}
 };
-

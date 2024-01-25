@@ -97,3 +97,7 @@ extern size_t mt_kind_size[];
 mars_type new_type_node(arena* restrict a, mt_kind type);
 size_t size_of_type(mars_type t);
 size_t align_of_type(mars_type t);
+
+da_typedef(mars_type);
+
+typedef da_mars_type mars_type_graph;
