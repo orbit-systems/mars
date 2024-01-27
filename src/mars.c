@@ -17,6 +17,8 @@ int main(int argc, char** argv) {
 
     mars_module* target = parse_target_module(mars_flags.input_path);
 
+
+
     return 0;
 }
 
@@ -60,8 +62,6 @@ void load_arguments(int argc, char* argv[], flag_set* fl) {
     if (argc <= 2) return;
 
     int flag_start_index = 2;
-    cmd_arg module_name_arg = make_argument(argv[2]);
-
     FOR_RANGE(i, flag_start_index, argc) {
         cmd_arg a = make_argument(argv[i]);
         if (string_eq(a.key, to_string("-help"))) {

@@ -14,16 +14,16 @@ mars_module* parse_target_module(string input_path) {
 
     // path checks
     if (!fs_exists(input_path))
-        general_error("input directory \"%s\" does not exist", clone_to_cstring(input_path));
+        general_error("input directory \""str_fmt"\" does not exist", str_arg(input_path));
 
     fs_file input_dir = {0};
     fs_get(input_path, &input_dir);
     if (!fs_is_directory(&input_dir))
-        general_error("input path \"%s\" is not a directory", clone_to_cstring(input_path));
+        general_error("input path \""str_fmt"\" is not a directory", str_arg(input_path));
 
     int subfile_count = fs_subfile_count(&input_dir);
     if (subfile_count == 0)
-        general_error("input path \"%s\" has no files", clone_to_cstring(input_path));
+        general_error("input path \""str_fmt"\" has no files", str_arg(input_path));
 
     fs_file* subfiles = malloc(sizeof(fs_file) * subfile_count);
     fs_get_subfiles(&input_dir, subfiles);
@@ -58,7 +58,7 @@ mars_module* parse_target_module(string input_path) {
         fs_close(&subfiles[i]);
 
         if (read_success == false)
-            general_error("cannot read from \"%s\"", clone_to_cstring(subfiles[i].path));
+            general_error("cannot read from \""str_fmt"\"", str_arg(subfiles[i].path));
 
 
         lexer this_lexer = new_lexer(subfiles[i].path, loaded_file);
@@ -67,7 +67,7 @@ mars_module* parse_target_module(string input_path) {
 
     }
     if (mars_file_count == 0)
-        general_error("input path \"%s\" has no \".mars\" files", clone_to_cstring(input_path));
+        general_error("input path \""str_fmt"\" has no \".mars\" files", str_arg(input_path));
 
     // timing
     struct timeval lex_begin, lex_end;
@@ -86,7 +86,7 @@ mars_module* parse_target_module(string input_path) {
         double elapsed = (double) seconds + (double) microseconds*1e-6;
         printf(STYLE_FG_Cyan STYLE_Bold "LEXING" STYLE_Reset);
         printf("\t  time      : %fs\n", elapsed);
-        printf("\t  tokens    : %lu\n", tokens_lexed);
+        printf("\t  tokens    : %zu\n", tokens_lexed);
         printf("\t  tok/s     : %.3f\n", (double) tokens_lexed / elapsed);
     }
 
@@ -122,7 +122,7 @@ mars_module* parse_target_module(string input_path) {
         double elapsed = (double) seconds + (double) microseconds*1e-6;
         printf(STYLE_FG_Blue STYLE_Bold "PARSING" STYLE_Reset);
         printf("\t  time      : %fs\n", elapsed);
-        printf("\t  AST nodes : %lu\n", ast_nodes_created);
+        printf("\t  AST nodes : %zu\n", ast_nodes_created);
         printf("\t  nodes/s   : %.3f\n", (double) ast_nodes_created / elapsed);
     }
 
@@ -149,13 +149,14 @@ mars_module* create_module(da(parser)* pl, arena alloca) {
     da_init(&mod->files, pl->len);
     FOR_URANGE(i, 0, pl->len) {
         if (!string_eq(pl->at[i].module_decl.as_module_decl->name->text, mod->module_name)) {
-            printf("WE HERE\n");
             error_at_string(pl->at[i].path, pl->at[i].src, pl->at[i].module_decl.as_module_decl->name->text,
                 "mismatched module name, expected '"str_fmt"'", str_arg(mod->module_name));
         }
 
-        mod->files.at[i].path = pl->at[i].path;
-        mod->files.at[i].src  = pl->at[i].src;
+        da_append(&mod->files, ((mars_file){
+            pl->at[i].path,
+            pl->at[i].src
+        }));
     }
 
     if (string_eq(mod->module_name, to_string("mars")))
@@ -173,7 +174,7 @@ mars_module* create_module(da(parser)* pl, arena alloca) {
     return mod;
 }
 
-mars_file* find_source_file(mars_module* cu, string snippet) {
+mars_file *find_source_file(mars_module *cu, string snippet) {
     FOR_URANGE(i, 0, cu->files.len) {
         if (is_within(cu->files.at[i].src, snippet)) {
             return &cu->files.at[i];

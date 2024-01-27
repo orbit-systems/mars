@@ -62,7 +62,7 @@ bool fs_open(fs_file* file, char* mode);
 // close a file if it is opened. does not perform any other operations
 bool fs_close(fs_file* file);
 
-// self explanatory
+// self-explanatory
 #define fs_is_regular(file)    ((file)->type == oft_regular)
 #define fs_is_directory(file)  ((file)->type == oft_directory)
 #define fs_is_pipe(file)       ((file)->type == oft_pipe)

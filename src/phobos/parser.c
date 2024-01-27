@@ -115,8 +115,9 @@ int op_precedence(token_type type) {
     case tt_or_or:
     case tt_tilde_tilde:
         return 1;
+    default:
+        return 0;
     }
-    return 0;
 }
 
 AST parse_binary_expr(parser* restrict p, int precedence, bool no_cl) {
@@ -227,8 +228,8 @@ AST parse_unary_expr(parser* restrict p, bool no_cl) {
     return n;
 }
 
-i64 ascii_to_digit_val(parser* restrict p, char c, u8 base) {
-    char val = base;
+int ascii_to_digit_val(parser* restrict p, char c, u8 base) {
+    char val = (char)base;
     if (c >= '0' && c <= '9') val = c-'0';
     if (c >= 'a' && c <= 'f') val = c-'a' +10;
     if (c >= 'A' && c <= 'F') val = c-'A' +10;
@@ -285,8 +286,8 @@ f64 float_lit_value(parser* restrict p) {
 
     int digit_start = 0;
 
-    u32 decimal_index = 0;
-    for (u32 i = digit_start; i < t.len; i++) {
+    int decimal_index = 0;
+    for (int i = digit_start; i < t.len; i++) {
         if (t.raw[i] == '.') {
             decimal_index = i;
             break;
@@ -294,9 +295,9 @@ f64 float_lit_value(parser* restrict p) {
         val = val*10 + (f64)ascii_to_digit_val(p, t.raw[i], 10);
     }
 
-    u32 e_index = -1;
+    int e_index = -1;
     f64 factor = 0.1;
-    for (u32 i = decimal_index+1; i < t.len; i++) {
+    for (int i = decimal_index+1; i < t.len; i++) {
         if (t.raw[i] == 'e') {
             e_index = i;
             break;
