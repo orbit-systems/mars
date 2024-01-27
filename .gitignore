@@ -1,5 +1,7 @@
 .vscode/*
 .vscode
+.idea/*
+.idea
 *.exe
 cachegrind*
 build/*

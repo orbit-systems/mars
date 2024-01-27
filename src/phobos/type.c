@@ -33,6 +33,11 @@ mars_type new_type_node(arena* restrict a, mt_kind type) {
     return node;
 }
 
+// assuming both types are embedded in the same type graph
+bool type_eq(mars_type a, mars_type b) {
+    return a.type == b.type && a.rawptr == b.rawptr;
+}
+
 // counts on the type not being cyclic/infinite size
 size_t align_of_type(mars_type t) {
     switch (t.type) {
@@ -58,14 +63,14 @@ size_t align_of_type(mars_type t) {
         return align_of_type(t.as_array->subtype);
     case mt_struct: {
         size_t max_align = 1;
-        FOR_URANGE_EXCL(i, 0, t.as_struct->fields.len) {
+        FOR_URANGE(i, 0, t.as_struct->fields.len) {
             max_align = max(max_align, align_of_type(t.as_struct->fields.at[i].type));
         }
         return max_align;
     }
-    case mt_union:{
+    case mt_union: {
         size_t max_align = 1;
-        FOR_URANGE_EXCL(i, 0, t.as_union->fields.len) {
+        FOR_URANGE(i, 0, t.as_union->fields.len) {
             max_align = max(max_align, align_of_type(t.as_union->fields.at[i].type));
         }
         return max_align;
@@ -110,7 +115,7 @@ size_t size_of_type(mars_type t) {
     case mt_struct: {
         size_t max_offset = 0;
         size_t max_offset_size = 0;
-        FOR_URANGE_EXCL(i, 0, t.as_struct->fields.len) {
+        FOR_URANGE(i, 0, t.as_struct->fields.len) {
             if (t.as_struct->fields.at[i].offset > max_offset) {
                 max_offset = t.as_struct->fields.at[i].offset;
                 max_offset_size = size_of_type(t.as_struct->fields.at[i].type);
@@ -120,7 +125,7 @@ size_t size_of_type(mars_type t) {
     }
     case mt_union:{
         size_t max_size = 0;
-        FOR_URANGE_EXCL(i, 0, t.as_union->fields.len) {
+        FOR_URANGE(i, 0, t.as_union->fields.len) {
             max_size = max(max_size, size_of_type(t.as_union->fields.at[i].type));
         }
         return max_size;
@@ -163,7 +168,7 @@ string type_to_str(mars_type t) {
     case mt_alias:      return t.as_alias->name;
     case mt_multi:
         s = to_string("(");
-        FOR_URANGE_EXCL(i, 0, t.as_multi->subtypes.len) {
+        FOR_URANGE(i, 0, t.as_multi->subtypes.len) {
             s = string_concat(s, type_to_str(t.as_multi->subtypes.at[i]));
             if (i != t.as_multi->subtypes.len - 1) {
                 s = string_concat(s, to_string(", "));
@@ -178,7 +183,7 @@ string type_to_str(mars_type t) {
         return string_concat(strprintf("[%ull]", t.as_array->length), type_to_str(t.as_array->subtype));
     case mt_struct:
         s = to_string("union {");
-        FOR_URANGE_EXCL(i, 0, t.as_struct->fields.len) {
+        FOR_URANGE(i, 0, t.as_struct->fields.len) {
             s = string_concat(s, t.as_struct->fields.at[i].ident);
             s = string_concat(s, to_string(": "));
             s = string_concat(s, type_to_str(t.as_struct->fields.at[i].type));
@@ -189,7 +194,7 @@ string type_to_str(mars_type t) {
         return string_concat(s, to_string("}"));
     case mt_union:
         s = to_string("struct {");
-        FOR_URANGE_EXCL(i, 0, t.as_struct->fields.len) {
+        FOR_URANGE(i, 0, t.as_struct->fields.len) {
             s = string_concat(s, t.as_struct->fields.at[i].ident);
             s = string_concat(s, to_string(": "));
             s = string_concat(s, type_to_str(t.as_struct->fields.at[i].type));

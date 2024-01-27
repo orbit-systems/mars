@@ -1,12 +1,12 @@
-// generate the actual code here
+// generate the actual orbit.h code here
 #define ORBITSTR_IMPLEMENTATION
 #define ORBITFS_IMPLEMENTATION
 
 #include "orbit.h"
 #include "mars.h"
 #include "term.h"
-#include "deimos/tac.h"
 #include "phobos/phobos.h"
+#include "deimos/deimos.h"
 
 flag_set mars_flags;
 
@@ -61,7 +61,7 @@ void load_arguments(int argc, char* argv[], flag_set* fl) {
     int flag_start_index = 2;
     cmd_arg module_name_arg = make_argument(argv[2]);
 
-    FOR_RANGE_EXCL(i, flag_start_index, argc) {
+    FOR_RANGE(i, flag_start_index, argc) {
         cmd_arg a = make_argument(argv[i]);
         if (string_eq(a.key, to_string("-help"))) {
             print_help();

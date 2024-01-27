@@ -37,10 +37,10 @@ typedef double f64;
 #define min(a,b) ((a) < (b) ? (a) : (b))
 
 #define FOR_RANGE_INCL(iterator, start, end) for (intptr_t iterator = (start); iterator <= (end); iterator++)
-#define FOR_RANGE_EXCL(iterator, start, end) for (intptr_t iterator = (start); iterator < (end); iterator++)
+#define FOR_RANGE(iterator, start, end) for (intptr_t iterator = (start); iterator < (end); iterator++)
 
 #define FOR_URANGE_INCL(iterator, start, end) for (uintptr_t iterator = (start); iterator <= (end); iterator++)
-#define FOR_URANGE_EXCL(iterator, start, end) for (uintptr_t iterator = (start); iterator < (end); iterator++)
+#define FOR_URANGE(iterator, start, end) for (uintptr_t iterator = (start); iterator < (end); iterator++)
 
 #define is_pow_2(i) ((i & (i-1)) == 0)
 

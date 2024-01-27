@@ -558,7 +558,7 @@ int fs_self_test() {
         
         fs_file* subfile_array = malloc(sizeof(fs_file) * count);
         passed = passed && fs_get_subfiles(&f, subfile_array);
-        FOR_RANGE_EXCL(i, 0, count) {
+        FOR_RANGE(i, 0, count) {
             printf("\t\t- %s\n", clone_to_cstring(subfile_array[i].path));
             fs_drop(&subfile_array[i]);
         }

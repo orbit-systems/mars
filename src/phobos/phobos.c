@@ -11,7 +11,7 @@
 /*tune this probably*/
 #define PARSER_ARENA_SIZE 0x100000
 
-compilation_unit* phobos_perform_frontend() {
+mars_module* phobos_perform_frontend() {
 
     // path checks
     if (!fs_exists(mars_flags.input_path))
@@ -33,7 +33,7 @@ compilation_unit* phobos_perform_frontend() {
     da_init(&lexers, subfile_count);
 
     int mars_file_count = 0;
-    FOR_RANGE_EXCL(i, 0, subfile_count) {
+    FOR_RANGE(i, 0, subfile_count) {
 
         // filter out non-files and non-mars files.
         if (!fs_is_regular(&subfiles[i])) continue;
@@ -45,7 +45,7 @@ compilation_unit* phobos_perform_frontend() {
 
         // stop the lexer from shitting itself
         if (subfiles[i].size == 0) 
-            loaded_file = to_string(" ");
+            loaded_file = string_clone(to_string(" "));
         else 
             loaded_file = string_alloc(subfiles[i].size);
 
@@ -75,7 +75,7 @@ compilation_unit* phobos_perform_frontend() {
     if (mars_flags.print_timings) gettimeofday(&lex_begin, 0);        
     size_t tokens_lexed = 0;
 
-    FOR_URANGE_EXCL(i, 0, lexers.len) {
+    FOR_URANGE(i, 0, lexers.len) {
         construct_token_buffer(&lexers.at[i]);
         tokens_lexed += lexers.at[i].buffer.len;
     }
@@ -84,17 +84,17 @@ compilation_unit* phobos_perform_frontend() {
         gettimeofday(&lex_end, 0);
         long seconds = lex_end.tv_sec - lex_begin.tv_sec;
         long microseconds = lex_end.tv_usec - lex_begin.tv_usec;
-        double elapsed = seconds + microseconds*1e-6;
-        printf(style_FG_Cyan style_Bold "LEXING" style_Reset);
+        double elapsed = (double) seconds + (double) microseconds*1e-6;
+        printf(STYLE_FG_Cyan STYLE_Bold "LEXING" STYLE_Reset);
         printf("\t  time      : %fs\n", elapsed);
         printf("\t  tokens    : %lu\n", tokens_lexed);
-        printf("\t  tok/s     : %.3f\n", tokens_lexed / elapsed);
+        printf("\t  tok/s     : %.3f\n", (double) tokens_lexed / elapsed);
     }
 
     da(parser) parsers;
     da_init(&parsers, lexers.len);
 
-    FOR_URANGE_EXCL(i, 0, lexers.len) {
+    FOR_URANGE(i, 0, lexers.len) {
         arena alloca = arena_make(PARSER_ARENA_SIZE);
 
         parser p = make_parser(&lexers.at[i], alloca);
@@ -108,27 +108,75 @@ compilation_unit* phobos_perform_frontend() {
     if (mars_flags.print_timings) gettimeofday(&parse_begin, 0);
     size_t ast_nodes_created = 0;
 
-    FOR_URANGE_EXCL(i, 0, parsers.len) {
+    FOR_URANGE(i, 0, parsers.len) {
         parse_file(&parsers.at[i]);
         ast_nodes_created += parsers.at[i].num_nodes;
     }
+
+    mars_module* module = create_module(&parsers);
 
     /* display timing */ 
     if (mars_flags.print_timings) {
         gettimeofday(&parse_end, 0);
         long seconds = parse_end.tv_sec - parse_begin.tv_sec;
         long microseconds = parse_end.tv_usec - parse_begin.tv_usec;
-        double elapsed = seconds + microseconds*1e-6;
-        printf(style_FG_Blue style_Bold "PARSING" style_Reset);
+        double elapsed = (double) seconds + (double) microseconds*1e-6;
+        printf(STYLE_FG_Blue STYLE_Bold "PARSING" STYLE_Reset);
         printf("\t  time      : %fs\n", elapsed);
         printf("\t  AST nodes : %lu\n", ast_nodes_created);
-        printf("\t  nodes/s   : %.3f\n", ast_nodes_created / elapsed);
+        printf("\t  nodes/s   : %.3f\n", (double) ast_nodes_created / elapsed);
     }
 
     // cleanup
-    FOR_RANGE_EXCL(i, 0, subfile_count) fs_drop(&subfiles[i]);
+    FOR_RANGE(i, 0, subfile_count) fs_drop(&subfiles[i]);
     free(subfiles);
     fs_drop(&input_dir);
 
+    return module;
+}
+
+mars_module* create_module(da(parser)* pl) {
+
+    if (pl->len == 0) CRASH("build_module() provided with parser list of length 0");
+
+    mars_module* mod = malloc(sizeof(mars_module));
+    if (mod == NULL) CRASH("build_module() alloc failed");
+
+    mod->module_name = pl->at[0].module_decl.as_module_decl->name->text;
+    if (!string_eq(mod->module_name, to_string("mars"))) {}
+
+    da_init(&mod->files, pl->len);
+    FOR_URANGE(i, 0, pl->len) {
+        if (!string_eq(pl->at[i].module_decl.as_module_decl->name->text, mod->module_name)) {
+            printf("WE HERE\n");
+            error_at_string(pl->at[i].path, pl->at[i].src, pl->at[i].module_decl.as_module_decl->name->text,
+                "mismatched module name, expected '"str_fmt"'", str_arg(mod->module_name));
+        }
+
+        mod->files.at[i].path = pl->at[i].path;
+        mod->files.at[i].src  = pl->at[i].src;
+    }
+
+    if (string_eq(mod->module_name, to_string("mars")))
+        error_at_string(pl->at[0].path, pl->at[0].src, pl->at[0].module_decl.as_module_decl->name->text,
+            "module name 'mars' is reserved");
+
+    // stitch ASTs together
+    da_init(&mod->program_tree, pl->len);
+    FOR_URANGE(file, 0, pl->len) {
+        FOR_URANGE(stmt, 0, pl->at[file].stmts.len) {
+            da_append(&mod->program_tree, pl->at[file].stmts.at[stmt]);
+        }
+    }
+
+    return mod;
+}
+
+mars_file* find_source_file(mars_module* cu, string snippet) {
+    FOR_URANGE(i, 0, cu->files.len) {
+        if (is_within(cu->files.at[i].src, snippet)) {
+            return &cu->files.at[i];
+        }
+    }
     return NULL;
 }

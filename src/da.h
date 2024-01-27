@@ -19,13 +19,13 @@
 // the array pointer is called 'at' so that you can use it like 'dynarray.at[i]'
 
 #define da_init(da_ptr, capacity) do { \
-    size_t c = (capacity); \
+    size_t c = (size_t)(capacity); \
     if ((capacity) <= 0) c = 1; \
     (da_ptr)->len = 0; \
     (da_ptr)->cap = c; \
     (da_ptr)->at = malloc(sizeof((da_ptr)->at[0]) * c); \
     if ((da_ptr)->at == NULL) { \
-        printf("(%s:%d) da_init malloc failed for capacity %d", (__FILE__), (__LINE__), c); \
+        printf("(%s:%d) da_init malloc failed for capacity %zu", (__FILE__), (__LINE__), c); \
         exit(1); \
     } \
 } while (0)
@@ -35,7 +35,7 @@
         (da_ptr)->cap *= 2; \
         (da_ptr)->at = realloc((da_ptr)->at, sizeof((da_ptr)->at[0]) * (da_ptr)->cap); \
         if ((da_ptr)->at == NULL) { \
-            printf("(%s:%d) da_append realloc failed for capacity %d", (__FILE__), (__LINE__), (da_ptr)->cap); \
+            printf("(%s:%d) da_append realloc failed for capacity %zu", (__FILE__), (__LINE__), (da_ptr)->cap); \
             exit(1); \
         } \
     } \
@@ -47,7 +47,7 @@
     (da_ptr)->cap = (da_ptr)->len; \
     (da_ptr)->at = realloc((da_ptr)->at, sizeof((da_ptr)->at[0]) * (da_ptr)->cap); \
     if ((da_ptr)->at == NULL) { \
-        printf("(%s:%d) da_init realloc failed for capacity %d", (__FILE__), (__LINE__), (da_ptr)->cap); \
+        printf("(%s:%d) da_init realloc failed for capacity %zu", (__FILE__), (__LINE__), (da_ptr)->cap); \
         exit(1); \
     } \
 } while (0)
@@ -56,7 +56,7 @@
     (da_ptr)->cap += num_slots; \
     (da_ptr)->at *= realloc((da_ptr)->at, sizeof((da_ptr)->at[0]) * (da_ptr)->cap); \
     if ((da_ptr)->at == NULL) { \
-        printf("(%s:%d) da_reserve realloc failed for capacity %d", (__FILE__), (__LINE__), (da_ptr)->cap); \
+        printf("(%s:%d) da_reserve realloc failed for capacity %zu", (__FILE__), (__LINE__), (da_ptr)->cap); \
         exit(1); \
     } \
 } while (0)

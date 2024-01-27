@@ -25,7 +25,7 @@ typedef struct string_s {
 #define string_len(s) ((s).len)
 #define string_raw(s) ((s).raw)
 #define is_within(haystack, needle) (((haystack).raw <= (needle).raw) && ((haystack).raw + (haystack).len >= (needle).raw + (needle).len))
-#define substring(str, start, end_excl) ((string){(str).raw + (start), (end_excl) - (start)})
+#define substring(str, start, end) ((string){(str).raw + (start), (end) - (start)})
 #define substring_len(str, start, len) ((string){(str).raw + (start), (len)})
 #define can_be_cstring(str) ((str).raw[(str).len] == '\0')
 #define to_string(cstring) ((string){(cstring), strlen((cstring))})
@@ -65,14 +65,14 @@ string strprintf(char* format, ...) {
 
 string string_concat(string a, string b) {
     string c = string_alloc(a.len + b.len);
-    FOR_RANGE_EXCL(i, 0, a.len) c.raw[i] = a.raw[i];
-    FOR_RANGE_EXCL(i, 0, b.len) c.raw[a.len + i] = b.raw[i];
+    FOR_RANGE(i, 0, a.len) c.raw[i] = a.raw[i];
+    FOR_RANGE(i, 0, b.len) c.raw[a.len + i] = b.raw[i];
     return c;
 }
 
 void string_concat_buf(string buf, string a, string b) {
-    FOR_RANGE_EXCL(i, 0, a.len) buf.raw[i] = a.raw[i];
-    FOR_RANGE_EXCL(i, 0, b.len) buf.raw[a.len + i] = b.raw[i];
+    FOR_RANGE(i, 0, a.len) buf.raw[i] = a.raw[i];
+    FOR_RANGE(i, 0, b.len) buf.raw[a.len + i] = b.raw[i];
 }
 
 bool string_ends_with(string source, string ending) {
@@ -110,7 +110,7 @@ int string_cmp(string a, string b) {
 
 bool string_eq(string a, string b) {
     if (a.len != b.len) return false;
-    FOR_RANGE_EXCL(i, 0, a.len) {
+    FOR_RANGE(i, 0, a.len) {
         if (a.raw[i] != b.raw[i]) return false;
     }
     return true;

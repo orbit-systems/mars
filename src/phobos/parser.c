@@ -4,7 +4,6 @@
 #include "parser.h"
 #include "ast.h"
 
-
 // sandwichman's BLAZINGLY 🔥🔥 FAST 🚀🚀 parser in RUST 🦀🦀 + AI POWERED with CHATGPT 🤖🧠 with BLOCKCHAIN BITCOIN TECHNOLOGY
 
 #define current_token ((p)->tokens.at[(p)->current_tok])
@@ -15,16 +14,20 @@
 #define str_from_tokens(start, end) ((string){(start).text.raw, (end).text.raw - (start).text.raw + (end).text.len})
 
 #define error_at_parser(p, message, ...) \
-    error_at_string((p)->path, (p)->src, current_token.text, message __VA_OPT__(,) __VA_ARGS__)
+    error_at_string((p)->path, (p)->src, current_token.text, \
+    message __VA_OPT__(,) __VA_ARGS__)
 
 #define error_at_token_index(p, index, message, ...) \
-    error_at_string((p)->path, (p)->src, (p)->tokens.at[index].text, message __VA_OPT__(,) __VA_ARGS__)
+    error_at_string((p)->path, (p)->src, (p)->tokens.at[index].text, \
+    message __VA_OPT__(,) __VA_ARGS__)
 
 #define error_at_token(p, token, message, ...) \
-    error_at_string((p)->path, (p)->src, (token).text, message __VA_OPT__(,) __VA_ARGS__)
+    error_at_string((p)->path, (p)->src, (token).text, \
+    message __VA_OPT__(,) __VA_ARGS__)
 
 #define error_at_AST(p, node, message, ...) \
-    error_at_string((p)->path, (p)->src, str_from_tokens(*((node).base->start), *((node).base->end)), message __VA_OPT__(,) __VA_ARGS__)
+    error_at_string((p)->path, (p)->src, str_from_tokens(*((node).base->start), *((node).base->end)), \
+    message __VA_OPT__(,) __VA_ARGS__)
 
 // construct a parser struct from a lexer and an arena allocator
 parser make_parser(lexer* restrict l, arena alloca) {
@@ -150,7 +153,7 @@ AST parse_unary_expr(parser* restrict p, bool no_cl) {
     switch (current_token.type) {
     case tt_sub:
     case tt_tilde:
-    case tt_exclam:
+    case ttam:
     case tt_and:
     case tt_keyword_sizeof:
     case tt_keyword_alignof:
@@ -280,7 +283,6 @@ f64 float_lit_value(parser* restrict p) {
     string t = current_token.text;
     f64 val = 0;
 
-    bool is_negative = false;
     int digit_start = 0;
 
     u32 decimal_index = 0;
@@ -299,7 +301,7 @@ f64 float_lit_value(parser* restrict p) {
             e_index = i;
             break;
         }
-        val = val + ascii_to_digit_val(p, t.raw[i], 10) * factor;
+        val = val + (f64)ascii_to_digit_val(p, t.raw[i], 10) * factor;
         factor *= 0.1;
     }
 
@@ -316,7 +318,7 @@ f64 float_lit_value(parser* restrict p) {
 
     // printf("\n\n%lf\n\n", (is_negative ? -val : val));
 
-    return (is_negative ? -val : val);
+    return val;
 }
 
 i64 int_lit_value(parser* restrict p) {
@@ -332,7 +334,7 @@ i64 int_lit_value(parser* restrict p) {
     }
 
     if (t.raw[digit_start] != '0') { // basic base-10 parse
-        FOR_URANGE_EXCL(i, digit_start, t.len) {
+        FOR_URANGE(i, digit_start, t.len) {
             val = val * 10 + ascii_to_digit_val(p, t.raw[i], 10);
         }
         return val * (is_negative ? -1 : 1);
@@ -361,7 +363,7 @@ i64 int_lit_value(parser* restrict p) {
 
     if (t.len < 3 + digit_start) error_at_parser(p, "expected digit after '%c'", t.raw[digit_start+1]);
 
-    FOR_URANGE_EXCL(i, 2 + digit_start, t.len) {
+    FOR_URANGE(i, 2 + digit_start, t.len) {
         val = val * 10 + ascii_to_digit_val(p, t.raw[i], base);
     }
     return val * (is_negative ? -1 : 1);
@@ -373,7 +375,7 @@ string string_lit_value(parser* restrict p) {
     size_t val_len = 0;
 
     // trace string, figure out how long it needs to be
-    FOR_URANGE_EXCL(i, 1, t.len-1) {
+    FOR_URANGE(i, 1, t.len-1) {
         if (t.raw[i] != '\\') {
             val_len++;
             continue;
@@ -408,7 +410,7 @@ string string_lit_value(parser* restrict p) {
 
     // fill in string with correct bytes
     u64 val_i = 0;
-    FOR_URANGE_EXCL(i, 1, t.len-1) {
+    FOR_URANGE(i, 1, t.len-1) {
         if (t.raw[i] != '\\') {
             val.raw[val_i] = t.raw[i];
             val_i++;
@@ -457,8 +459,6 @@ bool is_possible_type_expr(AST n) {
     case astype_identifier_expr:
     case astype_basic_type_expr:
         return true;
-        break;
-    default:
     }
     return false;
 }
@@ -1290,7 +1290,6 @@ AST parse_stmt(parser* restrict p) {
         n.as_defer_stmt->stmt = parse_stmt(p);
 
         n.as_defer_stmt->base.end = &peek_token(-1);
-        break;
     } break;
     case tt_keyword_if: {
         n = new_ast_node_p(p, astype_if_stmt);
@@ -1613,7 +1612,6 @@ AST parse_stmt(parser* restrict p) {
         
         n.base->end = &current_token;
         advance_token;
-        break;
     } break;
     case tt_keyword_asm: {
         error_at_parser(p, "TODO inline assembly");
@@ -1701,7 +1699,6 @@ AST parse_stmt(parser* restrict p) {
             n.as_label_stmt->base.end = &current_token;
             n.as_label_stmt->label = lhs;
             advance_token;
-            break;
         } break;
         case tt_add_equal: // compound assign statement
         case tt_sub_equal:

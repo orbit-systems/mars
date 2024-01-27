@@ -16,6 +16,8 @@ ASANFLAGS = -fsanitize=undefined -fsanitize=address
 DONTBEAFUCKINGIDIOT = -Wall -Wextra -pedantic -Wno-missing-field-initializers -Wno-unused-result
 CFLAGS = -O3 -Wincompatible-pointer-types
 
+all: build
+
 build/%.o: src/%.c
 	@echo compiling $<
 	@$(CC) -c -o $@ $< -g -Isrc/ -MD $(CFLAGS)

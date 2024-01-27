@@ -26,6 +26,7 @@
     TYPE(basic_addr, "addr", {char _;}) \
     TYPE(untyped_bool,   "untyped bool", {char _;}) \
     TYPE(untyped_int,    "untyped int", {char _;}) \
+    TYPE(untyped_char,   "untyped char", {char _;}) \
     TYPE(untyped_float,  "untyped float", {char _;}) \
     TYPE(untyped_pointer,"untyped pointer", {char _;}) \
     TYPE(untyped_string, "untyped string", {char _;}) \
@@ -97,7 +98,6 @@ extern size_t mt_kind_size[];
 mars_type new_type_node(arena* restrict a, mt_kind type);
 size_t size_of_type(mars_type t);
 size_t align_of_type(mars_type t);
+bool type_eq(mars_type a, mars_type b);
 
-da_typedef(mars_type);
-
-typedef da_mars_type mars_type_graph;
+void init_type_graph(arena* restrict type_arena);

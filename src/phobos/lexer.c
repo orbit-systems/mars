@@ -100,7 +100,7 @@ void append_next_token(lexer* restrict lex) {
     }
 
     u64 beginning_cursor = lex->cursor;
-    token_type this_type = 0;
+    token_type this_type;
     if (can_start_identifier(current_char(lex))) {
         this_type = scan_ident_or_keyword(lex);
     } else if (can_start_number(current_char(lex))) {
@@ -211,7 +211,7 @@ token_type scan_number(lexer* restrict lex) {
             return tt_literal_int;
         }
         advance_char(lex);
-    };
+    }
 }
 token_type scan_string_or_char(lexer* restrict lex) {
     char quote_char = current_char(lex);
@@ -317,11 +317,11 @@ token_type scan_operator(lexer* restrict lex) {
         advance_char(lex);
         if (current_char(lex) == '|') {
             advance_char(lex);
-            return tt_or_equal;
+            return tt_or_or;
         }
         if (current_char(lex) == '=') {
             advance_char(lex);
-            return tt_or_or;
+            return tt_or_equal;
         }
         return tt_or;
     case '<':
@@ -367,7 +367,7 @@ token_type scan_operator(lexer* restrict lex) {
             advance_char(lex);
             return tt_not_equal;
         }
-        return tt_exclam;
+        return ttam;
     case ':':
         advance_char(lex);
         if (current_char(lex) == ':') {

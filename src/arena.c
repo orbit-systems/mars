@@ -40,7 +40,7 @@ arena arena_make(size_t block_size) {
 }
 
 void arena_delete(arena* restrict al) {
-    FOR_URANGE_EXCL(i, 0, (al->list.len)) {
+    FOR_URANGE(i, 0, (al->list.len)) {
         arena_block_delete(&al->list.at[i]);
     }
     da_destroy(&al->list);
