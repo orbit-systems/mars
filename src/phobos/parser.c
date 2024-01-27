@@ -30,7 +30,7 @@
     message __VA_OPT__(,) __VA_ARGS__)
 
 // construct a parser struct from a lexer and an arena allocator
-parser make_parser(lexer* restrict l, arena alloca) {
+parser make_parser(lexer* restrict l, arena* alloca) {
     parser p = {0};
     p.alloca = alloca;
     p.tokens = l->buffer;
@@ -406,7 +406,7 @@ string string_lit_value(parser* restrict p) {
     }
 
     // allocate
-    val = (string){arena_alloc(&p->alloca, val_len, 1), val_len};
+    val = (string){arena_alloc(p->alloca, val_len, 1), val_len};
 
     // fill in string with correct bytes
     u64 val_i = 0;
@@ -566,7 +566,7 @@ AST parse_atomic_expr(parser* restrict p, bool no_cl) {
             // otherwise the malloc/free overhead is pretty big
             while (current_token.type == tt_literal_string) {
                 string str = string_lit_value(p);
-                string new_value = (string){arena_alloc(&p->alloca, value.len + str.len, 1), value.len + str.len};
+                string new_value = (string){arena_alloc(p->alloca, value.len + str.len, 1), value.len + str.len};
                 string_concat_buf(new_value, value, str);
                 value = new_value;
                 advance_token;

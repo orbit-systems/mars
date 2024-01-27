@@ -6,6 +6,7 @@
 #include "mars.h"
 #include "term.h"
 #include "phobos/phobos.h"
+#include "phobos/checker.h"
 #include "deimos/deimos.h"
 
 flag_set mars_flags;
@@ -14,7 +15,9 @@ int main(int argc, char** argv) {
     
     load_arguments(argc, argv, &mars_flags);
 
-    phobos_perform_frontend();
+    mars_module* target = phobos_parse_target_module();
+
+    
 
     return 0;
 }

@@ -6,12 +6,11 @@
 #include "phobos.h"
 #include "lexer.h"
 #include "parser.h"
-#include "type.h"
 
 /*tune this probably*/
 #define PARSER_ARENA_SIZE 0x100000
 
-mars_module* phobos_perform_frontend() {
+mars_module* phobos_parse_target_module() {
 
     // path checks
     if (!fs_exists(mars_flags.input_path))
@@ -94,11 +93,11 @@ mars_module* phobos_perform_frontend() {
     da(parser) parsers;
     da_init(&parsers, lexers.len);
 
+    arena alloca = arena_make(PARSER_ARENA_SIZE);
+
     FOR_URANGE(i, 0, lexers.len) {
-        arena alloca = arena_make(PARSER_ARENA_SIZE);
-
-        parser p = make_parser(&lexers.at[i], alloca);
-
+        
+        parser p = make_parser(&lexers.at[i], &alloca);
 
         da_append(&parsers, p);
     }
@@ -113,7 +112,7 @@ mars_module* phobos_perform_frontend() {
         ast_nodes_created += parsers.at[i].num_nodes;
     }
 
-    mars_module* module = create_module(&parsers);
+    mars_module* module = create_module(&parsers, alloca);
 
     /* display timing */ 
     if (mars_flags.print_timings) {
@@ -135,12 +134,14 @@ mars_module* phobos_perform_frontend() {
     return module;
 }
 
-mars_module* create_module(da(parser)* pl) {
-
+mars_module* create_module(da(parser)* pl, arena alloca) {
+    if (pl == NULL) CRASH("build_module() provided with null parser list pointer");
     if (pl->len == 0) CRASH("build_module() provided with parser list of length 0");
 
     mars_module* mod = malloc(sizeof(mars_module));
-    if (mod == NULL) CRASH("build_module() alloc failed");
+    if (mod == NULL) CRASH("build_module() module alloc failed");
+
+    mod->alloca = alloca;
 
     mod->module_name = pl->at[0].module_decl.as_module_decl->name->text;
     if (!string_eq(mod->module_name, to_string("mars"))) {}
