@@ -10,7 +10,7 @@
 // emit an error that highlights an AST node
 #define error_at_node(mod_ptr, node, msg, ...) do { \
     string ast_str = str_from_tokens(*((node).base->start), *((node).base->end));                       \
-    mars_file* source_file = find_source_file(mod_ptr, ast_str);                                        \
+    mars_file* source_file = find_source_file((mod_ptr), ast_str);                                      \
     if (source_file == NULL) CRASH("CRASH: source file not found for AST node");                        \
     error_at_string(source_file->path, source_file->src, ast_str, message __VA_OPT__(,) __VA_ARGS__);   \
 } while (0)

@@ -30,11 +30,11 @@ typedef struct {
     mmodule_list import_list;
 
     da(AST) program_tree;
-    arena alloca;
+    arena AST_alloca;
 
 } mars_module;
 
-mars_module* phobos_parse_target_module();
+mars_module* parse_target_module(string input_path);
 
 // creates a compilation unit from a list of parsers.
 // stitches the unchecked ASTs together and such

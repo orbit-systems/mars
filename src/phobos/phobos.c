@@ -10,20 +10,20 @@
 /*tune this probably*/
 #define PARSER_ARENA_SIZE 0x100000
 
-mars_module* phobos_parse_target_module() {
+mars_module* parse_target_module(string input_path) {
 
     // path checks
-    if (!fs_exists(mars_flags.input_path))
-        general_error("input directory \"%s\" does not exist", clone_to_cstring(mars_flags.input_path));
+    if (!fs_exists(input_path))
+        general_error("input directory \"%s\" does not exist", clone_to_cstring(input_path));
 
     fs_file input_dir = {0};
-    fs_get(mars_flags.input_path, &input_dir);
+    fs_get(input_path, &input_dir);
     if (!fs_is_directory(&input_dir))
-        general_error("input path \"%s\" is not a directory", clone_to_cstring(mars_flags.input_path));
+        general_error("input path \"%s\" is not a directory", clone_to_cstring(input_path));
 
     int subfile_count = fs_subfile_count(&input_dir);
     if (subfile_count == 0)
-        general_error("input path \"%s\" has no files", clone_to_cstring(mars_flags.input_path));
+        general_error("input path \"%s\" has no files", clone_to_cstring(input_path));
 
     fs_file* subfiles = malloc(sizeof(fs_file) * subfile_count);
     fs_get_subfiles(&input_dir, subfiles);
@@ -67,7 +67,7 @@ mars_module* phobos_parse_target_module() {
 
     }
     if (mars_file_count == 0)
-        general_error("input path \"%s\" has no \".mars\" files", clone_to_cstring(mars_flags.input_path));
+        general_error("input path \"%s\" has no \".mars\" files", clone_to_cstring(input_path));
 
     // timing
     struct timeval lex_begin, lex_end;
@@ -141,7 +141,7 @@ mars_module* create_module(da(parser)* pl, arena alloca) {
     mars_module* mod = malloc(sizeof(mars_module));
     if (mod == NULL) CRASH("build_module() module alloc failed");
 
-    mod->alloca = alloca;
+    mod->AST_alloca = alloca;
 
     mod->module_name = pl->at[0].module_decl.as_module_decl->name->text;
     if (!string_eq(mod->module_name, to_string("mars"))) {}

@@ -15,9 +15,7 @@ int main(int argc, char** argv) {
     
     load_arguments(argc, argv, &mars_flags);
 
-    mars_module* target = phobos_parse_target_module();
-
-    
+    mars_module* target = parse_target_module(mars_flags.input_path);
 
     return 0;
 }
