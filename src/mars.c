@@ -17,7 +17,7 @@ int main(int argc, char** argv) {
 
     mars_module* target = parse_target_module(mars_flags.input_path);
 
-
+    printf("target module parsed %p\n", target);
 
     return 0;
 }

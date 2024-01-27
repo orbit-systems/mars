@@ -134,7 +134,7 @@ mars_module* parse_target_module(string input_path) {
     return module;
 }
 
-mars_module* create_module(da(parser)* pl, arena alloca) {
+mars_module* create_module(da(parser)* restrict pl, arena alloca) {
     if (pl == NULL) CRASH("build_module() provided with null parser list pointer");
     if (pl->len == 0) CRASH("build_module() provided with parser list of length 0");
 
@@ -174,7 +174,7 @@ mars_module* create_module(da(parser)* pl, arena alloca) {
     return mod;
 }
 
-mars_file *find_source_file(mars_module *cu, string snippet) {
+mars_file *find_source_file(mars_module* restrict cu, string snippet) {
     FOR_URANGE(i, 0, cu->files.len) {
         if (is_within(cu->files.at[i].src, snippet)) {
             return &cu->files.at[i];
