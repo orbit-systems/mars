@@ -7,4 +7,6 @@ Mars is a work-in-progress and currently only being developed for the [Aphelion 
 
 ## Why?
 
-C is the dominant choice for programming kernels and other embedded applications, and it's clear to see why. C does not tangle itself in complexs abstractions and has virtually zero overhead. C code is explicit and translates clearly and effectively into machine code. Mars was born out of a desire to hold on to C's simplicity (no runtime, implicit contexts, built-in allocators, large stdlibs, etc.) but dig deeper into the nitty-gritty and give the programmer more low-level control.
+C is the dominant choice for programming kernels and other embedded applications, and it's clear to see why. C code is explicit and translates clearly and effectively into machine code. C also does not tangle itself in complex abstractions, has virtually zero overhead, and is one of the fastest, if not *the fastest* programming language, making it ideal for kernel applications where speed and responsiveness are key.
+
+Mars was born out of a desire to hold on to C's simplicity (no runtime, implicit contexts, built-in allocators, large stdlibs, etc.) but dig deeper into the nitty-gritty and give the programmer more low-level control.
