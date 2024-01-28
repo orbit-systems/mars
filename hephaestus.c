@@ -151,7 +151,19 @@ int main() {
             if (!fs_is_regular(&src_dir_subfiles[j])) continue;
             if (string_ends_with(src_dir_subfiles[j].path, to_string(".c"))) {
                 // build file!
-                printf("[ %d / %d ] compiling %s/"str_fmt"\n", file_num++, total_files_to_build, real_src_dirs[i], str_arg(src_dir_subfiles[j].path));
+                char* slashchar = "";
+                if (real_src_dirs[i][strlen(real_src_dirs[i])-1] == '\\' ||
+                    real_src_dirs[i][strlen(real_src_dirs[i])-1] == '/') {
+                        slashchar = "";
+                } else {
+#if defined(_WIN32) || defined(_WIN64)
+                    slashchar = "\\";
+#else
+                    slashchar = "/";
+#endif
+                }
+                printf("[ %d / %d ] compiling %s%s"str_fmt"\n", file_num++, total_files_to_build, real_src_dirs[i], slashchar, str_arg(src_dir_subfiles[j].path));
+
                 string outpath = string_clone(src_dir_subfiles[j].path);
                 outpath.raw[outpath.len-1] = 'o';
                 sprintf(cmd, "%s -c -o %s/"str_fmt" %s/"str_fmt" %s",
