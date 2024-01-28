@@ -1,6 +1,5 @@
 // generate the actual orbit.h code here
-#define ORBITSTR_IMPLEMENTATION
-#define ORBITFS_IMPLEMENTATION
+#define ORBIT_IMPLEMENTATION
 
 #include "orbit.h"
 #include "mars.h"

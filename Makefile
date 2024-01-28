@@ -20,7 +20,7 @@ all: build
 
 build/%.o: src/%.c
 	@echo compiling $<
-	@$(CC) -c -o $@ $< -g -Isrc/ -MD $(CFLAGS)
+	@$(CC) -c -o $@ $< -Isrc/ -MD $(CFLAGS)
 
 build: $(OBJECTS)
 	@-cp build/deimos/* build/
