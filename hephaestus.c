@@ -1,8 +1,6 @@
 #define ORBIT_IMPLEMENTATION
 #include "src/orbit.h"
 
-// simple C build tool inspired by tsoding's nobuild
-
 // to build the project, just compile and run this program!
 
 char* project_name = "mars";
@@ -90,15 +88,17 @@ int main() {
 
     // translate relative paths into realpaths (im so fucking done)
     real_output_dir = malloc(PATH_MAX);
+    if (output_dir[0] == '\0') output_dir = "./";
     realpath(output_dir, real_output_dir);
+
     real_build_dir = malloc(PATH_MAX);
+    if (build_dir[0] == '\0') build_dir = "./build";
     realpath(build_dir, real_build_dir);
+
     real_include_dir = malloc(PATH_MAX);
-    if (include_dir[0] == '\0') {
-        real_include_dir = "";
-    } else {
-        realpath(include_dir, real_include_dir);
-    }
+    if (include_dir[0] == '\0') real_include_dir = "";
+    else realpath(include_dir, real_include_dir);
+
     FOR_RANGE(i, 0, sizeof(source_directories) / sizeof(*source_directories)) {
         fs_file source_directory;
         if (!fs_get(to_string(source_directories[i]), &source_directory))
