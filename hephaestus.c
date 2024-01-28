@@ -1,34 +1,32 @@
-#define ORBIT_IMPLEMENTATION
-#include "src/orbit.h"
+// to build the project, just compile and run this file!
 
 //////////////////////////////////////////////////////////////////////////////
 
-// to build the project, just compile and run this file!
+char* project_name  = "mars";
 
-char* project_name = "mars";
-
-char* cc           = "gcc";
-char* flags        = "-O3";
-char* source_directories[] = {
+char* cc            = "gcc";
+char* flags         = "-O3";
+char* source_dirs[] = {
         "src/",
         "src/phobos/",
         "src/deimos/",
 };
-
-char* include_dir  = "src";
-char* build_dir    = "build";
-char* output_dir   = "./";
-char* link_flags   = "-lm";
+char* include_dir   = "src";
+char* build_dir     = "build";
+char* output_dir    = "./";
+char* link_flags    = "-lm";
 
 //////////////////////////////////////////////////////////////////////////////
 
-
-
+// HEPHAESTUS by sandwichman - single-file, slim build tool for multi-file C projects
 
 // here be dragons
 
 // seriously, im not proud of this code
 // dont @ me if you find bad shit in here
+
+#define ORBIT_IMPLEMENTATION
+#include "src/orbit.h"
 
 #define MAX_CMD 1000
 char cmd[MAX_CMD] = {0};
@@ -39,7 +37,7 @@ void clear(char* buf) {
 }
 
 // realpath()s of the source directories that i need because filesystem shit is so dumb
-char* real_src_dirs[sizeof(source_directories) / sizeof(*source_directories)];
+char* real_src_dirs[sizeof(source_dirs) / sizeof(*source_dirs)];
 char* real_build_dir;
 char* real_include_dir;
 char* real_output_dir;
@@ -89,16 +87,16 @@ int main() {
         clear(cmd);
     }
 
-    FOR_RANGE(i, 0, sizeof(source_directories) / sizeof(*source_directories)) {
+    FOR_RANGE(i, 0, sizeof(source_dirs) / sizeof(*source_dirs)) {
         fs_file source_directory;
-        if (!fs_get(to_string(source_directories[i]), &source_directory))
-            error("could not open source directory '%s'", source_directories[i]);
+        if (!fs_get(to_string(source_dirs[i]), &source_directory))
+            error("could not open source directory '%s'", source_dirs[i]);
 
         if (!fs_is_directory(&source_directory))
-            error("source directory '%s' is not a directory", source_directories[i]);
+            error("source directory '%s' is not a directory", source_dirs[i]);
 
         real_src_dirs[i] = malloc(PATH_MAX);
-        realpath(source_directories[i], real_src_dirs[i]);
+        realpath(source_dirs[i], real_src_dirs[i]);
 //        printf("\t%s\n", real_src_dirs[i]);
         fs_drop(&source_directory);
     }
@@ -108,10 +106,10 @@ int main() {
 
     // count the files
     int total_files_to_build = 0;
-    FOR_RANGE(i, 0, sizeof(source_directories) / sizeof(*source_directories)) {
+    FOR_RANGE(i, 0, sizeof(source_dirs) / sizeof(*source_dirs)) {
         fs_file source_directory;
         if (!fs_get(to_string(real_src_dirs[i]), &source_directory))
-            error("could not open source directory '%s'", source_directories[i]);
+            error("could not open source directory '%s'", source_dirs[i]);
 
         int src_dir_subfile_count = fs_subfile_count(&source_directory);
         if (src_dir_subfile_count == 0) {
@@ -136,10 +134,10 @@ int main() {
 
     // build the individual object files
     int file_num = 1;
-    FOR_RANGE(i, 0, sizeof(source_directories) / sizeof(*source_directories)) {
+    FOR_RANGE(i, 0, sizeof(source_dirs) / sizeof(*source_dirs)) {
         fs_file source_directory;
         if (!fs_get(to_string(real_src_dirs[i]), &source_directory))
-            error("could not open source directory '%s'", source_directories[i]);
+            error("could not open source directory '%s'", source_dirs[i]);
 
         int src_dir_subfile_count = fs_subfile_count(&source_directory);
         if (src_dir_subfile_count == 0) {
