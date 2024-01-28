@@ -165,8 +165,6 @@ int  string_cmp(string a, string b);
 bool string_eq(string a, string b);
 bool string_ends_with(string source, string ending);
 
-// use #define ORBITSTR_IMPLEMENTATION before including the header to generate the actual code
-
 #ifdef ORBIT_IMPLEMENTATION
 
 string strprintf(char* format, ...) {

@@ -28,6 +28,8 @@ mars_module* parse_target_module(string input_path) {
     fs_file* subfiles = malloc(sizeof(fs_file) * subfile_count);
     fs_get_subfiles(&input_dir, subfiles);
 
+    chdir(clone_to_cstring(input_path));
+
     da(lexer) lexers;
     da_init(&lexers, subfile_count);
 
