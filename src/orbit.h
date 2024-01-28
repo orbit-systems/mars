@@ -2,7 +2,6 @@
 #define ORBIT_H
 
 // orbit systems utility header
-// this is prolly public domain (CC0), idk tho
 
 #include <stdlib.h>
 #include <stdint.h>

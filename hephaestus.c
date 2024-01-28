@@ -1,5 +1,7 @@
 // to build the project, just compile and run this file!
 
+// hephaestus by sandwichman - single-file, slim build tool for multi-file C projects
+
 //////////////////////////////////////////////////////////////////////////////
 
 char* project_name  = "mars";
@@ -18,7 +20,7 @@ char* link_flags    = "-lm";
 
 //////////////////////////////////////////////////////////////////////////////
 
-// HEPHAESTUS by sandwichman - single-file, slim build tool for multi-file C projects
+// TODO read dependency files for incremental compilation support
 
 // here be dragons
 
