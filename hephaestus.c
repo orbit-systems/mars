@@ -1,11 +1,13 @@
 #define ORBIT_IMPLEMENTATION
 #include "src/orbit.h"
 
-// to build the project, just compile and run this program!
+//////////////////////////////////////////////////////////////////////////////
+
+// to build the project, just compile and run this file!
 
 char* project_name = "mars";
 
-char* cc           = "gcc"; // swap this out with the compiler of your choice
+char* cc           = "gcc";
 char* flags        = "-O3";
 char* source_directories[] = {
         "src/",
@@ -18,19 +20,7 @@ char* build_dir    = "build";
 char* output_dir   = "./";
 char* link_flags   = "-lm";
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+//////////////////////////////////////////////////////////////////////////////
 
 
 
