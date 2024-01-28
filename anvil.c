@@ -1,8 +1,10 @@
-// to build the project, just compile and run this file!
+/*
 
-// hephaestus by sandwichman - single-file, slim build tool for multi-file C projects
+    anvil 🔨 by sandwichman - single-file, slim build tool for multi-file C projects
 
-//////////////////////////////////////////////////////////////////////////////
+    to build the project, just compile and run this file!
+
+*/
 
 char* project_name  = "mars";
 
@@ -34,6 +36,7 @@ int transparency_mode = 0;
 #include <stdio.h>
 #include <sys/stat.h>
 #include <dirent.h>
+#include <unistd.h>
 
 typedef uint32_t u32;
 typedef uint8_t  u8;
