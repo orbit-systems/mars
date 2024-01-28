@@ -50,7 +50,6 @@ void clear(char* buf) {
 
 // realpath()s of the source directories that i need because filesystem shit is so dumb
 char* real_src_dirs[sizeof(source_directories) / sizeof(*source_directories)];
-int max_src_dir_len = 0;
 char* real_build_dir;
 char* real_include_dir;
 char* real_output_dir;
@@ -65,10 +64,24 @@ char base_dir[PATH_MAX] = {0}; // this is the current working directory at the s
 
 int main() {
 
-    // init some random shit
-    FOR_RANGE(i, 0, sizeof(source_directories) / sizeof(*source_directories)) {
-        max_src_dir_len = max(max_src_dir_len, strlen(source_directories[i]));
+    // translate relative paths into realpaths (im so fucking done)
+    real_output_dir = malloc(PATH_MAX);
+    if (output_dir[0] == '\0') output_dir = "./";
+    realpath(output_dir, real_output_dir);
+
+    real_build_dir = malloc(PATH_MAX);
+    if (build_dir[0] == '\0') {
+        if (fs_exists(to_string("./build"))) {
+            error("an explicit build path must be provided");
+        }
+        printf("default build directory created\n");
+        build_dir = "./build";
     }
+    realpath(build_dir, real_build_dir);
+
+    real_include_dir = malloc(PATH_MAX);
+    if (include_dir[0] == '\0') real_include_dir = "";
+    else realpath(include_dir, real_include_dir);
 
     // clean build directory
     if (fs_exists(to_string(build_dir))) {
@@ -86,19 +99,6 @@ int main() {
         clear(cmd);
     }
 
-    // translate relative paths into realpaths (im so fucking done)
-    real_output_dir = malloc(PATH_MAX);
-    if (output_dir[0] == '\0') output_dir = "./";
-    realpath(output_dir, real_output_dir);
-
-    real_build_dir = malloc(PATH_MAX);
-    if (build_dir[0] == '\0') build_dir = "./build";
-    realpath(build_dir, real_build_dir);
-
-    real_include_dir = malloc(PATH_MAX);
-    if (include_dir[0] == '\0') real_include_dir = "";
-    else realpath(include_dir, real_include_dir);
-
     FOR_RANGE(i, 0, sizeof(source_directories) / sizeof(*source_directories)) {
         fs_file source_directory;
         if (!fs_get(to_string(source_directories[i]), &source_directory))
@@ -113,7 +113,7 @@ int main() {
         fs_drop(&source_directory);
     }
 
-    printf("building %s using %s with flags %s\n", project_name, cc, flags);
+    printf("compiling using %s with flags %s\n", cc, flags);
 
 
     // count the files
