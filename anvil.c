@@ -1,6 +1,6 @@
 /*
 
-    anvil 🔨 by sandwichman - single-file, slim build tool for multi-file C projects
+    anvil 🔨 by sandwichman - slim, source-driven build tool for C
 
     to build the project, just compile and run this file!
 
@@ -98,12 +98,12 @@ typedef struct fs_file_s {
 bool fs_exists(string path);
 bool fs_get(string path, fs_file* file);
 bool fs_drop(fs_file* file);
+bool fs_close(fs_file* file);
+
 
 #ifdef _WIN32
 #define realpath(N,R) _fullpath((R),(N),_MAX_PATH)
 #endif
-
-bool fs_close(fs_file* file);
 
 #define fs_is_regular(file)    ((file)->type == oft_regular)
 #define fs_is_directory(file)  ((file)->type == oft_directory)
