@@ -2,6 +2,7 @@
 #define MARS_H
 
 #include "orbit.h"
+#include "term.h"
 
 typedef struct cmd_arg_s {
     string key;
@@ -19,6 +20,5 @@ cmd_arg make_argument(char* s);
 void load_arguments(int argc, char* argv[], flag_set* fl);
 
 void print_help();
-u8* load_file(FILE* asm_file);
 
 extern flag_set mars_flags;

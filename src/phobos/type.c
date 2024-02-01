@@ -106,12 +106,8 @@ size_t size_of_type(mars_type t) {
         return 8;
     case mt_slice:
         return 16;
-    case mt_array: {
-        // size + inter-member padding
-        size_t real_size = size_of_type(t.as_array->subtype);
-        size_t functional_size = align_forward(real_size, align_of_type(t.as_array->subtype));
-        return functional_size*(t.as_array->length-1) + real_size;
-    }
+    case mt_array:
+        return size_of_type(t.as_array->subtype)*t.as_array->length;
     case mt_struct: {
         size_t max_offset = 0;
         size_t max_offset_size = 0;
@@ -121,14 +117,14 @@ size_t size_of_type(mars_type t) {
                 max_offset_size = size_of_type(t.as_struct->fields.at[i].type);
             }
         }
-        return max_offset + max_offset_size;
+        return align_forward(max_offset + max_offset_size, align_of_type(t));
     }
-    case mt_union:{
+    case mt_union: {
         size_t max_size = 0;
         FOR_URANGE(i, 0, t.as_union->fields.len) {
             max_size = max(max_size, size_of_type(t.as_union->fields.at[i].type));
         }
-        return max_size;
+        return align_forward(max_size, align_of_type(t));
     }
     case mt_alias:
         return size_of_type(t.as_alias->subtype);
@@ -203,7 +199,7 @@ string type_to_str(mars_type t) {
             }
         }
         return string_concat(s, to_string("}"));
-    default:
-        return to_string("<INVALID TYPE>");
     }
+
+    return to_string("<INVALID TYPE>");
 }

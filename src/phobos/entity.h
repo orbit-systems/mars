@@ -9,11 +9,21 @@
 struct entity;
 struct scope;
 
+typedef u8 storage_class; enum {
+    st_global_code, // for function code
+    st_global_data, // for global variables
+    st_local, // local variables
+    st_local_static, // static local variables
+    st_param, // function parameters
+    st_type, // type (may be redundant)
+};
+
 typedef struct {
     struct scope * scope;
     mars_type * type;
     string identifier;
     AST declaration;
+    storage_class storage;
 } entity;
 
 typedef struct { // these have to be pointer arrays so that they can resize without pointers to their elements anywhere else getting fucked

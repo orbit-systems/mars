@@ -78,15 +78,6 @@ void parse_file(parser* restrict p) {
     }
 }
 
-
-// cl = compound literals
-// this can cause syntatic ambiguity with conditionals so its nice to be able to turn these off
-AST parse_expr(parser* restrict p, bool no_cl) {
-    AST n = NULL_AST;
-    n = parse_binary_expr(p, 0, no_cl);
-    return n;
-}
-
 int op_precedence(token_type type) {
     switch (type) {
     case tt_mul:
@@ -230,9 +221,9 @@ AST parse_unary_expr(parser* restrict p, bool no_cl) {
 
 int ascii_to_digit_val(parser* restrict p, char c, u8 base) {
     char val = (char)base;
-    if (c >= '0' && c <= '9') val = c-'0';
-    if (c >= 'a' && c <= 'f') val = c-'a' +10;
-    if (c >= 'A' && c <= 'F') val = c-'A' +10;
+    if (c >= '0' && c <= '9') val = (char)(c-'0');
+    if (c >= 'a' && c <= 'f') val = (char)(c-'a' + 10);
+    if (c >= 'A' && c <= 'F') val = (char)(c-'A' + 10);
     
     if (val >= base)
         error_at_parser(p, "invalid base %d digit '%c'", base, c);

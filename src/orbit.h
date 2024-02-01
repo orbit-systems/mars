@@ -10,6 +10,7 @@
 #include <math.h>
 #include <stdarg.h>
 #include <sys/time.h>
+#include <stdatomic.h>
 
 typedef uint64_t u64;
 typedef uint32_t u32;
@@ -21,9 +22,26 @@ typedef int16_t  i16;
 typedef int8_t   i8;
 typedef float f32;
 typedef double f64;
+
+#if !defined(bool)
 typedef uint8_t  bool;
 #define false ((bool)0)
-#define true ((bool)!false)
+#define true ((bool)1)
+#endif
+
+#ifdef _MSC_VER
+#define forceinline __forceinline
+#elif defined(__GNUC__)
+#define forceinline inline __attribute__((__always_inline__))
+#elif defined(__CLANG__)
+#if __has_attribute(__always_inline__)
+        #define forceinline inline __attribute__((__always_inline__))
+    #else
+        #define forceinline inline
+    #endif
+#else
+    #define forceinline inline
+#endif
 
 #define TODO(msg) do {\
     printf("\x1b[36m\x1b[1mTODO\x1b[0m: \"%s\" at %s:%d\n", (msg), (__FILE__), (__LINE__)); \
@@ -165,7 +183,6 @@ bool string_eq(string a, string b);
 bool string_ends_with(string source, string ending);
 
 #ifdef ORBIT_IMPLEMENTATION
-
 string strprintf(char* format, ...) {
     string c = NULL_STR;
     va_list a;
@@ -265,11 +282,36 @@ void printstr(string str) {
 // filesystem utils
 // god this thing is a mess but it works ig
 
+#ifdef _WIN32
+#define _CRT_SECURE_NO_WARNINGS
+#endif
+
+#include <stdlib.h>
+#include <stdint.h>
+#include <string.h>
 #include <stdio.h>
-#include <unistd.h>
 #include <sys/stat.h>
-#include <sys/types.h>
+#ifdef _WIN32
+#define VC_EXTRALEAN
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#include <direct.h>
+
+#define __S_ISTYPE(mode, mask)  (((mode) & S_IFMT) == (mask))
+#undef S_ISREG
+#undef S_ISDIR
+#define S_ISREG(mode)    __S_ISTYPE((mode), S_IFREG)
+#define S_ISDIR(mode)    __S_ISTYPE((mode), S_IFDIR)
+
+#define fs_mkdir _mkdir
+#define chdir _chdir
+#define PATH_MAX 260
+#else
 #include <dirent.h>
+#include <unistd.h>
+
+#define fs_mkdir mkdir
+#endif
 
 typedef u8 fs_file_type; enum {
     oft_invalid = 0,
@@ -358,7 +400,6 @@ bool fs_set_cursor(fs_file* file, int new_cursor);
 
 // get the value of the file cursor, relative to how
 int fs_get_cursor(fs_file* file);
-
 
 
 #ifdef ORBIT_IMPLEMENTATION
@@ -547,10 +588,30 @@ bool fs_delete(fs_file* file) {
     return success && fs_drop(file);
 }
 
+
 int fs_subfile_count(fs_file* file) {
     int count = 0;
     if (!fs_is_directory(file)) return 0;
 
+#ifdef _WIN32
+    HANDLE find = NULL;
+    WIN32_FIND_DATA find_data = {0};
+
+    char* path_cstr = clone_to_cstring(file->path);
+    char path[MAX_PATH] = {0};
+    snprintf(path, MAX_PATH, "%s\\*", path_cstr);
+    find = FindFirstFile(path, &find_data);
+    free(path_cstr);
+
+    if(find != INVALID_HANDLE_VALUE){
+        do {
+            if (strcmp(find_data.cFileName, ".") == 0) continue;
+            if (strcmp(find_data.cFileName, "..") == 0) continue;
+            count++;
+        } while(FindNextFile(find, &find_data));
+        FindClose(find);
+    }
+#else
     DIR* d;
     struct dirent* dir;
 
@@ -570,7 +631,8 @@ int fs_subfile_count(fs_file* file) {
     }
 
     closedir(d);
-    return count; // account for the . and .. dirs
+#endif
+    return count; // account for default directories
 }
 
 bool fs_get_subfiles(fs_file* file, fs_file* file_array) {
@@ -580,6 +642,18 @@ bool fs_get_subfiles(fs_file* file, fs_file* file_array) {
 
     if (!fs_is_directory(file)) return false;
 
+#ifdef _WIN32
+    HANDLE find = NULL;
+    WIN32_FIND_DATA find_data = {0};
+
+    char* path_cstr = clone_to_cstring(file->path);
+    char path[MAX_PATH] = {0};
+    snprintf(path, MAX_PATH, "%s\\*", path_cstr);
+    find = FindFirstFile(path, &find_data);
+    free(path_cstr);
+
+    if(find == INVALID_HANDLE_VALUE) return false;
+#else
     DIR* directory;
     struct dirent* dir_entry;
 
@@ -591,7 +665,7 @@ bool fs_get_subfiles(fs_file* file, fs_file* file_array) {
         free(path_cstr);
     }
     if (!directory) return false;
-
+#endif
     if (can_be_cstring(file->path)) {
         chdir(file->path.raw);
     } else {
@@ -599,7 +673,21 @@ bool fs_get_subfiles(fs_file* file, fs_file* file_array) {
         chdir(path_cstr);
         free(path_cstr);
     }
-
+#ifdef _WIN32
+    int i = 0;
+    do
+    {
+        if (strcmp(find_data.cFileName, ".") == 0) continue;
+        if (strcmp(find_data.cFileName, "..") == 0) continue;
+        string path = to_string(find_data.cFileName);
+        bool success = fs_get(path, &file_array[i]);
+        if (!success) {
+            chdir(file_realpath);
+            return false;
+        }
+        i++;
+    } while(FindNextFile(find, &find_data));
+#else
     for (int i = 0; (dir_entry = readdir(directory)) != NULL;) {
         if (strcmp(dir_entry->d_name, ".") == 0) continue;
         if (strcmp(dir_entry->d_name, "..") == 0) continue;
@@ -616,11 +704,16 @@ bool fs_get_subfiles(fs_file* file, fs_file* file_array) {
         // string_free(path);
         i++;
     }
+#endif
 
     chdir(file_realpath);
     chdir("..");
 
+#ifdef _WIN32
+    FindClose(find);
+#else
     closedir(directory);
+#endif
     return true;
 }
 

@@ -18,7 +18,7 @@ void* arena_block_alloc(arena_block* restrict a, size_t size, size_t align);
 
 da_typedef(arena_block);
 
-typedef struct {
+typedef struct arena {
     da(arena_block) list;
     u32 arena_size;
 } arena;

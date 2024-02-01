@@ -18,12 +18,14 @@ mars_module* parse_target_module(string input_path) {
 
     fs_file input_dir = {0};
     fs_get(input_path, &input_dir);
-    if (!fs_is_directory(&input_dir))
+    if (!fs_is_directory(&input_dir)) {
         general_error("input path \""str_fmt"\" is not a directory", str_arg(input_path));
+    }
 
     int subfile_count = fs_subfile_count(&input_dir);
-    if (subfile_count == 0)
+    if (subfile_count == 0) {
         general_error("input path \""str_fmt"\" has no files", str_arg(input_path));
+    }
 
     fs_file* subfiles = malloc(sizeof(fs_file) * subfile_count);
     fs_get_subfiles(&input_dir, subfiles);
@@ -146,7 +148,6 @@ mars_module* create_module(da(parser)* restrict pl, arena alloca) {
     mod->AST_alloca = alloca;
 
     mod->module_name = pl->at[0].module_decl.as_module_decl->name->text;
-    if (!string_eq(mod->module_name, to_string("mars"))) {}
 
     da_init(&mod->files, pl->len);
     FOR_URANGE(i, 0, pl->len) {

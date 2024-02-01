@@ -270,7 +270,7 @@ typedef u16 ast_type; enum {
 };
 
 // generate tagged union AST type
-typedef struct {
+typedef struct AST {
     union {
         void* rawptr;
         ast_base * base;

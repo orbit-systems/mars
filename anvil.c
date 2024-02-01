@@ -22,13 +22,13 @@ char* link_flags    = "-lm";
 int transparency_mode = 0;
 
 //////////////////////////////////////////////////////////////////////////////
+/*
+    TODO read dependency files for separate compilation
 
-// TODO read dependency files for separate compilation
+    here be dragons
+*/
 
 // this is basically my orbit.h header but slimmed down and copied in
-// because single-file means single-file
-
-// here be dragons
 
 #include <stdlib.h>
 #include <stdint.h>
@@ -38,11 +38,22 @@ int transparency_mode = 0;
 #include <dirent.h>
 #include <unistd.h>
 
+typedef uint64_t u64;
 typedef uint32_t u32;
+typedef uint16_t u16;
 typedef uint8_t  u8;
+typedef int64_t  i64;
+typedef int32_t  i32;
+typedef int16_t  i16;
+typedef int8_t   i8;
+typedef float f32;
+typedef double f64;
+
+#if !defined(bool)
 typedef uint8_t  bool;
 #define false ((bool)0)
-#define true ((bool)!false)
+#define true ((bool)1)
+#endif
 
 #define CRASH(msg) do { \
     printf("\x1b[31m\x1b[1mCRASH\x1b[0m: \"%s\" at %s:%d\n", (msg), (__FILE__), (__LINE__)); \
@@ -140,15 +151,29 @@ int execute(char* command) {
 
 int main() {
 
+    // detect compiler if not provided
+    if (cc[0] == '\0') {
+#       if defined(__clang__)
+        cc = "clang";
+#       elif defined(_MSC_VER)
+        cc = "cl.exe";
+#       elif defined(__GNUC__)
+        cc = "gcc";
+#       elif
+        error("cannot detect c compiler, please explicitly set 'cc' in anvil.c");
+#       endif
+        printf("compiler detected '%s'\n", cc);
+    }
+
+    // check params and set defaults
+    if (build_dir[0] == '\0') error("an explicit build path must be provided");
+    if (output_dir[0] == '\0') output_dir = "./";
+
     // translate relative paths into realpaths (im so fucking done)
     real_output_dir = malloc(PATH_MAX);
-    if (output_dir[0] == '\0') output_dir = "./";
     realpath(output_dir, real_output_dir);
 
     real_build_dir = malloc(PATH_MAX);
-    if (build_dir[0] == '\0') {
-        error("an explicit build path must be provided");
-    }
     realpath(build_dir, real_build_dir);
 
     real_include_dir = malloc(PATH_MAX);
