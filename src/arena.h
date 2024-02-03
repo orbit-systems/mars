@@ -3,7 +3,6 @@
 
 #include "orbit.h"
 
-
 // memory arenas
 
 typedef struct {
