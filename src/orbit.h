@@ -588,7 +588,6 @@ bool fs_delete(fs_file* file) {
     return success && fs_drop(file);
 }
 
-
 int fs_subfile_count(fs_file* file) {
     int count = 0;
     if (!fs_is_directory(file)) return 0;
