@@ -678,7 +678,10 @@ bool fs_get_subfiles(fs_file* file, fs_file* file_array) {
     {
         if (strcmp(find_data.cFileName, ".") == 0) continue;
         if (strcmp(find_data.cFileName, "..") == 0) continue;
-        string path = to_string(find_data.cFileName);
+//        string path = to_string(find_data.cFileName);
+        char* pathcstr = malloc(PATH_MAX);
+        realpath(find_data.cFileName, pathcstr);
+        string path = to_string(pathcstr);
         bool success = fs_get(path, &file_array[i]);
         if (!success) {
             chdir(file_realpath);
@@ -693,7 +696,9 @@ bool fs_get_subfiles(fs_file* file, fs_file* file_array) {
         //string temp1 = string_concat(file->path, to_string("/"));
         //string path = string_concat(temp1, to_string(dir_entry->d_name));
         //printf("\ny\n[%s]\n\n", dir_entry->d_name);
-        string path = to_string(dir_entry->d_name);
+        char* pathcstr = malloc(PATH_MAX);
+        realpath(dir_entry->d_name, pathcstr);
+        string path = to_string(pathcstr);
         bool success = fs_get(path, &file_array[i]);
         if (!success) {
             chdir(file_realpath);

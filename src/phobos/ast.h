@@ -13,7 +13,7 @@ typedef struct {
 
 // define all the AST node macros
 #define AST_NODES \
-    AST_TYPE(meta_scope, "[META] scope tree linkage point", { \
+    AST_TYPE(meta_scope, "[scope tree linkage point]", { \
         struct scope * this_scope; \
         AST sub; \
     }) \

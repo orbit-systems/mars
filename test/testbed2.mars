@@ -1,25 +1,36 @@
 module test;
 
-type char = u8;
-type string = []u8;
-
-let find = fn(needle: char, haystack: string) -> (index: uint, found: bool) {
-    for i: u64 in 0..<haystack.len {
-        if haystack[i] == needle {
-            return i, true;
-        }
-    }
-    return -1, false;
+let main = fn() {
+    let arr = [6]int {4, 6, 5, 1, 3, 2};
+    quicksort(arr[:]);
+    // arr == {1, 2, 3, 4, 5, 6}
 };
 
-let main = fn() {
+let quicksort = fn #always_inline (array: []int) {
+    quicksort_real(array, 0, array.len - 1);
+};
 
-    let s = "apple";
-    let c = 'l';
+let quicksort_real = fn(array: []int, low, high: int) {
+    if low >= high || low < 0 { return; }
+    let pivot = partition(array, low, high);
+    quicksort(array, low, pivot - 1);
+    quicksort(array, pivot + 1, high);
+};
 
-    let index, found = find(c, s);
-    if !found || s[index] != c {
-        // not found
+let partition = fn(array: []int, low, high: int) {
+    let pivot = array[high];
+    mut i = low - 1;
+    for j in low..<high {
+        if array[j] <= pivot {
+            i += 1;
+            let temp = array[j];
+            array[j] = array[i];
+            array[i] = temp;
+        }
     }
-
+    i += 1;
+    let temp = array[high];
+    array[high] = array[i];
+    array[i] = temp;
+    return i;
 };

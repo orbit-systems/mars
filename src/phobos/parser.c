@@ -1021,6 +1021,9 @@ AST parse_atomic_expr(parser* restrict p, bool no_cl) {
                     if (current_token.type != tt_close_paren)
                         error_at_parser(p, "expected ')'");
                     advance_token;
+                } else if (string_eq(current_token.text, to_string("always_inline"))) {
+                    advance_token;
+                    n.as_fn_type_expr->always_inline = true;
                 }
             }
 
