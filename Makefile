@@ -1,4 +1,4 @@
-SRCPATHS = src/*.c src/deimos/*.c src/phobos/*.c src/test/*.c
+SRCPATHS = src/*.c src/phobos/*.c src/deimos/*.c src/test/*.c
 SRC = $(wildcard $(SRCPATHS))
 OBJECTS = $(SRC:src/%.c=build/%.o)
 

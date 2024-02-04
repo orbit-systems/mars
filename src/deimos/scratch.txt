@@ -1,0 +1,32 @@
+MIL - mars intermediate language
+
+this is kind of a shit IR.
+it will hopefully be replaced with a better version at some point.
+
+let x: i64 = 3;
+if x > 10 {
+    x = 1;
+} else {
+    x = 2;
+}
+let y = x;
+
+becomes
+
+set t1, 3
+local_store t1, -8      // -8 is the stack offset of x
+local_load t2, -8
+br_greater t2, 10, BB_1
+jump BB_2
+
+BB_1:
+local_store 1, -8
+jump BB_3
+
+BB_2:
+local_store 2, -8
+jump BB_3
+
+BB_3:
+local_load t3, -8
+local_store t3, -16
