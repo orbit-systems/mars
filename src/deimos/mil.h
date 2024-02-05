@@ -186,8 +186,9 @@ typedef struct mil_bb {
 } mil_bb;
 
 typedef struct mil_function {
+    struct mil_module * func;
     da(mil_variable) vars;
-    size_t local_storage_size;
+    size_t stack_size;
 } mil_function;
 
 typedef struct mil_static_region {

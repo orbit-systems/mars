@@ -13,6 +13,7 @@ typedef u8 storage_class; enum {
     st_global_code, // for function code
     st_global_data, // for global variables
     st_local, // local variables
+    st_local_volatile, // local variables that must be accessible via address
     st_local_static, // static local variables
     st_param, // function parameters
     st_type, // type (may be redundant)
