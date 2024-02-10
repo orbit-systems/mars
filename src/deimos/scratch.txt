@@ -1,7 +1,6 @@
-MIL - mars intermediate language
+SIL - shitty intermediate language
 
-this is kind of a shit IR.
-it will hopefully be replaced with a better version at some point.
+this is just to get codegen working until we can work on a better IR
 
 let x: i64 = 3;
 if x > 10 {

@@ -1,10 +1,13 @@
 #pragma once
-#define DEIMOS_MIC_H
+#define DEIMOS_SIL_H
 
-// MIL - mars intermediate language
+/*
+ SIL - shitty intermediate language
 
-// it's a shitty IR, it does not lend itself to a lot of optimization
-// but it works
+ this is just to get codegen working until we can work on a better IR
+
+ SIL variables are bare, they do not have types. any presence of types are
+*/
 
 #include "orbit.h"
 #include "arena.h"
@@ -34,7 +37,7 @@ typedef struct mil_argument {
 /*
     inst_invalid,
 
-    // "this instruction has been deleted"
+    // "this instruction has been deleted, please ignore"
     inst_deleted,
 
     // memory
@@ -138,7 +141,16 @@ typedef struct mil_argument {
     inst_asm,
 */
 
+typedef u8 bit_depth; enum {
+    bd_8,
+    bd_16,
+    bd_32,
+    bd_64,
+};
+
 #define INSTRUCTIONS \
+    INSTR(deleted, { \
+    })               \
     INSTR(local_load, { \
         var_index dest; \
         mil_argument offset; \
@@ -186,19 +198,23 @@ typedef struct mil_bb {
 } mil_bb;
 
 typedef struct mil_function {
-    struct mil_module * func;
+    struct mil_module * module;
     da(mil_variable) vars;
     size_t stack_size;
 } mil_function;
 
-typedef struct mil_static_region {
-    
-} mil_static_region;
+typedef struct mil_static_data {
+    string label;
+    size_t size;
+    bool read_only;
+} mil_static_data;
 
 da_typedef(mil_function);
+da_typedef(mil_static_data);
 
 typedef struct mil_module {
     arena str_alloca; // for allocating names and strings
     arena alloca;
-    da(mil_function) functions;
+    da(mil_function) code;
+    da(mil_static_data) data;
 } mil_module;
