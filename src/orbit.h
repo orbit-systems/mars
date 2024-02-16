@@ -11,6 +11,7 @@
 #include <stdarg.h>
 #include <sys/time.h>
 #include <stdatomic.h>
+#include <assert.h>
 
 typedef uint64_t u64;
 typedef uint32_t u32;

@@ -3,52 +3,148 @@
 
 #include "orbit.h"
 
+typedef u8 mil_typekind; enum {
+    tk_void,
+    tk_data,
+    tk_memory,
+    tk_control,
+    tk_tuple,
 
+    tk_phi, // phi connection; emitted by
+};
 
-typedef u8 mil_nodetype; enum {
+typedef struct mil_conntype mil_conntype;
+
+typedef struct mil_conntype {
+    mil_typekind kind;
+    u16 tuple_len; // if tuple, how big
+    mil_conntype* tuple;
+} mil_conntype;
+
+typedef u8 mil_nodekind; enum {
     mil_invalid,
 
+    // -> data
     mil_const,
-    mil_localaddr,
-    mil_symboladdr,
 
+    // -> data
+    mil_localptr,
+
+    // -> data
+    mil_symbolptr,
+
+    // tuple -> any
+    mil_proj,
+
+    // -> (control, memory, data...)
     mil_head,
 
+    // control, memory, data -> data
     mil_load,
+
+    // control, memory, data, data -> memory
     mil_store,
+
+    // control, memory, data -> memory, data
     mil_vol_load,
+
+    // control, memory, data, data -> memory
     mil_vol_store,
 
-    mil_cast,
-    mil_bitcast,
-
+    // data, data -> data
     mil_add,
     mil_sub,
     mil_imul,
     mil_umul,
-    mil_mod,
-    mil_rem,
-
+    mil_mod, // Python-like modulo
+    mil_rem, // C-like modulo
     mil_and,
     mil_or,
-    mil_not,
     mil_xor,
 
+    // data -> data
+    mil_not,
+
+    // outs for this are (result, did_over/underflow)
+    // data, data -> (data, data)
+    mil_add_overflow,
+    mil_sub_underflow,
+
+    mil_check_eq, // ins[1] == ins[2]
+    mil_check_ne, // ins[1] != ins[2]
+    mil_check_lt, // ins[1] <  ins[2]
+    mil_check_le, // ins[1] <= ins[2]
+    mil_check_gt, // ins[1] >  ins[2]
+    mil_check_ge, // ins[1] >= ins[2]
+
+    // data -> data
+    mil_to_float,
+    mil_from_float,
+
+    // data, data -> data
     mil_fadd,
     mil_fsub,
     mil_fmul,
     mil_fdiv,
+
+    // data -> data
     mil_fneg,
     mil_fsqrt,
 
-    mil_phi,
+    // instead of phi nodes or block arguments, we do this
+    // its basically phi nodes but easier to codegen imo
+    // if you want to merge data from mutliple control flow paths,
+    // use a mil_preserve node at the end of your basic block
 
-    mil_branch,
+    // control, data -> phi
+    mil_preserve,
+
+    // then use a unify node to take all of your phi connections from preserve nodes
+    // and merge them into a single data connection
+    // very nice to codegen, because mil_unify does not generate any real code
+    // mil_preserve does most of the heavy lifting
+
+    // phi... -> data
+    mil_unify,
+
+    // control -> (control, data...)
+    mil_block,
+
+    // control, data... -> (control...)
+    mil_branch_eq, // ins[1] == ins[2]
+    mil_branch_ne, // ins[1] != ins[2]
+    mil_branch_lt, // ins[1] <  ins[2]
+    mil_branch_le, // ins[1] <= ins[2]
+    mil_branch_gt, // ins[1] >  ins[2]
+    mil_branch_ge, // ins[1] >= ins[2]
+
+    // control -> control
     mil_jump,
+
+    // control, memory, data... -> (control, memory, data...)
     mil_call,
 
+    // control, data... ->
+    mil_return,
+
+    // control, memory, data... -> (control, memory, data...)
     mil_asm,
+
+    // control, memory, data...
     mil_memset,
     mil_memcopy,
-
 };
+
+typedef struct mil_node mil_node;
+
+typedef struct mil_node {
+    mil_nodekind kind;
+
+    u16 in_count;
+    u16 out_count;
+
+    mil_node** ins;
+    mil_node** uses;
+
+    void* data;
+} mil_node;
