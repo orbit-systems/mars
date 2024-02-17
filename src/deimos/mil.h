@@ -3,6 +3,16 @@
 
 #include "orbit.h"
 
+typedef u8 bitwidth; enum {
+    width_1 = 0,
+    width_2,
+    width_4,
+    width_8,
+    width_16,
+    width_32,
+    width_64,
+};
+
 typedef u8 mil_typekind; enum {
     tk_void,
     tk_data,
@@ -70,12 +80,16 @@ typedef u8 mil_nodekind; enum {
     mil_add_overflow,
     mil_sub_underflow,
 
-    mil_check_eq, // ins[1] == ins[2]
-    mil_check_ne, // ins[1] != ins[2]
-    mil_check_lt, // ins[1] <  ins[2]
-    mil_check_le, // ins[1] <= ins[2]
-    mil_check_gt, // ins[1] >  ins[2]
-    mil_check_ge, // ins[1] >= ins[2]
+    mil_check_eq,  // ins[1] == ins[2]
+    mil_check_ne,  // ins[1] != ins[2]
+    mil_check_lt,  // ins[1] <  ins[2]
+    mil_check_le,  // ins[1] <= ins[2]
+    mil_check_gt,  // ins[1] >  ins[2]
+    mil_check_ge,  // ins[1] >= ins[2]
+    mil_check_ltu, // ins[1] <  ins[2] unsigned
+    mil_check_leu, // ins[1] <= ins[2] unsigned
+    mil_check_gtu, // ins[1] >  ins[2] unsigned
+    mil_check_geu, // ins[1] >= ins[2] unsigned
 
     // data -> data
     mil_to_float,
@@ -91,7 +105,7 @@ typedef u8 mil_nodekind; enum {
     mil_fneg,
     mil_fsqrt,
 
-    // instead of phi nodes or block arguments, we do this
+    // instead of phi nodes or block arguments, we do preserve and unify nodes
     // its basically phi nodes but easier to codegen imo
     // if you want to merge data from mutliple control flow paths,
     // use a mil_preserve node at the end of your basic block
@@ -107,16 +121,20 @@ typedef u8 mil_nodekind; enum {
     // phi... -> data
     mil_unify,
 
-    // control -> (control, data...)
+    // control... -> control
     mil_block,
 
-    // control, data... -> (control...)
-    mil_branch_eq, // ins[1] == ins[2]
-    mil_branch_ne, // ins[1] != ins[2]
-    mil_branch_lt, // ins[1] <  ins[2]
-    mil_branch_le, // ins[1] <= ins[2]
-    mil_branch_gt, // ins[1] >  ins[2]
-    mil_branch_ge, // ins[1] >= ins[2]
+    // control, data, data -> (control, control)
+    mil_branch_eq,  // ins[1] == ins[2]
+    mil_branch_ne,  // ins[1] != ins[2]
+    mil_branch_lt,  // ins[1] <  ins[2]
+    mil_branch_le,  // ins[1] <= ins[2]
+    mil_branch_gt,  // ins[1] >  ins[2]
+    mil_branch_ge,  // ins[1] >= ins[2]
+    mil_branch_ltu, // ins[1] <  ins[2] unsigned
+    mil_branch_leu, // ins[1] <= ins[2] unsigned
+    mil_branch_gtu, // ins[1] >  ins[2] unsigned
+    mil_branch_geu, // ins[1] >= ins[2] unsigned
 
     // control -> control
     mil_jump,
@@ -129,11 +147,41 @@ typedef u8 mil_nodekind; enum {
 
     // control, memory, data... -> (control, memory, data...)
     mil_asm,
-
-    // control, memory, data...
-    mil_memset,
-    mil_memcopy,
 };
+
+/*
+
+bb1:
+    x1 = 0
+    jump bb2
+bb2:
+    x2 = phi (bb2, x1), (bb3, x3)
+    if x2 < 10 jump bb3 else bb4
+bb3:
+    x3 = x2 + 1
+    jump bb2
+bb4:
+    return x2;
+
+
+
+
+bb1:
+    x1 = preserve(0)
+    jump bb2
+bb2:
+    x2 = merge x1, x3
+    if x2 < 10 jump bb3 else bb4
+bb3:
+    x3 = x2 + 1
+    x4 = preserve(x3)
+    jump bb2
+bb4:
+    return x2;
+
+
+*/
+
 
 typedef struct mil_node mil_node;
 
