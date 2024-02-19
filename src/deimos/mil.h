@@ -1,7 +1,8 @@
 #pragma once
-#define DEIMOS_ARES_H
+#define DEIMOS_MIL_H
 
 #include "orbit.h"
+#include "arena.h"
 
 typedef u8 bitwidth; enum {
     width_1 = 0,
@@ -20,7 +21,7 @@ typedef u8 mil_typekind; enum {
     tk_control,
     tk_tuple,
 
-    tk_phi, // phi connection; emitted by
+    tk_phi, // phi connection; used by reserve and unify
 };
 
 typedef struct mil_conntype mil_conntype;
@@ -28,11 +29,60 @@ typedef struct mil_conntype mil_conntype;
 typedef struct mil_conntype {
     mil_typekind kind;
     u16 tuple_len; // if tuple, how big
-    mil_conntype* tuple;
+    mil_typekind* tuple; // because tuples will never have tuples inside of them
 } mil_conntype;
 
 typedef u8 mil_nodekind; enum {
     mil_invalid,
+
+
+    // function entry point
+    // -> (control, memory, data...)
+    mil_head,
+
+    // block header
+    // control... -> control
+    mil_block,
+
+    // control, data, data -> (control, control)
+    mil_branch_eq,  // ins[1] == ins[2]
+    mil_branch_ne,  // ins[1] != ins[2]
+    mil_branch_lt,  // ins[1] <  ins[2]
+    mil_branch_le,  // ins[1] <= ins[2]
+    mil_branch_gt,  // ins[1] >  ins[2]
+    mil_branch_ge,  // ins[1] >= ins[2]
+    mil_branch_ltu, // ins[1] <  ins[2] unsigned
+    mil_branch_leu, // ins[1] <= ins[2] unsigned
+    mil_branch_gtu, // ins[1] >  ins[2] unsigned
+    mil_branch_geu, // ins[1] >= ins[2] unsigned
+
+    // control -> control
+    mil_jump,
+
+    // control, memory, data... -> (control, memory, data...)
+    mil_call,
+
+    // control, data... ->
+    mil_return,
+
+    // inline assembly block
+    // kind of treated like a function call but with
+    // control, memory, data... -> (control, memory, data...)
+    mil_asm,
+
+
+    // memory operations
+    // control, memory, data -> data
+    mil_load,
+    // control, memory, data, data -> memory
+    mil_store,
+
+    // memory operations that cannot be optimized out
+    // control, memory, data -> memory, data
+    mil_vol_load,
+
+    // control, memory, data, data -> memory
+    mil_vol_store,
 
     // -> data
     mil_const,
@@ -45,21 +95,6 @@ typedef u8 mil_nodekind; enum {
 
     // tuple -> any
     mil_proj,
-
-    // -> (control, memory, data...)
-    mil_head,
-
-    // control, memory, data -> data
-    mil_load,
-
-    // control, memory, data, data -> memory
-    mil_store,
-
-    // control, memory, data -> memory, data
-    mil_vol_load,
-
-    // control, memory, data, data -> memory
-    mil_vol_store,
 
     // data, data -> data
     mil_add,
@@ -74,12 +109,19 @@ typedef u8 mil_nodekind; enum {
 
     // data -> data
     mil_not,
+    mil_zero_ext,
+    mil_sign_ext,
+
+    // extract bits (low-high)
+    mil_iselect,
+    mil_uselect,
 
     // outs for this are (result, did_over/underflow)
     // data, data -> (data, data)
     mil_add_overflow,
     mil_sub_underflow,
 
+    // data, data -> data
     mil_check_eq,  // ins[1] == ins[2]
     mil_check_ne,  // ins[1] != ins[2]
     mil_check_lt,  // ins[1] <  ins[2]
@@ -121,33 +163,10 @@ typedef u8 mil_nodekind; enum {
     // phi... -> data
     mil_unify,
 
-    // control... -> control
-    mil_block,
-
-    // control, data, data -> (control, control)
-    mil_branch_eq,  // ins[1] == ins[2]
-    mil_branch_ne,  // ins[1] != ins[2]
-    mil_branch_lt,  // ins[1] <  ins[2]
-    mil_branch_le,  // ins[1] <= ins[2]
-    mil_branch_gt,  // ins[1] >  ins[2]
-    mil_branch_ge,  // ins[1] >= ins[2]
-    mil_branch_ltu, // ins[1] <  ins[2] unsigned
-    mil_branch_leu, // ins[1] <= ins[2] unsigned
-    mil_branch_gtu, // ins[1] >  ins[2] unsigned
-    mil_branch_geu, // ins[1] >= ins[2] unsigned
-
-    // control -> control
-    mil_jump,
-
-    // control, memory, data... -> (control, memory, data...)
-    mil_call,
-
-    // control, data... ->
-    mil_return,
-
-    // control, memory, data... -> (control, memory, data...)
-    mil_asm,
+    mil_MAX,
 };
+
+static_assert(mil_MAX < (1 << (sizeof(mil_nodekind)*8)), "mil_nodekind exceeds 256");
 
 /*
 
@@ -182,17 +201,59 @@ bb4:
 
 */
 
+typedef struct mil_module   mil_module;
+typedef struct mil_function mil_function;
+typedef struct mil_node     mil_node;
+typedef struct mil_symbol   mil_symbol;
 
-typedef struct mil_node mil_node;
-
-typedef struct mil_node {
-    mil_nodekind kind;
-
-    u16 in_count;
-    u16 out_count;
-
-    mil_node** ins;
+#define NODE_BASE       \
+    mil_nodekind kind;  \
+    u32 in_count;       \
+    u32 use_count;      \
+    mil_node** ins;     \
     mil_node** uses;
 
-    void* data;
+
+typedef struct mil_node {
+    NODE_BASE
 } mil_node;
+
+typedef struct node_proj {
+    NODE_BASE
+    int index;
+} node_proj;
+
+typedef struct node_head {
+    NODE_BASE
+    mil_function* function;
+} node_head;
+
+typedef struct node_block {
+    string label;
+} node_block;
+
+
+typedef struct mil_symbol {
+    string label;
+    bool external;
+} mil_symbol;
+
+typedef struct mil_function {
+    mil_symbol* sym;
+    mil_module* module;
+    node_head* head;
+    arena node_alloc;
+} mil_function;
+
+typedef struct mil_static {
+    mil_symbol* sym;
+    bitwidth align;
+    size_t size;
+} mil_static;
+
+typedef struct mil_module {
+    mil_function* functions;
+    mil_static* storage;
+    mil_symbol* symbol;
+} mil_module;
+

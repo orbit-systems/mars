@@ -21,27 +21,33 @@ typedef int64_t  i64;
 typedef int32_t  i32;
 typedef int16_t  i16;
 typedef int8_t   i8;
-typedef float f32;
+
 typedef double f64;
+typedef float f32;
+#if defined(__clang__)
+    typedef __fp16 f16;
+#elif defined(__GNUC__)
+    typedef _Float16 f16;
+#endif
 
 #if !defined(bool)
-typedef uint8_t  bool;
-#define false ((bool)0)
-#define true ((bool)1)
+    typedef uint8_t  bool;
+#   define false ((bool)0)
+#   define true ((bool)1)
 #endif
 
 #ifdef _MSC_VER
-#define forceinline __forceinline
+#   define forceinline __forceinline
 #elif defined(__GNUC__)
-#define forceinline inline __attribute__((__always_inline__))
+#   define forceinline inline __attribute__((__always_inline__))
 #elif defined(__CLANG__)
-#if __has_attribute(__always_inline__)
-        #define forceinline inline __attribute__((__always_inline__))
-    #else
-        #define forceinline inline
-    #endif
+#   if __has_attribute(__always_inline__)
+#       define forceinline inline __attribute__((__always_inline__))
+#   else
+#       define forceinline inline
+#   endif
 #else
-    #define forceinline inline
+#   define forceinline inline
 #endif
 
 #define TODO(msg) do {\
