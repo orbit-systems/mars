@@ -356,7 +356,7 @@ i64 int_lit_value(parser* restrict p) {
     if (t.len < 3 + digit_start) error_at_parser(p, "expected digit after '%c'", t.raw[digit_start+1]);
 
     FOR_URANGE(i, 2 + digit_start, t.len) {
-        val = val * 10 + ascii_to_digit_val(p, t.raw[i], base);
+        val = val * base + ascii_to_digit_val(p, t.raw[i], base);
     }
     return val * (is_negative ? -1 : 1);
 }
