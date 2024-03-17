@@ -25,5 +25,39 @@ let main = fn #block_symbol("main") () {
     for i in 0..=9                 { printf("%int, ", {&i}); } printf("\n");
     for i: u64 in 0..<10           { printf("%u64, ", {&i}); } printf("\n");
 
+    for mut i = 0; i < 10; i += 1; {
+        i += 2; // modify the index
+    }
+    for i in 0..<10                {
+        i += 2; // should this be allowed?
+    }
+
+    let x = 1;
+    let x: int = 1;
+
+    mut y = 2;
+    mut y: int = 2;
+
     while true {}
 };
+
+
+
+type ll_node = struct {
+    content: int;
+    next: ^ll_node;
+};
+
+type ll_node_2 = struct {
+    content: int;
+    next: ^ll_node_2;
+};
+
+// ll_node == ll_node_2, structural equality!
+
+type ll_node_distinct = distinct struct {
+    content: int;
+    next: ^ll_node_distinct;
+};
+
+// ll_node_distinct != ll_node

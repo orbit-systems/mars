@@ -1368,7 +1368,6 @@ AST parse_stmt(parser* restrict p) {
             n.as_for_in_stmt->base.end = &peek_token(-1);
         } else {
             // regular for loop!
-            // TODO("regular for loop parsing");
             n = new_ast_node_p(p, astype_for_stmt);
             n.as_for_stmt->base.start = &current_token;
             advance_token;
@@ -1560,22 +1559,22 @@ AST parse_stmt(parser* restrict p) {
         n.base->end = &current_token;
         advance_token;
     } break;
-    case tt_keyword_goto: {
-        n = new_ast_node_p(p, astype_goto_stmt);
-        n.base->start = &current_token;
-        advance_token;
-        if (current_token.type != tt_semicolon) {
-            n.as_goto_stmt->label = parse_expr(p, false);
-            if (is_null_AST(n.as_goto_stmt->label) || n.as_goto_stmt->label.type != astype_identifier_expr)
-                error_at_token(p, *n.base->start, "expected an identifer");
-        }
+    // case tt_keyword_goto: {
+    //     n = new_ast_node_p(p, astype_goto_stmt);
+    //     n.base->start = &current_token;
+    //     advance_token;
+    //     if (current_token.type != tt_semicolon) {
+    //         n.as_goto_stmt->label = parse_expr(p, false);
+    //         if (is_null_AST(n.as_goto_stmt->label) || n.as_goto_stmt->label.type != astype_identifier_expr)
+    //             error_at_token(p, *n.base->start, "expected an identifer");
+    //     }
 
-        if (current_token.type != tt_semicolon)
-            error_at_parser(p, "expected ';'");
+    //     if (current_token.type != tt_semicolon)
+    //         error_at_parser(p, "expected ';'");
 
-        n.base->end = &current_token;
-        advance_token;
-    } break;
+    //     n.base->end = &current_token;
+    //     advance_token;
+    // } break;
     case tt_keyword_fallthrough: {
         n = new_ast_node_p(p, astype_fallthrough_stmt);
         n.base->start = &current_token;

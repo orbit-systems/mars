@@ -159,9 +159,10 @@ token_type scan_ident_or_keyword(lexer* restrict lex) {
     if (string_eq(word, to_string("case")))         return tt_keyword_case;
     if (string_eq(word, to_string("cast")))         return tt_keyword_cast;
     if (string_eq(word, to_string("defer")))        return tt_keyword_defer;
+    if (string_eq(word, to_string("distinct")))     return tt_keyword_distinct;
     if (string_eq(word, to_string("enum")))         return tt_keyword_enum;
     if (string_eq(word, to_string("extern")))       return tt_keyword_extern;
-    if (string_eq(word, to_string("goto")))         return tt_keyword_goto;
+    // if (string_eq(word, to_string("goto")))         return tt_keyword_goto;
     if (string_eq(word, to_string("asm")))          return tt_keyword_asm;
     if (string_eq(word, to_string("bitcast")))      return tt_keyword_bitcast;
     if (string_eq(word, to_string("import")))       return tt_keyword_import;

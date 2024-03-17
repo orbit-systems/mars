@@ -93,6 +93,7 @@
     TOKEN(tt_keyword_cast,      "cast") \
     TOKEN(tt_keyword_continue,  "continue") \
     TOKEN(tt_keyword_defer,     "defer") \
+    TOKEN(tt_keyword_distinct,  "distinct") \
     TOKEN(tt_keyword_enum,      "enum") \
     TOKEN(tt_keyword_elif,      "elif") \
     TOKEN(tt_keyword_else,      "else") \
@@ -100,7 +101,6 @@
     TOKEN(tt_keyword_fallthrough,"fallthrough") \
     TOKEN(tt_keyword_for,       "for") \
     TOKEN(tt_keyword_fn,        "fn") \
-    TOKEN(tt_keyword_goto,      "goto") \
     TOKEN(tt_keyword_if,        "if") \
     TOKEN(tt_keyword_in,        "in") \
     TOKEN(tt_keyword_import,    "import") \
