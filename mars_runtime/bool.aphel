@@ -1,5 +1,0 @@
-// boolean normalization - take a boolean value in ra, set it to 1 if it is not zero.
-
-cmp ra, 0
-setfe ra
-xor ra, ra, 1

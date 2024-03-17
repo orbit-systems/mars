@@ -5,7 +5,6 @@
 #include "mars.h"
 #include "phobos/phobos.h"
 #include "phobos/checker.h"
-#include "deimos/deimos.h"
 
 flag_set mars_flags;
 

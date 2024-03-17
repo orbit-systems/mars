@@ -3,7 +3,6 @@
 
 #include "orbit.h"
 
-#include "type.h"
 #include "ast.h"
 
 struct entity;
@@ -21,7 +20,7 @@ typedef u8 storage_class; enum {
 
 typedef struct {
     struct scope * scope;
-    mars_type * type;
+    // mars_type * type;
     string identifier;
     AST declaration;
     storage_class storage;

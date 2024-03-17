@@ -69,6 +69,11 @@ typedef struct {
         AST lhs; \
         AST rhs; \
     }) \
+    AST_TYPE(return_selector_expr, "return selector", { \
+        ast_base base; \
+        AST lhs; \
+        AST rhs; \
+    }) \
     AST_TYPE(impl_selector_expr, "implicit selector", { \
         ast_base base; \
         AST rhs; \
@@ -111,11 +116,11 @@ typedef struct {
         da(AST) lhs; \
         AST rhs; \
         AST type; \
-        bool has_expl_type; \
-        bool is_mut; \
-        bool is_static; \
-        bool is_volatile; \
-        bool is_uninit; \
+        bool has_expl_type : 1; \
+        bool is_mut        : 1; \
+        bool is_static     : 1; \
+        bool is_volatile   : 1; \
+        bool is_uninit     : 1; \
     }) \
     AST_TYPE(type_decl_stmt, "type declaration", { \
         ast_base base; \
@@ -251,6 +256,10 @@ typedef struct {
             AST subexpr; \
     }) \
     AST_TYPE(pointer_type_expr, "pointer type", { \
+            ast_base base; \
+            AST subexpr; \
+    }) \
+    AST_TYPE(distinct_type_expr, "distinct type", { \
             ast_base base; \
             AST subexpr; \
     }) \

@@ -190,6 +190,15 @@ AST parse_unary_expr(parser* restrict p, bool no_cl) {
 
         n.as_pointer_type_expr->base.end = &peek_token(-1);
     } break;
+    case tt_keyword_distinct: {
+        n = new_ast_node_p(p, astype_distinct_type_expr);
+        n.as_distinct_type_expr->base.start = &current_token;
+        advance_token;
+
+        n.as_distinct_type_expr->subexpr = parse_unary_expr(p, no_cl);
+
+        n.as_distinct_type_expr->base.end = &peek_token(-1);
+    } break;
     case tt_open_bracket: {
         if (peek_token(1).type == tt_close_bracket) {
             n = new_ast_node_p(p, astype_slice_type_expr);
@@ -443,11 +452,11 @@ bool is_possible_type_expr(AST n) {
     case astype_array_type_expr:
     case astype_slice_type_expr:
     case astype_pointer_type_expr:
+    case astype_distinct_type_expr:
     case astype_struct_type_expr:
     case astype_union_type_expr:
     case astype_enum_type_expr:
     case astype_fn_type_expr:
-
     case astype_identifier_expr:
     case astype_basic_type_expr:
         return true;
@@ -706,7 +715,7 @@ AST parse_atomic_expr(parser* restrict p, bool no_cl) {
                 advance_token;
 
                 if (current_token.type != tt_identifier)
-                    error_at_parser(p, "expected identifer after '.'");
+                    error_at_parser(p, "expected identifer after '::'");
 
                 AST ident = new_ast_node_p(p, astype_identifier_expr);
                 
@@ -714,6 +723,31 @@ AST parse_atomic_expr(parser* restrict p, bool no_cl) {
                 ident.as_identifier_expr->base.start = &current_token;
                 ident.as_identifier_expr->tok = &current_token;
                 temp.as_entity_selector_expr->base.end = &current_token;
+
+                temp.as_entity_selector_expr->rhs = ident;
+                temp.as_entity_selector_expr->lhs = n;
+                n = temp;
+                advance_token;
+            }
+        } break;
+        case tt_arrow_right: {
+            // return selection
+            if (is_null_AST(n)) {
+                error_at_parser(p, "expected expression before '->'");
+            } else {
+                AST temp = new_ast_node_p(p, astype_return_selector_expr);
+                temp.as_return_selector_expr->base.start = n.base->start;
+                advance_token;
+
+                if (current_token.type != tt_identifier)
+                    error_at_parser(p, "expected identifer after '->'");
+
+                AST ident = new_ast_node_p(p, astype_identifier_expr);
+                
+                ident.as_identifier_expr->base.end = &current_token;
+                ident.as_identifier_expr->base.start = &current_token;
+                ident.as_identifier_expr->tok = &current_token;
+                temp.as_return_selector_expr->base.end = &current_token;
 
                 temp.as_entity_selector_expr->rhs = ident;
                 temp.as_entity_selector_expr->lhs = n;
@@ -1259,7 +1293,6 @@ AST parse_import_stmt(parser* restrict p) {
     advance_token;
     return n;
 }
-
 
 AST parse_stmt(parser* restrict p) {
     AST n = NULL_AST;
