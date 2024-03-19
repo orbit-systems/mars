@@ -3,7 +3,6 @@
 
 #include "phobos.h"
 #include "parser.h"
-#include "entity.h"
 #include "term.h"
 
 // emit an error that highlights an AST node
