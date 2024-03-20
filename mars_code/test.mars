@@ -11,7 +11,7 @@ let printf = neptune::kprintf;
 
 let main = fn #block_symbol("main") () {
 
-    let str = "bruh";
+    mut str = "bruh";
     let str2 = "bruh2";
 
     if mem::str_eq(str, str2) {
@@ -25,11 +25,20 @@ let main = fn #block_symbol("main") () {
     for i in 0..=9                 { printf("%int, ", {&i}); } printf("\n");
     for i: u64 in 0..<10           { printf("%u64, ", {&i}); } printf("\n");
 
-    let x = 1;
-    let x: int = struct {x, y:int; b: []u8;} {bruh};
+    mut x = 1;
+    mut x: int = 1;
 
-    mut y = 2;
-    mut y: int = 2;
+    let y = 2;
+    let y: int = 2;
+
+    // pointers and let-pointers
+
+    let x_ptr: ^int = &x;
+    let y_ptr: ^let int = &y;
+    
+    let str_slice : []u8 = str[:];
+    let str_2slice: []let u8 = str2[:];
+
 
     while true {}
 };
