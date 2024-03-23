@@ -34,10 +34,10 @@ let main = fn #block_symbol("main") () {
     // pointers and let-pointers
 
     let x_ptr: ^int = &x;
-    let y_ptr: ^let int = &y;
+    // let y_ptr: ^let int = &y;
     
     let str_slice : []u8 = str[:];
-    let str_2slice: []let u8 = str2[:];
+    // let str_2slice: []let u8 = str2[:];
 
 
     while true {}

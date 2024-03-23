@@ -134,7 +134,7 @@ void dump_tree(AST node, int n) {
         dump_tree(node.as_import_stmt->path, n+1);
         break;
     case astype_block_stmt:
-        printf("{;}\n");
+        printf("block stmt\n");
         FOR_URANGE(i, 0, node.as_block_stmt->stmts.len) {
             dump_tree(node.as_block_stmt->stmts.at[i], n+1);
         }
@@ -193,8 +193,13 @@ void dump_tree(AST node, int n) {
         printf("\n");
         break;
 
+    case astype_func_literal_expr:
+        printf("function literal\n");
+        dump_tree(node.as_func_literal_expr->type, n+1);
+        dump_tree(node.as_func_literal_expr->code_block, n+1);
+
     default:
-        general_error("dump_tree(): invalid/implemented node of type %d '%s'", node.type, ast_type_str[node.type]);
+        printf("unimplemented %d '%s'\n", node.type, ast_type_str[node.type]);
         break;
     }
 }
