@@ -118,6 +118,12 @@ mars_module* parse_target_module(string input_path) {
 
     mars_module* module = create_module(&parsers, alloca);
 
+    FOR_URANGE(i, 0, module->program_tree.len) {
+        if (module->program_tree.at[i].type == astype_import_stmt) {
+            
+        }
+    }
+
     /* display timing */ 
     if (mars_flags.print_timings) {
         gettimeofday(&parse_end, 0);
@@ -131,6 +137,8 @@ mars_module* parse_target_module(string input_path) {
     }
 
     // cleanup
+
+
     FOR_RANGE(i, 0, subfile_count) fs_drop(&subfiles[i]);
     free(subfiles);
     fs_drop(&input_dir);

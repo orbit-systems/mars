@@ -39,6 +39,9 @@ let main = fn #block_symbol("main") () {
     let str_slice : []mut u8 = str[:];
     let str_2slice: []let u8 = str2[:];
 
+    let x = shit( a + a);
+    let x = shit( a + a + a);
+    let x = shit( a + a + a + a);
 
     while true {}
 };

@@ -16,7 +16,7 @@ int main(int argc, char** argv) {
     mars_module* target = parse_target_module(mars_flags.input_path);
 
     FOR_URANGE(i, 0, target->program_tree.len) {
-        //dump_tree(target->program_tree.at[i], 0);
+        // dump_tree(target->program_tree.at[i], 0);
     }
 
     if (mars_flags.output_dot == true) {  
