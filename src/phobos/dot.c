@@ -36,6 +36,149 @@ int dot_uID() {
 }
 
 void recurse_dot(AST node, fs_file* file, int n, int uid) {
+	//this code keeps track of depth with n, in which case it prints that many tabs.
+	//all nodes have label sugar to allow them to change names to un-mutated names.
+	for (int i = 0; i < n; i++) fs_write(file, "\t", 1);
+
+	char buffer[4096];
+
+	if (is_null_AST(node)) {
+		printf("encountered null node at uid %d\n", uid);
+		sprintf(buffer, "\"%s_%d\" [shape=diamond, style=filled, label=\"%s\", color=\"1.0 .7 .7\"]\n", 
+				ast_type_str[node.type], uid, 
+				"NULL\\nAST"); //invalid sugar
+	    fs_write(file, buffer, strlen(buffer));
+		return;
+	}
+
+	
+	switch (node.type) {
+		case astype_invalid:
+			return;
+		case astype_identifier_expr: {
+	        sprintf(buffer, "\"%s_%d\" [shape=box,style=filled,color=\".7 .3 1.0\", label=\"%s\"]\n", 
+	        		clone_to_cstring(node.as_identifier_expr->tok->text), 
+	        		_dot_uID + 1, 
+	        		clone_to_cstring(node.as_identifier_expr->tok->text)); //write out identifier_expr with sugared name
+	        fs_write(file, buffer, strlen(buffer));
+	        for (int i = 0; i < n; i++) fs_write(file, "\t", 1); //fix tabs
+
+	        sprintf(buffer, "\"%s_%d\" [label=\"%s\"]\n", 
+	        		ast_type_str[node.type], uid, 
+	        		ast_type_str[node.type]); //write out identifier with sugared name
+	    	fs_write(file, buffer, strlen(buffer));
+	        for (int i = 0; i < n; i++) fs_write(file, "\t", 1); //fix tabs
+
+	        sprintf(buffer, "\"%s_%d\" -> \"%s_%d\"", 
+	        		ast_type_str[node.type], uid, 
+	        		clone_to_cstring(node.as_identifier_expr->tok->text), _dot_uID + 1); //print node link
+	        fs_write(file, buffer, strlen(buffer));
+	        break;
+		}
+
+		case astype_decl_stmt: {
+	    	char* decl_type = "";
+	        if (node.as_decl_stmt->is_mut) 
+	        	decl_type = "mut decl";
+	        else 
+	        	decl_type = "let decl"; //determine name
+
+	        sprintf(buffer, "\"%s_%d\" [label=\"%s\"]\n", decl_type, uid, decl_type); //decl sugar
+	        fs_write(file, buffer, strlen(buffer));
+	        for (int i = 0; i < n; i++) fs_write(file, "\t", 1); //fix tabs
+
+	        FOR_URANGE(i, 0, node.as_decl_stmt->lhs.len) { //iterate over function itself
+	        	int int_uid = dot_uID();
+	        	sprintf(buffer, "\"%s_%d\" -> \"%s_%d\"\n", decl_type, uid, ast_type_str[node.as_decl_stmt->lhs.at[i].type], int_uid);
+	            fs_write(file, buffer, strlen(buffer));
+	            recurse_dot(node.as_decl_stmt->lhs.at[i], file, n+1, int_uid);
+	        }
+	        for (int i = 0; i < n; i++) fs_write(file, "\t", 1); //fix tabs
+
+	        sprintf(buffer, "\"%s_%d\" -> \"%s_%d\"\n", 
+	        		decl_type, uid, 
+	        		ast_type_str[node.as_decl_stmt->type.type], _dot_uID + 1); //link
+	        fs_write(file, buffer, strlen(buffer));
+	        recurse_dot(node.as_decl_stmt->type, file, n+1, dot_uID()); //print type info
+
+	        for (int i = 0; i < n; i++) fs_write(file, "\t", 1);
+	        sprintf(buffer, "\"%s_%d\" -> \"%s_%d\"\n", 
+	        		decl_type, uid, 
+	        		ast_type_str[node.as_decl_stmt->rhs.type], _dot_uID + 1); //print links
+	        fs_write(file, buffer, strlen(buffer));
+	        recurse_dot(node.as_decl_stmt->rhs, file, n+1, dot_uID());
+			break;
+		}
+
+		case astype_func_literal_expr: {
+	        sprintf(buffer, "\"%s_%d\" [shape=box,style=filled,color=green, label=\"%s\"]\n", 
+	        		ast_type_str[node.type], uid, 
+	        		ast_type_str[node.type]); //write out identifier_expr with sugared name
+	        fs_write(file, buffer, strlen(buffer));
+	        for (int i = 0; i < n; i++) fs_write(file, "\t", 1); //fix tabs			
+
+	        sprintf(buffer, "\"%s_%d\" -> \"%s_%d\"\n", ast_type_str[node.type], uid, ast_type_str[node.as_func_literal_expr->type.type], _dot_uID + 1);
+	        fs_write(file, buffer, strlen(buffer));
+	    	recurse_dot(node.as_func_literal_expr->type, file, n+1, dot_uID());
+	    	for (int i = 0; i < n; i++) fs_write(file, "\t", 1);
+
+	        sprintf(buffer, "\"%s_%d\" -> \"%s_%d\"\n", ast_type_str[node.type], uid, ast_type_str[node.as_func_literal_expr->code_block.type], _dot_uID + 1);
+	        fs_write(file, buffer, strlen(buffer));
+	    	recurse_dot(node.as_func_literal_expr->code_block, file, n+1, dot_uID());
+	    	break;
+	    }
+
+		case astype_fn_type_expr: {
+			sprintf(buffer, "\"%s_%d\" [shape=box,style=filled,color=green, label=\"%s\"]\n", 
+	        		ast_type_str[node.type], uid, 
+	        		ast_type_str[node.type]); //write out identifier_expr with sugared name
+	        fs_write(file, buffer, strlen(buffer));
+	        for (int i = 0; i < n; i++) fs_write(file, "\t", 1); //fix tabs	
+	        sprintf(buffer, "subgraph {\n");
+	        fs_write(file, buffer, strlen(buffer));
+
+	       	for (int i = 0; i < (n + 1); i++) fs_write(file, "\t", 1); //fix tabs	
+	        sprintf(buffer, "color=red\n");
+	        fs_write(file, buffer, strlen(buffer));
+
+
+	        FOR_URANGE(i, 0, node.as_fn_type_expr->parameters.len) {
+	        	recurse_dot(node.as_fn_type_expr->parameters.at[i].type, file, n+1, dot_uID());
+	        }
+
+
+	        for (int i = 0; i < n; i++) fs_write(file, "\t", 1);
+	        fs_write(file, "}", 1);		
+			break;
+		}
+
+		case astype_basic_type_expr: {
+			sprintf(buffer, "\"%s_%d\" -> \"%s_%d\"\n", 
+					ast_type_str[node.type], uid, 
+					clone_to_cstring(node.as_basic_type_expr->lit->text), _dot_uID + 1);
+	        fs_write(file, buffer, strlen(buffer));
+	    	recurse_dot(node.as_func_literal_expr->type, file, n+1, dot_uID());
+	    	for (int i = 0; i < n; i++) fs_write(file, "\t", 1);
+		}
+
+
+		default: {
+			sprintf(buffer, "\"unimpl_%d\"->\"unimpl_%d\" unimpl_%d [shape=star,style=filled,color=yellow]", uid, uid, uid);
+			fs_write(file, buffer, strlen(buffer));
+			printf("unimpl: %d\n", node.type);
+			if (node.type < astype_COUNT) {
+				printf("encountered unimplemented node: %s\n", ast_type_str[node.type]);
+			}
+			
+			break;
+		}
+
+	}
+
+	fs_write(file, "\n", 1);
+}
+/*
+void recurse_dot(AST node, fs_file* file, int n, int uid) {
 	//we need to generate all the edges for THIS node and then move on
 	//this has no cycle detection, so will halt and catch fire if there is a cyclical graph passed in
 	
@@ -241,4 +384,4 @@ void recurse_dot(AST node, fs_file* file, int n, int uid) {
 	}
 
 	//fs_write(file, str, strlen(str));
-}
+}*/

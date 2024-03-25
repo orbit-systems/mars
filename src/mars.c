@@ -18,6 +18,13 @@ int main(int argc, char** argv) {
         dump_tree(target->program_tree.at[i], 0);
     }
 
+    if (mars_flags.output_dot == true) {  
+        FOR_URANGE(i, 0, target->program_tree.len) {
+            emit_dot(to_string("test"), target->program_tree.at[i]);
+        }        
+    }
+
+
     printf("target module parsed %p\n", target);
 
     return 0;

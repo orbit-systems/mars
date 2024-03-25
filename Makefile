@@ -33,13 +33,13 @@ build: $(OBJECTS)
 	
 
 dbgbuild/%.o: src/%.c
-	@$(CC) -c -o $@ $< -Isrc/ -MD $(DEBUGFLAGS) 
+	@$(CC) -c -o $@ $< -Isrc/ -MD $(DEBUGFLAGS) -lm
 
 dbgbuild: $(OBJECTS)
 	@-cp build/deimos/* build/
 	@-cp build/phobos/* build/
 
-	@$(LD) $(OBJECTS) -o $(EXECUTABLE_NAME) $(DEBUGFLAGS)
+	@$(LD) $(OBJECTS) -o $(EXECUTABLE_NAME) $(DEBUGFLAGS) -lm
 	
 test: build
 	./$(EXECUTABLE_NAME) ./mars_code

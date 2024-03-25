@@ -11,3 +11,6 @@ mars
 mars.*
 anvil
 anvil.exe
+
+vgcore*
+*.dot

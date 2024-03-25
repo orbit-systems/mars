@@ -1,0 +1,43 @@
+module aphelmem_test;
+
+let mem_eq = fn(a, b: addr, len: u64) -> bool {
+
+	//ra - block 1
+	//rb - block 2
+	//rc - length
+	//ra will contain 1 on equality
+
+	asm (a <-> ra, b -> rb, len -> rc) {
+		"__mars_runtime_memeq_code:",
+		"addi rc, rc, 1",
+		"addi ra, ra, -1",
+		"addi rb, rb, -1", //prepare values for loop
+		"push rd",
+		"push re",
+		"",
+		"__mars_runtime_memeq_code.0:",
+		"	addi ra, ra, 1",
+		"	addi rb, rb, 1",
+		"	lw rd, ra, 0"
+		"   lw re, rb, 0"
+		"",
+		"	cmpi rc, 0",
+		"	beq __mars_runtime_memeq_code.1" ,
+		"",
+		"	addi rc, rc, -1", //we are not at end of length. rc--
+		"	cmpr rd, re",
+		"	beq __mars_runtime_memeq_code.0", //is equal, continue to SPIN
+		"",
+		"li ra, 0", //is not equal
+		"bra __mars_runtime_memeq_code.2",
+		"",
+		"__mars_runtime_memeq_code.1:", //reached end of length
+		"	li ra, 1",
+		"__mars_runtime_memeq_code.2:",
+		"pop re",
+		"pop rd"
+	}
+
+	return a == 1;
+
+}
