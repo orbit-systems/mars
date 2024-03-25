@@ -186,6 +186,15 @@ AST parse_unary_expr(parser* restrict p, bool no_cl) {
         n.as_pointer_type_expr->base.start = &current_token;
         advance_token;
 
+        if (current_token.type == tt_keyword_let) {
+            n.as_pointer_type_expr->mutable = false;
+        } else if (current_token.type == tt_keyword_mut) {
+            n.as_pointer_type_expr->mutable = true;
+        } else {
+            error_at_parser(p, "pointer type must be 'mut' or 'let' (e.g. ^mut T)");
+        }
+        advance_token;
+
         n.as_pointer_type_expr->subexpr = parse_unary_expr(p, no_cl);
 
         n.as_pointer_type_expr->base.end = &peek_token(-1);
@@ -203,8 +212,17 @@ AST parse_unary_expr(parser* restrict p, bool no_cl) {
         if (peek_token(1).type == tt_close_bracket) {
             n = new_ast_node_p(p, astype_slice_type_expr);
             n.as_slice_type_expr->base.start = &current_token;
-
             advance_n_tok(2);
+
+            if (current_token.type == tt_keyword_let) {
+                n.as_slice_type_expr->mutable = false;
+            } else if (current_token.type == tt_keyword_mut) {
+                n.as_slice_type_expr->mutable = true;
+            } else {
+                error_at_parser(p, "slice type must be 'mut' or 'let' (e.g. []mut T)");
+            }
+            advance_token;
+
             n.as_slice_type_expr->subexpr = parse_unary_expr(p, no_cl);
 
             n.as_slice_type_expr->base.end = &peek_token(-1);

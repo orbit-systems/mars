@@ -254,10 +254,12 @@ typedef struct {
     AST_TYPE(slice_type_expr, "slice type", { \
             ast_base base; \
             AST subexpr; \
+            bool mutable; \
     }) \
     AST_TYPE(pointer_type_expr, "pointer type", { \
             ast_base base; \
             AST subexpr; \
+            bool mutable; \
     }) \
     AST_TYPE(distinct_type_expr, "distinct type", { \
             ast_base base; \
@@ -308,7 +310,6 @@ typedef u8 exact_value_kind; enum {
     ev_int,
     ev_float,
     ev_pointer,
-    ev_compound,
 };
 
 typedef struct {
@@ -318,7 +319,6 @@ typedef struct {
         i64     as_int;
         f64     as_float;
         u64     as_pointer;
-        da(AST) as_compound;
     };
     exact_value_kind kind;
 } exact_value;
