@@ -3,9 +3,7 @@
 #include "ast.h"
 #include "dot.h"
 
-da(string) paths;
-
-void emit_dot(string path, AST node) {
+void emit_dot(string path, da(AST) nodes) {
 	char* path_cstr = clone_to_cstring(path);
 	char buffer[1050];
 	sprintf(buffer, "%.1024s.dot", path_cstr); //capped at 1024 characters for file name
@@ -24,11 +22,14 @@ void emit_dot(string path, AST node) {
 	fs_open(&file, "w");
 	printf("emitting dot file: \"%s\"\n", filename.raw);
 
-	sprintf(buffer, "digraph %d {", dot_uID());
-	fs_write(&file, buffer, strlen(buffer));
-	recurse_dot(node, &file, 1, 0);
-	fs_write(&file, "}\n", 2);
+	FOR_RANGE(i, 0, nodes.len) {
+		sprintf(buffer, "digraph %d {\n", dot_uID());
+		fs_write(&file, buffer, strlen(buffer));
+		recurse_dot(nodes.at[i], &file, 1, 0);
+		fs_write(&file, "}\n", 2);
+	}
 
+	fs_close(&file);
 	fs_drop(&file);
 }
 

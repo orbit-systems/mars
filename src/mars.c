@@ -4,6 +4,7 @@
 #include "orbit.h"
 #include "mars.h"
 #include "phobos/phobos.h"
+#include "phobos/dot.h"
 #include "phobos/checker.h"
 
 flag_set mars_flags;
@@ -19,9 +20,7 @@ int main(int argc, char** argv) {
     }
 
     if (mars_flags.output_dot == true) {  
-        FOR_URANGE(i, 0, target->program_tree.len) {
-            emit_dot(to_string("test"), target->program_tree.at[i]);
-        }        
+        emit_dot(to_string("test"), target->program_tree);
     }
 
 
