@@ -37,7 +37,7 @@ let str_equal = fn(a, b: []u8) -> bool {
     return equal(a.raw, b.raw, a.len);
 };
 
-let set = fn(dest: addr, len: uint, val: u8) {
+let set = fn(dest: addr, len: uint, val: u8) -> bool {
     mut cursor = cast(^u8) dest;
     let stop = cursor + cast(^u8) len;
     while cursor != stop {
