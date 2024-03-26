@@ -23,6 +23,8 @@ int main(int argc, char** argv) {
         emit_dot(to_string("test"), target->program_tree);
     }
 
+    process_ast(target->program_tree);
+
 
     printf("target module parsed %p\n", target);
 
