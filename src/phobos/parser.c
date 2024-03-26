@@ -1079,13 +1079,19 @@ AST parse_atomic_expr(parser* restrict p, bool no_cl) {
                 if (current_token.type == tt_colon) {
                     advance_token;
                     type = parse_expr(p, true);
+                    if (is_null_AST(type)) {
+                        error_at_parser(p, "expected type");
+                    }
 
                     if (current_token.type == tt_comma) {
                         da_append(&n.as_fn_type_expr->parameters, ((AST_typed_field){
                             field, type
                         }));
                         advance_token;
-                        if (current_token.type == tt_close_paren) {
+                            if (current_token.type == tt_close_paren) {
+                                da_append(&n.as_fn_type_expr->parameters, ((AST_typed_field){
+                                field, type
+                            }));
                             break;
                         }
                         continue;
