@@ -1096,6 +1096,9 @@ AST parse_atomic_expr(parser* restrict p, bool no_cl) {
                         }
                         continue;
                     } else if (current_token.type == tt_close_paren) {
+                        da_append(&n.as_fn_type_expr->parameters, ((AST_typed_field){
+                            field, type
+                        }));
                         break;
                     } else {
                         error_at_parser(p, "expected ',' or ')'");
