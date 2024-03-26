@@ -17,8 +17,8 @@ typedef struct {
 		dag_base base;				   \
 		DAG node; 					   \
 	}) 								   \
-	//operators
-	DAG_TYPE(unary_op, "unary op", {  \
+	/*operators*/					   \
+	DAG_TYPE(unary_op, "unary op", {   \
 		dag_base base;				   \
 		token* operator;			   \
 		DAG operand;				   \
@@ -279,11 +279,11 @@ typedef struct {
 
 // generate the enum tags for the DAG tagged union
 typedef u16 dag_type; enum {
-    dag_astype_invalid,
-#define DAG_TYPE(ident, identstr, structdef) dag_astype_##ident,
+    dagtype_invalid,
+#define DAG_TYPE(ident, identstr, structdef) dagtype_##ident,
     DAG_NODES
 #undef DAG_TYPE
-    dag_astype_COUNT,
+    dagtype_COUNT,
 };
 
 // generate tagged union DAG type
@@ -291,7 +291,7 @@ typedef struct DAG {
     union {
         void* rawptr;
         dag_base * base;
-#define DAG_TYPE(ident, identstr, structdef) struct dag_##ident * as_dag_##ident;
+#define DAG_TYPE(ident, identstr, structdef) struct dag_##ident * as_##ident;
         DAG_NODES
 #undef DAG_TYPE
     };

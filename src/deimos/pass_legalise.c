@@ -6,22 +6,25 @@
 
 #define DAG_ARENA_SIZE 0x100000
 
-void recurse_legalisation_ast(DAG parent, AST base_node, int depth);
+void recurse_legalisation_ast(DAG parent_link, DAG parent, AST node, int depth);
+
+arena dag_alloca;
 
 DAG pass_legalise(AST base_node) {
 	//setup new DAG
-	arena alloca = arena_make(DAG_ARENA_SIZE);
+	dag_alloca = arena_make(DAG_ARENA_SIZE);
 
-	DAG new_dag = new_dag_node(&alloca, dag_entry);
+	DAG new_dag = new_dag_node(&dag_alloca, dagtype_entry);
 
-	recurse_legalisation_ast(new_dag, base_node, 0);
+	recurse_legalisation_ast(new_dag.as_entry->node, new_dag, base_node, 0);
 }
 
 void recurse_legalisation_ast(DAG parent_link, DAG parent, AST node, int depth) {
 	switch (node.type) {
-		case astype_unary_op: {
-			parent_link = new_dag_node(parent.alloca, dag_unary_op);
-			recurse_legalisation_ast()
+		case astype_unary_op_expr: {
+			parent_link = new_dag_node(&dag_alloca, dagtype_unary_op);
+			parent_link.as_unary_op->operator = node.as_unary_op_expr->op; //may need to clone
+			recurse_legalisation_ast(parent_link.as_unary_op->operand, parent_link, node.as_unary_op_expr->inside, depth+1);
 			break;
 		}
 
