@@ -62,7 +62,7 @@ string search_for_module(mars_module* mod, string relpath) {
 
 }
 
-mars_module* parse_target_module(string input_path) {
+mars_module* parse_module(string input_path) {
 
     // path checks
     if (!fs_exists(input_path))
@@ -214,7 +214,7 @@ mars_module* parse_target_module(string input_path) {
                 da_append(&module->import_list, active_modules.at[found_imported_module]);
             } else {
                 // parse new module
-                mars_module* import_module = parse_target_module(importpath);
+                mars_module* import_module = parse_module(importpath);
                 da_append(&module->import_list, import_module);
 
                 // check module name conflicts

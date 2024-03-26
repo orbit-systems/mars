@@ -8,11 +8,8 @@ void general_error(char* message, ...) {
     vsprintf(ERROR_MSG_BUFFER, message, args);
     va_end(args);
 
-
     printf(STYLE_FG_Red STYLE_Bold "ERROR" STYLE_Reset);
-
     printf(STYLE_Dim " | " STYLE_Reset "%s", ERROR_MSG_BUFFER);
-
 
     printf("\n");
     exit(EXIT_FAILURE);
@@ -26,7 +23,7 @@ void general_warning(char* message, ...) {
     va_end(args);
 
     printf(STYLE_FG_Yellow STYLE_Bold "WARNING" STYLE_Reset);
-
+    printf(STYLE_Dim " | " STYLE_Reset "%s", ERROR_MSG_BUFFER);
 
     printf("\n");
 }

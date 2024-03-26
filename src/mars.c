@@ -13,27 +13,27 @@ int main(int argc, char** argv) {
     
     load_arguments(argc, argv, &mars_flags);
 
-    mars_module* target = parse_target_module(mars_flags.input_path);
+    mars_module* main_mod = parse_module(mars_flags.input_path);
 
-    FOR_URANGE(i, 0, target->program_tree.len) {
-        // dump_tree(target->program_tree.at[i], 0);
+    FOR_URANGE(i, 0, main_mod->program_tree.len) {
+        dump_tree(main_mod->program_tree.at[i], 0);
     }
 
     if (mars_flags.output_dot == true) {  
-        emit_dot(to_string("test"), target->program_tree);
+        emit_dot(to_string("test"), main_mod->program_tree);
     }
 
-    process_ast(target->program_tree);
+    process_ast(main_mod->program_tree);
 
 
-    printf("target module parsed %p\n", target);
+    printf("main_mod module parsed %p\n", main_mod);
 
     return 0;
 }
 
 void print_help() {
     printf("usage: mars (directory) [flags]\n\n");
-    printf("(directory)         where the target module is.\n");
+    printf("(directory)         where the main_mod module is.\n");
     printf("\n");
     printf("-o:(path)           specify an output path\n");
     printf("-help               display this text\n\n");
@@ -71,7 +71,7 @@ void load_arguments(int argc, char* argv[], flag_set* fl) {
 
     char* got = realpath(input_directory_arg.key.raw, dumbass_shit_buffer);
     if (got == NULL) {
-        general_error("could not find '%s'", input_directory_arg.val.raw);
+        general_error("could not find '%s'", input_directory_arg.key.raw);
     }
 
     fl->input_path = string_clone(to_string(dumbass_shit_buffer));

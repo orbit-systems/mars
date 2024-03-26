@@ -40,7 +40,7 @@ typedef char* cstring;
 da_typedef(cstring);
 
 
-mars_module* parse_target_module(string input_path);
+mars_module* parse_module(string input_path);
 
 // creates a compilation unit from a list of parsers.
 // stitches the unchecked ASTs together and such
