@@ -3,6 +3,8 @@
 #include "ast.h"
 #include "dot.h"
 
+int dot_uID();
+
 void emit_dot(string path, da(AST) nodes) {
 	char* path_cstr = clone_to_cstring(path);
 	char buffer[1050];
@@ -25,7 +27,7 @@ void emit_dot(string path, da(AST) nodes) {
 	sprintf(buffer, "digraph \"%d\" {\n\trankdir=\"LR\"\n\tnodesep=0.4\n", dot_uID());
 	fs_write(&file, buffer, strlen(buffer));
 
-	FOR_RANGE(i, 0, nodes.len) {
+	FOR_URANGE(i, 0, nodes.len) {
 		recurse_dot(nodes.at[i], &file, 1, dot_uID());
 	}
 

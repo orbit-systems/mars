@@ -25,23 +25,16 @@ let main = fn #block_symbol("main") () {
     for i in 0..=9                 { printf("%int, ", {&i}); } printf("\n");
     for i: u64 in 0..<10           { printf("%u64, ", {&i}); } printf("\n");
 
-    mut x = 1;
+    // mut-pointers and let-pointers
+
     mut x: int = 1;
-
-    let y = 2;
     let y: int = 2;
-
-    // pointers and let-pointers
 
     let x_ptr: ^mut int = &x;
     let y_ptr: ^let int = &y;
     
     let str_slice : []mut u8 = str[:];
     let str_2slice: []let u8 = str2[:];
-
-    let x = shit( a + a);
-    let x = shit( a + a + a);
-    let x = shit( a + a + a + a);
 
     while true {}
 };

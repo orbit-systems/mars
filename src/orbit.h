@@ -12,6 +12,7 @@
 #include <sys/time.h>
 #include <stdatomic.h>
 #include <assert.h>
+#include <limits.h>
 #include <float.h>
 
 typedef uint64_t u64;
@@ -25,19 +26,12 @@ typedef int8_t   i8;
 
 typedef double f64;
 typedef float f32;
+typedef _Float16 f16;
 
-// #ifdef __F16CINTRIN_H
-// typedef _Float16 f16;
-// #else
-// #warning "Float16 ops not supported on this target. Comet will not be compliant! Tell kayla to write a soft-float16."
-// typedef float f16;
-// #endif
 
-// #if defined(__clang__)
-//     typedef __fp16 f16;
-// #elif defined(__GNUC__)
-//     typedef _Float16 f16;
-// #endif
+#if !defined(PATH_MAX)
+#   define PATH_MAX 4096
+#endif
 
 #if !defined(bool)
     typedef uint8_t  bool;

@@ -4,30 +4,7 @@
 #include "parser.h"
 #include "ast.h"
 
-// sandwichman's BLAZINGLY 🔥🔥 FAST 🚀🚀 parser in RUST 🦀🦀 + AI POWERED with CHATGPT 🤖🧠 with BLOCKCHAIN BITCOIN TECHNOLOGY
-
-#define current_token ((p)->tokens.at[(p)->current_tok])
-#define peek_token(n) ((p)->tokens.at[(p)->current_tok + (n)])
-#define advance_token (((p)->current_tok + 1 < (p)->tokens.len) ? ((p)->current_tok)++ : 0)
-#define advance_n_tok(n) (((p)->current_tok + n < (p)->tokens.len) ? ((p)->current_tok)+=n : 0)
-
-#define str_from_tokens(start, end) ((string){(start).text.raw, (end).text.raw - (start).text.raw + (end).text.len})
-
-#define error_at_parser(p, message, ...) \
-    error_at_string((p)->path, (p)->src, current_token.text, \
-    message __VA_OPT__(,) __VA_ARGS__)
-
-#define error_at_token_index(p, index, message, ...) \
-    error_at_string((p)->path, (p)->src, (p)->tokens.at[index].text, \
-    message __VA_OPT__(,) __VA_ARGS__)
-
-#define error_at_token(p, token, message, ...) \
-    error_at_string((p)->path, (p)->src, (token).text, \
-    message __VA_OPT__(,) __VA_ARGS__)
-
-#define error_at_AST(p, node, message, ...) \
-    error_at_string((p)->path, (p)->src, str_from_tokens(*((node).base->start), *((node).base->end)), \
-    message __VA_OPT__(,) __VA_ARGS__)
+// sandwichman's BLAZINGLY 🔥🔥 FAST 🚀🚀 parser in RUST 🦀🦀 + AI POWERED with ChatGPT 5.0 🤖🧠 and BLOCKCHAIN NFT ETHEREUM WEB3 TECHNOLOGY
 
 // construct a parser struct from a lexer and an arena allocator
 parser make_parser(lexer* restrict l, arena* alloca) {

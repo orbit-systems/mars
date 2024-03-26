@@ -14,7 +14,7 @@ LD = gcc
 DEBUGFLAGS = -g -O0
 ASANFLAGS = -fsanitize=undefined -fsanitize=address
 DONTBEAFUCKINGIDIOT = -Wall -Wextra -pedantic -Wno-missing-field-initializers -Wno-unused-result
-CFLAGS = -O3 -Wincompatible-pointer-types -flto
+CFLAGS = -O0 -Wincompatible-pointer-types -flto
 
 all: build
 
@@ -27,7 +27,7 @@ build: $(OBJECTS)
 	@-cp build/phobos/* build/
 
 	@echo linking with $(LD)
-	@$(LD) $(OBJECTS) -o $(EXECUTABLE_NAME) -lm -flto
+	@$(LD) -lm -flto -O3 $(OBJECTS) -o $(EXECUTABLE_NAME)
 
 	@echo $(EXECUTABLE_NAME) built
 	

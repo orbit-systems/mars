@@ -197,7 +197,8 @@ void dump_tree(AST node, int n) {
         printf("function literal\n");
         dump_tree(node.as_func_literal_expr->type, n+1);
         dump_tree(node.as_func_literal_expr->code_block, n+1);
-
+        break;
+    
     default:
         printf("unimplemented %d '%s'\n", node.type, ast_type_str[node.type]);
         break;

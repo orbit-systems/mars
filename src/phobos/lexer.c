@@ -60,10 +60,10 @@ void append_next_token(lexer* restrict lex) {
     // if (lex->buffer.at[lex->buffer.len-1].type == tt_EOF) {
     //     return;
     // }
-    
 
     // advance to next significant char
     while (true) {
+        if (lex->cursor >= lex->src.len) goto skip_insignificant_end;
         switch (current_char(lex)) {
         case ' ':
         case '\t':
@@ -71,7 +71,7 @@ void append_next_token(lexer* restrict lex) {
         case '\r':
         case '\v':
             advance_char(lex);
-            break;
+            continue;
         case '/':
             if (peek_char(lex, 1) == '/') {
                 skip_until_char(lex, '\n');
@@ -84,7 +84,7 @@ void append_next_token(lexer* restrict lex) {
                     );
                 }
             } else goto skip_insignificant_end;
-            break;
+            continue;
         default:
             goto skip_insignificant_end;
         }

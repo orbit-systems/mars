@@ -42,6 +42,7 @@ void print_help() {
 cmd_arg make_argument(char* s) {
     for (size_t i = 0; s[i] != '\0'; i++) {
         if (s[i] == ':') {
+            s[i] = '\0';
             return (cmd_arg){to_string(s), to_string(s+i+1)};
         }
     }
@@ -64,7 +65,14 @@ void load_arguments(int argc, char* argv[], flag_set* fl) {
     if (!is_null_str(input_directory_arg.val)) {
         general_error("error: expected an input path, got \"%s\"", argv[1]);
     }
-    fl->input_path = input_directory_arg.key;
+    char dumbass_shit_buffer[PATH_MAX] = {0};
+
+    char* got = realpath(input_directory_arg.key.raw, dumbass_shit_buffer);
+    if (got == NULL) {
+        general_error("could not find '%s'", input_directory_arg.val.raw);
+    }
+
+    fl->input_path = string_clone(to_string(dumbass_shit_buffer));
 
     if (argc <= 2) return;
 
@@ -75,7 +83,15 @@ void load_arguments(int argc, char* argv[], flag_set* fl) {
             print_help();
             exit(EXIT_SUCCESS);
         } else if (string_eq(a.key, to_string("-o"))) {
-            fl->output_path = a.val;
+
+            char dumbass_shit_buffer[PATH_MAX] = {0};
+
+            char* got = realpath(a.val.raw, dumbass_shit_buffer);
+            if (got == NULL) {
+                general_error("could not find '%s'", a.val.raw);
+            }
+
+            fl->output_path = string_clone(to_string(dumbass_shit_buffer));
         } else if (string_eq(a.key, to_string("-dot"))) {
             fl->output_dot = true;
         } else if (string_eq(a.key, to_string("-timings"))) {

@@ -2,8 +2,6 @@
 #define PHOBOS_H
 
 #include "orbit.h"
-
-
 #include "lexer.h"
 #include "parser.h"
 #include "ast.h"
@@ -22,16 +20,25 @@ typedef struct {
     struct mars_module ** at;
     size_t len;
     size_t cap;
-} mmodule_list;
+} module_list;
 
-typedef struct {
+typedef struct mars_module {
     string module_name;
+    string module_path;
     da(mars_file) files;
-    mmodule_list import_list;
+    module_list import_list;
 
     da(AST) program_tree;
     arena AST_alloca;
+
+    bool visited : 1; // checking shit
+
 } mars_module;
+
+typedef char* cstring;
+
+da_typedef(cstring);
+
 
 mars_module* parse_target_module(string input_path);
 

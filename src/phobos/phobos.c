@@ -6,31 +6,83 @@
 #include "phobos.h"
 #include "lexer.h"
 #include "parser.h"
+#include "checker.h"
+#include "ast.h"
+
+module_list active_modules;
+
+da(cstring) cwd_stack;
+
+void restore_cwd() {
+    if (cwd_stack.len == 0) {
+        CRASH("cwd_stack popped at len == 0");
+    }
+
+    char* cwd = cwd_stack.at[cwd_stack.len-1];
+
+    chdir(cwd);
+    da_pop(&cwd_stack);
+}
+
+void change_cwd(char* dir) {
+    if (cwd_stack.at == NULL) {
+        da_init(&cwd_stack, 1);
+    }
+
+    // relying on gnu behavior, this may cause a problem
+    char* cwd = getcwd(NULL, 0);
+    da_append(&cwd_stack, cwd);
+
+    chdir(dir);
+}
+
 
 /*tune this probably*/
 #define PARSER_ARENA_SIZE 0x100000
+
+string search_for_module(mars_module* mod, string relpath) {
+    // search locally first
+    change_cwd(clone_to_cstring(mod->module_path));
+    if (fs_exists(relpath)) {
+        string mod_realpath = string_alloc(PATH_MAX);
+        realpath(clone_to_cstring(relpath), mod_realpath.raw);
+        restore_cwd();
+        return mod_realpath;
+    }
+    restore_cwd();
+
+    // look in cwd
+    if (fs_exists(relpath)) {
+        string mod_realpath = string_alloc(PATH_MAX);
+        realpath(clone_to_cstring(relpath), mod_realpath.raw);
+        return mod_realpath;
+    }
+
+    return NULL_STR;
+
+}
 
 mars_module* parse_target_module(string input_path) {
 
     // path checks
     if (!fs_exists(input_path))
-        general_error("input directory \""str_fmt"\" does not exist", str_arg(input_path));
+        general_error("module \""str_fmt"\" does not exist", str_arg(input_path));
 
     fs_file input_dir = {0};
     fs_get(input_path, &input_dir);
     if (!fs_is_directory(&input_dir)) {
-        general_error("input path \""str_fmt"\" is not a directory", str_arg(input_path));
+        general_error("path \""str_fmt"\" is not a directory", str_arg(input_path));
     }
 
     int subfile_count = fs_subfile_count(&input_dir);
     if (subfile_count == 0) {
-        general_error("input path \""str_fmt"\" has no files", str_arg(input_path));
+        general_error("path \""str_fmt"\" has no files", str_arg(input_path));
     }
 
     fs_file* subfiles = malloc(sizeof(fs_file) * subfile_count);
     fs_get_subfiles(&input_dir, subfiles);
 
-    chdir(clone_to_cstring(input_path));
+    change_cwd(clone_to_cstring(input_path));
 
     da(lexer) lexers;
     da_init(&lexers, subfile_count);
@@ -48,7 +100,7 @@ mars_module* parse_target_module(string input_path) {
 
         // stop the lexer from shitting itself
         if (subfiles[i].size == 0) 
-            loaded_file = string_clone(to_string(" "));
+            loaded_file = string_clone(to_string(" \n "));
         else 
             loaded_file = string_alloc(subfiles[i].size);
 
@@ -71,7 +123,7 @@ mars_module* parse_target_module(string input_path) {
 
     }
     if (mars_file_count == 0)
-        general_error("input path \""str_fmt"\" has no \".mars\" files", str_arg(input_path));
+        general_error("path \""str_fmt"\" has no \".mars\" files", str_arg(input_path));
 
     // timing
     struct timeval lex_begin, lex_end;
@@ -93,6 +145,8 @@ mars_module* parse_target_module(string input_path) {
         printf("\t  tokens    : %zu\n", tokens_lexed);
         printf("\t  tok/s     : %.3f\n", (double) tokens_lexed / elapsed);
     }
+
+    restore_cwd();
 
     da(parser) parsers;
     da_init(&parsers, lexers.len);
@@ -117,12 +171,12 @@ mars_module* parse_target_module(string input_path) {
     }
 
     mars_module* module = create_module(&parsers, alloca);
+    module->module_path = input_path;
 
-    FOR_URANGE(i, 0, module->program_tree.len) {
-        if (module->program_tree.at[i].type == astype_import_stmt) {
-            
-        }
+    if (active_modules.at == NULL) {
+        da_init(&active_modules, 1);
     }
+    da_append(&active_modules, module);
 
     /* display timing */ 
     if (mars_flags.print_timings) {
@@ -136,9 +190,47 @@ mars_module* parse_target_module(string input_path) {
         printf("\t  nodes/s   : %.3f\n", (double) ast_nodes_created / elapsed);
     }
 
+    // index and parse imports
+    FOR_URANGE(i, 0, module->program_tree.len) {
+        if (module->program_tree.at[i].type == astype_import_stmt) {
+            string importpath = search_for_module(
+                module, 
+                module->program_tree.at[i].as_import_stmt->path.as_literal_expr->value.as_string
+            );
+
+            // does module exist?
+            if (is_null_str(importpath)) {
+                error_at_node(module, module->program_tree.at[i], "path not found");
+            }
+            // has it been imported yet?
+            int found_imported_module = -1;
+            FOR_URANGE(j, 0, active_modules.len) {
+                if (string_eq(active_modules.at[j]->module_path, importpath)) {
+                    found_imported_module = j;
+                }
+            }
+
+            if (found_imported_module != -1) {
+                da_append(&module->import_list, active_modules.at[found_imported_module]);
+            } else {
+                // parse new module
+                mars_module* import_module = parse_target_module(importpath);
+                da_append(&module->import_list, import_module);
+
+                // check module name conflicts
+                FOR_URANGE(j, 0, active_modules.len) {
+                    if (import_module == active_modules.at[j]) continue;
+                    if (string_eq(active_modules.at[j]->module_name, import_module->module_name)) {
+                        warning_at_node(module, module->program_tree.at[i], 
+                            "imported module may cause symbol conflicts with module at \""str_fmt"\"", str_arg(active_modules.at[j]->module_path));
+                    }
+                }
+            }
+        }
+    }
+
+
     // cleanup
-
-
     FOR_RANGE(i, 0, subfile_count) fs_drop(&subfiles[i]);
     free(subfiles);
     fs_drop(&input_dir);
@@ -156,6 +248,8 @@ mars_module* create_module(da(parser)* restrict pl, arena alloca) {
     mod->AST_alloca = alloca;
 
     mod->module_name = pl->at[0].module_decl.as_module_decl->name->text;
+
+    da_init(&mod->import_list, 1);
 
     da_init(&mod->files, pl->len);
     FOR_URANGE(i, 0, pl->len) {
