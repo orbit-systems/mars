@@ -14,20 +14,21 @@ LD = gcc
 DEBUGFLAGS = -g -O0
 ASANFLAGS = -fsanitize=undefined -fsanitize=address
 DONTBEAFUCKINGIDIOT = -Wall -Wextra -pedantic -Wno-missing-field-initializers -Wno-unused-result
-CFLAGS = -Ofast -Wincompatible-pointer-types -flto
+CFLAGS = -Wincompatible-pointer-types
+OPT = -Ofast -flto
 
 all: build
 
 build/%.o: src/%.c
 	@echo compiling $<
-	@$(CC) -c -o $@ $< -Isrc/ -MD $(CFLAGS)
+	@$(CC) -c -o $@ $< -Isrc/ -MD $(CFLAGS) $(OPT)
 
 build: $(OBJECTS)
 	@-cp build/deimos/* build/
 	@-cp build/phobos/* build/
 
 	@echo linking with $(LD)
-	@$(LD) -lm -flto -O3 $(OBJECTS) -o $(EXECUTABLE_NAME)
+	@$(LD) -lm $(OPT) $(OBJECTS) -o $(EXECUTABLE_NAME)
 
 	@echo $(EXECUTABLE_NAME) built
 	
@@ -54,7 +55,7 @@ clean:
 	@mkdir build/phobos
 
 printbuildinfo:
-	@echo using $(CC) with flags $(CFLAGS)
+	@echo using $(CC) with flags $(CFLAGS) $(OPT)
 
 new: clean printbuildinfo build
 

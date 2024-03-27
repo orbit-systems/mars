@@ -6,7 +6,7 @@ arena_block arena_block_make(size_t size) {
     arena_block block;
     block.raw = malloc(size);
     if (block.raw == NULL) {
-        general_error("internal: arena block size %lu too big, can't allocate", size);
+        general_error("internal: arena block size %zu too big, can't allocate", size);
     }
     block.size = (u32) size;
     block.offset = 0;
@@ -67,10 +67,5 @@ size_t align_forward(size_t ptr, size_t align) {
         general_error("internal: align is not a power of two (got %zu)\n", align);
     }
     
-    size_t p = ptr;
-    size_t mod = p & (align - 1);
-    if (mod != 0) {
-        p += align - mod;
-    }
-    return p;
+    return (ptr + align - 1) & ~(align - 1);
 }

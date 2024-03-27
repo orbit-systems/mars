@@ -1,6 +1,7 @@
 #pragma once
+#define PHOBOS_TYPE_H
 
-#include "../orbit.h"
+#include "orbit.h"
 
 enum {
     // does not really do anything. serves as an invalid/none type.
@@ -125,20 +126,19 @@ type* restrict get_target(type* restrict p);
 u64   get_index(type* restrict t);
 
 type* restrict get_type_from_num(u16 num, int num_set);
-bool are_equivalent(type* restrict a, type* restrict b, bool* executed_TSA);
-bool is_element_equivalent(type* restrict a, type* restrict b, int num_set_a, int num_set_b);
-void locally_number(type* restrict t, u64* number, int num_set);
-void reset_numbers(int num_set);
-void canonicalize();
+bool types_are_equivalent(type* restrict a, type* restrict b, bool* executed_TSA);
+bool type_element_equivalent(type* restrict a, type* restrict b, int num_set_a, int num_set_b);
+void type_locally_number(type* restrict t, u64* number, int num_set);
+void type_reset_numbers(int num_set);
+void canonicalize_type_graph();
 void merge_type_references(type* restrict dest, type* restrict src, bool disable);
 
 void print_type_graph();
 
 // a < b
-bool variant_less(enum_variant* a, enum_variant* b);
+bool type_enum_variant_less(enum_variant* a, enum_variant* b);
 
-u64 size_of(type* restrict t);
-u64 align_of(type* restrict t);
+u64 type_real_size_of(type* restrict t);
+u64 type_real_align_of(type* restrict t);
 
-bool is_infinite(type* restrict t);
-u64 forceinline align_forward(u64 n, u64 align);
+bool type_is_infinite(type* restrict t);

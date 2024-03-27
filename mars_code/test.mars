@@ -42,20 +42,20 @@ let main = fn #block_symbol("main") () {
 
 
 type ll_node = struct {
-    content: int;
-    next: ^mut ll_node;
+    content: int,
+    next: ^mut ll_node,
 };
 
 type ll_node_2 = struct {
-    content: int;
-    next: ^mut ll_node_2;
+    content: int,
+    next: ^mut ll_node_2,
 };
 
 // ll_node == ll_node_2, structural equality!
 
 type ll_node_distinct = distinct struct {
-    content: int;
-    next: ^mut ll_node_distinct;
+    content: int,
+    next: ^mut ll_node_distinct,
 };
 
 // ll_node_distinct != ll_node

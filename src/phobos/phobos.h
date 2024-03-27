@@ -32,6 +32,7 @@ typedef struct mars_module {
     arena AST_alloca;
 
     bool visited : 1; // checking shit
+    bool checked : 1; // has been FULLY CHECKED by the checker
 
 } mars_module;
 

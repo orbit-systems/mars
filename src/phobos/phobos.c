@@ -172,6 +172,7 @@ mars_module* parse_module(string input_path) {
 
     mars_module* module = create_module(&parsers, alloca);
     module->module_path = input_path;
+    module->visited = true;
 
     if (active_modules.at == NULL) {
         da_init(&active_modules, 1);
@@ -211,6 +212,9 @@ mars_module* parse_module(string input_path) {
             }
 
             if (found_imported_module != -1) {
+                if (active_modules.at[found_imported_module]->visited) {
+                    error_at_node(module, module->program_tree.at[i], "cyclic imports are not allowed");
+                }
                 da_append(&module->import_list, active_modules.at[found_imported_module]);
             } else {
                 // parse new module
@@ -229,6 +233,7 @@ mars_module* parse_module(string input_path) {
         }
     }
 
+    module->visited = false;
 
     // cleanup
     FOR_RANGE(i, 0, subfile_count) fs_drop(&subfiles[i]);

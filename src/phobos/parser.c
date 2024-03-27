@@ -461,6 +461,60 @@ bool is_possible_type_expr(AST n) {
 
 #define is_definitely_not_type_expr_trust_me_bro(ast_node) (!is_possible_type_expr((ast_node)))
 
+void parse_typed_field_list(parser* restrict p, da(AST_typed_field)* list, token_type ending) {
+    while (current_token.type != ending) {
+
+        AST field = parse_expr(p, true);
+
+        if (is_null_AST(field))
+            error_at_parser(p, "expected identifier");
+        if (field.type != astype_identifier_expr)
+            error_at_AST(p, field, "expected identifier");
+        
+        AST type = NULL_AST;
+        if (current_token.type == tt_colon) {
+            advance_token;
+            type = parse_expr(p, true);
+            if (is_null_AST(type)) {
+                error_at_parser(p, "expected type");
+            }
+
+            if (current_token.type == tt_comma) {
+                da_append(list, ((AST_typed_field){
+                    field, type
+                }));
+                advance_token;
+                    if (current_token.type == tt_close_paren) {
+                        da_append(list, ((AST_typed_field){
+                        field, type
+                    }));
+                    break;
+                }
+                continue;
+            } else if (current_token.type == tt_close_paren) {
+                da_append(list, ((AST_typed_field){
+                    field, type
+                }));
+                break;
+            } else {
+                error_at_parser(p, "expected ',' or '%s'", token_type_str[ending]);
+            }
+
+        } else if (current_token.type == tt_comma) {
+            da_append(list, ((AST_typed_field){
+                field, type
+            }));
+            advance_token;
+            if (current_token.type != tt_identifier) {
+                error_at_parser(p, "expected parameter name");
+            }
+            continue;
+        } else {
+            error_at_parser(p, "expected ':' or ','");
+        }
+    }
+}
+
 // jesus christ
 AST parse_atomic_expr(parser* restrict p, bool no_cl) {
     AST n = NULL_AST;
@@ -835,46 +889,7 @@ AST parse_atomic_expr(parser* restrict p, bool no_cl) {
 
             da_init(&n.as_struct_type_expr->fields, 8);
             
-            while (true) {
-
-                AST field = parse_expr(p, true);
-
-                if (is_null_AST(field))
-                    error_at_parser(p, "expected struct name");
-                if (field.type != astype_identifier_expr)
-                    error_at_AST(p, field, "field must be an identifier");
-                
-                AST type = NULL_AST;
-                if (current_token.type == tt_colon) {
-                    advance_token;
-                    type = parse_expr(p, true);
-
-                    if (current_token.type == tt_semicolon) {
-                        da_append(&n.as_struct_type_expr->fields, ((AST_typed_field){
-                            field, type
-                        }));
-                        advance_token;
-                        if (current_token.type == tt_close_brace) {
-                            break;
-                        }
-                        continue;
-                    } else {
-                        error_at_parser(p, "expected ';' after field definition");
-                    }
-
-                } else if (current_token.type == tt_comma) {
-                    da_append(&n.as_struct_type_expr->fields, ((AST_typed_field){
-                        field, type
-                    }));
-                    advance_token;
-                    if (current_token.type != tt_identifier) {
-                        error_at_parser(p, "expected field name");
-                    }
-                    continue;
-                } else {
-                    error_at_parser(p, "expected ':' or ','");
-                }
-            }
+            parse_typed_field_list(p, &n.as_struct_type_expr->fields, tt_close_brace);
             n.base->end = &current_token;
             advance_token;
         } break;
@@ -899,47 +914,8 @@ AST parse_atomic_expr(parser* restrict p, bool no_cl) {
             }
 
             da_init(&n.as_union_type_expr->fields, 8);
-            
-            while (true) {
 
-                AST field = parse_expr(p, true);
-
-                if (is_null_AST(field))
-                    error_at_parser(p, "expected field name");
-                if (field.type != astype_identifier_expr)
-                    error_at_AST(p, field, "field must be an identifier");
-                
-                AST type = NULL_AST;
-                if (current_token.type == tt_colon) {
-                    advance_token;
-                    type = parse_expr(p, true);
-
-                    if (current_token.type == tt_semicolon) {
-                        da_append(&n.as_struct_type_expr->fields, ((AST_typed_field){
-                            field, type
-                        }));
-                        advance_token;
-                        if (current_token.type == tt_close_brace) {
-                            break;
-                        }
-                        continue;
-                    } else {
-                        error_at_parser(p, "expected ';' after field declaration");
-                    }
-
-                } else if (current_token.type == tt_comma) {
-                    da_append(&n.as_union_type_expr->fields, ((AST_typed_field){
-                        field, type
-                    }));
-                    advance_token;
-                    if (current_token.type != tt_identifier) {
-                        error_at_parser(p, "expected field name");
-                    }
-                    continue;
-                } else {
-                    error_at_parser(p, "expected ':' or ','");
-                }
-            }
+            parse_typed_field_list(p, &n.as_union_type_expr->fields, tt_close_brace);
             n.base->end = &current_token;
             advance_token;
         } break;
@@ -1065,58 +1041,9 @@ AST parse_atomic_expr(parser* restrict p, bool no_cl) {
 
             da_init(&n.as_fn_type_expr->parameters, 4);
             da_init(&n.as_fn_type_expr->returns, 2);
-            
-            while (current_token.type != tt_close_paren) {
 
-                AST field = parse_expr(p, true);
+            parse_typed_field_list(p, &n.as_fn_type_expr->parameters, tt_close_paren);
 
-                if (is_null_AST(field))
-                    error_at_parser(p, "expected parameter name");
-                if (field.type != astype_identifier_expr)
-                    error_at_AST(p, field, "parameter must be an identifier");
-                
-                AST type = NULL_AST;
-                if (current_token.type == tt_colon) {
-                    advance_token;
-                    type = parse_expr(p, true);
-                    if (is_null_AST(type)) {
-                        error_at_parser(p, "expected type");
-                    }
-
-                    if (current_token.type == tt_comma) {
-                        da_append(&n.as_fn_type_expr->parameters, ((AST_typed_field){
-                            field, type
-                        }));
-                        advance_token;
-                            if (current_token.type == tt_close_paren) {
-                                da_append(&n.as_fn_type_expr->parameters, ((AST_typed_field){
-                                field, type
-                            }));
-                            break;
-                        }
-                        continue;
-                    } else if (current_token.type == tt_close_paren) {
-                        da_append(&n.as_fn_type_expr->parameters, ((AST_typed_field){
-                            field, type
-                        }));
-                        break;
-                    } else {
-                        error_at_parser(p, "expected ',' or ')'");
-                    }
-
-                } else if (current_token.type == tt_comma) {
-                    da_append(&n.as_fn_type_expr->parameters, ((AST_typed_field){
-                        field, type
-                    }));
-                    advance_token;
-                    if (current_token.type != tt_identifier) {
-                        error_at_parser(p, "expected parameter name");
-                    }
-                    continue;
-                } else {
-                    error_at_parser(p, "expected ':' or ','");
-                }
-            }
             n.base->end = &current_token;
             advance_token;
 
@@ -1130,7 +1057,7 @@ AST parse_atomic_expr(parser* restrict p, bool no_cl) {
             if (current_token.type != tt_open_paren) {
                 AST return_type = parse_type_expr(p);
                 if (is_null_AST(return_type))
-                    error_at_parser(p, "expected a type expression");
+                    error_at_parser(p, "expected a type expression or list of returns");
                 if (!is_possible_type_expr(return_type))
                     error_at_AST(p, return_type, "return type must be a type expression");
 
@@ -1144,48 +1071,7 @@ AST parse_atomic_expr(parser* restrict p, bool no_cl) {
 
             // else, complex return
             advance_token;
-            while (current_token.type != tt_close_paren) {
-
-                AST field = parse_expr(p, true);
-
-                if (is_null_AST(field))
-                    error_at_parser(p, "expected return variable name");
-                if (field.type != astype_identifier_expr)
-                    error_at_AST(p, field, "return variable must be an identifier");
-                
-                AST type = NULL_AST;
-                if (current_token.type == tt_colon) {
-                    advance_token;
-                    type = parse_expr(p, true);
-
-                    if (current_token.type == tt_comma) {
-                        da_append(&n.as_fn_type_expr->returns, ((AST_typed_field){
-                            field, type
-                        }));
-                        advance_token;
-                        if (current_token.type == tt_close_paren) {
-                            break;
-                        }
-                        continue;
-                    } else if (current_token.type == tt_close_paren) {
-                        break;
-                    } else {
-                        error_at_parser(p, "expected ',' or ')'");
-                    }
-
-                } else if (current_token.type == tt_comma) {
-                    da_append(&n.as_fn_type_expr->returns, ((AST_typed_field){
-                        field, type
-                    }));
-                    advance_token;
-                    if (current_token.type != tt_identifier) {
-                        error_at_parser(p, "expected return variable name");
-                    }
-                    continue;
-                } else {
-                    error_at_parser(p, "expected ':' or ','");
-                }
-            }
+            parse_typed_field_list(p, &n.as_fn_type_expr->returns, tt_close_paren);
             n.base->end = &current_token;
             advance_token;
 

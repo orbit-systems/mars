@@ -16,7 +16,12 @@ typedef struct {
 
 da_typedef(type_pair);
 
-void canonicalize() {
+// align a number (n) up to a power of two (align)
+static u64 forceinline align_forward(u64 n, u64 align) {
+    return (n + align - 1) & ~(align - 1);
+}
+
+void canonicalize_type_graph() {
 
     // preliminary normalization
     FOR_URANGE(i, 0, tg.len) {
@@ -32,7 +37,7 @@ void canonicalize() {
             // using insertion sort for nice best-case complexity
             FOR_URANGE(i, 1, t->as_enum.variants.len) {
                 u64 j = i;
-                while (j > 0 && variant_less(get_variant(t, j), get_variant(t, j-1))) {
+                while (j > 0 && type_enum_variant_less(get_variant(t, j), get_variant(t, j-1))) {
                     enum_variant temp = *get_variant(t, j);
                     t->as_enum.variants.at[j] = t->as_enum.variants.at[j-1];
                     t->as_enum.variants.at[j-1] = temp;
@@ -62,16 +67,16 @@ void canonicalize() {
                 if (tg.at[j]->moved) continue;
                 if (!(tg.at[i]->dirty || tg.at[j]->dirty)) continue;
                 bool executed_TSA = false;
-                if (are_equivalent(tg.at[i], tg.at[j], &executed_TSA)) {
+                if (types_are_equivalent(tg.at[i], tg.at[j], &executed_TSA)) {
                     da_append(&equalities, ((type_pair){tg.at[i], tg.at[j]}));
                 }
                 if (executed_TSA) {
                     executed_TSA_at_all = true;
-                    reset_numbers(1);
+                    type_reset_numbers(1);
                 }
             }
             if (executed_TSA_at_all) {
-                reset_numbers(0);
+                type_reset_numbers(0);
             }
             LOG("compared all to %p (%4zu / %4zu)\n", tg.at[i], i+1, tg.len);
             tg.at[i]->dirty = false;
@@ -108,7 +113,7 @@ void canonicalize() {
     da_destroy(&equalities);
 }
 
-bool are_equivalent(type* restrict a, type* restrict b, bool* executed_TSA) {
+bool types_are_equivalent(type* restrict a, type* restrict b, bool* executed_TSA) {
 
     while (a->tag == T_ALIAS) a = get_target(a);
     while (b->tag == T_ALIAS) b = get_target(b);
@@ -172,38 +177,29 @@ bool are_equivalent(type* restrict a, type* restrict b, bool* executed_TSA) {
     default: break;
     }
 
-    // deep structure analysis
+    // total structure analysis
 
     *executed_TSA = true;
 
     u64 a_numbers = 1;
-    locally_number(a, &a_numbers, 0);
+    type_locally_number(a, &a_numbers, 0);
 
     u64 b_numbers = 1;
-    locally_number(b, &b_numbers, 1);
+    type_locally_number(b, &b_numbers, 1);
 
     if (a_numbers != b_numbers) {
-        // reset_numbers(0);
-        // reset_numbers(1);
         return false;
     }
 
     FOR_URANGE(i, 1, a_numbers) {
-        if (!is_element_equivalent(get_type_from_num(i, 0), get_type_from_num(i, 1), 0, 1)) {
-            // reset_numbers(0);
-            // reset_numbers(1);
+        if (!type_element_equivalent(get_type_from_num(i, 0), get_type_from_num(i, 1), 0, 1)) {
             return false;
         }
     }
-
-    // print_type_graph();
-
-    // reset_numbers(0);
-    // reset_numbers(1);
     return true;
 }
 
-bool is_element_equivalent(type* restrict a, type* restrict b, int num_set_a, int num_set_b) {
+bool type_element_equivalent(type* restrict a, type* restrict b, int num_set_a, int num_set_b) {
     if (a->tag != b->tag) return false;
 
     switch (a->tag) {
@@ -356,7 +352,7 @@ void merge_type_references(type* restrict dest, type* restrict src, bool disable
     dest->dirty = true;
 }
 
-void locally_number(type* restrict t, u64* number, int num_set) {
+void type_locally_number(type* restrict t, u64* number, int num_set) {
     if (t->type_nums[num_set] != 0) return;
 
     t->type_nums[num_set] = (*number)++;
@@ -365,31 +361,31 @@ void locally_number(type* restrict t, u64* number, int num_set) {
     case T_STRUCT:
     case T_UNION:
         FOR_URANGE(i, 0, t->as_aggregate.fields.len) {
-            locally_number(get_field(t, i)->subtype, number, num_set);
+            type_locally_number(get_field(t, i)->subtype, number, num_set);
         }
         break;
     case T_FUNCTION:
         FOR_URANGE(i, 0, t->as_function.params.len) {
-            locally_number(t->as_function.params.at[i].subtype, number, num_set);
+            type_locally_number(t->as_function.params.at[i].subtype, number, num_set);
         }
         FOR_URANGE(i, 0, t->as_function.returns.len) {
-            locally_number(t->as_function.returns.at[i].subtype, number, num_set);
+            type_locally_number(t->as_function.returns.at[i].subtype, number, num_set);
         }
         break;
     case T_ARRAY:
-        locally_number(t->as_array.subtype, number, num_set);
+        type_locally_number(t->as_array.subtype, number, num_set);
     case T_POINTER:
     case T_SLICE:
     case T_DISTINCT:
     case T_ALIAS:
-        locally_number(get_target(t), number, num_set);
+        type_locally_number(get_target(t), number, num_set);
         break;
     default:
         break;
     }
 }
 
-void reset_numbers(int num_set) {
+void type_reset_numbers(int num_set) {
     FOR_URANGE(i, 0, tg.len) {
         tg.at[i]->type_nums[num_set] = 0;
     }
@@ -468,7 +464,7 @@ enum_variant* get_variant(type* restrict e, size_t i) {
     return &e->as_enum.variants.at[i];
 }
 
-bool variant_less(enum_variant* a, enum_variant* b) {
+bool type_enum_variant_less(enum_variant* a, enum_variant* b) {
     if (a->enum_val == b->enum_val) {
         // use string names
         return strcmp(a->name, b->name) < 0;
@@ -553,7 +549,7 @@ void print_type_graph() {
 }
 
 // is type unboundedly recursive (have infinite size)?
-bool is_infinite(type* restrict t) {
+bool type_is_infinite(type* restrict t) {
     if (t->visited) return true;
 
     t->visited = true;
@@ -563,7 +559,7 @@ bool is_infinite(type* restrict t) {
     case T_STRUCT:
     case T_UNION:
         FOR_URANGE(i, 0, t->as_aggregate.fields.len) {
-            if (is_infinite(get_field(t, i)->subtype)) {
+            if (type_is_infinite(get_field(t, i)->subtype)) {
                 is_inf = true;
                 break;
             }
@@ -571,20 +567,20 @@ bool is_infinite(type* restrict t) {
         break;
     case T_FUNCTION:
         FOR_URANGE(i, 0, t->as_function.params.len) {
-            if (is_infinite(t->as_function.params.at[i].subtype)) {
+            if (type_is_infinite(t->as_function.params.at[i].subtype)) {
                 is_inf = true;
                 break;
             }
         }
         FOR_URANGE(i, 0, t->as_function.returns.len) {
-            if (is_infinite(t->as_function.returns.at[i].subtype)) {
+            if (type_is_infinite(t->as_function.returns.at[i].subtype)) {
                 is_inf = true;
                 break;
             }
         }
         break;
     case T_ARRAY:
-        is_inf = is_infinite(t->as_array.subtype);
+        is_inf = type_is_infinite(t->as_array.subtype);
         break;
     case T_POINTER:
     case T_SLICE:
@@ -592,7 +588,7 @@ bool is_infinite(type* restrict t) {
 
     case T_DISTINCT:
     case T_ALIAS:
-        is_infinite(get_target(t));
+        type_is_infinite(get_target(t));
         break;
     default:
         break;
@@ -653,8 +649,8 @@ u64 static size_of_internal(type* restrict t) {
     }
 }
 
-u64 size_of(type* restrict t) {
-    if (is_infinite(t)) return UINT64_MAX;
+u64 type_real_size_of(type* restrict t) {
+    if (type_is_infinite(t)) return UINT64_MAX;
     return size_of_internal(t);
 }
 
@@ -703,12 +699,7 @@ u64 static align_of_internal(type* restrict t) {
     }
 }
 
-u64 align_of(type* restrict t) {
-    if (is_infinite(t)) return UINT64_MAX;
+u64 type_real_align_of(type* restrict t) {
+    if (type_is_infinite(t)) return UINT64_MAX;
     return align_of_internal(t);
-}
-
-// align a number (n) up to a power of two (align)
-u64 forceinline align_forward(u64 n, u64 align) {
-    return (n + align - 1) & ~(align - 1);
 }

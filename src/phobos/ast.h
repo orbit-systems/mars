@@ -22,7 +22,8 @@ typedef struct {
         ast_base base; \
         token* tok; \
         }; \
-        bool is_discard; \
+        struct entity* entity; \
+        bool is_discard : 1; \
     }) \
     AST_TYPE(literal_expr, "literal", { \
         ast_base base; \
