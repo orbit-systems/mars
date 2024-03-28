@@ -211,6 +211,8 @@ mars_module* parse_module(string input_path) {
                 }
             }
 
+            module->program_tree.at[i].as_import_stmt->realpath = importpath;
+
             if (found_imported_module != -1) {
                 if (active_modules.at[found_imported_module]->visited) {
                     error_at_node(module, module->program_tree.at[i], "cyclic imports are not allowed");
@@ -236,9 +238,9 @@ mars_module* parse_module(string input_path) {
     module->visited = false;
 
     // cleanup
-    FOR_RANGE(i, 0, subfile_count) fs_drop(&subfiles[i]);
-    free(subfiles);
-    fs_drop(&input_dir);
+    // FOR_RANGE(i, 0, subfile_count) fs_drop(&subfiles[i]);
+    // free(subfiles);
+    // fs_drop(&input_dir);
 
     return module;
 }

@@ -7,6 +7,9 @@ enum {
     // does not really do anything. serves as an invalid/none type.
     T_NONE,
 
+    T_UNTYPED_INT,
+    T_UNTYPED_FLOAT,
+
     // signed integer types
     T_I8,
     T_I16,
@@ -23,6 +26,8 @@ enum {
     T_F64,
     // bare address type
     T_ADDR,
+    // boolean type
+    T_BOOL,
 
     // for checking purposes, is not an actual type lol
     T_meta_INTEGRAL,
@@ -42,6 +47,7 @@ enum {
     // aggregate types
     T_STRUCT,
     T_UNION,
+    T_UNTYPED_AGGREGATE,
 
     // function type! has sort of the same semantics as a struct
     T_FUNCTION,
@@ -112,7 +118,7 @@ typedef struct {
     size_t cap;
 } type_graph;
 
-extern type_graph tg;
+extern type_graph typegraph;
 
 void  make_type_graph();
 type* restrict make_type(u8 tag);

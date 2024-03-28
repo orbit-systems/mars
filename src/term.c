@@ -56,11 +56,22 @@ void error_at_string(string path, string text, string pos, char* message, ...) {
 
     printf(STYLE_Italic STYLE_Bold "%s" STYLE_Reset, ERROR_MSG_BUFFER);
 
+    char* nextnewline = memchr(pos.raw, '\n', pos.len);
+    if (nextnewline != NULL && (u64)(nextnewline - pos.raw) < pos.len) {
+        pos.len = (u64)(nextnewline - pos.raw);
+    }
+
     printf(STYLE_Dim);
-    // printf("\n      | ");
     printf("\n %4d | ", line);
     printf(STYLE_Reset);
-    printstr(string_make(line_ptr, line_len));
+
+    for (int i = 0; i < line_len; i ++) {
+        if (column-1 == i) printf(STYLE_FG_Red STYLE_Bold);
+        if (column-1 + pos.len == i) printf(STYLE_Reset);
+        putchar(line_ptr[i]);
+    }
+    printf(STYLE_Reset);
+
     printf(STYLE_Dim);
     printf("\n      | ");
     printf(STYLE_Reset);
@@ -69,6 +80,7 @@ void error_at_string(string path, string text, string pos, char* message, ...) {
 
     printf(STYLE_FG_Red);
     printf(STYLE_Bold);
+
     if (pos.len > 0) {
         printf("^");
     }
@@ -80,13 +92,7 @@ void error_at_string(string path, string text, string pos, char* message, ...) {
         printf("^");
     }
     printf(STYLE_Reset);
-
-    // printf(STYLE_Italic);
-    // printf(STYLE_Bold);
-    // printf(" %s\n", ERROR_MSG_BUFFER);
-    // printf(STYLE_Reset);
     printf("\n");
-
     exit(EXIT_FAILURE);
 }
 
@@ -112,16 +118,23 @@ void warning_at_string(string path, string text, string pos, char* message, ...)
     printf(" @ %d:%d ", line, column);
 
     printf(STYLE_Dim "-> " STYLE_Reset);
-
-
-
     printf(STYLE_Italic STYLE_Bold "%s" STYLE_Reset, ERROR_MSG_BUFFER);
+
+    char* nextnewline = memchr(pos.raw, '\n', pos.len);
+    if (nextnewline != NULL && (u64)(nextnewline - pos.raw) < pos.len) {
+        pos.len = (u64)(nextnewline - pos.raw);
+    }
 
     printf(STYLE_Dim);
     // printf("\n        | ");
     printf("\n   % 4d | ", line);
     printf(STYLE_Reset);
-    printstr(string_make(line_ptr, line_len));
+    for (int i = 0; i < line_len; i ++) {
+        if (column-1 == i) printf(STYLE_FG_Yellow STYLE_Bold);
+        if (column-1 + pos.len == i) printf(STYLE_Reset);
+        putchar(line_ptr[i]);
+    }
+    printf(STYLE_Reset);
     printf(STYLE_Dim);
     printf("\n        | ");
     printf(STYLE_Reset);

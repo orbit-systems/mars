@@ -2,6 +2,7 @@
 #define PHOBOS_ENTITY_H
 
 #include "orbit.h"
+#include "phobos.h"
 #include "ast.h"
 #include "parser.h"
 #include "type.h"
@@ -10,12 +11,17 @@ typedef struct entity {
     string identifier;
     AST decl; // If it's NULL_AST, it hasn't been declared yet.
 
-    type* entity_type;
+    union {
+        type* entity_type;
+        mars_module* module;
+    };
 
     bool is_mutable : 1;
     bool is_type    : 1;
+    bool is_module  : 1;
+    bool is_extern  : 1;
 
-    bool visited : 1; // for cyclic dependency checking
+    bool visited    : 1; // for cyclic dependency checking
 } entity;
 
 typedef struct entity_table_list {

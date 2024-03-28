@@ -1360,6 +1360,7 @@ AST parse_stmt(parser* restrict p) {
         n = new_ast_node_p(p, astype_empty_stmt);
         n.as_empty_stmt->base.start = &current_token;
         n.as_empty_stmt->base.end = &current_token;
+        advance_token;
     } break;
     case tt_open_bracket: {
         n = parse_block_stmt(p);
@@ -1554,7 +1555,7 @@ AST parse_stmt(parser* restrict p) {
         switch (current_token.type) {
         case tt_equal: {    // single-assign statement
             n = new_ast_node_p(p, astype_assign_stmt);
-            n.as_assign_stmt->base.start = n.base->start;
+            n.as_assign_stmt->base.start = lhs.base->start;
             da_init(&n.as_assign_stmt->lhs, 1);
             da_append(&n.as_assign_stmt->lhs, lhs);
 
@@ -1630,7 +1631,7 @@ AST parse_stmt(parser* restrict p) {
         case tt_lshift_equal:
         case tt_rshift_equal: {
             n = new_ast_node_p(p, astype_comp_assign_stmt);
-            n.as_comp_assign_stmt->base.start = n.base->start;
+            n.as_comp_assign_stmt->base.start = lhs.base->start;
             n.as_comp_assign_stmt->lhs = lhs;
 
             n.as_comp_assign_stmt->op = &current_token;

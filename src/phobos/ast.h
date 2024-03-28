@@ -107,6 +107,8 @@ typedef struct {
         ast_base base; \
         AST name; \
         AST path; \
+        \
+        string realpath; \
     }) \
     AST_TYPE(block_stmt, "statement block", { \
         ast_base base; \

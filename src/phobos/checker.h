@@ -26,3 +26,22 @@
 
 void check_program(mars_module* restrict mod);
 void check_module(mars_module* restrict mod);
+void collect_globals(mars_module* restrict mod, entity_table* restrict et);
+void collect_entites(mars_module* restrict mod, entity_table* restrict et, da(AST) stmts, bool global);
+
+typedef struct checked_expr {
+    AST expr;
+
+    type* type;
+    bool use_returns : 1; // use return list of type* as the type. for functions that return multiple things
+
+    bool is_type   : 1;
+    bool constant  : 1;
+    bool mutable   : 1;
+    bool local_ptr : 1; // so that we can warn against returning local pointers and shit 
+} checked_expr;
+
+void check_stmt(mars_module* restrict mod, entity_table* restrict et, AST stmt);
+
+// pass in a checked_expr struct to fill out
+void check_expr(mars_module* restrict mod, entity_table* restrict et, AST expr, checked_expr* restrict info);

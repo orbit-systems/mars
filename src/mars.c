@@ -19,7 +19,7 @@ int main(int argc, char** argv) {
         emit_dot(to_string("test"), main_mod->program_tree);
     }
 
-    printf("main_mod module parsed %p\n", main_mod);
+    // printf("main_mod module parsed %p\n", main_mod);
 
     // FOR_URANGE(i, 0, main_mod->program_tree.len) {
     //     dump_tree(main_mod->program_tree.at[i], 0);

@@ -4,7 +4,7 @@
 
 // type engine
 
-type_graph tg;
+type_graph typegraph;
 
 // #define LOG(...) printf(__VA_ARGS__)
 #define LOG(...)
@@ -24,8 +24,8 @@ static u64 forceinline align_forward(u64 n, u64 align) {
 void canonicalize_type_graph() {
 
     // preliminary normalization
-    FOR_URANGE(i, 0, tg.len) {
-        type* t = tg.at[i];
+    FOR_URANGE(i, 0, typegraph.len) {
+        type* t = typegraph.at[i];
         switch (t->tag) {
         case T_ALIAS: // alias retargeting
             while (t->tag == T_ALIAS) {
@@ -54,21 +54,21 @@ void canonicalize_type_graph() {
     // u64 num_of_types = 0;
     bool keep_going = true;
     while (keep_going) {
-        // num_of_types = tg.len;
+        // num_of_types = typegraph.len;
         keep_going = false;
-        FOR_URANGE(i, T_meta_INTEGRAL, tg.len) {
+        FOR_URANGE(i, T_meta_INTEGRAL, typegraph.len) {
             bool executed_TSA_at_all = false;
-            if (tg.at[i]->tag == T_ALIAS) continue;
-            if (tg.at[i]->tag == T_DISTINCT) continue;
-            if (tg.at[i]->moved) continue;
-            FOR_URANGE(j, i+1, tg.len) {
-                if (tg.at[j]->tag == T_ALIAS) continue;
-                if (tg.at[j]->tag == T_DISTINCT) continue;
-                if (tg.at[j]->moved) continue;
-                if (!(tg.at[i]->dirty || tg.at[j]->dirty)) continue;
+            if (typegraph.at[i]->tag == T_ALIAS) continue;
+            if (typegraph.at[i]->tag == T_DISTINCT) continue;
+            if (typegraph.at[i]->moved) continue;
+            FOR_URANGE(j, i+1, typegraph.len) {
+                if (typegraph.at[j]->tag == T_ALIAS) continue;
+                if (typegraph.at[j]->tag == T_DISTINCT) continue;
+                if (typegraph.at[j]->moved) continue;
+                if (!(typegraph.at[i]->dirty || typegraph.at[j]->dirty)) continue;
                 bool executed_TSA = false;
-                if (types_are_equivalent(tg.at[i], tg.at[j], &executed_TSA)) {
-                    da_append(&equalities, ((type_pair){tg.at[i], tg.at[j]}));
+                if (types_are_equivalent(typegraph.at[i], typegraph.at[j], &executed_TSA)) {
+                    da_append(&equalities, ((type_pair){typegraph.at[i], typegraph.at[j]}));
                 }
                 if (executed_TSA) {
                     executed_TSA_at_all = true;
@@ -78,8 +78,8 @@ void canonicalize_type_graph() {
             if (executed_TSA_at_all) {
                 type_reset_numbers(0);
             }
-            LOG("compared all to %p (%4zu / %4zu)\n", tg.at[i], i+1, tg.len);
-            tg.at[i]->dirty = false;
+            LOG("compared all to %p (%4zu / %4zu)\n", typegraph.at[i], i+1, typegraph.len);
+            typegraph.at[i]->dirty = false;
         }
         for (int i = equalities.len-1; i >= 0; --i) {
             type* src = equalities.at[i].src;
@@ -102,9 +102,9 @@ void canonicalize_type_graph() {
         da_clear(&equalities);
 
 
-        FOR_URANGE(i, 0, tg.len) {
-            if (tg.at[i]->moved) {
-                da_unordered_remove_at(&tg, i);
+        FOR_URANGE(i, 0, typegraph.len) {
+            if (typegraph.at[i]->moved) {
+                da_unordered_remove_at(&typegraph, i);
                 i--;
             }
         }
@@ -132,6 +132,7 @@ bool types_are_equivalent(type* restrict a, type* restrict b, bool* executed_TSA
         break;
     case T_STRUCT:
     case T_UNION:
+    case T_UNTYPED_AGGREGATE:
         if (a->as_aggregate.fields.len != b->as_aggregate.fields.len) return false;
         bool subtype_equals = true;
         FOR_URANGE(i, 0, a->as_aggregate.fields.len) {
@@ -234,6 +235,7 @@ bool type_element_equivalent(type* restrict a, type* restrict b, int num_set_a, 
         break;
     case T_STRUCT:
     case T_UNION:
+    case T_UNTYPED_AGGREGATE:
         if (a->as_aggregate.fields.len != b->as_aggregate.fields.len) {
             return false;
         }
@@ -301,11 +303,12 @@ void merge_type_references(type* restrict dest, type* restrict src, bool disable
         return;
     }
 
-    FOR_URANGE(i, 0, tg.len) {
-        type* t = tg.at[i];
+    FOR_URANGE(i, 0, typegraph.len) {
+        type* t = typegraph.at[i];
         switch (t->tag) {
         case T_STRUCT:
         case T_UNION:
+        case T_UNTYPED_AGGREGATE:
             FOR_URANGE(i, 0, t->as_aggregate.fields.len) {
                 if (get_field(t, i)->subtype == src) {
                     get_field(t, i)->subtype = dest;
@@ -360,6 +363,7 @@ void type_locally_number(type* restrict t, u64* number, int num_set) {
     switch (t->tag) {
     case T_STRUCT:
     case T_UNION:
+    case T_UNTYPED_AGGREGATE:
         FOR_URANGE(i, 0, t->as_aggregate.fields.len) {
             type_locally_number(get_field(t, i)->subtype, number, num_set);
         }
@@ -386,22 +390,25 @@ void type_locally_number(type* restrict t, u64* number, int num_set) {
 }
 
 void type_reset_numbers(int num_set) {
-    FOR_URANGE(i, 0, tg.len) {
-        tg.at[i]->type_nums[num_set] = 0;
+    FOR_URANGE(i, 0, typegraph.len) {
+        typegraph.at[i]->type_nums[num_set] = 0;
     }
 }
 
 type* get_type_from_num(u16 num, int num_set) {
     // printf("FUCK %hu %d\n", num, num_set);
-    FOR_URANGE(i, 0, tg.len) {
-        if (tg.at[i]->type_nums[num_set] == num) return tg.at[i];
+    FOR_URANGE(i, 0, typegraph.len) {
+        if (typegraph.at[i]->type_nums[num_set] == num) return typegraph.at[i];
     }
     return NULL;
 }
 
 type* make_type(u8 tag) {
-    if (tag < T_meta_INTEGRAL && (tg.len >= T_meta_INTEGRAL)) {
-        return tg.at[tag];
+    if (typegraph.at == NULL) {
+        make_type_graph();
+    }
+    if (tag < T_meta_INTEGRAL && (typegraph.len >= T_meta_INTEGRAL)) {
+        return typegraph.at[tag];
     }
 
     type* t = malloc(sizeof(type));
@@ -412,59 +419,46 @@ type* make_type(u8 tag) {
     switch (tag) {
     case T_STRUCT:
     case T_UNION:
+    case T_UNTYPED_AGGREGATE:
         da_init(&t->as_aggregate.fields, 1);
         break;
     case T_ENUM:
         da_init(&t->as_enum.variants, 1);
-        t->as_enum.backing_type = tg.at[T_I64];
+        t->as_enum.backing_type = typegraph.at[T_I64];
         break;
     default: break;
     }
     t->dirty = true;
-    da_append(&tg, t);
+    da_append(&typegraph, t);
     return t;
 }
 
 void make_type_graph() {
-    tg = (type_graph){0};
-    da_init(&tg, 3);
+    typegraph = (type_graph){0};
+    da_init(&typegraph, 3);
 
-    make_type(T_NONE);
-    make_type(T_I8);
-    make_type(T_I16);
-    make_type(T_I32);
-    make_type(T_I64);
-    make_type(T_U8);
-    make_type(T_U16);
-    make_type(T_U32);
-    make_type(T_U64);
-    make_type(T_F16);
-    make_type(T_F32);
-    make_type(T_F64);
-    make_type(T_ADDR);
+    FOR_RANGE(i, 0, T_meta_INTEGRAL) {
+        make_type(i);
+    }
 }
 
-void add_field(type* restrict s, char* name, type* restrict sub) {
-    if (s->tag != T_STRUCT && s->tag != T_UNION) return;
+forceinline void add_field(type* restrict s, char* name, type* restrict sub) {
     da_append(&s->as_aggregate.fields, ((struct_field){name, sub}));
 }
 
-struct_field* get_field(type* restrict s, size_t i) {
-    if (s->tag != T_STRUCT && s->tag != T_UNION) return NULL;
+forceinline struct_field* get_field(type* restrict s, size_t i) {
     return &s->as_aggregate.fields.at[i];
 }
 
-void add_variant(type* restrict e, char* name, i64 val) {
-    if (e->tag != T_ENUM) return;
+forceinline void add_variant(type* restrict e, char* name, i64 val) {
     da_append(&e->as_enum.variants, ((enum_variant){name, val}));
 }
 
-enum_variant* get_variant(type* restrict e, size_t i) {
-    if (e->tag != T_ENUM) return NULL;
+forceinline enum_variant* get_variant(type* restrict e, size_t i) {
     return &e->as_enum.variants.at[i];
 }
 
-bool type_enum_variant_less(enum_variant* a, enum_variant* b) {
+forceinline bool type_enum_variant_less(enum_variant* a, enum_variant* b) {
     if (a->enum_val == b->enum_val) {
         // use string names
         return strcmp(a->name, b->name) < 0;
@@ -473,33 +467,25 @@ bool type_enum_variant_less(enum_variant* a, enum_variant* b) {
     }
 }
 
-void set_target(type* restrict p, type* restrict dest) {
-    if (p->tag != T_POINTER && 
-        p->tag != T_SLICE && 
-        p->tag != T_ALIAS &&
-        p->tag != T_DISTINCT) return;
+forceinline void set_target(type* restrict p, type* restrict dest) {
     p->as_reference.subtype = dest;
 }
 
-type* restrict get_target(type* restrict p) {
-    if (p->tag != T_POINTER && 
-        p->tag != T_SLICE && 
-        p->tag != T_ALIAS &&
-        p->tag != T_DISTINCT) return NULL;
+forceinline type* get_target(type* restrict p) {
     return p->as_reference.subtype;
 }
 
 u64 get_index(type* restrict t) {
-    FOR_URANGE(i, 0, tg.len) {
-        if (tg.at[i] == t) return i;
+    FOR_URANGE(i, 0, typegraph.len) {
+        if (typegraph.at[i] == t) return i;
     }
     return UINT64_MAX;
 }
 
 void print_type_graph() {
     printf("-------------------------\n");
-    FOR_URANGE(i, 0, tg.len) {
-        type* t = tg.at[i];
+    FOR_URANGE(i, 0, typegraph.len) {
+        type* t = typegraph.at[i];
         if (t->moved) continue;
         // printf("%-2zu   [%-2hu, %-2hu]\t", i, t->type_nums[0], t->type_nums[1]);
         printf("%-2zu\t", i);
