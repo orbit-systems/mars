@@ -42,9 +42,9 @@ entity* search_for_entity(entity_table* restrict et, string ident) {
 
 entity* new_entity(entity_table* restrict et, string ident, AST decl) {
     entity* e = arena_alloc(&et->alloca, sizeof(entity), alignof(entity));
-    da_append(et, e);
     *e = (entity){0};
     e->identifier = ident;
     e->decl = decl;
+    da_append(et, e);
     return e;
 }

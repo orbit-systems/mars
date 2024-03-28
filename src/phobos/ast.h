@@ -4,7 +4,7 @@
 #include "orbit.h"
 #include "lexer.h"
 #include "arena.h"
-
+#include "exactval.h"
 
 typedef struct {
     token* start;
@@ -13,10 +13,6 @@ typedef struct {
 
 // define all the AST node macros
 #define AST_NODES \
-    AST_TYPE(meta_scope, "[scope tree linkage point]", { \
-        struct scope * this_scope; \
-        AST sub; \
-    }) \
     AST_TYPE(identifier_expr, "identifier", { \
         union { \
         ast_base base; \
@@ -95,8 +91,6 @@ typedef struct {
         AST lhs; \
         da(AST) params; \
     }) \
-    \
-    \
     \
     \
     AST_TYPE(module_decl, "module declaration", { \
@@ -306,26 +300,6 @@ da_typedef(AST);
 da_typedef(AST_enum_variant);
 da_typedef(AST_typed_field);
 
-typedef u8 exact_value_kind; enum {
-    ev_invalid,
-    ev_bool,
-    ev_string,
-    ev_int,
-    ev_float,
-    ev_pointer,
-};
-
-typedef struct {
-    union {
-        bool    as_bool;
-        string  as_string;
-        i64     as_int;
-        f64     as_float;
-        u64     as_pointer;
-    };
-    exact_value_kind kind;
-} exact_value;
-
 // generate AST node typedefs
 #define AST_TYPE(ident, identstr, structdef) typedef struct ast_##ident structdef ast_##ident;
     AST_NODES
@@ -335,7 +309,7 @@ typedef struct {
 #define is_null_AST(node) ((node).type == 0 || (node).rawptr == NULL)
 
 extern char* ast_type_str[];
-extern size_t ast_type_size[];
+extern const size_t ast_type_size[];
 
 AST new_ast_node(arena* restrict alloca, ast_type type);
 void dump_tree(AST node, int n);

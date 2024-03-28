@@ -5,7 +5,7 @@
 #include "ast.h"
 #include "parser.h"
 
-size_t ast_type_size[] = {
+const size_t ast_type_size[] = {
     0,
 #define AST_TYPE(ident, identstr, structdef) sizeof(ast_##ident),
     AST_NODES

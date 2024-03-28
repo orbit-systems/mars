@@ -131,8 +131,6 @@ void collect_entites(mars_module* restrict mod, entity_table* restrict et, da(AS
             if (!e->is_module) {
                 CRASH("FUCK");
             }
-
-            // TODO("collect import statements");
         } break;
         case astype_empty_stmt:
             break;

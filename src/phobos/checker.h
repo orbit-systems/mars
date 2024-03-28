@@ -4,6 +4,8 @@
 #include "phobos.h"
 #include "parser.h"
 #include "term.h"
+#include "ast.h"
+#include "exactval.h"
 
 #include "entity.h"
 #include "type.h"
@@ -12,7 +14,7 @@
 #define error_at_node(module, node, msg, ...) do { \
     string ast_str = str_from_tokens(*((node).base->start), *((node).base->end));                       \
     mars_file* source_file = find_source_file((module), ast_str);                                       \
-    if (source_file == NULL) CRASH("CRASH: source file not found for AST node");                        \
+    if (source_file == NULL) CRASH("source file not found for AST node");                        \
     error_at_string(source_file->path, source_file->src, ast_str, msg __VA_OPT__(,) __VA_ARGS__);   \
 } while (0)
 
@@ -20,7 +22,7 @@
 #define warning_at_node(module, node, msg, ...) do { \
     string ast_str = str_from_tokens(*((node).base->start), *((node).base->end));                       \
     mars_file* source_file = find_source_file((module), ast_str);                                       \
-    if (source_file == NULL) CRASH("CRASH: source file not found for AST node");                        \
+    if (source_file == NULL) CRASH("source file not found for AST node");                        \
     warning_at_string(source_file->path, source_file->src, ast_str, msg __VA_OPT__(,) __VA_ARGS__);   \
 } while (0)
 
@@ -38,10 +40,13 @@ typedef struct checked_expr {
     bool is_type   : 1;
     bool constant  : 1;
     bool mutable   : 1;
-    bool local_ptr : 1; // so that we can warn against returning local pointers and shit 
+    bool local_ref : 1; // so that we can warn against returning local pointers and shit 
 } checked_expr;
 
 void check_stmt(mars_module* restrict mod, entity_table* restrict et, AST stmt);
 
-// pass in a checked_expr struct to fill out
+// pass in a checked_expr struct for check_expr to fill out
 void check_expr(mars_module* restrict mod, entity_table* restrict et, AST expr, checked_expr* restrict info);
+
+// ev is modified by attempt_consteval to return the information.
+bool attempt_consteval(mars_module* restrict mod, entity_table* restrict et, AST expr, exact_value** restrict ev);
