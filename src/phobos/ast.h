@@ -277,8 +277,8 @@ typedef u16 ast_type; enum {
 typedef struct AST {
     union {
         void* rawptr;
-        ast_base * base;
-#define AST_TYPE(ident, identstr, structdef) struct ast_##ident * as_##ident;
+        ast_base * restrict base;
+#define AST_TYPE(ident, identstr, structdef) struct ast_##ident * restrict as_##ident;
         AST_NODES
 #undef AST_TYPE
     };

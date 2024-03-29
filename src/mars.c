@@ -3,9 +3,13 @@
 
 #include "orbit.h"
 #include "mars.h"
+
 #include "phobos/phobos.h"
 #include "phobos/dot.h"
+#include "phobos/parser.h"
 #include "phobos/checker.h"
+
+#include "deimos/deimos.h"
 
 flag_set mars_flags;
 

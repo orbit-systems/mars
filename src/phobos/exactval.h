@@ -6,13 +6,17 @@
 
 typedef u8 exact_value_kind; enum {
     ev_invalid,
+    
     ev_bool,
     ev_string,
     ev_int,
     ev_float,
     ev_pointer,
     ev_aggregate,
-    // ev_trustme, /* the checker can't determine what the value is, but it WILL be constant. */
+    ev_trustmebro, /* the checker can't determine what the value is, 
+                      but it WILL be constant at compile time. this is
+                      usually due to pointer shenangians, where the value of the pointer
+                      will be known by the backend but isn't known by the frontend */
 };
 
 typedef struct exact_value {

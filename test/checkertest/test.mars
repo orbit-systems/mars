@@ -1,0 +1,3 @@
+module checkertest;
+
+let x = 1;

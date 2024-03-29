@@ -534,6 +534,7 @@ AST parse_atomic_expr(parser* restrict p, bool no_cl) {
 
             n.as_literal_expr->value.kind = ev_pointer; 
             n.as_literal_expr->value.as_pointer = 0;
+            n.as_literal_expr->value.freeable = false;
 
             advance_token;
         } break;
@@ -549,6 +550,7 @@ AST parse_atomic_expr(parser* restrict p, bool no_cl) {
 
             n.as_literal_expr->value.kind = ev_bool;
             n.as_literal_expr->value.as_bool = string_eq(current_token.text, to_string("true"));
+            n.as_literal_expr->value.freeable = false;
 
             advance_token;
         } break;
@@ -564,6 +566,7 @@ AST parse_atomic_expr(parser* restrict p, bool no_cl) {
 
             n.as_literal_expr->value.kind = ev_int;
             n.as_literal_expr->value.as_int = char_lit_value(p);
+            n.as_literal_expr->value.freeable = false;
 
             advance_token;
         } break;
@@ -579,6 +582,7 @@ AST parse_atomic_expr(parser* restrict p, bool no_cl) {
         
             n.as_literal_expr->value.kind = ev_float;
             n.as_literal_expr->value.as_float = float_lit_value(p);
+            n.as_literal_expr->value.freeable = false;
 
             advance_token;
         } break;
@@ -594,6 +598,7 @@ AST parse_atomic_expr(parser* restrict p, bool no_cl) {
         
             n.as_literal_expr->value.kind = ev_int;
             n.as_literal_expr->value.as_int = int_lit_value(p);
+            n.as_literal_expr->value.freeable = false;
 
             advance_token;
         } break;
@@ -607,7 +612,7 @@ AST parse_atomic_expr(parser* restrict p, bool no_cl) {
             n.as_literal_expr->base.start = &current_token;
         
             n.as_literal_expr->value.kind = ev_string;
-            // n.as_literal_expr->value.as_string = string_lit_value(p);
+            n.as_literal_expr->value.freeable = false;
 
             string value = NULL_STR;
             value = string_lit_value(p);
@@ -1093,7 +1098,7 @@ AST parse_atomic_expr(parser* restrict p, bool no_cl) {
                 AST func_lit = new_ast_node_p(p, astype_func_literal_expr);
                 func_lit.as_func_literal_expr->base.start = n.base->start;
                 func_lit.as_func_literal_expr->type = n;
-
+                
                 AST code_block = parse_block_stmt(p);
                 func_lit.as_func_literal_expr->code_block = code_block;
 
@@ -1113,7 +1118,7 @@ AST parse_atomic_expr(parser* restrict p, bool no_cl) {
 
             advance_token;
             if (current_token.type == tt_close_brace) {
-                da_init(&lit.as_comp_literal_expr->elems, 1);
+                da_init(&lit.as_comp_literal_expr->elems, 1); // we might not need to do this
                 lit.base->end = &current_token;
                 n = lit;
                 advance_token;

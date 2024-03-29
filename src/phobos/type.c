@@ -65,7 +65,7 @@ void canonicalize_type_graph() {
                 if (typegraph.at[j]->tag == T_ALIAS) continue;
                 if (typegraph.at[j]->tag == T_DISTINCT) continue;
                 if (typegraph.at[j]->moved) continue;
-                if (!(typegraph.at[i]->dirty || typegraph.at[j]->dirty)) continue;
+                // if (!(typegraph.at[i]->dirty || typegraph.at[j]->dirty)) continue;
                 bool executed_TSA = false;
                 if (types_are_equivalent(typegraph.at[i], typegraph.at[j], &executed_TSA)) {
                     da_append(&equalities, ((type_pair){typegraph.at[i], typegraph.at[j]}));
@@ -79,7 +79,7 @@ void canonicalize_type_graph() {
                 type_reset_numbers(0);
             }
             LOG("compared all to %p (%4zu / %4zu)\n", typegraph.at[i], i+1, typegraph.len);
-            typegraph.at[i]->dirty = false;
+            // typegraph.at[i]->dirty = false;
         }
         for (int i = equalities.len-1; i >= 0; --i) {
             type* src = equalities.at[i].src;
@@ -93,7 +93,7 @@ void canonicalize_type_graph() {
             if (src == dest) continue;
             merge_type_references(dest, src, true);
             equalities.at[i].src->moved = dest;
-            dest->dirty = true;
+            // dest->dirty = true;
             keep_going = true;
             LOG("merged %p <- %p (%4zu / %4zu)\n", dest, src, equalities.len-i, equalities.len);
             
@@ -171,10 +171,8 @@ bool types_are_equivalent(type* restrict a, type* restrict b, bool* executed_TSA
         break;
     case T_DISTINCT: // distinct types are VERY strict
         return a == b;
-
     case T_ADDR:
         return a == b; // this should really not do anything
-
     default: break;
     }
 
@@ -312,7 +310,7 @@ void merge_type_references(type* restrict dest, type* restrict src, bool disable
             FOR_URANGE(i, 0, t->as_aggregate.fields.len) {
                 if (get_field(t, i)->subtype == src) {
                     get_field(t, i)->subtype = dest;
-                    t->dirty = true;
+                    // t->dirty = true;
                 }
             }
             break;
@@ -320,13 +318,13 @@ void merge_type_references(type* restrict dest, type* restrict src, bool disable
             FOR_URANGE(i, 0, t->as_function.params.len) {
                 if (t->as_function.params.at[i].subtype == src) {
                     t->as_function.params.at[i].subtype = dest;
-                    t->dirty = true;
+                    // t->dirty = true;
                 }
             }
             FOR_URANGE(i, 0, t->as_function.returns.len) {
                 if (t->as_function.returns.at[i].subtype == src) {
                     t->as_function.returns.at[i].subtype = dest;
-                    t->dirty = true;
+                    // t->dirty = true;
                 }
             }
             break;
@@ -336,13 +334,13 @@ void merge_type_references(type* restrict dest, type* restrict src, bool disable
         case T_DISTINCT:
             if (get_target(t) == src) {
                 set_target(t, dest);
-                t->dirty = true;
+                // t->dirty = true;
             }
             break;
         case T_ARRAY:
             if (t->as_array.subtype == src) {
                 t->as_array.subtype = dest;
-                t->dirty = true;
+                // t->dirty = true;
             }
             break;
         default:
@@ -352,7 +350,7 @@ void merge_type_references(type* restrict dest, type* restrict src, bool disable
 
     // printf("--- %zu\n", src_index);
     if (disable) src->moved = dest;
-    dest->dirty = true;
+    // dest->dirty = true;
 }
 
 void type_locally_number(type* restrict t, u64* number, int num_set) {
@@ -387,6 +385,79 @@ void type_locally_number(type* restrict t, u64* number, int num_set) {
     default:
         break;
     }
+}
+
+// do checking on the fly, improved method for ""incomplete"" type graphs
+bool otf_types_are_equivalent(type* restrict a, type* restrict b) {
+    while (a->tag == T_ALIAS) a = get_target(a);
+    while (b->tag == T_ALIAS) b = get_target(b);
+
+    // simple checks
+    if (a == b) return true;
+    if (a->tag != b->tag) return false;
+    if (a->tag < T_meta_INTEGRAL) return true;
+    
+    // a little more complex
+    switch (a->tag) {
+    case T_POINTER:
+    case T_SLICE:
+        if (a->as_reference.constant != b->as_reference.constant) return false;
+        if (get_target(a) == get_target(b)) return true;
+        break;
+    case T_STRUCT:
+    case T_UNION:
+    case T_UNTYPED_AGGREGATE:
+        if (a->as_aggregate.fields.len != b->as_aggregate.fields.len) return false;
+        bool subtype_equals = true;
+        FOR_URANGE(i, 0, a->as_aggregate.fields.len) {
+            if (get_field(a, i)->subtype != get_field(b, i)->subtype) {
+                subtype_equals = false;
+                break;
+            }
+        }
+        if (subtype_equals) return true;
+        break;
+    case T_FUNCTION:
+        if (a->as_function.params.len != b->as_function.params.len) {
+            return false;
+        }
+        if (a->as_function.returns.len != b->as_function.returns.len) {
+            return false;
+        }
+        subtype_equals = true;
+        FOR_URANGE(i, 0, a->as_function.params.len) {
+            if (a->as_function.params.at[i].subtype != b->as_function.params.at[i].subtype) {
+                subtype_equals = false;
+                break;
+            }
+        }
+        if (subtype_equals) return true;
+        FOR_URANGE(i, 0, a->as_function.returns.len) {
+            if (a->as_function.returns.at[i].subtype != b->as_function.returns.at[i].subtype) {
+                subtype_equals = false;
+                break;
+            }
+        }
+        if (subtype_equals) return true;
+        break;
+    case T_ARRAY:
+        if (a->as_array.len != b->as_array.len) return false;
+        if (a->as_array.subtype == b->as_array.subtype) return true;
+        break;
+    case T_DISTINCT: // distinct types are VERY strict
+        return a == b;
+    case T_ADDR:
+        return a == b; // this should really not do anything
+    default: break;
+    }
+    
+    type_reset_numbers(0);
+    type_reset_numbers(1);
+
+    // we have to do some modified parallel TSA
+    TODO("too tired to impl this rn");
+
+
 }
 
 void type_reset_numbers(int num_set) {
@@ -428,7 +499,7 @@ type* make_type(u8 tag) {
         break;
     default: break;
     }
-    t->dirty = true;
+    // t->dirty = true;
     da_append(&typegraph, t);
     return t;
 }

@@ -22,7 +22,17 @@ void check_module(mars_module* restrict mod) {
     entity_table* globals = new_entity_table(NULL);
     collect_globals(mod, globals);
 
+    FOR_URANGE(i, 0, globals->len) {
+        if (!globals->at[i]->entity_type) {
+            check_global_decl();
+        }
+    }
+
     mod->checked = true;
+}
+
+void check_global_decl() {
+
 }
 
 void collect_globals(mars_module* restrict mod, entity_table* restrict et) {

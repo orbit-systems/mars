@@ -45,6 +45,7 @@ entity* new_entity(entity_table* restrict et, string ident, AST decl) {
     *e = (entity){0};
     e->identifier = ident;
     e->decl = decl;
+    e->top = et;
     da_append(et, e);
     return e;
 }

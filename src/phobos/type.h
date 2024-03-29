@@ -102,8 +102,7 @@ typedef struct type {
     };
     struct type* moved;
     u8 tag;
-    // bool disabled;
-    bool dirty : 1;
+    // bool dirty : 1; /* not needed anymore! this actually trips up incremental canonicalization sometimes */
     bool visited : 1;
 
     u16 size;
