@@ -13,14 +13,9 @@ LD = gcc
 
 DEBUGFLAGS = -lm -rdynamic -pg -g
 ASANFLAGS = -fsanitize=undefined -fsanitize=address
-<<<<<<< HEAD
 DONTBEAFUCKINGIDIOT = -Wall -Wextra -pedantic -Wno-missing-field-initializers -Wno-unused-result
 CFLAGS = -Wincompatible-pointer-types
 OPT = -O0
-=======
-DONTBEAFUCKINGIDIOT = -Wall -Wextra -Wno-missing-field-initializers -Wno-unused-result
-CFLAGS = -O0 -Wincompatible-pointer-types -lm
->>>>>>> 5f8ffca (pushing changes because im not gonna be at my pc for a bit)
 
 all: build
 
@@ -33,11 +28,7 @@ build: $(OBJECTS)
 	@-cp build/phobos/* build/
 
 	@echo linking with $(LD)
-<<<<<<< HEAD
-	@$(LD) -lm $(OPT) $(OBJECTS) -o $(EXECUTABLE_NAME)
-=======
 	@$(LD) $(OBJECTS) -o $(EXECUTABLE_NAME) $(CFLAGS)
->>>>>>> 5f8ffca (pushing changes because im not gonna be at my pc for a bit)
 
 	@echo $(EXECUTABLE_NAME) built
 	

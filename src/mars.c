@@ -15,19 +15,15 @@ int main(int argc, char** argv) {
 
     mars_module* main_mod = parse_module(mars_flags.input_path);
 
-<<<<<<< HEAD
-=======
     FOR_URANGE(i, 0, main_mod->program_tree.len) {
         //dump_tree(main_mod->program_tree.at[i], 0);
         process_ast(main_mod->program_tree.at[i]);
     }
 
->>>>>>> 5f8ffca (pushing changes because im not gonna be at my pc for a bit)
     if (mars_flags.output_dot == true) {  
         emit_dot(to_string("test"), main_mod->program_tree);
     }
 
-<<<<<<< HEAD
     // printf("main_mod module parsed %p\n", main_mod);
 
     // FOR_URANGE(i, 0, main_mod->program_tree.len) {
@@ -37,15 +33,7 @@ int main(int argc, char** argv) {
     // recursive check
     check_program(main_mod);
 
-
-
-
-
     // process_ast(main_mod->program_tree);
-=======
-    
->>>>>>> 5f8ffca (pushing changes because im not gonna be at my pc for a bit)
-
 
 
     return 0;
