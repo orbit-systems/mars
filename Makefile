@@ -14,7 +14,7 @@ LD = gcc
 DEBUGFLAGS = -lm -rdynamic -pg -g
 ASANFLAGS = -fsanitize=undefined -fsanitize=address
 DONTBEAFUCKINGIDIOT = -Wall -Wextra -pedantic -Wno-missing-field-initializers -Wno-unused-result
-CFLAGS = -Wincompatible-pointer-types
+CFLAGS = -Wincompatible-pointer-types -lm
 OPT = -O0
 
 all: build
