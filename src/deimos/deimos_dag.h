@@ -13,16 +13,38 @@ typedef struct {
 
 // define all the DAG node macros
 #define DAG_NODES \
-	DAG_TYPE(entry, "dag entry node", {\
-		dag_base base;				   \
-		DAG node; 					   \
-	}) 								   \
-	/*operators*/					   \
-	DAG_TYPE(unary_op, "unary op", {   \
-		dag_base base;				   \
-		token* operator;			   \
-		DAG operand;				   \
-	})								   \
+	DAG_TYPE(entry, "dag entry node", { \
+		dag_base base;					\
+		DAG node; 						\
+	}) 									\
+	/*operators*/						\
+	DAG_TYPE(unary_op, "unary op", {	\
+		dag_base base;					\
+		token* operator;				\
+		DAG operand;					\
+	})									\
+	/*statements*/						\
+	DAG_TYPE(decl_stmt, "declaration", {\
+		dag_base base;					\
+		da(token) lhs;					\
+		DAG rhs;						\
+		DAG type;						\
+		bool has_expl_type : 1;			\
+		bool is_volatile   : 1;			\
+		bool is_uninit     : 1;			\
+	})									\
+	/*
+	    AST_TYPE(decl_stmt, "declaration", { \
+        ast_base base; \
+        da(AST) lhs; \
+        AST rhs; \
+        AST type; \
+        bool has_expl_type : 1; \
+        bool is_mut        : 1; \
+        bool is_static     : 1; \
+        bool is_volatile   : 1; \
+        bool is_uninit     : 1; \
+    }) \*/
     /*AST_TYPE(meta_scope, "[scope tree linkage point]", { \
         struct scope * this_scope; \
         AST sub; \
@@ -120,17 +142,6 @@ typedef struct {
     AST_TYPE(block_stmt, "statement block", { \
         ast_base base; \
         da(AST) stmts; \
-    }) \
-    AST_TYPE(decl_stmt, "declaration", { \
-        ast_base base; \
-        da(AST) lhs; \
-        AST rhs; \
-        AST type; \
-        bool has_expl_type : 1; \
-        bool is_mut        : 1; \
-        bool is_static     : 1; \
-        bool is_volatile   : 1; \
-        bool is_uninit     : 1; \
     }) \
     AST_TYPE(type_decl_stmt, "type declaration", { \
         ast_base base; \
