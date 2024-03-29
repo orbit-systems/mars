@@ -11,10 +11,10 @@ endif
 CC = gcc
 LD = gcc
 
-DEBUGFLAGS = -g -O0
+DEBUGFLAGS = -lm -rdynamic -pg -g
 ASANFLAGS = -fsanitize=undefined -fsanitize=address
-DONTBEAFUCKINGIDIOT = -Wall -Wextra -pedantic -Wno-missing-field-initializers -Wno-unused-result
-CFLAGS = -Ofast -Wincompatible-pointer-types -flto
+DONTBEAFUCKINGIDIOT = -Wall -Wextra -Wno-missing-field-initializers -Wno-unused-result
+CFLAGS = -O0 -Wincompatible-pointer-types -lm
 
 all: build
 
@@ -27,19 +27,19 @@ build: $(OBJECTS)
 	@-cp build/phobos/* build/
 
 	@echo linking with $(LD)
-	@$(LD) -lm -flto -O3 $(OBJECTS) -o $(EXECUTABLE_NAME)
+	@$(LD) $(OBJECTS) -o $(EXECUTABLE_NAME) $(CFLAGS)
 
 	@echo $(EXECUTABLE_NAME) built
 	
 
 dbgbuild/%.o: src/%.c
-	@$(CC) -c -o $@ $< -Isrc/ -MD $(DEBUGFLAGS) -lm
+	@$(CC) -c -o $@ $< -Isrc/ -MD $(DEBUGFLAGS)
 
 dbgbuild: $(OBJECTS)
 	@-cp build/deimos/* build/
 	@-cp build/phobos/* build/
 
-	@$(LD) $(OBJECTS) -o $(EXECUTABLE_NAME) $(DEBUGFLAGS) -lm
+	@$(LD) $(OBJECTS) -o $(EXECUTABLE_NAME) $(DEBUGFLAGS)
 	
 test: build
 	./$(EXECUTABLE_NAME) ./mars_code

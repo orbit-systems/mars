@@ -16,14 +16,15 @@ int main(int argc, char** argv) {
     mars_module* main_mod = parse_module(mars_flags.input_path);
 
     FOR_URANGE(i, 0, main_mod->program_tree.len) {
-        dump_tree(main_mod->program_tree.at[i], 0);
+        //dump_tree(main_mod->program_tree.at[i], 0);
+        process_ast(main_mod->program_tree.at[i]);
     }
 
     if (mars_flags.output_dot == true) {  
         emit_dot(to_string("test"), main_mod->program_tree);
     }
 
-    process_ast(main_mod->program_tree);
+    
 
 
     printf("main_mod module parsed %p\n", main_mod);
