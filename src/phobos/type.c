@@ -127,7 +127,7 @@ bool types_are_equivalent(type* restrict a, type* restrict b, bool* executed_TSA
     switch (a->tag) {
     case T_POINTER:
     case T_SLICE:
-        if (a->as_reference.constant != b->as_reference.constant) return false;
+        if (a->as_reference.mutable != b->as_reference.mutable) return false;
         if (get_target(a) == get_target(b)) return true;
         break;
     case T_STRUCT:
@@ -280,7 +280,7 @@ bool type_element_equivalent(type* restrict a, type* restrict b, int num_set_a, 
         break;
     case T_POINTER:
     case T_SLICE:
-        if (a->as_reference.constant != b->as_reference.constant) return false;
+        if (a->as_reference.mutable != b->as_reference.mutable) return false;
         if (get_target(a)->type_nums[num_set_a] != get_target(b)->type_nums[num_set_b]) {
             return false;
         }
@@ -297,7 +297,7 @@ bool type_element_equivalent(type* restrict a, type* restrict b, int num_set_a, 
 void merge_type_references(type* restrict dest, type* restrict src, bool disable) {
 
     u64 src_index = get_index(src);
-    if (src_index == UINT64_MAX) {
+    if (src_index == UINT32_MAX) {
         return;
     }
 
@@ -401,7 +401,7 @@ bool otf_types_are_equivalent(type* restrict a, type* restrict b) {
     switch (a->tag) {
     case T_POINTER:
     case T_SLICE:
-        if (a->as_reference.constant != b->as_reference.constant) return false;
+        if (a->as_reference.mutable != b->as_reference.mutable) return false;
         if (get_target(a) == get_target(b)) return true;
         break;
     case T_STRUCT:
@@ -550,7 +550,7 @@ u64 get_index(type* restrict t) {
     FOR_URANGE(i, 0, typegraph.len) {
         if (typegraph.at[i] == t) return i;
     }
-    return UINT64_MAX;
+    return UINT32_MAX;
 }
 
 void print_type_graph() {
@@ -655,37 +655,40 @@ bool type_is_infinite(type* restrict t) {
     return is_inf;
 }
 
-u64 static size_of_internal(type* restrict t) {
+u32 static size_of_internal(type* restrict t) {
+    if (t->size != UINT32_MAX) return t->size;
+
     switch (t->tag) {
     case T_NONE:
-        return 0;
+        return t->size = 0;
     case T_I8:
     case T_U8:
-        return 1;
+    case T_BOOL:
+        return t->size = 1;
     case T_I16:
     case T_U16:
     case T_F16:
-        return 2;
+        return t->size = 2;
     case T_I32:
     case T_U32:
     case T_F32:
-        return 4;
+        return t->size = 4;
     case T_I64:
     case T_U64:
     case T_F64:
     case T_POINTER:
     case T_ADDR:
     case T_FUNCTION: // remember, its a function POINTER!
-        return 8;
+        return t->size = 8;
     case T_SLICE:
-        return 16;
+        return t->size = 16;
     case T_ENUM:
-        return size_of_internal(t->as_enum.backing_type);
+        return t->size = size_of_internal(t->as_enum.backing_type);
     case T_ALIAS:
     case T_DISTINCT:
-        return size_of_internal(t->as_reference.subtype);
+        return t->size = size_of_internal(t->as_reference.subtype);
     case T_ARRAY:
-        return size_of_internal(t->as_array.subtype) * t->as_array.len;
+        return t->size = size_of_internal(t->as_array.subtype) * t->as_array.len;
     case T_UNION: {
         u64 max_size = 0;
         FOR_URANGE(i, 0, t->as_aggregate.fields.len) {
@@ -706,26 +709,28 @@ u64 static size_of_internal(type* restrict t) {
     }
 }
 
-u64 type_real_size_of(type* restrict t) {
-    if (type_is_infinite(t)) return UINT64_MAX;
+u32 type_real_size_of(type* restrict t) {
+    if (type_is_infinite(t)) return UINT32_MAX;
     return size_of_internal(t);
 }
 
-u64 static align_of_internal(type* restrict t) {
+u32 static align_of_internal(type* restrict t) {
+    if (t->align != UINT32_MAX) return t->align;
+
     switch (t->tag) {
     case T_NONE:
-        return 0;
+        return t->align = 0;
     case T_I8:
     case T_U8:
-        return 1;
+        return t->align = 1;
     case T_I16:
     case T_U16:
     case T_F16:
-        return 2;
+        return t->align = 2;
     case T_I32:
     case T_U32:
     case T_F32:
-        return 4;
+        return t->align = 4;
     case T_I64:
     case T_U64:
     case T_F64:
@@ -733,14 +738,14 @@ u64 static align_of_internal(type* restrict t) {
     case T_ADDR:
     case T_FUNCTION: // remember, its a function POINTER!
     case T_SLICE:
-        return 8;
+        return t->align = 8;
     case T_ENUM:
-        return align_of_internal(t->as_enum.backing_type);
+        return t->align = align_of_internal(t->as_enum.backing_type);
     case T_ALIAS:
     case T_DISTINCT:
-        return align_of_internal(t->as_reference.subtype);
+        return t->align = align_of_internal(t->as_reference.subtype);
     case T_ARRAY:
-        return align_of_internal(t->as_array.subtype);
+        return t->align = align_of_internal(t->as_array.subtype);
     
     case T_UNION:
     case T_STRUCT: {
@@ -749,14 +754,14 @@ u64 static align_of_internal(type* restrict t) {
             u64 align = align_of_internal(get_field(t, i)->subtype);
             if (align > max_align) max_align = align;
         }
-        return max_align;
+        return t->align = max_align;
         } break;
     default:
         CRASH("unreachable");
     }
 }
 
-u64 type_real_align_of(type* restrict t) {
-    if (type_is_infinite(t)) return UINT64_MAX;
+u32 type_real_align_of(type* restrict t) {
+    if (type_is_infinite(t)) return UINT32_MAX;
     return align_of_internal(t);
 }

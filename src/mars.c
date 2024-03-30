@@ -6,8 +6,8 @@
 
 #include "phobos/phobos.h"
 #include "phobos/dot.h"
-#include "phobos/parser.h"
-#include "phobos/checker.h"
+#include "phobos/parse.h"
+#include "phobos/sema.h"
 
 #include "deimos/deimos.h"
 
@@ -21,7 +21,7 @@ int main(int argc, char** argv) {
 
     FOR_URANGE(i, 0, main_mod->program_tree.len) {
         //dump_tree(main_mod->program_tree.at[i], 0);
-        process_ast(main_mod->program_tree.at[i]);
+        // process_ast(main_mod->program_tree.at[i]);
     }
 
     if (mars_flags.output_dot == true) {  

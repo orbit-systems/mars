@@ -29,7 +29,7 @@
     TOKEN(tt_range_less,"..<") \
     TOKEN(tt_range_eq,  "..=") \
     TOKEN(tt_comma,     ",") \
-    TOKEN(ttam,    "!") \
+    TOKEN(tt_exclam,    "!") \
     TOKEN(tt_carat,     "^") \
     TOKEN(tt_at,        "@") \
     TOKEN(tt_add,       "+") \
@@ -47,7 +47,7 @@
 \
     TOKEN(tt_and_and,       "&&") \
     TOKEN(tt_or_or,         "||") \
-    TOKEN(tt_tilde_tilde,   "~~") \
+ /* TOKEN(tt_tilde_tilde, "~~") */ \
 \
     TOKEN(tt_arrow_right,   "->") \
     TOKEN(tt_arrow_left,    "<-") \

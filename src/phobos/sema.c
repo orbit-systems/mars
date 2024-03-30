@@ -2,7 +2,7 @@
 #include "mars.h"
 
 #include "phobos.h"
-#include "checker.h"
+#include "sema.h"
 
 void check_program(mars_module* restrict mod) {
     FOR_URANGE(i, 0, mod->import_list.len) {

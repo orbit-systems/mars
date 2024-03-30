@@ -2,8 +2,8 @@
 #define PHOBOS_H
 
 #include "orbit.h"
-#include "lexer.h"
-#include "parser.h"
+#include "lex.h"
+#include "parse.h"
 #include "ast.h"
 
 da_typedef(lexer);

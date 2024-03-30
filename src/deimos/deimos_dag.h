@@ -2,7 +2,7 @@
 #define DEIMOS_DAG_H
 
 #include "orbit.h"
-#include "../phobos/lexer.h"
+#include "../phobos/lex.h"
 #include "../arena.h"
 #include "../term.h"
 

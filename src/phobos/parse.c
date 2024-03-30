@@ -1,7 +1,7 @@
 #include "orbit.h"
 #include "term.h"
 
-#include "parser.h"
+#include "parse.h"
 #include "ast.h"
 
 // sandwichman's BLAZINGLY 🔥🔥 FAST 🚀🚀 parser in RUST 🦀🦀 + AI POWERED with ChatGPT 5.0 🤖🧠 and BLOCKCHAIN NFT ETHEREUM WEB3 TECHNOLOGY
@@ -81,7 +81,7 @@ int op_precedence(token_type type) {
     case tt_and_and:
         return 2;
     case tt_or_or:
-    case tt_tilde_tilde:
+    // case tt_tilde_tilde:
         return 1;
     default:
         return 0;
@@ -122,7 +122,7 @@ AST parse_unary_expr(parser* restrict p, bool no_cl) {
     switch (current_token.type) {
     case tt_sub:
     case tt_tilde:
-    case ttam:
+    case tt_exclam:
     case tt_and:
     case tt_keyword_sizeof:
     case tt_keyword_alignof:
@@ -564,8 +564,8 @@ AST parse_atomic_expr(parser* restrict p, bool no_cl) {
             n.as_literal_expr->base.start = &current_token;
             n.as_literal_expr->base.end = &current_token;
 
-            n.as_literal_expr->value.kind = ev_int;
-            n.as_literal_expr->value.as_int = char_lit_value(p);
+            n.as_literal_expr->value.kind = ev_untyped_int;
+            n.as_literal_expr->value.as_untyped_int = char_lit_value(p);
             n.as_literal_expr->value.freeable = false;
 
             advance_token;
@@ -580,8 +580,8 @@ AST parse_atomic_expr(parser* restrict p, bool no_cl) {
             n.as_literal_expr->base.start = &current_token;
             n.as_literal_expr->base.end = &current_token;
         
-            n.as_literal_expr->value.kind = ev_float;
-            n.as_literal_expr->value.as_float = float_lit_value(p);
+            n.as_literal_expr->value.kind = ev_untyped_float;
+            n.as_literal_expr->value.as_untyped_float = float_lit_value(p);
             n.as_literal_expr->value.freeable = false;
 
             advance_token;
@@ -596,8 +596,8 @@ AST parse_atomic_expr(parser* restrict p, bool no_cl) {
             n.as_literal_expr->base.start = &current_token;
             n.as_literal_expr->base.end = &current_token;
         
-            n.as_literal_expr->value.kind = ev_int;
-            n.as_literal_expr->value.as_int = int_lit_value(p);
+            n.as_literal_expr->value.kind = ev_untyped_int;
+            n.as_literal_expr->value.as_untyped_int = int_lit_value(p);
             n.as_literal_expr->value.freeable = false;
 
             advance_token;

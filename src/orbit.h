@@ -29,7 +29,6 @@ typedef double f64;
 typedef float f32;
 typedef _Float16 f16;
 
-
 #if !defined(PATH_MAX)
 #   define PATH_MAX 4096
 #endif
@@ -61,6 +60,15 @@ typedef _Float16 f16;
 #define CRASH(msg) do { \
     printf("\x1b[31m\x1b[1mCRASH\x1b[0m: \"%s\" at %s:%d\n", (msg), (__FILE__), (__LINE__)); \
     exit(EXIT_FAILURE); } while (0)
+
+#ifdef __GNUC__
+#   define UNREACHABLE __builtin_unreachable()
+#else
+#   define UNREACHABLE do { \
+        printf("\x1b[31m\x1b[1mUNREACHABLE\x1b[0m at %s:%d\n", (__FILE__), (__LINE__)); \
+        exit(EXIT_FAILURE);} while (0)
+#endif
+
 
 #define max(a,b) ((a) > (b) ? (a) : (b))
 #define min(a,b) ((a) < (b) ? (a) : (b))

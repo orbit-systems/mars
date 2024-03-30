@@ -81,8 +81,9 @@ da_typedef(enum_variant);
 typedef struct type {
     union {
         struct {
+            string name; // only used by T_ALIAS
             struct type* subtype;
-            bool constant; // only used by pointers and slices
+            bool mutable; // only used by pointers and slices
         } as_reference; // used by T_POINTER, T_SLICE, T_ALIAS, and T_DISTINCT
         struct {
             struct type* subtype;
@@ -102,13 +103,11 @@ typedef struct type {
     };
     struct type* moved;
     u8 tag;
-    // bool dirty : 1; /* not needed anymore! this actually trips up incremental canonicalization sometimes */
     bool visited : 1;
-
-    u16 size;
-
-    // data for comparison shit
     u16 type_nums[2];
+
+    u32 size;
+    u32 align;
 } type;
 
 typedef struct {
@@ -138,12 +137,14 @@ void type_reset_numbers(int num_set);
 void canonicalize_type_graph();
 void merge_type_references(type* restrict dest, type* restrict src, bool disable);
 
+char** gather_aliases(type* restrict t);
+
 void print_type_graph();
 
 // a < b
 bool type_enum_variant_less(enum_variant* a, enum_variant* b);
 
-u64 type_real_size_of(type* restrict t);
-u64 type_real_align_of(type* restrict t);
+u32 type_real_size_of(type* restrict t);
+u32 type_real_align_of(type* restrict t);
 
 bool type_is_infinite(type* restrict t);

@@ -2,7 +2,7 @@
 #define PHOBOS_PARSER_H
 
 #include "orbit.h"
-#include "lexer.h"
+#include "lex.h"
 #include "ast.h"
 #include "arena.h"
 

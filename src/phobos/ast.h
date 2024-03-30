@@ -2,7 +2,7 @@
 #define PHOBOS_AST_H
 
 #include "orbit.h"
-#include "lexer.h"
+#include "lex.h"
 #include "arena.h"
 #include "exactval.h"
 

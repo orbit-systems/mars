@@ -1,9 +1,9 @@
 #include "orbit.h"
-#include "lexer.h"
+#include "lex.h"
 #include "term.h"
 #include "arena.h"
 #include "ast.h"
-#include "parser.h"
+#include "parse.h"
 
 const size_t ast_type_size[] = {
     0,
@@ -59,8 +59,8 @@ void dump_tree(AST node, int n) {
     case astype_literal_expr:
         switch (node.as_literal_expr->value.kind) {
         case ev_bool: printf("bool literal\n"); break;
-        case ev_float: printf("float literal\n"); break;
-        case ev_int: printf("int literal\n"); break;
+        case ev_untyped_float: printf("float literal\n"); break;
+        case ev_untyped_int: printf("int literal\n"); break;
         case ev_pointer: printf("pointer literal\n"); break;
         case ev_string: printf("string literal\n"); break;
         default: printf("[invalid] literal\n"); break;

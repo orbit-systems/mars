@@ -4,8 +4,12 @@
 #include "orbit.h"
 #include "phobos.h"
 #include "ast.h"
-#include "parser.h"
+#include "parse.h"
 #include "type.h"
+
+typedef struct entity entity;
+typedef struct entity_table_list entity_table_list;
+typedef struct entity_table entity_table;
 
 typedef struct entity {
     string identifier;
@@ -31,16 +35,16 @@ typedef struct entity {
 } entity;
 
 typedef struct entity_table_list {
-    struct entity_table** at;
+    entity_table** at;
     size_t len;
     size_t cap;
 } entity_table_list;
 
 typedef struct entity_table {
-    struct entity_table* parent;
+    entity_table* parent;
     arena alloca;
 
-    entity** at;
+    entity** restrict at;
     size_t len;
     size_t cap;
 } entity_table;
@@ -51,5 +55,6 @@ u64 FNV_1a(string key); // for implementing a hash table later
 
 entity_table* new_entity_table(entity_table* restrict parent);
 
-entity* search_for_entity(entity_table* restrict et, string ident);
-entity* new_entity(entity_table* restrict et, string ident, AST decl);
+entity* restrict search_for_entity(entity_table* restrict et, string ident);
+entity* restrict new_entity(entity_table* restrict et, string ident, AST decl);
+bool    is_global(entity* restrict et);

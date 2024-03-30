@@ -1,6 +1,6 @@
 #include "orbit.h"
 #include "term.h"
-#include "lexer.h"
+#include "lex.h"
 
 #define can_start_identifier(ch) ((ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z') || ch == '_')
 #define can_be_in_identifier(ch) ((ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z') || (ch >= '0' && ch <= '9') || ch == '_')
@@ -368,7 +368,7 @@ token_type scan_operator(lexer* restrict lex) {
             advance_char(lex);
             return tt_not_equal;
         }
-        return ttam;
+        return tt_exclam;
     case ':':
         advance_char(lex);
         if (current_char(lex) == ':') {

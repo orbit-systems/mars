@@ -2,7 +2,7 @@
 #define PHOBOS_CHECKER_H
 
 #include "phobos.h"
-#include "parser.h"
+#include "parse.h"
 #include "term.h"
 #include "ast.h"
 #include "exactval.h"
@@ -37,21 +37,20 @@ typedef struct checked_expr {
     type* type;
     exact_value* ev; // for if is compile time constant
     bool use_returns : 1; // use return list of type* as the type. for functions that return multiple things
- 
-    bool is_type   : 1;
-    bool mutable   : 1;
-    bool local_ref : 1; // so that we can warn against returning local pointers and shit 
+
+    bool mutable       : 1;
+    bool local_ref     : 1; // so that we can warn against returning local pointers and shit 
+    bool local_derived : 1;
+    bool addressable   : 1;
 } checked_expr;
 
-void check_stmt(
-    mars_module* restrict mod, 
-    entity_table* restrict et, 
-    AST stmt);
+void check_stmt(mars_module* restrict mod, entity_table* restrict et, AST stmt);
+
+
 
 // pass in a checked_expr struct for check_expr to fill out
-void check_expr(
-    mars_module* restrict mod, 
-    entity_table* restrict et, 
-    AST expr,
-    checked_expr* restrict info, 
-    bool must_comptime_const);
+void check_expr          (mars_module* restrict mod, entity_table* restrict et, AST expr, checked_expr* restrict info, bool must_comptime_const, type* restrict typehint);
+void check_ident_expr    (mars_module* restrict mod, entity_table* restrict et, AST expr, checked_expr* restrict info, bool must_comptime_const, type* restrict typehint);
+void check_literal_expr  (mars_module* restrict mod, entity_table* restrict et, AST expr, checked_expr* restrict info, bool must_comptime_const, type* restrict typehint);
+void check_unary_op_expr (mars_module* restrict mod, entity_table* restrict et, AST expr, checked_expr* restrict info, bool must_comptime_const, type* restrict typehint);
+void check_binary_op_expr(mars_module* restrict mod, entity_table* restrict et, AST expr, checked_expr* restrict info, bool must_comptime_const, type* restrict typehint);

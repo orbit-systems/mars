@@ -30,8 +30,6 @@ types
     untyped
         (untyped_int)   internal int literal - can implicitly convert to any numeric type (if in range)
         (untyped_float) internal float literal - can implictly convert to any float type, or an int type if it represents an integer value (12.0 for example)
-        (untyped_bool)  internal bool literal - can implicitly convert to any boolean type
-        (untyped_null)  internal "null" literal - implicitly converts to any pointer
 
     compound
         [N]T            concrete array type with determined length at compile-time
@@ -65,9 +63,8 @@ operators
         >>      right shift             with type T in (all integers, uintegers, floats, pointers): <T> >> (all uintegers) -> <T>
 
     binary boolean
-        &&      boolean and             with type T in (booleans): <T> && <T> -> <T>
+        &&      boolean and             with type T in (bool): <T> && <T> -> <T>
         ||      boolean or              with type T in (bool): <T> || <T> -> <T>
-        ~~      boolean xor             with type T in (bool): <T> ~~ <T> -> <T>
 
     comparison
         ==      equality                (*): <T> == <T> -> <bool>
@@ -78,7 +75,7 @@ operators
         >=      greater than or equal   (**): <T> >= <T> -> <bool>
 
         * a type T is comparable if it is a:
-        | base, non-compound type (all integers, uintegers, floats, booleans, pointers)
+        | base, non-compound type (all integers, uintegers, floats, bool, pointers)
         | struct with comparable fields
         | union with comparable variants
         | array with comparable element type
@@ -92,11 +89,11 @@ operators
         note: entities can ONLY compare with others of the same type, no mixing.
 
     unary numeric
-        -       negation (0 - x)        with type T in (all integers, uintegers, floats, pointers): - <T> -> <T>
-        ~       bitwise complement      with type T in (all integers, uintegers, floats, pointers): ~ <T> -> <T>
+        -       negation (0 - x)        with type T in (all integers, uintegers, floats): - <T> -> <T>
+        ~       bitwise complement      with type T in (all integers, uintegers, floats): ~ <T> -> <T>
 
     unary boolean
-        !       boolean not             with type T in (all booleans): !<T> -> <T>
+        !       boolean not             with type T in (bool, all pointers): !<T> -> <T>
 
 
     unary conversion
