@@ -129,10 +129,9 @@ operators
         ^       dereference pointer     using type T in (all): <^T>^ -> <T>
     
     unary type info
-        sizeof      get the size of a type. takes a raw type expression, returns an untyped integer.
-        alignof     get the alignment characteristics of a type. takes a raw type expression, returns an untyped integer.
-        offsetof    get the offset of a field from an entity's base address. they should be used for structs/union field selectors, but will return zero for other non-composite types.
-
+        sizeof(T)   get the size of a type. takes a type expression or value expression, returns an untyped integer. the type must not be untyped.
+        alignof(T)  get the alignment characteristics of a type. takes a raw type expression, returns an untyped integer. the type must not be untyped.
+        offsetof(T, field) get the offset of a field from an entity's base address. only works for struct and union types.
     index
         []      index array             using entity T with type (any array, pointer to any array, slice) and A with type (any int, uint, enum) : <T>[<A>]
 

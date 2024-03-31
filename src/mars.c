@@ -20,7 +20,7 @@ int main(int argc, char** argv) {
     mars_module* main_mod = parse_module(mars_flags.input_path);
 
     FOR_URANGE(i, 0, main_mod->program_tree.len) {
-        //dump_tree(main_mod->program_tree.at[i], 0);
+        dump_tree(main_mod->program_tree.at[i], 0);
         // process_ast(main_mod->program_tree.at[i]);
     }
 
@@ -35,7 +35,22 @@ int main(int argc, char** argv) {
     // }
 
     // recursive check
-    check_module_and_dependencies(main_mod);
+    checked_expr e = {0};
+    check_expr(
+        main_mod, 
+        NULL, 
+        main_mod->program_tree.at[0].as_decl_stmt->rhs,
+        &e,
+        true,
+        NULL
+    );
+
+    printf("%p %p\n", e.ev->kind, e.ev->as_untyped_int);
+
+
+    // check_module_and_dependencies(main_mod);
+
+
 
     // process_ast(main_mod->program_tree);
 

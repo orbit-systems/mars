@@ -500,6 +500,8 @@ type* make_type(u8 tag) {
     default: break;
     }
     // t->dirty = true;
+    t->size = UINT32_MAX;
+    t->align = UINT32_MAX;
     da_append(&typegraph, t);
     return t;
 }

@@ -126,7 +126,6 @@ AST parse_unary_expr(parser* p, bool no_cl) {
     case TOK_AND:
     case TOK_KEYWORD_SIZEOF:
     case TOK_KEYWORD_ALIGNOF:
-    case TOK_KEYWORD_OFFSETOF:
     case TOK_KEYWORD_INLINE: {
         n = new_ast_node_p(p, AST_unary_op_expr);
         n.as_unary_op_expr->base.start = &current_token;
@@ -670,6 +669,28 @@ AST parse_atomic_expr(parser* p, bool no_cl) {
             n.as_identifier_expr->base.start = &current_token;
             n.as_identifier_expr->tok = &current_token;
             n.as_identifier_expr->is_discard = current_token.type == TOK_IDENTIFIER_DISCARD;
+            advance_token;
+        } break;
+        case TOK_KEYWORD_OFFSETOF: {
+            if (!is_null_AST(n)) {
+                out = true;
+                break;
+            }
+            n = new_ast_node_p(p, AST_binary_op_expr);
+            n.as_binary_op_expr->base.start = &current_token;
+            advance_token;
+            n.as_binary_op_expr->lhs = parse_expr(p, false);
+            advance_token;
+            if (current_token.type != TOK_COMMA) {
+                error_at_parser(p, "expected ','");
+            }
+            advance_token;
+            n.as_binary_op_expr->rhs = parse_expr(p, false);
+            if (current_token.type == TOK_COMMA) advance_token;
+            if (current_token.type != TOK_CLOSE_PAREN) {
+                error_at_parser(p, "expected ')'");
+            }
+            n.as_binary_op_expr->base.end = &current_token;
             advance_token;
         } break;
         case TOK_OPEN_PAREN: {

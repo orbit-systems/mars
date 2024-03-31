@@ -123,6 +123,7 @@ void check_expr(mars_module* mod, entity_table* et, AST expr, checked_expr* info
     default:
         error_at_node(mod, expr, "expected value expression, got %s", ast_type_str[expr.type]);
     }
+
 }
 
 void check_literal_expr(mars_module* mod, entity_table* et, AST expr, checked_expr* info, bool must_comptime_const, type* typehint) {
@@ -138,7 +139,7 @@ void check_literal_expr(mars_module* mod, entity_table* et, AST expr, checked_ex
     case EV_UNTYPED_FLOAT: info->type = make_type(T_UNTYPED_FLOAT); break;
     case EV_UNTYPED_INT:   info->type = make_type(T_UNTYPED_INT);   break;
     case EV_POINTER:       info->type = make_type(T_ADDR);          break;
-    case EV_STRING:        info->type = make_string();                   break;
+    case EV_STRING:        info->type = make_string();              break;
     default:               CRASH("unhandled literal ev type");
     }
 }
@@ -275,80 +276,23 @@ void check_unary_op_expr(mars_module* mod, entity_table* et, AST expr, checked_e
         info->type = get_target(subexpr.type);
         info->mutable = subexpr.type->as_reference.mutable;
     } break;
-    case TOK_KEYWORD_OFFSETOF: { // offsetof( entity.field )
-
-        TODO("rework");
-
-        // if the entity is a type expression, use the type name directly
-        if (unary->inside.type == AST_selector_expr && unary->inside.as_selector_expr->rhs.type == AST_identifier_expr) {
-            AST field = unary->inside.as_selector_expr->rhs;
-
-            // search for selectee type, if possible
-            type* selectee_type = type_from_expr(mod, et, unary->inside.as_selector_expr->lhs, true, true);
-            if (selectee_type != NULL) {
-                if (selectee_type->tag != T_STRUCT && selectee_type->tag != T_UNION) {
-                    error_at_node(mod, unary->inside.as_selector_expr->lhs, "type expression is not a struct or union type");
-                }
-                
-                exact_value* ev = new_exact_value(NO_AGGREGATE, USE_MALLOC);
-                ev->kind = EV_UNTYPED_INT;
-
-                ev->as_untyped_int = get_field_offset(selectee_type, field.as_identifier_expr->tok->text);
-                if (ev->as_untyped_int == UINT64_MAX) error_at_node(mod, unary->inside, "type has no field '"str_fmt"'", str_arg(field.as_identifier_expr->tok->text));
-                info->ev = ev;
-                info->type = make_type(T_UNTYPED_INT);
-                break;
-            }
-        }
-
-        check_expr(mod, et, unary->inside, &subexpr, must_comptime_const, NULL);
-
-        if (!subexpr.addressable) { // cant get offset if its not addressable!
-            error_at_node(mod, unary->inside, "cannot get offset of non-addressable expression");
-        }
-        
-        exact_value* ev = new_exact_value(NO_AGGREGATE, USE_MALLOC);
-        ev->kind = EV_UNTYPED_INT;
-
-        if (unary->inside.type != AST_selector_expr) {
-            warning_at_node(mod, unary->inside, "offset of non-selector expression is always zero");
-            ev->as_untyped_int = 0;
-            break;
-        }
-
-        assert(unary->inside.as_selector_expr->rhs.type == AST_identifier_expr);
-        string field_name = unary->inside.as_selector_expr->rhs.as_identifier_expr->tok->text;
-
-        checked_expr selectee = {0};
-        check_expr(mod, et, unary->inside, &selectee, false, NULL);
-
-        type* struct_type = selectee.type;
-        assert(struct_type != NULL);
-
-        ev->as_untyped_int = get_field_offset(struct_type, field_name);
-        assert(ev->as_untyped_int != UINT64_MAX);
-        
-        info->ev = ev;
-        info->type = make_type(T_UNTYPED_INT);
-
-    } break;
     case TOK_KEYWORD_SIZEOF: {
         exact_value* ev = new_exact_value(NO_AGGREGATE, USE_MALLOC);
         ev->kind = EV_UNTYPED_INT;
         info->ev = ev;
 
         // try parsing a type?
-        type* inside_type = type_from_expr(mod, et, unary->inside, true, true);
+        type* inside_type = type_from_expr(mod, et, unary->inside, true, false);
         if (inside_type != NULL) {
+            if (is_untyped(inside_type)) error_at_node(mod, unary->inside, "cannot get size of untyped expression");
             info->ev->as_untyped_int = type_real_size_of(inside_type);
-            break;
+        } else {
+            // try parsing value expression
+            check_expr(mod, et, unary->inside, &subexpr, must_comptime_const, NULL);
+            if (is_untyped(subexpr.type)) error_at_node(mod, subexpr.expr, "cannot get size of untyped expression");
+            
+            info->ev->as_untyped_int = type_real_size_of(subexpr.type);
         }
-
-        // try parsing value expression
-        check_expr(mod, et, unary->inside, &subexpr, must_comptime_const, NULL);
-        if (is_untyped(subexpr.type)) error_at_node(mod, subexpr.expr, "cannot get size of untyped expression");
-        
-        info->ev->as_untyped_int = type_real_size_of(subexpr.type);
         info->type = make_type(T_UNTYPED_INT);
     } break;
     case TOK_KEYWORD_ALIGNOF: {
@@ -357,17 +301,17 @@ void check_unary_op_expr(mars_module* mod, entity_table* et, AST expr, checked_e
         info->ev = ev;
 
         // try parsing a type?
-        type* inside_type = type_from_expr(mod, et, unary->inside, true, true);
+        type* inside_type = type_from_expr(mod, et, unary->inside, true, false);
         if (inside_type != NULL) {
+            if (is_untyped(inside_type)) error_at_node(mod, unary->inside, "cannot get align of untyped expression");
             info->ev->as_untyped_int = type_real_size_of(inside_type);
-            break;
+        } else {
+            // try parsing value expression
+            check_expr(mod, et, unary->inside, &subexpr, must_comptime_const, NULL);
+            if (is_untyped(subexpr.type)) error_at_node(mod, subexpr.expr, "cannot get align of untyped expression");
+            
+            info->ev->as_untyped_int = type_real_align_of(subexpr.type);
         }
-
-        // try parsing value expression
-        check_expr(mod, et, unary->inside, &subexpr, must_comptime_const, NULL);
-        if (is_untyped(subexpr.type)) error_at_node(mod, subexpr.expr, "cannot get align of untyped expression");
-        
-        info->ev->as_untyped_int = type_real_size_of(subexpr.type);
         info->type = make_type(T_UNTYPED_INT);
     } break;
 
@@ -408,6 +352,59 @@ type* type_from_expr(mars_module* mod, entity_table* et, AST expr, bool no_error
         case TOK_TYPE_KEYWORD_BOOL:  return make_type(T_BOOL);
         }
     } break;
+    case AST_array_type_expr: {
+        type* array = make_type(T_ARRAY);
+        type* subtype = type_from_expr(mod, et, expr.as_array_type_expr->subexpr, no_error, false);
+        if (subtype == NULL) return NULL;
+        array->as_array.subtype = subtype;
+
+        checked_expr length = {0};
+        check_expr(mod, et, expr.as_array_type_expr->length, &length, true, NULL);
+        if (length.ev == NULL) {
+            if (no_error) return NULL;
+            else error_at_node(mod, expr, "length of expression must be constant at compiletime");
+        }
+        u64 real_len = 0;
+        switch (length.ev->kind) {
+        case EV_U8:  real_len = (u64) length.ev->as_u8;  break;
+        case EV_U16: real_len = (u64) length.ev->as_u16; break;
+        case EV_U32: real_len = (u64) length.ev->as_u32; break;
+        case EV_U64: real_len = (u64) length.ev->as_u64; break;
+        
+        case EV_I8:
+            if (length.ev->as_i8 < 0) {
+                if (no_error) return NULL;
+                else error_at_node(mod, expr, "length cannot be negative");
+            }
+            real_len = (u64) length.ev->as_i8;
+            break;
+        case EV_I16:
+            if (length.ev->as_i16 < 0) {
+                if (no_error) return NULL;
+                else error_at_node(mod, expr, "length cannot be negative");
+            }
+            real_len = (u64) length.ev->as_i16;
+            break;
+        case EV_I32:
+            if (length.ev->as_i32 < 0) {
+                if (no_error) return NULL;
+                else error_at_node(mod, expr, "length cannot be negative");
+            }
+            real_len = (u64) length.ev->as_i32;
+            break;
+        case EV_I64:
+        case EV_UNTYPED_INT:
+            if (length.ev->as_i64 < 0) {
+                if (no_error) return NULL;
+                else error_at_node(mod, expr, "length cannot be negative");
+            }
+            real_len = (u64) length.ev->as_i64;
+            break;
+        default:
+            if (no_error) return NULL;
+            else error_at_node(mod, expr, "length must be an integer");
+        }
+    }
     case AST_struct_type_expr: { TODO("struct types"); } break;
     case AST_union_type_expr: { TODO("union types"); } break;
     case AST_fn_type_expr: {TODO("fn types"); } break;
