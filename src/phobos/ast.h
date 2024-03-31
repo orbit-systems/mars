@@ -43,7 +43,7 @@ typedef struct {
         ast_base base; \
         AST type; \
         AST rhs; \
-        bool is_bitcast; \
+        bool is_bitcast : 1; \
     }) \
     AST_TYPE(unary_op_expr, "unary op", { \
         ast_base base; \
@@ -140,7 +140,7 @@ typedef struct {
         AST condition; \
         AST if_branch; \
         AST else_branch; \
-        bool is_elif; \
+        bool is_elif : 1; \
     }) \
     AST_TYPE(switch_stmt, "switch statement", { \
         ast_base base; \
@@ -224,7 +224,7 @@ typedef struct {
     AST_TYPE(struct_type_expr, "struct type", { \
             ast_base base; \
             da(AST_typed_field) fields; \
-            bool smart_pack;\
+            bool smart_pack : 1;\
     }) \
     AST_TYPE(union_type_expr, "union type", { \
             ast_base base; \
@@ -235,8 +235,8 @@ typedef struct {
             da(AST_typed_field) parameters; \
             da(AST_typed_field) returns; \
             AST block_symbol_override; /*this will be a string literal or NULL_STR if not set*/ \
-            bool always_inline;\
-            bool simple_return; \
+            bool always_inline : 1;\
+            bool simple_return : 1; \
     }) \
     AST_TYPE(enum_type_expr, "enum type", { \
             ast_base base; \
@@ -251,12 +251,12 @@ typedef struct {
     AST_TYPE(slice_type_expr, "slice type", { \
             ast_base base; \
             AST subexpr; \
-            bool mutable; \
+            bool mutable : 1; \
     }) \
     AST_TYPE(pointer_type_expr, "pointer type", { \
             ast_base base; \
             AST subexpr; \
-            bool mutable; \
+            bool mutable : 1; \
     }) \
     AST_TYPE(distinct_type_expr, "distinct type", { \
             ast_base base; \
@@ -266,11 +266,11 @@ typedef struct {
 
 // generate the enum tags for the AST tagged union
 typedef u16 ast_type; enum {
-    astype_invalid,
-#define AST_TYPE(ident, identstr, structdef) astype_##ident,
+    AST_invalid,
+#define AST_TYPE(ident, identstr, structdef) AST_##ident,
     AST_NODES
 #undef AST_TYPE
-    astype_COUNT,
+    AST_COUNT,
 };
 
 // generate tagged union AST type

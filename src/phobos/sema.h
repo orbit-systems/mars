@@ -54,3 +54,6 @@ void check_ident_expr    (mars_module* restrict mod, entity_table* restrict et, 
 void check_literal_expr  (mars_module* restrict mod, entity_table* restrict et, AST expr, checked_expr* restrict info, bool must_comptime_const, type* restrict typehint);
 void check_unary_op_expr (mars_module* restrict mod, entity_table* restrict et, AST expr, checked_expr* restrict info, bool must_comptime_const, type* restrict typehint);
 void check_binary_op_expr(mars_module* restrict mod, entity_table* restrict et, AST expr, checked_expr* restrict info, bool must_comptime_const, type* restrict typehint);
+void check_cast_expr     (mars_module* restrict mod, entity_table* restrict et, AST expr, checked_expr* restrict info, bool must_comptime_const, type* restrict typehint);
+
+type* type_from_expr(mars_module* restrict mod, entity_table* restrict et, AST expr, bool no_error);

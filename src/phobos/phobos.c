@@ -40,7 +40,7 @@ void change_cwd(char* dir) {
 /*tune this probably*/
 #define PARSER_ARENA_SIZE 0x100000
 
-string search_for_module(mars_module* mod, string relpath) {
+string search_for_module(mars_module* restrict mod, string relpath) {
     // search locally first
     change_cwd(clone_to_cstring(mod->module_path));
     if (fs_exists(relpath)) {
@@ -193,7 +193,7 @@ mars_module* parse_module(string input_path) {
 
     // index and parse imports
     FOR_URANGE(i, 0, module->program_tree.len) {
-        if (module->program_tree.at[i].type == astype_import_stmt) {
+        if (module->program_tree.at[i].type == AST_import_stmt) {
             string importpath = search_for_module(
                 module, 
                 module->program_tree.at[i].as_import_stmt->path.as_literal_expr->value.as_string

@@ -215,9 +215,9 @@ program structure
 
 
     other modules can be imported as libraries using this syntax as well.
-        import lib_name "relative/path/to/module";
+        import lib_name "path/to/module";
     the entity name does not have match the module's internal name.
-    modules may import each other.
+    modules may not have import cycles
     
     entity names must be unique and cannot shadow entities from lower scopes.
     e.g. this is not allowed:

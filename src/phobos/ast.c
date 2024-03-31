@@ -50,13 +50,13 @@ void dump_tree(AST node, int n) {
     }
 
     switch (node.type) {
-    case astype_invalid:
+    case AST_invalid:
         printf("[invalid]\n");
         break;
-    case astype_identifier_expr:
+    case AST_identifier_expr:
         printf("ident '%s'\n", clone_to_cstring(node.as_identifier_expr->tok->text));
         break;
-    case astype_literal_expr:
+    case AST_literal_expr:
         switch (node.as_literal_expr->value.kind) {
         case ev_bool: printf("bool literal\n"); break;
         case ev_untyped_float: printf("float literal\n"); break;
@@ -66,58 +66,58 @@ void dump_tree(AST node, int n) {
         default: printf("[invalid] literal\n"); break;
         }
         break;
-    case astype_comp_literal_expr:
+    case AST_comp_literal_expr:
         printf("compound literal\n");
         dump_tree(node.as_comp_literal_expr->type, n+1);
         FOR_URANGE(i, 0, node.as_comp_literal_expr->elems.len) {
             dump_tree(node.as_comp_literal_expr->elems.at[i], n+1);
         }
         break;
-    case astype_paren_expr:
+    case AST_paren_expr:
         printf("()\n");
         dump_tree(node.as_paren_expr->subexpr, n+1);
         break;
-    case astype_cast_expr:
+    case AST_cast_expr:
         if (node.as_cast_expr->is_bitcast) printf("bitcast\n");
         else printf("cast\n");
         dump_tree(node.as_cast_expr->type, n+1);
         dump_tree(node.as_cast_expr->rhs, n+1);
         break;
-    case astype_unary_op_expr:
+    case AST_unary_op_expr:
         printf("unary %s\n", token_type_str[node.as_unary_op_expr->op->type]);
         dump_tree(node.as_unary_op_expr->inside, n+1);
         break;
-    case astype_binary_op_expr:
+    case AST_binary_op_expr:
         printf("binary %s\n", token_type_str[node.as_binary_op_expr->op->type]);
         dump_tree(node.as_binary_op_expr->lhs, n+1);
         dump_tree(node.as_binary_op_expr->rhs, n+1);
         break;
-    case astype_entity_selector_expr:
+    case AST_entity_selector_expr:
         printf("entity selector\n");
         dump_tree(node.as_entity_selector_expr->lhs, n+1);
         dump_tree(node.as_entity_selector_expr->rhs, n+1);
         break;
-    case astype_selector_expr:
+    case AST_selector_expr:
         printf("selector\n");
         dump_tree(node.as_selector_expr->lhs, n+1);
         dump_tree(node.as_selector_expr->rhs, n+1);
         break;
-    case astype_impl_selector_expr:
+    case AST_impl_selector_expr:
         printf("implicit selector\n");
         dump_tree(node.as_impl_selector_expr->rhs, n+1);
         break;
-    case astype_index_expr:
+    case AST_index_expr:
         printf("index\n");
         dump_tree(node.as_index_expr->lhs, n+1);
         dump_tree(node.as_index_expr->inside, n+1);
         break;
-    case astype_slice_expr:
+    case AST_slice_expr:
         printf("slice\n");
         dump_tree(node.as_slice_expr->lhs, n+1);
         dump_tree(node.as_slice_expr->inside_left, n+1);
         dump_tree(node.as_slice_expr->inside_right, n+1);
         break;
-    case astype_call_expr:
+    case AST_call_expr:
         printf("function call\n");
         dump_tree(node.as_call_expr->lhs, n+1);
         FOR_URANGE(i, 0, node.as_call_expr->params.len) {
@@ -125,21 +125,21 @@ void dump_tree(AST node, int n) {
         }
         break;
     
-    case astype_module_decl:
+    case AST_module_decl:
         printf("module %s\n", clone_to_cstring(node.as_module_decl->name->text));
         break;
-    case astype_import_stmt:
+    case AST_import_stmt:
         printf("import\n");
         dump_tree(node.as_import_stmt->name, n+1);
         dump_tree(node.as_import_stmt->path, n+1);
         break;
-    case astype_block_stmt:
+    case AST_block_stmt:
         printf("block stmt\n");
         FOR_URANGE(i, 0, node.as_block_stmt->stmts.len) {
             dump_tree(node.as_block_stmt->stmts.at[i], n+1);
         }
         break;
-    case astype_decl_stmt:
+    case AST_decl_stmt:
         if (node.as_decl_stmt->is_mut) 
             printf("mut decl\n");
         else 
@@ -151,26 +151,26 @@ void dump_tree(AST node, int n) {
         dump_tree(node.as_decl_stmt->type, n+1);
         dump_tree(node.as_decl_stmt->rhs, n+1);
         break;
-    case astype_type_decl_stmt:
+    case AST_type_decl_stmt:
         printf("type decl\n");
         dump_tree(node.as_type_decl_stmt->lhs, n+1);
         dump_tree(node.as_type_decl_stmt->rhs, n+1);
         break;
-    case astype_struct_type_expr:
+    case AST_struct_type_expr:
         printf("struct type expr\n");
         FOR_URANGE(i, 0, node.as_struct_type_expr->fields.len) {
             dump_tree(node.as_struct_type_expr->fields.at[i].field, n+1);
             dump_tree(node.as_struct_type_expr->fields.at[i].type, n+1);
         }
         break;
-    case astype_union_type_expr:
+    case AST_union_type_expr:
         printf("union type expr\n");
         FOR_URANGE(i, 0, node.as_struct_type_expr->fields.len) {
             dump_tree(node.as_struct_type_expr->fields.at[i].field, n+1);
             dump_tree(node.as_struct_type_expr->fields.at[i].type, n+1);
         }
         break;
-    case astype_enum_type_expr:
+    case AST_enum_type_expr:
         printf("enum type expr\n");
         dump_tree(node.as_enum_type_expr->backing_type, n+1);
         FOR_URANGE(i, 0, node.as_enum_type_expr->variants.len) {
@@ -180,20 +180,20 @@ void dump_tree(AST node, int n) {
             printf(" = %ld\n", node.as_enum_type_expr->variants.at[i].value);
         }
         break;
-    case astype_pointer_type_expr:
+    case AST_pointer_type_expr:
         printf("^ type expr\n");
         dump_tree(node.as_pointer_type_expr->subexpr, n+1);
         break;
-    case astype_slice_type_expr:
+    case AST_slice_type_expr:
         printf("[] type expr\n");
         dump_tree(node.as_slice_type_expr->subexpr, n+1);
         break;
-    case astype_basic_type_expr:
+    case AST_basic_type_expr:
         printstr(node.as_basic_type_expr->lit->text);
         printf("\n");
         break;
 
-    case astype_func_literal_expr:
+    case AST_func_literal_expr:
         printf("function literal\n");
         dump_tree(node.as_func_literal_expr->type, n+1);
         dump_tree(node.as_func_literal_expr->code_block, n+1);

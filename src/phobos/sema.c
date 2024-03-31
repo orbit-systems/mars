@@ -24,15 +24,11 @@ void check_module(mars_module* restrict mod) {
 
     FOR_URANGE(i, 0, globals->len) {
         if (!globals->at[i]->entity_type) {
-            check_global_decl();
+            // check_global_decl();
         }
     }
 
     mod->checked = true;
-}
-
-void check_global_decl() {
-
 }
 
 void collect_globals(mars_module* restrict mod, entity_table* restrict et) {
@@ -40,10 +36,10 @@ void collect_globals(mars_module* restrict mod, entity_table* restrict et) {
 }
 
 void collect_decl(mars_module* restrict mod, entity_table* restrict et, AST stmt) {
-    if (stmt.type == astype_decl_stmt) {
+    if (stmt.type == AST_decl_stmt) {
         ast_decl_stmt* decl = stmt.as_decl_stmt;
         FOR_URANGE(j, 0, decl->lhs.len) {
-            if (decl->lhs.at[j].type != astype_identifier_expr) {
+            if (decl->lhs.at[j].type != AST_identifier_expr) {
                 error_at_node(mod, decl->lhs.at[j], "entity must be an identifier");
             }
 
@@ -61,9 +57,9 @@ void collect_decl(mars_module* restrict mod, entity_table* restrict et, AST stmt
             e->is_mutable = decl->is_mut;
             ident_expr->entity = e;
         }
-    } else if (stmt.type == astype_type_decl_stmt) {
+    } else if (stmt.type == AST_type_decl_stmt) {
         ast_type_decl_stmt* decl = stmt.as_type_decl_stmt;
-        if (decl->lhs.type != astype_identifier_expr) {
+        if (decl->lhs.type != AST_identifier_expr) {
             error_at_node(mod, decl->lhs, "type entity must be an identifier");
         }
         ast_identifier_expr* ident_expr = decl->lhs.as_identifier_expr;
@@ -91,33 +87,33 @@ void collect_entites(mars_module* restrict mod, entity_table* restrict et, da(AS
     
     FOR_URANGE(i, 0, stmts.len) {
         switch (stmts.at[i].type){
-        case astype_decl_stmt:
-        case astype_type_decl_stmt:
+        case AST_decl_stmt:
+        case AST_type_decl_stmt:
             collect_decl(mod, et, stmts.at[i]);
             break;
-        case astype_extern_stmt: {
+        case AST_extern_stmt: {
             if (!global) {
                 error_at_node(mod, stmts.at[i], "extern statements only allowed in global scope");
             }
-            if (stmts.at[i].as_extern_stmt->decl.type == astype_block_stmt) {
+            if (stmts.at[i].as_extern_stmt->decl.type == AST_block_stmt) {
                 ast_block_stmt* blockstmt = stmts.at[i].as_extern_stmt->decl.as_block_stmt;
                 FOR_URANGE(j, 0, blockstmt->stmts.len) {
                     AST decl = blockstmt->stmts.at[j];
-                    if (decl.type == astype_decl_stmt) {
+                    if (decl.type == AST_decl_stmt) {
                         collect_decl(mod, et, decl);
-                    } else if (decl.type == astype_empty_stmt) {
+                    } else if (decl.type == AST_empty_stmt) {
                         // do nothing lmao
                     } else {
                         error_at_node(mod, decl, "expected a let or mut declaration");
                     }
                 }
-            } else if (stmts.at[i].as_extern_stmt->decl.type == astype_block_stmt) {
+            } else if (stmts.at[i].as_extern_stmt->decl.type == AST_block_stmt) {
                 collect_decl(mod, et, stmts.at[i].as_extern_stmt->decl);
             } else {
                 error_at_node(mod, stmts.at[i].as_extern_stmt->decl, "expected a let or mut declaration");
             }
         } break;
-        case astype_import_stmt: {
+        case AST_import_stmt: {
             if (!global) {
                 error_at_node(mod, stmts.at[i], "import statements only allowed in global scope");
             }
@@ -142,7 +138,7 @@ void collect_entites(mars_module* restrict mod, entity_table* restrict et, da(AS
                 CRASH("FUCK");
             }
         } break;
-        case astype_empty_stmt:
+        case AST_empty_stmt:
             break;
         default:
             if (global) error_at_node(mod, stmts.at[i], "%s not allowed in global scope", ast_type_str[stmts.at[i].type]);

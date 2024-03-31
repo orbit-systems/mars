@@ -20,7 +20,7 @@ parser make_parser(lexer* restrict l, arena* alloca) {
 
 AST parse_module_decl(parser* restrict p) {
 
-    AST n = new_ast_node_p(p, astype_module_decl);
+    AST n = new_ast_node_p(p, AST_module_decl);
 
     if (current_token.type != tt_keyword_module)
         error_at_parser(p, "expected module declaration");
@@ -102,7 +102,7 @@ AST parse_binary_expr(parser* restrict p, int precedence, bool no_cl) {
 }
 
 AST parse_non_unary_expr(parser* restrict p, AST lhs, int precedence, bool no_cl) {
-    AST n = new_ast_node_p(p, astype_binary_op_expr);
+    AST n = new_ast_node_p(p, AST_binary_op_expr);
     n.as_binary_op_expr->base.start = lhs.base->start;
     n.as_binary_op_expr->op = &current_token;
     n.as_binary_op_expr->lhs = lhs;
@@ -128,7 +128,7 @@ AST parse_unary_expr(parser* restrict p, bool no_cl) {
     case tt_keyword_alignof:
     case tt_keyword_offsetof:
     case tt_keyword_inline: {
-        n = new_ast_node_p(p, astype_unary_op_expr);
+        n = new_ast_node_p(p, AST_unary_op_expr);
         n.as_unary_op_expr->base.start = &current_token;
         n.as_unary_op_expr->op = &current_token;
         advance_token;
@@ -139,7 +139,7 @@ AST parse_unary_expr(parser* restrict p, bool no_cl) {
     } break;
     case tt_keyword_cast:
     case tt_keyword_bitcast: {
-        n = new_ast_node_p(p, astype_cast_expr);
+        n = new_ast_node_p(p, AST_cast_expr);
         n.as_cast_expr->base.start = &current_token;
         n.as_cast_expr->is_bitcast = current_token.type == tt_keyword_bitcast;
         advance_token;
@@ -159,7 +159,7 @@ AST parse_unary_expr(parser* restrict p, bool no_cl) {
         n.as_cast_expr->base.end = &peek_token(-1);
     } break;
     case tt_carat: {
-        n = new_ast_node_p(p, astype_pointer_type_expr);
+        n = new_ast_node_p(p, AST_pointer_type_expr);
         n.as_pointer_type_expr->base.start = &current_token;
         advance_token;
 
@@ -177,7 +177,7 @@ AST parse_unary_expr(parser* restrict p, bool no_cl) {
         n.as_pointer_type_expr->base.end = &peek_token(-1);
     } break;
     case tt_keyword_distinct: {
-        n = new_ast_node_p(p, astype_distinct_type_expr);
+        n = new_ast_node_p(p, AST_distinct_type_expr);
         n.as_distinct_type_expr->base.start = &current_token;
         advance_token;
 
@@ -187,7 +187,7 @@ AST parse_unary_expr(parser* restrict p, bool no_cl) {
     } break;
     case tt_open_bracket: {
         if (peek_token(1).type == tt_close_bracket) {
-            n = new_ast_node_p(p, astype_slice_type_expr);
+            n = new_ast_node_p(p, AST_slice_type_expr);
             n.as_slice_type_expr->base.start = &current_token;
             advance_n_tok(2);
 
@@ -204,7 +204,7 @@ AST parse_unary_expr(parser* restrict p, bool no_cl) {
 
             n.as_slice_type_expr->base.end = &peek_token(-1);
         } else {
-            n = new_ast_node_p(p, astype_array_type_expr);
+            n = new_ast_node_p(p, AST_array_type_expr);
             n.as_array_type_expr->base.start = &current_token;
             advance_token;
 
@@ -444,16 +444,16 @@ string string_lit_value(parser* restrict p) {
 // takes a parsed AST node and determines if it could possibly be a type expession
 bool is_possible_type_expr(AST n) {
     switch (n.type) {
-    case astype_array_type_expr:
-    case astype_slice_type_expr:
-    case astype_pointer_type_expr:
-    case astype_distinct_type_expr:
-    case astype_struct_type_expr:
-    case astype_union_type_expr:
-    case astype_enum_type_expr:
-    case astype_fn_type_expr:
-    case astype_identifier_expr:
-    case astype_basic_type_expr:
+    case AST_array_type_expr:
+    case AST_slice_type_expr:
+    case AST_pointer_type_expr:
+    case AST_distinct_type_expr:
+    case AST_struct_type_expr:
+    case AST_union_type_expr:
+    case AST_enum_type_expr:
+    case AST_fn_type_expr:
+    case AST_identifier_expr:
+    case AST_basic_type_expr:
         return true;
     }
     return false;
@@ -468,7 +468,7 @@ void parse_typed_field_list(parser* restrict p, da(AST_typed_field)* list, token
 
         if (is_null_AST(field))
             error_at_parser(p, "expected identifier");
-        if (field.type != astype_identifier_expr)
+        if (field.type != AST_identifier_expr)
             error_at_AST(p, field, "expected identifier");
         
         AST type = NULL_AST;
@@ -528,7 +528,7 @@ AST parse_atomic_expr(parser* restrict p, bool no_cl) {
                 break;
             }
 
-            n = new_ast_node_p(p, astype_literal_expr);
+            n = new_ast_node_p(p, AST_literal_expr);
             n.as_literal_expr->base.start = &current_token;
             n.as_literal_expr->base.end = &current_token;
 
@@ -544,7 +544,7 @@ AST parse_atomic_expr(parser* restrict p, bool no_cl) {
                 break;
             }
 
-            n = new_ast_node_p(p, astype_literal_expr);
+            n = new_ast_node_p(p, AST_literal_expr);
             n.as_literal_expr->base.start = &current_token;
             n.as_literal_expr->base.end = &current_token;
 
@@ -560,7 +560,7 @@ AST parse_atomic_expr(parser* restrict p, bool no_cl) {
                 break;
             }
 
-            n = new_ast_node_p(p, astype_literal_expr);
+            n = new_ast_node_p(p, AST_literal_expr);
             n.as_literal_expr->base.start = &current_token;
             n.as_literal_expr->base.end = &current_token;
 
@@ -576,7 +576,7 @@ AST parse_atomic_expr(parser* restrict p, bool no_cl) {
                 break;
             }
 
-            n = new_ast_node_p(p, astype_literal_expr);
+            n = new_ast_node_p(p, AST_literal_expr);
             n.as_literal_expr->base.start = &current_token;
             n.as_literal_expr->base.end = &current_token;
         
@@ -592,7 +592,7 @@ AST parse_atomic_expr(parser* restrict p, bool no_cl) {
                 break;
             }
 
-            n = new_ast_node_p(p, astype_literal_expr);
+            n = new_ast_node_p(p, AST_literal_expr);
             n.as_literal_expr->base.start = &current_token;
             n.as_literal_expr->base.end = &current_token;
         
@@ -608,7 +608,7 @@ AST parse_atomic_expr(parser* restrict p, bool no_cl) {
                 break;
             }
 
-            n = new_ast_node_p(p, astype_literal_expr);
+            n = new_ast_node_p(p, AST_literal_expr);
             n.as_literal_expr->base.start = &current_token;
         
             n.as_literal_expr->value.kind = ev_string;
@@ -652,7 +652,7 @@ AST parse_atomic_expr(parser* restrict p, bool no_cl) {
                 break;
             }
 
-            n = new_ast_node_p(p, astype_basic_type_expr);
+            n = new_ast_node_p(p, AST_basic_type_expr);
             n.as_basic_type_expr->base.start = &current_token;
             n.as_basic_type_expr->base.end = &current_token;
             n.as_basic_type_expr->lit = &current_token;
@@ -665,7 +665,7 @@ AST parse_atomic_expr(parser* restrict p, bool no_cl) {
                 out = true;
                 break;
             }
-            n = new_ast_node_p(p, astype_identifier_expr);
+            n = new_ast_node_p(p, AST_identifier_expr);
             n.as_identifier_expr->base.end = &current_token;
             n.as_identifier_expr->base.start = &current_token;
             n.as_identifier_expr->tok = &current_token;
@@ -675,7 +675,7 @@ AST parse_atomic_expr(parser* restrict p, bool no_cl) {
         case tt_open_paren: {
             if (is_null_AST(n)) {
                 // regular old paren expression
-                n = new_ast_node_p(p, astype_paren_expr);
+                n = new_ast_node_p(p, AST_paren_expr);
                 n.as_paren_expr->base.start = &current_token;
                 advance_token;
 
@@ -688,7 +688,7 @@ AST parse_atomic_expr(parser* restrict p, bool no_cl) {
             } else {
                 // function call!
                 AST temp;
-                temp = new_ast_node_p(p, astype_call_expr);
+                temp = new_ast_node_p(p, AST_call_expr);
                 temp.as_call_expr->base.start = n.base->start;
                 advance_token;
 
@@ -718,7 +718,7 @@ AST parse_atomic_expr(parser* restrict p, bool no_cl) {
         case tt_period: {
             if (is_null_AST(n)) {
                 // implicit selector
-                n = new_ast_node_p(p, astype_impl_selector_expr);
+                n = new_ast_node_p(p, AST_impl_selector_expr);
                 
                 n.as_impl_selector_expr->base.start = &current_token;
                 advance_token;
@@ -726,7 +726,7 @@ AST parse_atomic_expr(parser* restrict p, bool no_cl) {
                 if (current_token.type != tt_identifier)
                     error_at_parser(p, "expected identifer after '.'");
                 
-                AST temp = new_ast_node_p(p, astype_identifier_expr);
+                AST temp = new_ast_node_p(p, AST_identifier_expr);
 
                 temp.as_identifier_expr->base.end = &current_token;
                 temp.as_identifier_expr->base.start = &current_token;
@@ -739,14 +739,14 @@ AST parse_atomic_expr(parser* restrict p, bool no_cl) {
 
             } else {
                 // regular selector
-                AST temp = new_ast_node_p(p, astype_selector_expr);
+                AST temp = new_ast_node_p(p, AST_selector_expr);
                 temp.as_selector_expr->base.start = n.base->start;
                 advance_token;
 
                 if (current_token.type != tt_identifier)
                     error_at_parser(p, "expected identifer after '.'");
 
-                AST ident = new_ast_node_p(p, astype_identifier_expr);
+                AST ident = new_ast_node_p(p, AST_identifier_expr);
                 
                 ident.as_identifier_expr->base.end = &current_token;
                 ident.as_identifier_expr->base.start = &current_token;
@@ -764,14 +764,14 @@ AST parse_atomic_expr(parser* restrict p, bool no_cl) {
             if (is_null_AST(n)) {
                 error_at_parser(p, "expected expression before '::'");
             } else {
-                AST temp = new_ast_node_p(p, astype_entity_selector_expr);
+                AST temp = new_ast_node_p(p, AST_entity_selector_expr);
                 temp.as_entity_selector_expr->base.start = n.base->start;
                 advance_token;
 
                 if (current_token.type != tt_identifier)
                     error_at_parser(p, "expected identifer after '::'");
 
-                AST ident = new_ast_node_p(p, astype_identifier_expr);
+                AST ident = new_ast_node_p(p, AST_identifier_expr);
                 
                 ident.as_identifier_expr->base.end = &current_token;
                 ident.as_identifier_expr->base.start = &current_token;
@@ -789,14 +789,14 @@ AST parse_atomic_expr(parser* restrict p, bool no_cl) {
             if (is_null_AST(n)) {
                 error_at_parser(p, "expected expression before '->'");
             } else {
-                AST temp = new_ast_node_p(p, astype_return_selector_expr);
+                AST temp = new_ast_node_p(p, AST_return_selector_expr);
                 temp.as_return_selector_expr->base.start = n.base->start;
                 advance_token;
 
                 if (current_token.type != tt_identifier)
                     error_at_parser(p, "expected identifer after '->'");
 
-                AST ident = new_ast_node_p(p, astype_identifier_expr);
+                AST ident = new_ast_node_p(p, AST_identifier_expr);
                 
                 ident.as_identifier_expr->base.end = &current_token;
                 ident.as_identifier_expr->base.start = &current_token;
@@ -821,7 +821,7 @@ AST parse_atomic_expr(parser* restrict p, bool no_cl) {
                 if (is_null_AST(first_expr))
                     error_at_parser(p, "expected an expression inside '[]'");
 
-                AST temp = new_ast_node_p(p, astype_index_expr);
+                AST temp = new_ast_node_p(p, AST_index_expr);
                 temp.as_index_expr->base.start = n.base->start;
                 temp.as_index_expr->base.end = &current_token;
                 temp.as_index_expr->lhs = n;
@@ -830,7 +830,7 @@ AST parse_atomic_expr(parser* restrict p, bool no_cl) {
                 advance_token;
             } else if (current_token.type == tt_colon) {    // slice expr
                 advance_token;
-                AST temp = new_ast_node_p(p, astype_slice_expr);
+                AST temp = new_ast_node_p(p, AST_slice_expr);
                 temp.as_slice_expr->base.start = n.base->start;
                 temp.as_slice_expr->lhs = n;
                 temp.as_slice_expr->inside_left = first_expr;
@@ -850,7 +850,7 @@ AST parse_atomic_expr(parser* restrict p, bool no_cl) {
             if (is_null_AST(n))
                 error_at_parser(p, "expected expression before deref (THIS SHOULD NEVER HAPPEN - CONTACT SANDWICH)");
             
-            AST temp = new_ast_node_p(p, astype_unary_op_expr);
+            AST temp = new_ast_node_p(p, AST_unary_op_expr);
             temp.as_unary_op_expr->base.start = n.base->start;
             temp.as_unary_op_expr->base.end = &current_token;
             temp.as_unary_op_expr->op = &current_token;
@@ -864,7 +864,7 @@ AST parse_atomic_expr(parser* restrict p, bool no_cl) {
                 out = true;
                 break;
             }
-            n = new_ast_node_p(p, astype_struct_type_expr);
+            n = new_ast_node_p(p, AST_struct_type_expr);
 
             n.base->start = &current_token;
             advance_token;
@@ -903,7 +903,7 @@ AST parse_atomic_expr(parser* restrict p, bool no_cl) {
                 out = true;
                 break;
             }
-            n = new_ast_node_p(p, astype_union_type_expr);
+            n = new_ast_node_p(p, AST_union_type_expr);
 
             n.base->start = &current_token;
             advance_token;
@@ -929,7 +929,7 @@ AST parse_atomic_expr(parser* restrict p, bool no_cl) {
                 out = true;
                 break;
             }
-            n = new_ast_node_p(p, astype_enum_type_expr);
+            n = new_ast_node_p(p, AST_enum_type_expr);
             n.base->start = &current_token;
             advance_token;
 
@@ -964,7 +964,7 @@ AST parse_atomic_expr(parser* restrict p, bool no_cl) {
                 AST variant = parse_expr(p, true);
                 if (is_null_AST(variant))
                     error_at_parser(p, "expected field name");
-                if (variant.type != astype_identifier_expr)
+                if (variant.type != AST_identifier_expr)
                     error_at_AST(p, variant, "enum variant must be an identifier");
                 
 
@@ -1007,7 +1007,7 @@ AST parse_atomic_expr(parser* restrict p, bool no_cl) {
                 out = true;
                 break;
             }
-            n = new_ast_node_p(p, astype_fn_type_expr);
+            n = new_ast_node_p(p, AST_fn_type_expr);
             n.base->start = &current_token;
             advance_token;
 
@@ -1025,7 +1025,7 @@ AST parse_atomic_expr(parser* restrict p, bool no_cl) {
 
                     n.as_fn_type_expr->block_symbol_override = parse_expr(p, false);
 
-                    if (n.as_fn_type_expr->block_symbol_override.type != astype_literal_expr)
+                    if (n.as_fn_type_expr->block_symbol_override.type != AST_literal_expr)
                         error_at_AST(p,n.as_fn_type_expr->block_symbol_override, "expected string literal");
 
                     if (current_token.type != tt_close_paren)
@@ -1094,8 +1094,8 @@ AST parse_atomic_expr(parser* restrict p, bool no_cl) {
                 break;
             }
 
-            if (n.type == astype_fn_type_expr) {
-                AST func_lit = new_ast_node_p(p, astype_func_literal_expr);
+            if (n.type == AST_fn_type_expr) {
+                AST func_lit = new_ast_node_p(p, AST_func_literal_expr);
                 func_lit.as_func_literal_expr->base.start = n.base->start;
                 func_lit.as_func_literal_expr->type = n;
                 
@@ -1107,7 +1107,7 @@ AST parse_atomic_expr(parser* restrict p, bool no_cl) {
                 break;
             }
 
-            AST lit = new_ast_node_p(p, astype_comp_literal_expr);
+            AST lit = new_ast_node_p(p, AST_comp_literal_expr);
             lit.as_comp_literal_expr->type = n;
 
             if (!is_null_AST(n)) {
@@ -1163,7 +1163,7 @@ AST parse_atomic_expr(parser* restrict p, bool no_cl) {
 }
 
 AST parse_import_stmt(parser* restrict p) {
-    AST n = new_ast_node_p(p, astype_import_stmt);
+    AST n = new_ast_node_p(p, AST_import_stmt);
     n.as_import_stmt->base.start = &current_token;
     advance_token;
     
@@ -1172,7 +1172,7 @@ AST parse_import_stmt(parser* restrict p) {
 
     n.as_import_stmt->name = parse_expr(p, true);
 
-    if (n.as_import_stmt->name.type != astype_identifier_expr)
+    if (n.as_import_stmt->name.type != AST_identifier_expr)
         error_at_AST(p, n.as_import_stmt->name, "expected an identifer");
 
     if (current_token.type != tt_literal_string)
@@ -1197,7 +1197,7 @@ AST parse_stmt(parser* restrict p) {
         n = parse_import_stmt(p);
     } break;
     case tt_keyword_extern: {
-        n = new_ast_node_p(p, astype_extern_stmt);
+        n = new_ast_node_p(p, AST_extern_stmt);
         n.as_extern_stmt->base.start = &current_token;
         advance_token;
 
@@ -1206,7 +1206,7 @@ AST parse_stmt(parser* restrict p) {
         n.as_extern_stmt->base.end = &peek_token(-1);
     } break;
     case tt_keyword_defer: {
-        n = new_ast_node_p(p, astype_defer_stmt);
+        n = new_ast_node_p(p, AST_defer_stmt);
         n.as_defer_stmt->base.start = &current_token;
         advance_token;
 
@@ -1215,7 +1215,7 @@ AST parse_stmt(parser* restrict p) {
         n.as_defer_stmt->base.end = &peek_token(-1);
     } break;
     case tt_keyword_if: {
-        n = new_ast_node_p(p, astype_if_stmt);
+        n = new_ast_node_p(p, AST_if_stmt);
         n.as_if_stmt->is_elif = false;
         n.as_if_stmt->base.start = &current_token;
         advance_token;
@@ -1234,7 +1234,7 @@ AST parse_stmt(parser* restrict p) {
         }
     } break;
     case tt_keyword_while: {
-        n = new_ast_node_p(p, astype_while_stmt);
+        n = new_ast_node_p(p, AST_while_stmt);
         n.as_while_stmt->base.start = &current_token;
         advance_token;
 
@@ -1251,7 +1251,7 @@ AST parse_stmt(parser* restrict p) {
         if ((peek_token(1).type == tt_identifier || peek_token(1).type == tt_identifier_discard) &&
         (peek_token(2).type == tt_colon || peek_token(2).type == tt_keyword_in)) {
             // for-in loop!
-            n = new_ast_node_p(p, astype_for_in_stmt);
+            n = new_ast_node_p(p, AST_for_in_stmt);
             n.as_for_in_stmt->base.start = &current_token;
             advance_token;
 
@@ -1296,7 +1296,7 @@ AST parse_stmt(parser* restrict p) {
             n.as_for_in_stmt->base.end = &peek_token(-1);
         } else {
             // regular for loop!
-            n = new_ast_node_p(p, astype_for_stmt);
+            n = new_ast_node_p(p, AST_for_stmt);
             n.as_for_stmt->base.start = &current_token;
             advance_token;
 
@@ -1320,7 +1320,7 @@ AST parse_stmt(parser* restrict p) {
     case tt_keyword_switch: {
        
        
-        n = new_ast_node_p(p, astype_switch_stmt);
+        n = new_ast_node_p(p, AST_switch_stmt);
         n.base->start = &current_token;
         advance_token;
 
@@ -1332,7 +1332,7 @@ AST parse_stmt(parser* restrict p) {
             error_at_parser(p, "expected 'case'");
 
         while (current_token.type == tt_keyword_case) {
-            AST case_stmt = new_ast_node_p(p, astype_case);
+            AST case_stmt = new_ast_node_p(p, AST_case);
             case_stmt.base->start = &current_token;
             advance_token;
 
@@ -1362,7 +1362,7 @@ AST parse_stmt(parser* restrict p) {
 
     } break;
     case tt_semicolon: {
-        n = new_ast_node_p(p, astype_empty_stmt);
+        n = new_ast_node_p(p, AST_empty_stmt);
         n.as_empty_stmt->base.start = &current_token;
         n.as_empty_stmt->base.end = &current_token;
         advance_token;
@@ -1371,7 +1371,7 @@ AST parse_stmt(parser* restrict p) {
         n = parse_block_stmt(p);
     } break;
     case tt_keyword_type: {
-        n = new_ast_node_p(p, astype_type_decl_stmt);
+        n = new_ast_node_p(p, AST_type_decl_stmt);
         n.as_type_decl_stmt->base.start = &current_token;
 
         advance_token;
@@ -1396,7 +1396,7 @@ AST parse_stmt(parser* restrict p) {
     } break;
     case tt_keyword_let:
     case tt_keyword_mut: {
-        n = new_ast_node_p(p, astype_decl_stmt);
+        n = new_ast_node_p(p, AST_decl_stmt);
         n.as_decl_stmt->base.start = &current_token;
         n.as_decl_stmt->is_mut = (current_token.type == tt_keyword_mut);
         advance_token;
@@ -1457,12 +1457,12 @@ AST parse_stmt(parser* restrict p) {
         advance_token;
     } break;
     case tt_keyword_break: {
-        n = new_ast_node_p(p, astype_break_stmt);
+        n = new_ast_node_p(p, AST_break_stmt);
         n.base->start = &current_token;
         advance_token;
         if (current_token.type != tt_semicolon) {
             n.as_break_stmt->label = parse_expr(p, false);
-            if (is_null_AST(n.as_break_stmt->label) || n.as_break_stmt->label.type != astype_identifier_expr)
+            if (is_null_AST(n.as_break_stmt->label) || n.as_break_stmt->label.type != AST_identifier_expr)
                 error_at_token(p, *n.base->start, "expected an identifer");
         }
 
@@ -1473,12 +1473,12 @@ AST parse_stmt(parser* restrict p) {
         advance_token;
     } break;
     case tt_keyword_continue: {
-        n = new_ast_node_p(p, astype_continue_stmt);
+        n = new_ast_node_p(p, AST_continue_stmt);
         n.base->start = &current_token;
         advance_token;
         if (current_token.type != tt_semicolon) {
             n.as_continue_stmt->label = parse_expr(p, false);
-            if (is_null_AST(n.as_continue_stmt->label) || n.as_continue_stmt->label.type != astype_identifier_expr)
+            if (is_null_AST(n.as_continue_stmt->label) || n.as_continue_stmt->label.type != AST_identifier_expr)
                 error_at_token(p, *n.base->start, "expected an identifer");
         }
 
@@ -1489,12 +1489,12 @@ AST parse_stmt(parser* restrict p) {
         advance_token;
     } break;
     // case tt_keyword_goto: {
-    //     n = new_ast_node_p(p, astype_goto_stmt);
+    //     n = new_ast_node_p(p, AST_goto_stmt);
     //     n.base->start = &current_token;
     //     advance_token;
     //     if (current_token.type != tt_semicolon) {
     //         n.as_goto_stmt->label = parse_expr(p, false);
-    //         if (is_null_AST(n.as_goto_stmt->label) || n.as_goto_stmt->label.type != astype_identifier_expr)
+    //         if (is_null_AST(n.as_goto_stmt->label) || n.as_goto_stmt->label.type != AST_identifier_expr)
     //             error_at_token(p, *n.base->start, "expected an identifer");
     //     }
 
@@ -1505,7 +1505,7 @@ AST parse_stmt(parser* restrict p) {
     //     advance_token;
     // } break;
     case tt_keyword_fallthrough: {
-        n = new_ast_node_p(p, astype_fallthrough_stmt);
+        n = new_ast_node_p(p, AST_fallthrough_stmt);
         n.base->start = &current_token;
         advance_token;
         if (current_token.type != tt_semicolon)
@@ -1514,7 +1514,7 @@ AST parse_stmt(parser* restrict p) {
         advance_token;
     } break;
     case tt_keyword_return: {
-        n = new_ast_node_p(p, astype_return_stmt);
+        n = new_ast_node_p(p, AST_return_stmt);
         n.base->start = &current_token;
         advance_token;
 
@@ -1546,7 +1546,7 @@ AST parse_stmt(parser* restrict p) {
         if (is_null_AST(lhs)) return lhs;
 
         if (current_token.type == tt_semicolon) {
-            n = new_ast_node_p(p, astype_expr_stmt);
+            n = new_ast_node_p(p, AST_expr_stmt);
 
             n.base->start = lhs.base->start;
             n.base->end = &current_token;
@@ -1559,7 +1559,7 @@ AST parse_stmt(parser* restrict p) {
 
         switch (current_token.type) {
         case tt_equal: {    // single-assign statement
-            n = new_ast_node_p(p, astype_assign_stmt);
+            n = new_ast_node_p(p, AST_assign_stmt);
             n.as_assign_stmt->base.start = lhs.base->start;
             da_init(&n.as_assign_stmt->lhs, 1);
             da_append(&n.as_assign_stmt->lhs, lhs);
@@ -1577,7 +1577,7 @@ AST parse_stmt(parser* restrict p) {
             advance_token;
         } break;
         case tt_comma: {    // multi-assign statement
-            n = new_ast_node_p(p, astype_assign_stmt);
+            n = new_ast_node_p(p, AST_assign_stmt);
             n.as_assign_stmt->base.start = n.base->start;
             da_init(&n.as_assign_stmt->lhs, 2);
             da_append(&n.as_assign_stmt->lhs, lhs);
@@ -1617,7 +1617,7 @@ AST parse_stmt(parser* restrict p) {
             advance_token;
         } break;
         case tt_colon: {    // statement label
-            n = new_ast_node_p(p, astype_label_stmt);
+            n = new_ast_node_p(p, AST_label_stmt);
             n.as_label_stmt->base.start = lhs.base->start;
             n.as_label_stmt->base.end = &current_token;
             n.as_label_stmt->label = lhs;
@@ -1635,7 +1635,7 @@ AST parse_stmt(parser* restrict p) {
         case tt_xor_equal:
         case tt_lshift_equal:
         case tt_rshift_equal: {
-            n = new_ast_node_p(p, astype_comp_assign_stmt);
+            n = new_ast_node_p(p, AST_comp_assign_stmt);
             n.as_comp_assign_stmt->base.start = lhs.base->start;
             n.as_comp_assign_stmt->lhs = lhs;
 
@@ -1662,7 +1662,7 @@ AST parse_stmt(parser* restrict p) {
 
 // only for use within parse_stmt
 AST parse_elif(parser* restrict p) {
-    AST n = new_ast_node_p(p, astype_if_stmt);
+    AST n = new_ast_node_p(p, AST_if_stmt);
     n.as_if_stmt->is_elif = true;
     n.as_if_stmt->base.start = &current_token;
 
@@ -1687,7 +1687,7 @@ AST parse_elif(parser* restrict p) {
 }
 
 AST parse_block_stmt(parser* restrict p) {
-    AST n = new_ast_node_p(p, astype_block_stmt);
+    AST n = new_ast_node_p(p, AST_block_stmt);
 
     if (current_token.type != tt_open_brace)
         error_at_parser(p, "expected '{'");

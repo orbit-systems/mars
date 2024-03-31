@@ -23,15 +23,16 @@ typedef struct entity {
     exact_value* const_val;
     entity_table* top; // scope in which it is declared
 
-    bool is_const   : 1;
-    bool is_mutable : 1;
-    bool is_type    : 1;
-    bool is_module  : 1;
-    bool is_extern  : 1;
-    bool is_used    : 1;
+    bool is_const      : 1;
+    bool is_mutable    : 1;
+    bool is_type       : 1;
+    bool is_module     : 1;
+    bool is_extern     : 1;
+    bool is_used       : 1;
     bool is_pointed_to : 1; // does its pointer ever get taken?
 
-    bool visited    : 1; // for cyclic dependency checking
+    bool checked : 1;
+    bool visited : 1; // for cyclic dependency checking
 } entity;
 
 typedef struct entity_table_list {
@@ -57,4 +58,3 @@ entity_table* new_entity_table(entity_table* restrict parent);
 
 entity* restrict search_for_entity(entity_table* restrict et, string ident);
 entity* restrict new_entity(entity_table* restrict et, string ident, AST decl);
-bool    is_global(entity* restrict et);

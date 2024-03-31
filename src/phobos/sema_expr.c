@@ -71,15 +71,21 @@ forceinline entity_table* global_et(entity_table* restrict et) {
     return et;
 }
 
+forceinline bool is_global(entity* restrict e) {
+    return (e->top == global_et(e->top));
+}
+
 void check_expr(mars_module* restrict mod, entity_table* restrict et, AST expr, checked_expr* restrict info, bool must_comptime_const, type* restrict typehint) {
     info->expr = expr;
 
     // dispatch
     switch (expr.type) {
-    case astype_literal_expr:    check_literal_expr   (mod, et, expr, info, must_comptime_const, NULL); break;
-    case astype_identifier_expr: check_ident_expr     (mod, et, expr, info, must_comptime_const, NULL); break;
-    case astype_unary_op_expr:   check_unary_op_expr  (mod, et, expr, info, must_comptime_const, NULL); break;
-    case astype_binary_op_expr:  check_binary_op_expr (mod, et, expr, info, must_comptime_const, NULL); break;
+    case AST_paren_expr:      check_expr(mod, et, expr.as_paren_expr->subexpr, info, must_comptime_const, typehint); break;
+    
+    case AST_literal_expr:    check_literal_expr   (mod, et, expr, info, must_comptime_const, typehint); break;
+    case AST_identifier_expr: check_ident_expr     (mod, et, expr, info, must_comptime_const, typehint); break;
+    case AST_unary_op_expr:   check_unary_op_expr  (mod, et, expr, info, must_comptime_const, typehint); break;
+    case AST_binary_op_expr:  check_binary_op_expr (mod, et, expr, info, must_comptime_const, typehint); break;
     default:
         error_at_node(mod, expr, "expected value expression, got %s", ast_type_str[expr.type]);
     }
@@ -110,23 +116,27 @@ void check_ident_expr(mars_module* restrict mod, entity_table* restrict et, AST 
     if (!ident->entity) ident->entity = search_for_entity(et, ident->tok->text);
     entity* restrict ent = ident->entity;
 
-    if (!ent || is_null_AST(ent->decl)) error_at_node(mod, expr, "'"str_fmt"' undefined at this point", str_arg(ident->tok->text));
+    if (!ent || is_null_AST(ent->decl)) error_at_node(mod, expr, "'"str_fmt"' undefined", str_arg(ident->tok->text));
+
+    if (!ent->checked) check_stmt(mod, global_et(et), ent->decl); // on-the-fly global checking
 
     if (ent->is_module) error_at_node(mod, expr, "expected value expression, got imported module");
     if (ent->is_type)   error_at_node(mod, expr, "expected value expression, got type expression");
-    
+
+    if (!ent->entity_type) error_at_node(mod, expr, "(CRASH) cannot determine type of '"str_fmt"'", str_arg(ident->tok->text));
+
     if (must_comptime_const && !ent->const_val) error_at_node(mod, expr, "expression must be compile-time constant");
 
     if (!info->mutable) {
         info->ev = ent->const_val;
     }
-    info->addressable = true;
+    info->addressable   = true;
     info->local_derived = !is_global(ent);
-    info->mutable     = ent->is_mutable;
-    info->type        = ent->entity_type;
-    info->local_ref   = false;
-    info->use_returns = false;
-    ent->is_used      = true;
+    info->mutable       = ent->is_mutable;
+    info->type          = ent->entity_type;
+    info->local_ref     = false;
+    info->use_returns   = false;
+    ent->is_used        = true;
 }
 
 
@@ -205,11 +215,12 @@ void check_unary_op_expr(mars_module* restrict mod, entity_table* restrict et, A
                 break;
             }
         info->ev->kind = subexpr.ev->kind;
+        info->local_derived = subexpr.local_derived;
         }
 
         info->type = make_type(T_BOOL);
     } break;
-    case tt_and: { // & make-pointer operator
+    case tt_and: { // & reference operator
         if (!subexpr.addressable) {
             error_at_node(mod, unary->inside, "expression is not addressable");
         }
@@ -217,9 +228,32 @@ void check_unary_op_expr(mars_module* restrict mod, entity_table* restrict et, A
         info->type = make_type(T_POINTER);
         set_target(info->type, subexpr.type);
         info->type->as_reference.mutable = subexpr.mutable;
-        
-
+        info->local_ref = subexpr.local_derived;
     } break;
+    case tt_carat: { // ^ dereference operator
+        if (!is_pointer(subexpr.type)) {
+            error_at_node(mod, unary->inside, "expression is not dereferencable");
+        }
+
+        info->type = get_target(subexpr.type);
+        info->mutable = subexpr.type->as_reference.mutable;
+    } break;
+    case tt_keyword_offsetof: { // offsetof( entity.field )
+        if (!subexpr.addressable) { // cant get offset if its not addressable!
+            error_at_node(mod, unary->inside, "cannot get offset of expression");
+        }
+        
+        exact_value* restrict ev = new_exact_value(NO_AGGREGATE, USE_MALLOC);
+        ev->kind = ev_untyped_int;
+
+        if (unary->inside.type != AST_selector_expr) {
+            warning_at_node(mod, unary->inside, "offset of non-struct-selector is zero");
+            ev->as_untyped_int = 0;
+            break;
+        }
+
+        TODO("the rest of offsetof");
+    }
     }
 }
 
@@ -228,6 +262,80 @@ void check_binary_op_expr(mars_module* restrict mod, entity_table* restrict et, 
 }
 
 // construct a type and embed it in the type graph
-type* type_from_expr(mars_module* restrict mod, entity_table* restrict et, AST expr) {
+type* type_from_expr(mars_module* restrict mod, entity_table* restrict et, AST expr, bool no_error, bool top) {
+    if (is_null_AST(expr)) return NULL;
 
+    switch (expr.type) {
+    case AST_paren_expr: { // ()
+        return type_from_expr(mod, et, expr.as_paren_expr->subexpr, no_error, true);
+    }
+    case AST_basic_type_expr: { // i32, bool, addr, et cetera
+        switch (expr.as_basic_type_expr->lit->type) {
+        case tt_type_keyword_i8:    return make_type(T_I8);
+        case tt_type_keyword_i16:   return make_type(T_I16);
+        case tt_type_keyword_i32:   return make_type(T_I32);
+        case tt_type_keyword_i64:
+        case tt_type_keyword_int:   return make_type(T_I64);
+        case tt_type_keyword_u8:    return make_type(T_U8);
+        case tt_type_keyword_u16:   return make_type(T_U16);
+        case tt_type_keyword_u32:   return make_type(T_U32);
+        case tt_type_keyword_u64:
+        case tt_type_keyword_uint:  return make_type(T_U64);
+        case tt_type_keyword_f16:   return make_type(T_F16);
+        case tt_type_keyword_f32:   return make_type(T_F32);
+        case tt_type_keyword_f64:
+        case tt_type_keyword_float: return make_type(T_F64);
+        case tt_type_keyword_addr:  return make_type(T_ADDR);
+        case tt_type_keyword_bool:  return make_type(T_BOOL);        
+        }
+    } break;
+    case AST_struct_type_expr: { TODO("struct types"); } break;
+    case AST_union_type_expr: { TODO("union types"); } break;
+    case AST_fn_type_expr: {TODO("fn types"); } break;
+    case AST_pointer_type_expr: { // ^let T, ^mut T
+        type* ptr = make_type(T_POINTER);
+        type* subtype = type_from_expr(mod, et, expr.as_pointer_type_expr->subexpr, no_error, false);
+        if (subtype == NULL) return NULL;
+        ptr->as_reference.mutable = expr.as_pointer_type_expr->mutable;
+        set_target(ptr, subtype);
+        if (top) canonicalize_type_graph();
+        return ptr;
+    } break;
+    case AST_slice_type_expr: { // []let T, []mut T
+        type* ptr = make_type(T_SLICE);
+        type* subtype = type_from_expr(mod, et, expr.as_slice_type_expr->subexpr, no_error, false);
+        if (subtype == NULL) return NULL;
+        ptr->as_reference.mutable = expr.as_slice_type_expr->mutable;
+        set_target(ptr, subtype);
+        if (top) canonicalize_type_graph();
+        return ptr;
+    } break;
+    case AST_distinct_type_expr: { // disctinct T
+        type* distinct = make_type(T_DISTINCT);
+        type* subtype = type_from_expr(mod, et, expr.as_distinct_type_expr->subexpr, no_error, false);
+        if (subtype == NULL) return NULL;
+        set_target(distinct, subtype);
+        if (top) canonicalize_type_graph();
+        return distinct;
+    } break;
+    case AST_identifier_expr: { // T
+        entity* restrict ent = search_for_entity(et, expr.as_identifier_expr->tok->text);
+        if (ent == NULL) {
+            if (no_error) return NULL;
+            else error_at_node(mod, expr, "'"str_fmt"' undefined", str_arg(expr.as_identifier_expr->tok->text));
+        }
+
+        if (!ent->checked) check_stmt(mod, global_et(et), ent->decl); // on-the-fly global checking
+
+        if (!ent->is_type) {
+            if (no_error) return NULL;
+            else error_at_node(mod, expr, "'"str_fmt"' is not a type", str_arg(expr.as_identifier_expr->tok->text));
+        }
+        return ent->entity_type;
+    } break;
+    default:
+        if (no_error) return NULL;
+        else error_at_node(mod, expr, "expected type expression");
+        break;
+    }
 }

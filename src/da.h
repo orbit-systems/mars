@@ -10,7 +10,7 @@
 #define da(type) da_##type
 
 #define da_typedef(type) typedef struct da_##type { \
-    type * at; \
+    type * restrict at; \
     size_t len; \
     size_t cap; \
 } da_##type
