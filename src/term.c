@@ -1,7 +1,7 @@
 #include "orbit.h"
 #include "term.h"
 
-void general_error(char* message, ...) {
+noreturn void general_error(char* message, ...) {
     char ERROR_MSG_BUFFER[500] = {0};
     va_list args;
     va_start(args, message);
@@ -28,7 +28,7 @@ void general_warning(char* message, ...) {
     printf("\n");
 }
 
-void error_at_string(string path, string text, string pos, char* message, ...) {
+noreturn void error_at_string(string path, string text, string pos, char* message, ...) {
 
     char ERROR_MSG_BUFFER[500] = {0};
     va_list args;

@@ -49,7 +49,7 @@ void construct_token_buffer(lexer* restrict lex) {
 
     do {
         append_next_token(lex);
-    } while (lex->buffer.at[lex->buffer.len-1].type != tt_EOF);
+    } while (lex->buffer.at[lex->buffer.len-1].type != TT_EOF);
 
     da_shrink(&lex->buffer);
 }
@@ -57,7 +57,7 @@ void construct_token_buffer(lexer* restrict lex) {
 void append_next_token(lexer* restrict lex) {
 
     // if the top token is an EOF, early return
-    // if (lex->buffer.at[lex->buffer.len-1].type == tt_EOF) {
+    // if (lex->buffer.at[lex->buffer.len-1].type == TT_EOF) {
     //     return;
     // }
 
@@ -95,6 +95,7 @@ void append_next_token(lexer* restrict lex) {
         da_append(
             &lex->buffer, 
             ((token){substring_len(lex->src, lex->cursor, 1), tt_EOF})
+            ((token){substring_len(lex->src, lex->cursor, 1), TT_EOF})
         );
         return;
     }
@@ -125,66 +126,66 @@ token_type scan_ident_or_keyword(lexer* restrict lex) {
 
     string word = substring(lex->src, beginning, lex->cursor);
 
-    if (string_eq(word, to_string("_")))            return tt_identifier_discard;
+    if (string_eq(word, to_string("_")))            return TT_IDENTIFIER_DISCARD;
 
-    if (string_eq(word, to_string("int")))          return tt_type_keyword_int;
-    if (string_eq(word, to_string("i8")))           return tt_type_keyword_i8;
-    if (string_eq(word, to_string("i16")))          return tt_type_keyword_i16;
-    if (string_eq(word, to_string("i32")))          return tt_type_keyword_i32;
-    if (string_eq(word, to_string("i64")))          return tt_type_keyword_i64;
-    if (string_eq(word, to_string("uint")))         return tt_type_keyword_uint;
-    if (string_eq(word, to_string("u8")))           return tt_type_keyword_u8;
-    if (string_eq(word, to_string("u16")))          return tt_type_keyword_u16;
-    if (string_eq(word, to_string("u32")))          return tt_type_keyword_u32;
-    if (string_eq(word, to_string("u64")))          return tt_type_keyword_u64;
-    if (string_eq(word, to_string("bool")))         return tt_type_keyword_bool;
-    if (string_eq(word, to_string("float")))        return tt_type_keyword_float;
-    if (string_eq(word, to_string("f16")))          return tt_type_keyword_f16;
-    if (string_eq(word, to_string("f32")))          return tt_type_keyword_f32;
-    if (string_eq(word, to_string("f64")))          return tt_type_keyword_f64;
-    if (string_eq(word, to_string("addr")))         return tt_type_keyword_addr;
+    if (string_eq(word, to_string("int")))          return TT_TYPE_KEYWORD_INT;
+    if (string_eq(word, to_string("i8")))           return TT_TYPE_KEYWORD_I8;
+    if (string_eq(word, to_string("i16")))          return TT_TYPE_KEYWORD_I16;
+    if (string_eq(word, to_string("i32")))          return TT_TYPE_KEYWORD_I32;
+    if (string_eq(word, to_string("i64")))          return TT_TYPE_KEYWORD_I64;
+    if (string_eq(word, to_string("uint")))         return TT_TYPE_KEYWORD_UINT;
+    if (string_eq(word, to_string("u8")))           return TT_TYPE_KEYWORD_U8;
+    if (string_eq(word, to_string("u16")))          return TT_TYPE_KEYWORD_U16;
+    if (string_eq(word, to_string("u32")))          return TT_TYPE_KEYWORD_U32;
+    if (string_eq(word, to_string("u64")))          return TT_TYPE_KEYWORD_U64;
+    if (string_eq(word, to_string("bool")))         return TT_TYPE_KEYWORD_BOOL;
+    if (string_eq(word, to_string("float")))        return TT_TYPE_KEYWORD_FLOAT;
+    if (string_eq(word, to_string("f16")))          return TT_TYPE_KEYWORD_F16;
+    if (string_eq(word, to_string("f32")))          return TT_TYPE_KEYWORD_F32;
+    if (string_eq(word, to_string("f64")))          return TT_TYPE_KEYWORD_F64;
+    if (string_eq(word, to_string("addr")))         return TT_TYPE_KEYWORD_ADDR;
 
-    if (string_eq(word, to_string("let")))          return tt_keyword_let;
-    if (string_eq(word, to_string("mut")))          return tt_keyword_mut;
-    if (string_eq(word, to_string("def")))          return tt_keyword_def;
-    if (string_eq(word, to_string("type")))         return tt_keyword_type;
-    if (string_eq(word, to_string("if")))           return tt_keyword_if;
-    if (string_eq(word, to_string("in")))           return tt_keyword_in;
-    if (string_eq(word, to_string("elif")))         return tt_keyword_elif;
-    if (string_eq(word, to_string("else")))         return tt_keyword_else;
-    if (string_eq(word, to_string("for")))          return tt_keyword_for;
-    if (string_eq(word, to_string("fn")))           return tt_keyword_fn;
-    if (string_eq(word, to_string("break")))        return tt_keyword_break;
-    if (string_eq(word, to_string("continue")))     return tt_keyword_continue;
-    if (string_eq(word, to_string("case")))         return tt_keyword_case;
-    if (string_eq(word, to_string("cast")))         return tt_keyword_cast;
-    if (string_eq(word, to_string("defer")))        return tt_keyword_defer;
-    if (string_eq(word, to_string("distinct")))     return tt_keyword_distinct;
-    if (string_eq(word, to_string("enum")))         return tt_keyword_enum;
-    if (string_eq(word, to_string("extern")))       return tt_keyword_extern;
-    // if (string_eq(word, to_string("goto")))         return tt_keyword_goto;
-    if (string_eq(word, to_string("asm")))          return tt_keyword_asm;
-    if (string_eq(word, to_string("bitcast")))      return tt_keyword_bitcast;
-    if (string_eq(word, to_string("import")))       return tt_keyword_import;
-    if (string_eq(word, to_string("fallthrough")))  return tt_keyword_fallthrough;
-    if (string_eq(word, to_string("module")))       return tt_keyword_module;
-    if (string_eq(word, to_string("return")))       return tt_keyword_return;
-    if (string_eq(word, to_string("struct")))       return tt_keyword_struct;
-    if (string_eq(word, to_string("switch")))       return tt_keyword_switch;
-    if (string_eq(word, to_string("union")))        return tt_keyword_union;
-    if (string_eq(word, to_string("while")))        return tt_keyword_while;
-    if (string_eq(word, to_string("inline")))       return tt_keyword_inline;
-    if (string_eq(word, to_string("sizeof")))       return tt_keyword_sizeof;
-    if (string_eq(word, to_string("alignof")))      return tt_keyword_alignof;
-    if (string_eq(word, to_string("offsetof")))     return tt_keyword_offsetof;
+    if (string_eq(word, to_string("let")))          return TT_KEYWORD_LET;
+    if (string_eq(word, to_string("mut")))          return TT_KEYWORD_MUT;
+    if (string_eq(word, to_string("def")))          return TT_KEYWORD_DEF;
+    if (string_eq(word, to_string("type")))         return TT_KEYWORD_TYPE;
+    if (string_eq(word, to_string("if")))           return TT_KEYWORD_IF;
+    if (string_eq(word, to_string("in")))           return TT_KEYWORD_IN;
+    if (string_eq(word, to_string("elif")))         return TT_KEYWORD_ELIF;
+    if (string_eq(word, to_string("else")))         return TT_KEYWORD_ELSE;
+    if (string_eq(word, to_string("for")))          return TT_KEYWORD_FOR;
+    if (string_eq(word, to_string("fn")))           return TT_KEYWORD_FN;
+    if (string_eq(word, to_string("break")))        return TT_KEYWORD_BREAK;
+    if (string_eq(word, to_string("continue")))     return TT_KEYWORD_CONTINUE;
+    if (string_eq(word, to_string("case")))         return TT_KEYWORD_CASE;
+    if (string_eq(word, to_string("cast")))         return TT_KEYWORD_CAST;
+    if (string_eq(word, to_string("defer")))        return TT_KEYWORD_DEFER;
+    if (string_eq(word, to_string("distinct")))     return TT_KEYWORD_DISTINCT;
+    if (string_eq(word, to_string("enum")))         return TT_KEYWORD_ENUM;
+    if (string_eq(word, to_string("extern")))       return TT_KEYWORD_EXTERN;
+    // if (string_eq(word, to_string("goto")))         return TT_KEYWORD_GOTO;
+    if (string_eq(word, to_string("asm")))          return TT_KEYWORD_ASM;
+    if (string_eq(word, to_string("bitcast")))      return TT_KEYWORD_BITCAST;
+    if (string_eq(word, to_string("import")))       return TT_KEYWORD_IMPORT;
+    if (string_eq(word, to_string("fallthrough")))  return TT_KEYWORD_FALLTHROUGH;
+    if (string_eq(word, to_string("module")))       return TT_KEYWORD_MODULE;
+    if (string_eq(word, to_string("return")))       return TT_KEYWORD_RETURN;
+    if (string_eq(word, to_string("struct")))       return TT_KEYWORD_STRUCT;
+    if (string_eq(word, to_string("switch")))       return TT_KEYWORD_SWITCH;
+    if (string_eq(word, to_string("union")))        return TT_KEYWORD_UNION;
+    if (string_eq(word, to_string("while")))        return TT_KEYWORD_WHILE;
+    if (string_eq(word, to_string("inline")))       return TT_KEYWORD_INLINE;
+    if (string_eq(word, to_string("sizeof")))       return TT_KEYWORD_SIZEOF;
+    if (string_eq(word, to_string("alignof")))      return TT_KEYWORD_ALIGNOF;
+    if (string_eq(word, to_string("offsetof")))     return TT_KEYWORD_OFFSETOF;
     
-    if (string_eq(word, to_string("true")))         return tt_literal_bool;
-    if (string_eq(word, to_string("false")))        return tt_literal_bool;
+    if (string_eq(word, to_string("true")))         return TT_LITERAL_BOOL;
+    if (string_eq(word, to_string("false")))        return TT_LITERAL_BOOL;
 
-    if (string_eq(word, to_string("null")))         return tt_literal_null;
+    if (string_eq(word, to_string("null")))         return TT_LITERAL_NULL;
 
 
-    return tt_identifier;
+    return TT_IDENTIFIER;
 }
 
 token_type scan_number(lexer* restrict lex) {
@@ -194,7 +195,7 @@ token_type scan_number(lexer* restrict lex) {
             
             // really quick, check if its one of the range operators? this causes bugs very often :sob:
             if (peek_char(lex, 1) == '.') {
-                return tt_literal_int;
+                return TT_LITERAL_INT;
             }
 
             advance_char(lex);
@@ -203,13 +204,13 @@ token_type scan_number(lexer* restrict lex) {
                     advance_char_n(lex, 2);
                 }
                 if (!valid_digit(current_char(lex))) {
-                    return tt_literal_float;
+                    return TT_LITERAL_FLOAT;
                 }
                 advance_char(lex);
             }
         }
         if (!valid_digit(current_char(lex))) {
-            return tt_literal_int;
+            return TT_LITERAL_INT;
         }
         advance_char(lex);
     }
@@ -224,7 +225,7 @@ token_type scan_string_or_char(lexer* restrict lex) {
             advance_char(lex);
         } else if (current_char(lex) == quote_char) {
             advance_char(lex);
-            return quote_char == '\"' ? tt_literal_string : tt_literal_char;
+            return quote_char == '\"' ? TT_LITERAL_STRING : TT_LITERAL_CHAR;
         } else if (current_char(lex) == '\n') {
             if (quote_char == '\"') error_at_string(lex->path, lex->src, substring(lex->src, start_cursor, lex->cursor),
                 "unclosed string literal");
@@ -240,179 +241,179 @@ token_type scan_operator(lexer* restrict lex) {
         advance_char(lex);
         if (current_char(lex) == '=') {
             advance_char(lex);
-            return tt_add_equal;
+            return TT_ADD_EQUAL;
         }
-        return tt_add;
+        return TT_ADD;
     case '-':
         advance_char(lex);
 
         if (current_char(lex) == '=') {
             advance_char(lex);
-            return tt_sub_equal;
+            return TT_SUB_EQUAL;
         }
         if (current_char(lex) == '>') {
             advance_char(lex);
-            return tt_arrow_right;
+            return TT_ARROW_RIGHT;
         }
         if (current_char(lex) == '-' && peek_char(lex, 1) == '-') {
             advance_char_n(lex, 2);
-            return tt_uninit;
+            return TT_UNINIT;
         }
-        return tt_sub;
+        return TT_SUB;
     case '*':
         advance_char(lex);
         if (current_char(lex) == '=') {
             advance_char(lex);
-            return tt_mul_equal;
+            return TT_MUL_EQUAL;
         }
-        return tt_mul;
+        return TT_MUL;
     case '/':
         advance_char(lex);
         if (current_char(lex) == '=') {
             advance_char(lex);
-            return tt_div_equal;
+            return TT_DIV_EQUAL;
         }
-        return tt_div;
+        return TT_DIV;
     case '%':
         advance_char(lex);
         if (current_char(lex) == '=') {
             advance_char(lex);
-            return tt_mod_equal;
+            return TT_MOD_EQUAL;
         }
         if (current_char(lex) == '%') {
             advance_char(lex);
                 if (current_char(lex) == '=') {
                 advance_char(lex);
-                return tt_mod_mod_equal;
+                return TT_MOD_MOD_EQUAL;
             }
-            return tt_mod_mod;
+            return TT_MOD_MOD;
         }
-        return tt_mod;
+        return TT_MOD;
     case '~':
         advance_char(lex);
         if (current_char(lex) == '=') {
             advance_char(lex);
-            return tt_xor_equal;
+            return TT_XOR_EQUAL;
         }
         if (current_char(lex) == '|') {
             advance_char(lex);
             if (current_char(lex) == '=') {
                 advance_char(lex);
-                return tt_nor_equal;
+                return TT_NOR_EQUAL;
             }
-            return tt_nor;
+            return TT_NOR;
         }
-        return tt_tilde;
+        return TT_TILDE;
     case '&':
         advance_char(lex);
         if (current_char(lex) == '=') {
             advance_char(lex);
-            return tt_and_equal;
+            return TT_AND_EQUAL;
         }
         if (current_char(lex) == '&') {
             advance_char(lex);
-            return tt_and_and;
+            return TT_AND_AND;
         }
-        return tt_and;
+        return TT_AND;
     case '|':
         advance_char(lex);
         if (current_char(lex) == '|') {
             advance_char(lex);
-            return tt_or_or;
+            return TT_OR_OR;
         }
         if (current_char(lex) == '=') {
             advance_char(lex);
-            return tt_or_equal;
+            return TT_OR_EQUAL;
         }
-        return tt_or;
+        return TT_OR;
     case '<':
         advance_char(lex);
         if (current_char(lex) == '<') {
             advance_char(lex);
             if (current_char(lex) == '=') {
                 advance_char(lex);
-                return tt_lshift_equal;
+                return TT_LSHIFT_EQUAL;
             }
-            return tt_lshift;
+            return TT_LSHIFT;
         }
         if (current_char(lex) == '=') {
             advance_char(lex);
-            return tt_less_equal;
+            return TT_LESS_EQUAL;
         }
-        return tt_less_than;
+        return TT_LESS_THAN;
     case '>':
         advance_char(lex);
         if (current_char(lex) == '>') {
             advance_char(lex);
             if (current_char(lex) == '=') {
                 advance_char(lex);
-                return tt_rshift_equal;
+                return TT_RSHIFT_EQUAL;
             }
-            return tt_rshift;
+            return TT_RSHIFT;
         }
         if (current_char(lex) == '=') {
             advance_char(lex);
-            return tt_greater_equal;
+            return TT_GREATER_EQUAL;
         }
-        return tt_greater_than;
+        return TT_GREATER_THAN;
     case '=':
         advance_char(lex);
         if (current_char(lex) == '=') {
             advance_char(lex);
-            return tt_equal_equal;
+            return TT_EQUAL_EQUAL;
         }
-        return tt_equal;
+        return TT_EQUAL;
     case '!':
         advance_char(lex);
         if (current_char(lex) == '=') {
             advance_char(lex);
-            return tt_not_equal;
+            return TT_NOT_EQUAL;
         }
-        return tt_exclam;
+        return TT_EXCLAM;
     case ':':
         advance_char(lex);
         if (current_char(lex) == ':') {
             advance_char(lex);
-            return tt_colon_colon;
+            return TT_COLON_COLON;
         }
-        return tt_colon;
+        return TT_COLON;
     case '.':
         advance_char(lex);
         if (current_char(lex) == '.') {
             if (peek_char(lex, 1) == '<') {
                 advance_char_n(lex, 2);
-                return tt_range_less;
+                return TT_RANGE_LESS;
             }
             if (peek_char(lex, 1) == '=') {
                 advance_char_n(lex, 2);
-                return tt_range_eq;
+                return TT_RANGE_EQ;
             }
         } else if (valid_0d(current_char(lex))) {
             advance_char_n(lex, -2);
             return scan_number(lex);
         }
-        return tt_period;
+        return TT_PERIOD;
 
-    case '#': advance_char(lex); return tt_hash;
-    case ';': advance_char(lex); return tt_semicolon;
-    case '$': advance_char(lex); return tt_dollar;
-    case ',': advance_char(lex); return tt_comma;
-    case '^': advance_char(lex); return tt_carat;
-    case '@': advance_char(lex); return tt_at;
+    case '#': advance_char(lex); return TT_HASH;
+    case ';': advance_char(lex); return TT_SEMICOLON;
+    case '$': advance_char(lex); return TT_DOLLAR;
+    case ',': advance_char(lex); return TT_COMMA;
+    case '^': advance_char(lex); return TT_CARAT;
+    case '@': advance_char(lex); return TT_AT;
 
-    case '(': advance_char(lex); return tt_open_paren;
-    case ')': advance_char(lex); return tt_close_paren;
-    case '[': advance_char(lex); return tt_open_bracket;
-    case ']': advance_char(lex); return tt_close_bracket;
-    case '{': advance_char(lex); return tt_open_brace;
-    case '}': advance_char(lex); return tt_close_brace;
+    case '(': advance_char(lex); return TT_OPEN_PAREN;
+    case ')': advance_char(lex); return TT_CLOSE_PAREN;
+    case '[': advance_char(lex); return TT_OPEN_BRACKET;
+    case ']': advance_char(lex); return TT_CLOSE_BRACKET;
+    case '{': advance_char(lex); return TT_OPEN_BRACE;
+    case '}': advance_char(lex); return TT_CLOSE_BRACE;
 
     default:
         error_at_string(lex->path, lex->src, substring_len(lex->src, lex->cursor, 1), 
             "unrecognized character");
         break;
     }
-    return tt_invalid;
+    return TT_INVALID;
 }
 
 int skip_block_comment(lexer* restrict lex) {

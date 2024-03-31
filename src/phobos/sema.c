@@ -4,10 +4,10 @@
 #include "phobos.h"
 #include "sema.h"
 
-void check_program(mars_module* restrict mod) {
+void check_module_and_dependencies(mars_module* restrict mod) {
     FOR_URANGE(i, 0, mod->import_list.len) {
         if (!mod->import_list.at[i]->checked) {
-            check_program(mod->import_list.at[i]);
+            check_module_and_dependencies(mod->import_list.at[i]);
         }
     }
     // all imported modules have been checked
@@ -128,10 +128,10 @@ void collect_entites(mars_module* restrict mod, entity_table* restrict et, da(AS
             if (e->decl.rawptr != stmts.at[i].rawptr) {
                 error_at_node(mod, import->name, "'"str_fmt"' already declared", str_arg(ident));
             }
-            FOR_URANGE(i, 0, mod->import_list.len) {
-                if (string_eq(mod->import_list.at[i]->module_path, import->realpath)) {
+            FOR_URANGE(j, 0, mod->import_list.len) {
+                if (string_eq(mod->import_list.at[j]->module_path, import->realpath)) {
                     e->is_module = true;
-                    e->module = mod->import_list.at[i];
+                    e->module = mod->import_list.at[j];
                 }
             }
             if (!e->is_module) {

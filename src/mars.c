@@ -35,7 +35,7 @@ int main(int argc, char** argv) {
     // }
 
     // recursive check
-    check_program(main_mod);
+    check_module_and_dependencies(main_mod);
 
     // process_ast(main_mod->program_tree);
 

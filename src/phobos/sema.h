@@ -26,7 +26,7 @@
     warning_at_string(source_file->path, source_file->src, ast_str, msg __VA_OPT__(,) __VA_ARGS__); \
 } while (0)
 
-void check_program(mars_module* mod);
+void check_module_and_dependencies(mars_module* mod);
 void check_module(mars_module* mod);
 void collect_globals(mars_module* mod, entity_table* et);
 void collect_entites(mars_module* mod, entity_table* et, da(AST) stmts, bool global);
@@ -39,9 +39,9 @@ typedef struct checked_expr {
     bool use_returns : 1; // use return list of type* as the type. for functions that return multiple things
 
     bool mutable       : 1;
-    bool local_ref     : 1; // so that we can warn against returning local pointers and shit 
-    bool local_derived : 1;
     bool addressable   : 1;
+    bool local_ref     : 1; // so that we can warn against returning local pointers and shit
+    bool local_derived : 1;
 } checked_expr;
 
 void check_stmt(mars_module* mod, entity_table* et, AST stmt);

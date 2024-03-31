@@ -3,22 +3,19 @@
 
 #include "phobos.h"
 #include "sema.h"
+#include "type.h"
 
 // i may in fact explode
 // writing this is agony
 
-static type* make_simple_slice(u8 tag) {
-    static type* slice[T_meta_INTEGRAL] = {NULL};
-
-    if (tag > T_meta_INTEGRAL) {
-        return NULL;
+static type* make_string() {
+    static type* str = NULL;
+    if (str != NULL) {
+        return str;
     }
-    if (slice[tag] != NULL) {
-        return slice[tag];
-    }
-    slice[tag] = make_type(T_SLICE);
-    set_target(slice[tag], make_type(tag));
-    return slice[tag];
+    str = make_type(T_SLICE);
+    set_target(str, make_type(T_U8));
+    return str;
 }
 
 forceinline type* normalize_simple_untyped_type(type* t) {
@@ -123,7 +120,7 @@ void check_literal_expr(mars_module* mod, entity_table* et, AST expr, checked_ex
     case EV_UNTYPED_FLOAT: info->type = make_type(T_UNTYPED_FLOAT); break;
     case EV_UNTYPED_INT:   info->type = make_type(T_UNTYPED_INT);   break;
     case EV_POINTER:       info->type = make_type(T_ADDR);          break;
-    case EV_STRING:        info->type = make_simple_slice(T_U8);    break;
+    case EV_STRING:        info->type = make_string();                   break;
     default:               CRASH("unhandled literal ev type");
     }
 }
@@ -135,7 +132,7 @@ void check_ident_expr(mars_module* mod, entity_table* et, AST expr, checked_expr
     if (!ident->entity) ident->entity = search_for_entity(et, ident->tok->text);
     entity* ent = ident->entity;
 
-    if (!ent || is_null_AST(ent->decl)) error_at_node(mod, expr, "'"str_fmt"' undefined", str_arg(ident->tok->text));
+    if (ent == NULL) error_at_node(mod, expr, "'"str_fmt"' undefined", str_arg(ident->tok->text));
 
     if (must_comptime_const&& ent->visited) {
         error_at_node(mod, expr, "constant expression has cyclic dependencies");
@@ -170,7 +167,7 @@ void check_unary_op_expr(mars_module* mod, entity_table* et, AST expr, checked_e
     check_expr(mod, et, unary->inside, &subexpr, must_comptime_const, NULL);
     
     switch (unary->op->type) {
-    case tt_sub: { // - numeric negative
+    case TT_SUB: { // - numeric negative
         if (!is_numeric(subexpr.type)) {
             error_at_node(mod, unary->inside, "expected a numeric type");
         }
@@ -193,7 +190,7 @@ void check_unary_op_expr(mars_module* mod, entity_table* et, AST expr, checked_e
         }
         info->type = subexpr.type;
     } break;
-    case tt_tilde: { // ~ bitwise NOT
+    case TT_TILDE: { // ~ bitwise NOT
         if (!is_numeric(subexpr.type)) {
             error_at_node(mod, unary->inside, "expected a numeric type");
         }
@@ -205,16 +202,16 @@ void check_unary_op_expr(mars_module* mod, entity_table* et, AST expr, checked_e
             info->ev = new_exact_value(NO_AGGREGATE, USE_MALLOC);
             switch (subexpr.ev->kind) {
             case EV_U8:
-            case EV_I8:  info->ev->as_i8  = ~subexpr.ev->as_i8; break;
+            case EV_I8:  info->ev->as_i8  = (i8)~(u8)subexpr.ev->as_i8; break;
             case EV_F16:
             case EV_U16:
-            case EV_I16: info->ev->as_i16 = ~subexpr.ev->as_i16; break;
+            case EV_I16: info->ev->as_i16 = (i16)~(u16)subexpr.ev->as_i16; break;
             case EV_F32:
             case EV_U32:
-            case EV_I32: info->ev->as_i32 = ~subexpr.ev->as_i32; break;
+            case EV_I32: info->ev->as_i32 = (i32)~(u32)subexpr.ev->as_i32; break;
             case EV_F64:
             case EV_U64:
-            case EV_I64: info->ev->as_i64 = ~subexpr.ev->as_i64; break;
+            case EV_I64: info->ev->as_i64 = (i64)~(u64)subexpr.ev->as_i64; break;
             default:
                 UNREACHABLE;
                 break;
@@ -223,7 +220,7 @@ void check_unary_op_expr(mars_module* mod, entity_table* et, AST expr, checked_e
         info->type = subexpr.type;
         }
     } break;
-    case tt_exclam: { // ! boolean NOT
+    case TT_EXCLAM: { // ! boolean NOT
         if (subexpr.type->tag != T_BOOL) {
             error_at_node(mod, unary->inside, "expected pointer or boolean");
         }
@@ -236,7 +233,7 @@ void check_unary_op_expr(mars_module* mod, entity_table* et, AST expr, checked_e
 
         info->type = make_type(T_BOOL);
     } break;
-    case tt_and: { // & reference operator
+    case TT_AND: { // & reference operator
         if (!subexpr.addressable) {
             error_at_node(mod, unary->inside, "expression is not addressable");
         }
@@ -246,7 +243,7 @@ void check_unary_op_expr(mars_module* mod, entity_table* et, AST expr, checked_e
         info->type->as_reference.mutable = subexpr.mutable;
         info->local_ref = subexpr.local_derived;
     } break;
-    case tt_carat: { // ^ dereference operator
+    case TT_CARAT: { // ^ dereference operator
         if (!is_pointer(subexpr.type)) {
             error_at_node(mod, unary->inside, "expression is not dereferencable");
         }
@@ -254,7 +251,7 @@ void check_unary_op_expr(mars_module* mod, entity_table* et, AST expr, checked_e
         info->type = get_target(subexpr.type);
         info->mutable = subexpr.type->as_reference.mutable;
     } break;
-    case tt_keyword_offsetof: { // offsetof( entity.field )
+    case TT_KEYWORD_OFFSETOF: { // offsetof( entity.field )
         if (!subexpr.addressable) { // cant get offset if its not addressable!
             error_at_node(mod, unary->inside, "cannot get offset of expression");
         }
@@ -278,9 +275,9 @@ void check_unary_op_expr(mars_module* mod, entity_table* et, AST expr, checked_e
         assert(struct_type != NULL);
 
         // struct_field* field_props = get_field_properties(struct_type, field_name);
-        assert(field_props != NULL);
+        //assert(field_props != NULL);
 
-        ev->as_untyped_int = field_props->offset;
+        //ev->as_untyped_int = field_props->offset;
 
         return;
     }
@@ -320,22 +317,22 @@ type* type_from_expr(mars_module* mod, entity_table* et, AST expr, bool no_error
     }
     case AST_basic_type_expr: { // i32, bool, addr, et cetera
         switch (expr.as_basic_type_expr->lit->type) {
-        case tt_type_keyword_i8:    return make_type(T_I8);
-        case tt_type_keyword_i16:   return make_type(T_I16);
-        case tt_type_keyword_i32:   return make_type(T_I32);
-        case tt_type_keyword_i64:
-        case tt_type_keyword_int:   return make_type(T_I64);
-        case tt_type_keyword_u8:    return make_type(T_U8);
-        case tt_type_keyword_u16:   return make_type(T_U16);
-        case tt_type_keyword_u32:   return make_type(T_U32);
-        case tt_type_keyword_u64:
-        case tt_type_keyword_uint:  return make_type(T_U64);
-        case tt_type_keyword_f16:   return make_type(T_F16);
-        case tt_type_keyword_f32:   return make_type(T_F32);
-        case tt_type_keyword_f64:
-        case tt_type_keyword_float: return make_type(T_F64);
-        case tt_type_keyword_addr:  return make_type(T_ADDR);
-        case tt_type_keyword_bool:  return make_type(T_BOOL);        
+        case TT_TYPE_KEYWORD_I8:    return make_type(T_I8);
+        case TT_TYPE_KEYWORD_I16:   return make_type(T_I16);
+        case TT_TYPE_KEYWORD_I32:   return make_type(T_I32);
+        case TT_TYPE_KEYWORD_I64:
+        case TT_TYPE_KEYWORD_INT:   return make_type(T_I64);
+        case TT_TYPE_KEYWORD_U8:    return make_type(T_U8);
+        case TT_TYPE_KEYWORD_U16:   return make_type(T_U16);
+        case TT_TYPE_KEYWORD_U32:   return make_type(T_U32);
+        case TT_TYPE_KEYWORD_U64:
+        case TT_TYPE_KEYWORD_UINT:  return make_type(T_U64);
+        case TT_TYPE_KEYWORD_F16:   return make_type(T_F16);
+        case TT_TYPE_KEYWORD_F32:   return make_type(T_F32);
+        case TT_TYPE_KEYWORD_F64:
+        case TT_TYPE_KEYWORD_FLOAT: return make_type(T_F64);
+        case TT_TYPE_KEYWORD_ADDR:  return make_type(T_ADDR);
+        case TT_TYPE_KEYWORD_BOOL:  return make_type(T_BOOL);
         }
     } break;
     case AST_struct_type_expr: { TODO("struct types"); } break;

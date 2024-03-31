@@ -15,6 +15,7 @@
 #include <limits.h>
 #include <float.h>
 #include <stdalign.h>
+#include <stdnoreturn.h>
 
 typedef uint64_t u64;
 typedef uint32_t u32;
@@ -32,6 +33,8 @@ typedef _Float16 f16;
 #if !defined(PATH_MAX)
 #   define PATH_MAX 4096
 #endif
+
+
 
 #if !defined(bool)
     typedef uint8_t  bool;
