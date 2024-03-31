@@ -446,27 +446,27 @@ void recurse_dot(AST node, fs_file* file, int n, int uid) {
 
 	        //determine what type of literal, and then emit the correct node.
 	        switch (node.as_literal_expr->value.kind) {
-	        	case ev_bool: {
+	        	case EV_BOOL: {
 	        		literal_name = "bool";
 	        		sprintf(literal_buffer, "%s", node.as_literal_expr->value.as_bool == true ? "true" : "false");
 	        		break;
 	        	}
-	        	case ev_string: {
+	        	case EV_STRING: {
 	        		literal_name = "string";
 	        		sprintf(literal_buffer, "%.1024s", clone_to_cstring(node.as_literal_expr->value.as_string));
 	        		break;
 	        	}
-	        	case ev_untyped_int: {
+	        	case EV_UNTYPED_INT: {
 	        		literal_name = "int";
 	        		sprintf(literal_buffer, "%d", node.as_literal_expr->value.as_untyped_int);
 	        		break;
 	        	}
-	        	case ev_untyped_float: {
+	        	case EV_UNTYPED_FLOAT: {
 	        		literal_name = "float";
 	        		sprintf(literal_buffer, "%lf", node.as_literal_expr->value.as_untyped_float);
 	        		break;
 	        	}
-	        	case ev_pointer: {
+	        	case EV_POINTER: {
 	        		literal_name = "pointer";
 	        		sprintf(literal_buffer, "null");
 	        		break;

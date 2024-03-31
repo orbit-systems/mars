@@ -57,11 +57,11 @@ void dump_tree(AST node, int n) {
         break;
     case AST_literal_expr:
         switch (node.as_literal_expr->value.kind) {
-        case ev_bool: printf("bool literal\n"); break;
-        case ev_untyped_float: printf("float literal\n"); break;
-        case ev_untyped_int: printf("int literal\n"); break;
-        case ev_pointer: printf("pointer literal\n"); break;
-        case ev_string: printf("string literal\n"); break;
+        case EV_BOOL: printf("bool literal\n"); break;
+        case EV_UNTYPED_FLOAT: printf("float literal\n"); break;
+        case EV_UNTYPED_INT: printf("int literal\n"); break;
+        case EV_POINTER: printf("pointer literal\n"); break;
+        case EV_STRING: printf("string literal\n"); break;
         default: printf("[invalid] literal\n"); break;
         }
         break;

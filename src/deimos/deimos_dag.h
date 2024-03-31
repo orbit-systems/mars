@@ -331,7 +331,7 @@ typedef u8 exact_value_kind; enum {
     ev_string,
     ev_int,
     ev_float,
-    ev_pointer,
+    EV_POINTER,
 };
 
 typedef struct {

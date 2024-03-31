@@ -75,24 +75,24 @@ forceinline bool is_global(entity* e) {
     return (e->top == global_et(e->top));
 }
 
-struct_field* get_field_properties(type* t, string query) {
-    if (query.len == 1 && *query.raw == '_') return NULL;
+// struct_field* get_field_properties(type* t, string query) {
+//     if (query.len == 1 && *query.raw == '_') return NULL;
 
-    FOR_URANGE(i, 0, t->as_aggregate.fields.len) {
-        struct_field* field = &t->as_aggregate.fields.at[i];
+//     FOR_URANGE(i, 0, t->as_aggregate.fields.len) {
+//         struct_field* field = &t->as_aggregate.fields.at[i];
 
-        if (string_eq(query, field->name)) {
-            return field;
-        }
+//         if (string_eq(query, field->name)) {
+//             return field;
+//         }
 
-        if (string_eq(field->name, to_string("_"))) {
-            struct_field* subfield = get_field_properties(field->subtype, query);
-            if (subfield != NULL) return subfield;
-        }
-    }
+//         if (string_eq(field->name, to_string("_"))) {
+//             struct_field* subfield = get_field_properties(field->subtype, query);
+//             if (subfield != NULL) return subfield;
+//         }
+//     }
 
-    return NULL;
-}
+//     return NULL;
+// }
 
 void check_expr(mars_module* mod, entity_table* et, AST expr, checked_expr* info, bool must_comptime_const, type* typehint) {
     info->expr = expr;
@@ -119,11 +119,11 @@ void check_literal_expr(mars_module* mod, entity_table* et, AST expr, checked_ex
     info->use_returns = false;
 
     switch (literal->value.kind) {
-    case ev_bool:          info->type = make_type(T_BOOL);          break;
-    case ev_untyped_float: info->type = make_type(T_UNTYPED_FLOAT); break;
-    case ev_untyped_int:   info->type = make_type(T_UNTYPED_INT);   break;
-    case ev_pointer:       info->type = make_type(T_ADDR);          break;
-    case ev_string:        info->type = make_simple_slice(T_U8);    break;
+    case EV_BOOL:          info->type = make_type(T_BOOL);          break;
+    case EV_UNTYPED_FLOAT: info->type = make_type(T_UNTYPED_FLOAT); break;
+    case EV_UNTYPED_INT:   info->type = make_type(T_UNTYPED_INT);   break;
+    case EV_POINTER:       info->type = make_type(T_ADDR);          break;
+    case EV_STRING:        info->type = make_simple_slice(T_U8);    break;
     default:               CRASH("unhandled literal ev type");
     }
 }
@@ -146,7 +146,7 @@ void check_ident_expr(mars_module* mod, entity_table* et, AST expr, checked_expr
     if (ent->is_module) error_at_node(mod, expr, "expected value expression, got imported module");
     if (ent->is_type)   error_at_node(mod, expr, "expected value expression, got type expression");
 
-    if (!ent->entity_type) error_at_node(mod, expr, "(CRASH) cannot determine type of '"str_fmt"'", str_arg(ident->tok->text));
+    assert(!ent->entity_type);
 
     if (must_comptime_const && !ent->const_val) error_at_node(mod, expr, "expression must be compile-time constant");
 
@@ -178,13 +178,13 @@ void check_unary_op_expr(mars_module* mod, entity_table* et, AST expr, checked_e
         if (subexpr.ev) {
             info->ev = new_exact_value(NO_AGGREGATE, USE_MALLOC);
             switch (subexpr.ev->kind) {
-            case ev_untyped_int:
+            case EV_UNTYPED_INT:
                 info->ev->as_untyped_int = -subexpr.ev->as_untyped_int;
-                info->ev->kind = ev_untyped_int;
+                info->ev->kind = EV_UNTYPED_INT;
                 break;
-            case ev_untyped_float:
+            case EV_UNTYPED_FLOAT:
                 info->ev->as_untyped_float = -subexpr.ev->as_untyped_float;
-                info->ev->kind = ev_untyped_float;
+                info->ev->kind = EV_UNTYPED_FLOAT;
                 break;
             default:
                 UNREACHABLE;
@@ -204,17 +204,17 @@ void check_unary_op_expr(mars_module* mod, entity_table* et, AST expr, checked_e
         if (subexpr.ev) {
             info->ev = new_exact_value(NO_AGGREGATE, USE_MALLOC);
             switch (subexpr.ev->kind) {
-            case ev_u8:
-            case ev_i8:  info->ev->as_i8  = ~subexpr.ev->as_i8; break;
-            case ev_f16:
-            case ev_u16:
-            case ev_i16: info->ev->as_i16 = ~subexpr.ev->as_i16; break;
-            case ev_f32:
-            case ev_u32:
-            case ev_i32: info->ev->as_i32 = ~subexpr.ev->as_i32; break;
-            case ev_f64:
-            case ev_u64:
-            case ev_i64: info->ev->as_i64 = ~subexpr.ev->as_i64; break;
+            case EV_U8:
+            case EV_I8:  info->ev->as_i8  = ~subexpr.ev->as_i8; break;
+            case EV_F16:
+            case EV_U16:
+            case EV_I16: info->ev->as_i16 = ~subexpr.ev->as_i16; break;
+            case EV_F32:
+            case EV_U32:
+            case EV_I32: info->ev->as_i32 = ~subexpr.ev->as_i32; break;
+            case EV_F64:
+            case EV_U64:
+            case EV_I64: info->ev->as_i64 = ~subexpr.ev->as_i64; break;
             default:
                 UNREACHABLE;
                 break;
@@ -224,21 +224,14 @@ void check_unary_op_expr(mars_module* mod, entity_table* et, AST expr, checked_e
         }
     } break;
     case tt_exclam: { // ! boolean NOT
-        if (!is_pointer(subexpr.type) && !(subexpr.type->tag != T_BOOL)) {
+        if (subexpr.type->tag != T_BOOL) {
             error_at_node(mod, unary->inside, "expected pointer or boolean");
         }
 
         if (subexpr.ev) {
-            info->ev = new_exact_value(NO_AGGREGATE, USE_MALLOC);
-            switch (subexpr.ev->kind) {
-            case ev_pointer: info->ev->as_bool = !subexpr.ev->as_pointer;
-            case ev_bool:    info->ev->as_bool = !subexpr.ev->as_bool;
-            default:
-                UNREACHABLE;
-                break;
-            }
-        info->ev->kind = subexpr.ev->kind;
-        info->local_derived = subexpr.local_derived;
+            info->ev->as_bool = !subexpr.ev->as_bool;
+            info->ev->kind = EV_BOOL;
+            info->local_derived = subexpr.local_derived;
         }
 
         info->type = make_type(T_BOOL);
@@ -267,7 +260,7 @@ void check_unary_op_expr(mars_module* mod, entity_table* et, AST expr, checked_e
         }
         
         exact_value* ev = new_exact_value(NO_AGGREGATE, USE_MALLOC);
-        ev->kind = ev_untyped_int;
+        ev->kind = EV_UNTYPED_INT;
 
         if (unary->inside.type != AST_selector_expr) {
             warning_at_node(mod, unary->inside, "offset of non-struct-selector is zero");
@@ -284,13 +277,12 @@ void check_unary_op_expr(mars_module* mod, entity_table* et, AST expr, checked_e
         type* struct_type = selectee.type;
         assert(struct_type != NULL);
 
-        struct_field* field_props = get_field_properties(struct_type, field_name);
+        // struct_field* field_props = get_field_properties(struct_type, field_name);
         assert(field_props != NULL);
 
         ev->as_untyped_int = field_props->offset;
 
-
-        // TODO("the rest of offsetof");
+        return;
     }
     }
 }
@@ -299,13 +291,32 @@ void check_binary_op_expr(mars_module* mod, entity_table* et, AST expr, checked_
     TODO("");
 }
 
+void fill_aggregate_offsets(type* t) {
+    assert(t->tag == T_STRUCT || t->tag == T_UNION);
+
+    TODO("fill aggregate offsets");
+
+    if (t->tag == T_UNION) {
+        FOR_URANGE(i, 0, t->as_aggregate.fields.len) {
+            t->as_aggregate.fields.at[i].offset = 0;
+        }
+    } else {
+        u64 running_offset = 0;
+        FOR_URANGE(i, 0, t->as_aggregate.fields.len) {
+            running_offset = align_forward(running_offset, type_real_align_of(t->as_aggregate.fields.at[i].subtype));
+            t->as_aggregate.fields.at[i].offset = running_offset;
+            running_offset += type_real_size_of(t->as_aggregate.fields.at[i].subtype);
+        }
+    }
+}
+
 // construct a type and embed it in the type graph
 type* type_from_expr(mars_module* mod, entity_table* et, AST expr, bool no_error, bool top) {
     if (is_null_AST(expr)) return NULL;
 
     switch (expr.type) {
     case AST_paren_expr: { // ()
-        return type_from_expr(mod, et, expr.as_paren_expr->subexpr, no_error, true);
+        return type_from_expr(mod, et, expr.as_paren_expr->subexpr, no_error, top);
     }
     case AST_basic_type_expr: { // i32, bool, addr, et cetera
         switch (expr.as_basic_type_expr->lit->type) {

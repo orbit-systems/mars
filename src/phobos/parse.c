@@ -532,7 +532,7 @@ AST parse_atomic_expr(parser* p, bool no_cl) {
             n.as_literal_expr->base.start = &current_token;
             n.as_literal_expr->base.end = &current_token;
 
-            n.as_literal_expr->value.kind = ev_pointer; 
+            n.as_literal_expr->value.kind = EV_POINTER; 
             n.as_literal_expr->value.as_pointer = 0;
             n.as_literal_expr->value.freeable = false;
 
@@ -548,7 +548,7 @@ AST parse_atomic_expr(parser* p, bool no_cl) {
             n.as_literal_expr->base.start = &current_token;
             n.as_literal_expr->base.end = &current_token;
 
-            n.as_literal_expr->value.kind = ev_bool;
+            n.as_literal_expr->value.kind = EV_BOOL;
             n.as_literal_expr->value.as_bool = string_eq(current_token.text, to_string("true"));
             n.as_literal_expr->value.freeable = false;
 
@@ -564,7 +564,7 @@ AST parse_atomic_expr(parser* p, bool no_cl) {
             n.as_literal_expr->base.start = &current_token;
             n.as_literal_expr->base.end = &current_token;
 
-            n.as_literal_expr->value.kind = ev_untyped_int;
+            n.as_literal_expr->value.kind = EV_UNTYPED_INT;
             n.as_literal_expr->value.as_untyped_int = char_lit_value(p);
             n.as_literal_expr->value.freeable = false;
 
@@ -580,7 +580,7 @@ AST parse_atomic_expr(parser* p, bool no_cl) {
             n.as_literal_expr->base.start = &current_token;
             n.as_literal_expr->base.end = &current_token;
         
-            n.as_literal_expr->value.kind = ev_untyped_float;
+            n.as_literal_expr->value.kind = EV_UNTYPED_FLOAT;
             n.as_literal_expr->value.as_untyped_float = float_lit_value(p);
             n.as_literal_expr->value.freeable = false;
 
@@ -596,7 +596,7 @@ AST parse_atomic_expr(parser* p, bool no_cl) {
             n.as_literal_expr->base.start = &current_token;
             n.as_literal_expr->base.end = &current_token;
         
-            n.as_literal_expr->value.kind = ev_untyped_int;
+            n.as_literal_expr->value.kind = EV_UNTYPED_INT;
             n.as_literal_expr->value.as_untyped_int = int_lit_value(p);
             n.as_literal_expr->value.freeable = false;
 
@@ -611,7 +611,7 @@ AST parse_atomic_expr(parser* p, bool no_cl) {
             n = new_ast_node_p(p, AST_literal_expr);
             n.as_literal_expr->base.start = &current_token;
         
-            n.as_literal_expr->value.kind = ev_string;
+            n.as_literal_expr->value.kind = EV_STRING;
             n.as_literal_expr->value.freeable = false;
 
             string value = NULL_STR;

@@ -7,30 +7,30 @@
 typedef struct exact_value exact_value;
 
 typedef u8 exact_value_kind; enum {
-    ev_invalid,
+    EV_INVALID,
     
-    ev_bool,
-    ev_string,
-    ev_untyped_int,
-    ev_untyped_float,
+    EV_BOOL,
+    EV_STRING,
+    EV_UNTYPED_INT,
+    EV_UNTYPED_FLOAT,
 
-    ev_u8,
-    ev_u16,
-    ev_u32,
-    ev_u64,
+    EV_U8,
+    EV_U16,
+    EV_U32,
+    EV_U64,
 
-    ev_i8,
-    ev_i16,
-    ev_i32,
-    ev_i64,
+    EV_I8,
+    EV_I16,
+    EV_I32,
+    EV_I64,
+
+    EV_F16,
+    EV_F32,
+    EV_F64,
     
-    ev_f64,
-    ev_f32,
-    ev_f16,
-    
-    ev_pointer,
-    ev_aggregate,
-    ev_trustmebro, 
+    EV_POINTER,
+    EV_AGGREGATE,
+    // EV_TRUSTMEBRO, 
     /* the checker can't determine what the value is, 
        but it WILL be constant at compile time. this is
        usually due to pointer shenangians, where the value of the pointer
