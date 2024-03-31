@@ -277,6 +277,8 @@ void check_unary_op_expr(mars_module* mod, entity_table* et, AST expr, checked_e
     } break;
     case TOK_KEYWORD_OFFSETOF: { // offsetof( entity.field )
 
+        TODO("rework");
+
         // if the entity is a type expression, use the type name directly
         if (unary->inside.type == AST_selector_expr && unary->inside.as_selector_expr->rhs.type == AST_identifier_expr) {
             AST field = unary->inside.as_selector_expr->rhs;
@@ -302,7 +304,7 @@ void check_unary_op_expr(mars_module* mod, entity_table* et, AST expr, checked_e
         check_expr(mod, et, unary->inside, &subexpr, must_comptime_const, NULL);
 
         if (!subexpr.addressable) { // cant get offset if its not addressable!
-            error_at_node(mod, unary->inside, "cannot get offset of unaddressable expression");
+            error_at_node(mod, unary->inside, "cannot get offset of non-addressable expression");
         }
         
         exact_value* ev = new_exact_value(NO_AGGREGATE, USE_MALLOC);
