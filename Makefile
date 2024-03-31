@@ -15,7 +15,7 @@ DEBUGFLAGS = -lm -rdynamic -pg -g
 ASANFLAGS = -fsanitize=undefined -fsanitize=address
 DONTBEAFUCKINGIDIOT = -Wall -Wextra -pedantic -Wno-missing-field-initializers -Wno-unused-result
 CFLAGS = -std=c11 -Wincompatible-pointer-types -lm
-OPT = -O0
+OPT = -O2
 
 all: build
 
