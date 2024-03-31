@@ -226,7 +226,7 @@ bool type_element_equivalent(type* restrict a, type* restrict b, int num_set_a, 
             if (get_variant(a, i)->enum_val != get_variant(b, i)->enum_val) {
                 return false;
             }
-            if (strcmp(get_variant(a, i)->name, get_variant(b, i)->name) != 0) {
+            if (!string_eq(get_variant(a, i)->name, get_variant(b, i)->name)) {
                 return false;
             }
         }
@@ -238,7 +238,7 @@ bool type_element_equivalent(type* restrict a, type* restrict b, int num_set_a, 
             return false;
         }
         FOR_URANGE(i, 0, a->as_aggregate.fields.len) {
-            if (strcmp(get_field(a, i)->name, get_field(b, i)->name) != 0) {
+            if (!string_eq(get_field(a, i)->name, get_field(b, i)->name)) {
                 return false;
             }
             if (get_field(a, i)->subtype->type_nums[num_set_a] != get_field(b, i)->subtype->type_nums[num_set_b]) {
@@ -254,7 +254,7 @@ bool type_element_equivalent(type* restrict a, type* restrict b, int num_set_a, 
             return false;
         }
         FOR_URANGE(i, 0, a->as_function.params.len) {
-            if (strcmp(a->as_function.params.at[i].name, b->as_function.params.at[i].name) != 0) {
+            if (!string_eq(a->as_function.params.at[i].name, b->as_function.params.at[i].name)) {
                 return false;
             }
             if (a->as_function.params.at[i].subtype->type_nums[num_set_a] != b->as_function.params.at[i].subtype->type_nums[num_set_b]) {
@@ -262,7 +262,7 @@ bool type_element_equivalent(type* restrict a, type* restrict b, int num_set_a, 
             }
         }
         FOR_URANGE(i, 0, a->as_function.returns.len) {
-            if (strcmp(a->as_function.returns.at[i].name, b->as_function.returns.at[i].name) != 0) {
+            if (!string_eq(a->as_function.returns.at[i].name, b->as_function.returns.at[i].name)) {
                 return false;
             }
             if (a->as_function.returns.at[i].subtype->type_nums[num_set_a] != b->as_function.returns.at[i].subtype->type_nums[num_set_b]) {
@@ -513,7 +513,7 @@ void make_type_graph() {
     }
 }
 
-forceinline void add_field(type* restrict s, char* name, type* restrict sub) {
+forceinline void add_field(type* restrict s, string name, type* restrict sub) {
     da_append(&s->as_aggregate.fields, ((struct_field){name, sub}));
 }
 
@@ -521,7 +521,7 @@ forceinline struct_field* get_field(type* restrict s, size_t i) {
     return &s->as_aggregate.fields.at[i];
 }
 
-forceinline void add_variant(type* restrict e, char* name, i64 val) {
+forceinline void add_variant(type* restrict e, string name, i64 val) {
     da_append(&e->as_enum.variants, ((enum_variant){name, val}));
 }
 
@@ -532,7 +532,7 @@ forceinline enum_variant* get_variant(type* restrict e, size_t i) {
 forceinline bool type_enum_variant_less(enum_variant* a, enum_variant* b) {
     if (a->enum_val == b->enum_val) {
         // use string names
-        return strcmp(a->name, b->name) < 0;
+        return string_cmp(a->name, b->name) < 0;
     } else {
         return a->enum_val < b->enum_val;
     }

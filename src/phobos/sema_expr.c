@@ -75,6 +75,25 @@ forceinline bool is_global(entity* restrict e) {
     return (e->top == global_et(e->top));
 }
 
+struct_field* get_field_properties(type* restrict t, string query) {
+    if (query.len == 1 && *query.raw == '_') return NULL;
+
+    FOR_URANGE(i, 0, t->as_aggregate.fields.len) {
+        struct_field* field = &t->as_aggregate.fields.at[i];
+
+        if (string_eq(query, field->name)) {
+            return field;
+        }
+
+        if (string_eq(field->name, to_string("_"))) {
+            struct_field* subfield = get_field_properties(field->subtype, query);
+            if (subfield != NULL) return subfield;
+        }
+    }
+
+    return NULL;
+}
+
 void check_expr(mars_module* restrict mod, entity_table* restrict et, AST expr, checked_expr* restrict info, bool must_comptime_const, type* restrict typehint) {
     info->expr = expr;
 
@@ -117,6 +136,10 @@ void check_ident_expr(mars_module* restrict mod, entity_table* restrict et, AST 
     entity* restrict ent = ident->entity;
 
     if (!ent || is_null_AST(ent->decl)) error_at_node(mod, expr, "'"str_fmt"' undefined", str_arg(ident->tok->text));
+
+    if (must_comptime_const&& ent->visited) {
+        error_at_node(mod, expr, "constant expression has cyclic dependencies");
+    }
 
     if (!ent->checked) check_stmt(mod, global_et(et), ent->decl); // on-the-fly global checking
 
@@ -252,7 +275,22 @@ void check_unary_op_expr(mars_module* restrict mod, entity_table* restrict et, A
             break;
         }
 
-        TODO("the rest of offsetof");
+        assert(unary->inside.as_selector_expr->rhs.type == AST_identifier_expr);
+        string field_name = unary->inside.as_selector_expr->rhs.as_identifier_expr->tok->text;
+
+        checked_expr selectee = {0};
+        check_expr(mod, et, unary->inside, &selectee, false, NULL);
+
+        type* struct_type = selectee.type;
+        assert(struct_type != NULL);
+
+        struct_field* field_props = get_field_properties(struct_type, field_name);
+        assert(field_props != NULL);
+
+        ev->as_untyped_int = field_props->offset;
+
+
+        // TODO("the rest of offsetof");
     }
     }
 }

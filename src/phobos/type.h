@@ -64,16 +64,19 @@ enum {
 
 };
 
+typedef struct type type;
+
 typedef struct struct_field {
-    char* name;
-    struct type* subtype;
+    string name;
+    type* subtype;
+    u64   offset;
 } struct_field;
 
 da_typedef(struct_field);
 
 typedef struct enum_variant {
-    char* name;
-    i64 enum_val;
+    string name;
+    i64   enum_val;
 } enum_variant;
 
 da_typedef(enum_variant);
@@ -82,11 +85,11 @@ typedef struct type {
     union {
         struct {
             string name; // only used by T_ALIAS
-            struct type* subtype;
+            type* subtype;
             bool mutable; // only used by pointers and slices
         } as_reference; // used by T_POINTER, T_SLICE, T_ALIAS, and T_DISTINCT
         struct {
-            struct type* subtype;
+            type* subtype;
             u64 len;
         } as_array;
         struct {
@@ -98,10 +101,10 @@ typedef struct type {
         } as_function;
         struct {
             da(enum_variant) variants;
-            struct type* backing_type;
+            type* backing_type;
         } as_enum;
     };
-    struct type* moved;
+    type* moved;
     u8 tag;
     bool visited : 1;
     u16 type_nums[2];
@@ -121,9 +124,9 @@ extern type_graph typegraph;
 void  make_type_graph();
 type* restrict make_type(u8 tag);
 
-void          add_field(type* restrict s, char* name, type* restrict sub);
+void          add_field(type* restrict s, string name, type* restrict sub);
 struct_field* get_field(type* restrict s, size_t i);
-void          add_variant(type* restrict e, char* name, i64 val);
+void          add_variant(type* restrict e, string name, i64 val);
 enum_variant* get_variant(type* restrict e, size_t i);
 void  set_target(type* restrict p, type* restrict dest);
 type* restrict get_target(type* restrict p);
@@ -137,7 +140,7 @@ void type_reset_numbers(int num_set);
 void canonicalize_type_graph();
 void merge_type_references(type* restrict dest, type* restrict src, bool disable);
 
-char** gather_aliases(type* restrict t);
+string* gather_aliases(type* restrict t);
 
 void print_type_graph();
 
