@@ -122,32 +122,32 @@ typedef struct {
 extern type_graph typegraph;
 
 void  make_type_graph();
-type* restrict make_type(u8 tag);
+type* make_type(u8 tag);
 
-void          add_field(type* restrict s, string name, type* restrict sub);
-struct_field* get_field(type* restrict s, size_t i);
-void          add_variant(type* restrict e, string name, i64 val);
-enum_variant* get_variant(type* restrict e, size_t i);
-void  set_target(type* restrict p, type* restrict dest);
-type* restrict get_target(type* restrict p);
-u64   get_index(type* restrict t);
+void          add_field(type* s, string name, type* sub);
+struct_field* get_field(type* s, size_t i);
+void          add_variant(type* e, string name, i64 val);
+enum_variant* get_variant(type* e, size_t i);
+void  set_target(type* p, type* dest);
+type* get_target(type* p);
+u64   get_index(type* t);
 
-type* restrict get_type_from_num(u16 num, int num_set);
-bool types_are_equivalent(type* restrict a, type* restrict b, bool* executed_TSA);
-bool type_element_equivalent(type* restrict a, type* restrict b, int num_set_a, int num_set_b);
-void type_locally_number(type* restrict t, u64* number, int num_set);
+type* get_type_from_num(u16 num, int num_set);
+bool types_are_equivalent(type* a, type* b, bool* executed_TSA);
+bool type_element_equivalent(type* a, type* b, int num_set_a, int num_set_b);
+void type_locally_number(type* t, u64* number, int num_set);
 void type_reset_numbers(int num_set);
 void canonicalize_type_graph();
-void merge_type_references(type* restrict dest, type* restrict src, bool disable);
+void merge_type_references(type* dest, type* src, bool disable);
 
-string* gather_aliases(type* restrict t);
+string* gather_aliases(type* t);
 
 void print_type_graph();
 
 // a < b
 bool type_enum_variant_less(enum_variant* a, enum_variant* b);
 
-u32 type_real_size_of(type* restrict t);
-u32 type_real_align_of(type* restrict t);
+u32 type_real_size_of(type* t);
+u32 type_real_align_of(type*t);
 
-bool type_is_infinite(type* restrict t);
+bool type_is_infinite(type* t);

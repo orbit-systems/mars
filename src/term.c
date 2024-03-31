@@ -164,7 +164,7 @@ void warning_at_string(string path, string text, string pos, char* message, ...)
 
 }
 
-void line_and_col(string text, size_t position, char** restrict last_newline, int* restrict line_len, int* restrict line, int* restrict col) {
+void line_and_col(string text, size_t position, char** last_newline, int* restrict line_len, int* restrict line, int* restrict col) {
     
     int l = 0;
     int c = 0;

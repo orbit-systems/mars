@@ -17,7 +17,7 @@ typedef struct {
 da_typedef(mars_file);
 
 typedef struct {
-    struct mars_module ** restrict at;
+    struct mars_module ** at;
     size_t len;
     size_t cap;
 } module_list;

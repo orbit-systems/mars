@@ -1,7 +1,7 @@
 #include "exactval.h"
 #include "arena.h"
 
-exact_value* new_exact_value(int aggregate_len, arena* restrict alloca) {
+exact_value* new_exact_value(int aggregate_len, arena* alloca) {
     exact_value* ev;
     if (alloca == NULL) return NULL;
     if (alloca == USE_MALLOC) {

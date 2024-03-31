@@ -65,12 +65,14 @@ typedef struct exact_value {
             u32 len;
         } as_aggregate;
     };
-    exact_value_kind kind;
-    bool freeable;
+    exact_value_kind kind : 5;
+    bool freeable : 1;
+
+    bool aggregate_all_zero : 1;
 } exact_value;
 
 #define NO_AGGREGATE (-1)
 #define USE_MALLOC ((void*)1)
 
-exact_value* new_exact_value(int aggregate_len, arena* restrict alloca);
+exact_value* new_exact_value(int aggregate_len, arena* alloca);
 void destroy_exact_value(exact_value* ev);

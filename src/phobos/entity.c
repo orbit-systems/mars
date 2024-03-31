@@ -14,7 +14,7 @@ u64 FNV_1a(string key) {
     return hash;
 }
 
-entity_table* new_entity_table(entity_table* restrict parent) {
+entity_table* new_entity_table(entity_table* parent) {
     entity_table* et = malloc(sizeof(entity_table));
     *et = (entity_table){0};
 
@@ -27,7 +27,7 @@ entity_table* new_entity_table(entity_table* restrict parent) {
     return et;
 }
 
-entity* search_for_entity(entity_table* restrict et, string ident) {
+entity* search_for_entity(entity_table* et, string ident) {
     if (et == NULL) return NULL;
     
     // for now, its linear search bc im too lazy to impl a hashmap
@@ -40,7 +40,7 @@ entity* search_for_entity(entity_table* restrict et, string ident) {
     return search_for_entity(et->parent, ident);
 }
 
-entity* new_entity(entity_table* restrict et, string ident, AST decl) {
+entity* new_entity(entity_table* et, string ident, AST decl) {
     entity* e = arena_alloc(&et->alloca, sizeof(entity), alignof(entity));
     *e = (entity){0};
     e->identifier = ident;

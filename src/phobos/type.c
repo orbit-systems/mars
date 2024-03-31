@@ -113,7 +113,7 @@ void canonicalize_type_graph() {
     da_destroy(&equalities);
 }
 
-bool types_are_equivalent(type* restrict a, type* restrict b, bool* executed_TSA) {
+bool types_are_equivalent(type* a, type* b, bool* executed_TSA) {
 
     while (a->tag == T_ALIAS) a = get_target(a);
     while (b->tag == T_ALIAS) b = get_target(b);
@@ -198,7 +198,7 @@ bool types_are_equivalent(type* restrict a, type* restrict b, bool* executed_TSA
     return true;
 }
 
-bool type_element_equivalent(type* restrict a, type* restrict b, int num_set_a, int num_set_b) {
+bool type_element_equivalent(type* a, type* b, int num_set_a, int num_set_b) {
     if (a->tag != b->tag) return false;
 
     switch (a->tag) {
@@ -294,7 +294,7 @@ bool type_element_equivalent(type* restrict a, type* restrict b, int num_set_a, 
     return true;
 }
 
-void merge_type_references(type* restrict dest, type* restrict src, bool disable) {
+void merge_type_references(type* dest, type* src, bool disable) {
 
     u64 src_index = get_index(src);
     if (src_index == UINT32_MAX) {
@@ -353,7 +353,7 @@ void merge_type_references(type* restrict dest, type* restrict src, bool disable
     // dest->dirty = true;
 }
 
-void type_locally_number(type* restrict t, u64* number, int num_set) {
+void type_locally_number(type* t, u64* number, int num_set) {
     if (t->type_nums[num_set] != 0) return;
 
     t->type_nums[num_set] = (*number)++;
@@ -388,7 +388,7 @@ void type_locally_number(type* restrict t, u64* number, int num_set) {
 }
 
 // do checking on the fly, improved method for ""incomplete"" type graphs
-bool otf_types_are_equivalent(type* restrict a, type* restrict b) {
+bool otf_types_are_equivalent(type* a, type* b) {
     while (a->tag == T_ALIAS) a = get_target(a);
     while (b->tag == T_ALIAS) b = get_target(b);
 
@@ -513,19 +513,19 @@ void make_type_graph() {
     }
 }
 
-forceinline void add_field(type* restrict s, string name, type* restrict sub) {
+forceinline void add_field(type* s, string name, type* sub) {
     da_append(&s->as_aggregate.fields, ((struct_field){name, sub}));
 }
 
-forceinline struct_field* get_field(type* restrict s, size_t i) {
+forceinline struct_field* get_field(type* s, size_t i) {
     return &s->as_aggregate.fields.at[i];
 }
 
-forceinline void add_variant(type* restrict e, string name, i64 val) {
+forceinline void add_variant(type* e, string name, i64 val) {
     da_append(&e->as_enum.variants, ((enum_variant){name, val}));
 }
 
-forceinline enum_variant* get_variant(type* restrict e, size_t i) {
+forceinline enum_variant* get_variant(type* e, size_t i) {
     return &e->as_enum.variants.at[i];
 }
 
@@ -538,15 +538,15 @@ forceinline bool type_enum_variant_less(enum_variant* a, enum_variant* b) {
     }
 }
 
-forceinline void set_target(type* restrict p, type* restrict dest) {
+forceinline void set_target(type* p, type* dest) {
     p->as_reference.subtype = dest;
 }
 
-forceinline type* get_target(type* restrict p) {
+forceinline type* get_target(type* p) {
     return p->as_reference.subtype;
 }
 
-u64 get_index(type* restrict t) {
+u64 get_index(type* t) {
     FOR_URANGE(i, 0, typegraph.len) {
         if (typegraph.at[i] == t) return i;
     }
@@ -606,7 +606,7 @@ void print_type_graph() {
 }
 
 // is type unboundedly recursive (have infinite size)?
-bool type_is_infinite(type* restrict t) {
+bool type_is_infinite(type* t) {
     if (t->visited) return true;
 
     t->visited = true;
@@ -655,7 +655,7 @@ bool type_is_infinite(type* restrict t) {
     return is_inf;
 }
 
-u32 static size_of_internal(type* restrict t) {
+u32 static size_of_internal(type* t) {
     if (t->size != UINT32_MAX) return t->size;
 
     switch (t->tag) {
@@ -709,12 +709,12 @@ u32 static size_of_internal(type* restrict t) {
     }
 }
 
-u32 type_real_size_of(type* restrict t) {
+u32 type_real_size_of(type* t) {
     if (type_is_infinite(t)) return UINT32_MAX;
     return size_of_internal(t);
 }
 
-u32 static align_of_internal(type* restrict t) {
+u32 static align_of_internal(type* t) {
     if (t->align != UINT32_MAX) return t->align;
 
     switch (t->tag) {
@@ -761,7 +761,7 @@ u32 static align_of_internal(type* restrict t) {
     }
 }
 
-u32 type_real_align_of(type* restrict t) {
+u32 type_real_align_of(type* t) {
     if (type_is_infinite(t)) return UINT32_MAX;
     return align_of_internal(t);
 }

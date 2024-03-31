@@ -72,24 +72,42 @@ forceinline bool is_global(entity* e) {
     return (e->top == global_et(e->top));
 }
 
-// struct_field* get_field_properties(type* t, string query) {
-//     if (query.len == 1 && *query.raw == '_') return NULL;
+u64 get_field_offset(type* t, string query) {
+    if (query.len == 1 && *query.raw == '_') return UINT64_MAX;
 
-//     FOR_URANGE(i, 0, t->as_aggregate.fields.len) {
-//         struct_field* field = &t->as_aggregate.fields.at[i];
+    FOR_URANGE(i, 0, t->as_aggregate.fields.len) {
+        struct_field* field = &t->as_aggregate.fields.at[i];
 
-//         if (string_eq(query, field->name)) {
-//             return field;
-//         }
+        if (string_eq(query, field->name)) return field->offset;
 
-//         if (string_eq(field->name, to_string("_"))) {
-//             struct_field* subfield = get_field_properties(field->subtype, query);
-//             if (subfield != NULL) return subfield;
-//         }
-//     }
+        if (string_eq(field->name, to_string("_"))) {
+            u64 subfield_offset = get_field_offset(field->subtype, query);
+            if (subfield_offset != UINT64_MAX) return subfield_offset + field->offset;
+        }
+    }
 
-//     return NULL;
-// }
+    return UINT64_MAX;
+}
+
+void fill_aggregate_offsets(type* t) {
+    assert(t->tag == T_STRUCT || t->tag == T_UNION);
+
+    TODO("fill aggregate offsets");
+
+    if (t->tag == T_UNION) {
+        FOR_URANGE(i, 0, t->as_aggregate.fields.len) {
+            t->as_aggregate.fields.at[i].offset = 0;
+        }
+    } else {
+        u64 running_offset = 0;
+        FOR_URANGE(i, 0, t->as_aggregate.fields.len) {
+            running_offset = align_forward(running_offset, type_real_align_of(t->as_aggregate.fields.at[i].subtype));
+            t->as_aggregate.fields.at[i].offset = running_offset;
+            running_offset += type_real_size_of(t->as_aggregate.fields.at[i].subtype);
+            
+        }
+    }
+}
 
 void check_expr(mars_module* mod, entity_table* et, AST expr, checked_expr* info, bool must_comptime_const, type* typehint) {
     info->expr = expr;
@@ -154,8 +172,6 @@ void check_ident_expr(mars_module* mod, entity_table* et, AST expr, checked_expr
     info->local_derived = !is_global(ent);
     info->mutable       = ent->is_mutable;
     info->type          = ent->entity_type;
-    info->local_ref     = false;
-    info->use_returns   = false;
     ent->is_used        = true;
 }
 
@@ -164,10 +180,18 @@ void check_unary_op_expr(mars_module* mod, entity_table* et, AST expr, checked_e
     ast_unary_op_expr* unary = expr.as_unary_op_expr;
 
     checked_expr subexpr = {0};
-    check_expr(mod, et, unary->inside, &subexpr, must_comptime_const, NULL);
     
     switch (unary->op->type) {
-    case TT_SUB: { // - numeric negative
+    case TOK_KEYWORD_SIZEOF:
+    case TOK_KEYWORD_ALIGNOF:
+    case TOK_KEYWORD_OFFSETOF:
+        break;
+    default:
+        check_expr(mod, et, unary->inside, &subexpr, must_comptime_const, NULL);
+    }
+    
+    switch (unary->op->type) {
+    case TOK_SUB: { // - numeric negative
         if (!is_numeric(subexpr.type)) {
             error_at_node(mod, unary->inside, "expected a numeric type");
         }
@@ -190,7 +214,7 @@ void check_unary_op_expr(mars_module* mod, entity_table* et, AST expr, checked_e
         }
         info->type = subexpr.type;
     } break;
-    case TT_TILDE: { // ~ bitwise NOT
+    case TOK_TILDE: { // ~ bitwise NOT
         if (!is_numeric(subexpr.type)) {
             error_at_node(mod, unary->inside, "expected a numeric type");
         }
@@ -220,7 +244,7 @@ void check_unary_op_expr(mars_module* mod, entity_table* et, AST expr, checked_e
         info->type = subexpr.type;
         }
     } break;
-    case TT_EXCLAM: { // ! boolean NOT
+    case TOK_EXCLAM: { // ! boolean NOT
         if (subexpr.type->tag != T_BOOL) {
             error_at_node(mod, unary->inside, "expected pointer or boolean");
         }
@@ -233,7 +257,7 @@ void check_unary_op_expr(mars_module* mod, entity_table* et, AST expr, checked_e
 
         info->type = make_type(T_BOOL);
     } break;
-    case TT_AND: { // & reference operator
+    case TOK_AND: { // & reference operator
         if (!subexpr.addressable) {
             error_at_node(mod, unary->inside, "expression is not addressable");
         }
@@ -243,7 +267,7 @@ void check_unary_op_expr(mars_module* mod, entity_table* et, AST expr, checked_e
         info->type->as_reference.mutable = subexpr.mutable;
         info->local_ref = subexpr.local_derived;
     } break;
-    case TT_CARAT: { // ^ dereference operator
+    case TOK_CARAT: { // ^ dereference operator
         if (!is_pointer(subexpr.type)) {
             error_at_node(mod, unary->inside, "expression is not dereferencable");
         }
@@ -251,16 +275,41 @@ void check_unary_op_expr(mars_module* mod, entity_table* et, AST expr, checked_e
         info->type = get_target(subexpr.type);
         info->mutable = subexpr.type->as_reference.mutable;
     } break;
-    case TT_KEYWORD_OFFSETOF: { // offsetof( entity.field )
+    case TOK_KEYWORD_OFFSETOF: { // offsetof( entity.field )
+
+        // if the entity is a type expression, use the type name directly
+        if (unary->inside.type == AST_selector_expr && unary->inside.as_selector_expr->rhs.type == AST_identifier_expr) {
+            AST field = unary->inside.as_selector_expr->rhs;
+
+            // search for selectee type, if possible
+            type* selectee_type = type_from_expr(mod, et, unary->inside.as_selector_expr->lhs, true, true);
+            if (selectee_type != NULL) {
+                if (selectee_type->tag != T_STRUCT && selectee_type->tag != T_UNION) {
+                    error_at_node(mod, unary->inside.as_selector_expr->lhs, "type expression is not a struct or union type");
+                }
+                
+                exact_value* ev = new_exact_value(NO_AGGREGATE, USE_MALLOC);
+                ev->kind = EV_UNTYPED_INT;
+
+                ev->as_untyped_int = get_field_offset(selectee_type, field.as_identifier_expr->tok->text);
+                if (ev->as_untyped_int == UINT64_MAX) error_at_node(mod, unary->inside, "type has no field '"str_fmt"'", str_arg(field.as_identifier_expr->tok->text));
+                info->ev = ev;
+                info->type = make_type(T_UNTYPED_INT);
+                break;
+            }
+        }
+
+        check_expr(mod, et, unary->inside, &subexpr, must_comptime_const, NULL);
+
         if (!subexpr.addressable) { // cant get offset if its not addressable!
-            error_at_node(mod, unary->inside, "cannot get offset of expression");
+            error_at_node(mod, unary->inside, "cannot get offset of unaddressable expression");
         }
         
         exact_value* ev = new_exact_value(NO_AGGREGATE, USE_MALLOC);
         ev->kind = EV_UNTYPED_INT;
 
         if (unary->inside.type != AST_selector_expr) {
-            warning_at_node(mod, unary->inside, "offset of non-struct-selector is zero");
+            warning_at_node(mod, unary->inside, "offset of non-selector expression is always zero");
             ev->as_untyped_int = 0;
             break;
         }
@@ -274,37 +323,59 @@ void check_unary_op_expr(mars_module* mod, entity_table* et, AST expr, checked_e
         type* struct_type = selectee.type;
         assert(struct_type != NULL);
 
-        // struct_field* field_props = get_field_properties(struct_type, field_name);
-        //assert(field_props != NULL);
+        ev->as_untyped_int = get_field_offset(struct_type, field_name);
+        assert(ev->as_untyped_int != UINT64_MAX);
+        
+        info->ev = ev;
+        info->type = make_type(T_UNTYPED_INT);
 
-        //ev->as_untyped_int = field_props->offset;
+    } break;
+    case TOK_KEYWORD_SIZEOF: {
+        exact_value* ev = new_exact_value(NO_AGGREGATE, USE_MALLOC);
+        ev->kind = EV_UNTYPED_INT;
+        info->ev = ev;
 
-        return;
-    }
+        // try parsing a type?
+        type* inside_type = type_from_expr(mod, et, unary->inside, true, true);
+        if (inside_type != NULL) {
+            info->ev->as_untyped_int = type_real_size_of(inside_type);
+            break;
+        }
+
+        // try parsing value expression
+        check_expr(mod, et, unary->inside, &subexpr, must_comptime_const, NULL);
+        if (is_untyped(subexpr.type)) error_at_node(mod, subexpr.expr, "cannot get size of untyped expression");
+        
+        info->ev->as_untyped_int = type_real_size_of(subexpr.type);
+        info->type = make_type(T_UNTYPED_INT);
+    } break;
+    case TOK_KEYWORD_ALIGNOF: {
+        exact_value* ev = new_exact_value(NO_AGGREGATE, USE_MALLOC);
+        ev->kind = EV_UNTYPED_INT;
+        info->ev = ev;
+
+        // try parsing a type?
+        type* inside_type = type_from_expr(mod, et, unary->inside, true, true);
+        if (inside_type != NULL) {
+            info->ev->as_untyped_int = type_real_size_of(inside_type);
+            break;
+        }
+
+        // try parsing value expression
+        check_expr(mod, et, unary->inside, &subexpr, must_comptime_const, NULL);
+        if (is_untyped(subexpr.type)) error_at_node(mod, subexpr.expr, "cannot get align of untyped expression");
+        
+        info->ev->as_untyped_int = type_real_size_of(subexpr.type);
+        info->type = make_type(T_UNTYPED_INT);
+    } break;
+
+    default:
+        error_at_node(mod, expr, "(crash) unhandled unary operation");
     }
 }
 
 void check_binary_op_expr(mars_module* mod, entity_table* et, AST expr, checked_expr* info, bool must_comptime_const, type* typehint) {
     TODO("");
-}
-
-void fill_aggregate_offsets(type* t) {
-    assert(t->tag == T_STRUCT || t->tag == T_UNION);
-
-    TODO("fill aggregate offsets");
-
-    if (t->tag == T_UNION) {
-        FOR_URANGE(i, 0, t->as_aggregate.fields.len) {
-            t->as_aggregate.fields.at[i].offset = 0;
-        }
-    } else {
-        u64 running_offset = 0;
-        FOR_URANGE(i, 0, t->as_aggregate.fields.len) {
-            running_offset = align_forward(running_offset, type_real_align_of(t->as_aggregate.fields.at[i].subtype));
-            t->as_aggregate.fields.at[i].offset = running_offset;
-            running_offset += type_real_size_of(t->as_aggregate.fields.at[i].subtype);
-        }
-    }
 }
 
 // construct a type and embed it in the type graph
@@ -317,22 +388,22 @@ type* type_from_expr(mars_module* mod, entity_table* et, AST expr, bool no_error
     }
     case AST_basic_type_expr: { // i32, bool, addr, et cetera
         switch (expr.as_basic_type_expr->lit->type) {
-        case TT_TYPE_KEYWORD_I8:    return make_type(T_I8);
-        case TT_TYPE_KEYWORD_I16:   return make_type(T_I16);
-        case TT_TYPE_KEYWORD_I32:   return make_type(T_I32);
-        case TT_TYPE_KEYWORD_I64:
-        case TT_TYPE_KEYWORD_INT:   return make_type(T_I64);
-        case TT_TYPE_KEYWORD_U8:    return make_type(T_U8);
-        case TT_TYPE_KEYWORD_U16:   return make_type(T_U16);
-        case TT_TYPE_KEYWORD_U32:   return make_type(T_U32);
-        case TT_TYPE_KEYWORD_U64:
-        case TT_TYPE_KEYWORD_UINT:  return make_type(T_U64);
-        case TT_TYPE_KEYWORD_F16:   return make_type(T_F16);
-        case TT_TYPE_KEYWORD_F32:   return make_type(T_F32);
-        case TT_TYPE_KEYWORD_F64:
-        case TT_TYPE_KEYWORD_FLOAT: return make_type(T_F64);
-        case TT_TYPE_KEYWORD_ADDR:  return make_type(T_ADDR);
-        case TT_TYPE_KEYWORD_BOOL:  return make_type(T_BOOL);
+        case TOK_TYPE_KEYWORD_I8:    return make_type(T_I8);
+        case TOK_TYPE_KEYWORD_I16:   return make_type(T_I16);
+        case TOK_TYPE_KEYWORD_I32:   return make_type(T_I32);
+        case TOK_TYPE_KEYWORD_I64:
+        case TOK_TYPE_KEYWORD_INT:   return make_type(T_I64);
+        case TOK_TYPE_KEYWORD_U8:    return make_type(T_U8);
+        case TOK_TYPE_KEYWORD_U16:   return make_type(T_U16);
+        case TOK_TYPE_KEYWORD_U32:   return make_type(T_U32);
+        case TOK_TYPE_KEYWORD_U64:
+        case TOK_TYPE_KEYWORD_UINT:  return make_type(T_U64);
+        case TOK_TYPE_KEYWORD_F16:   return make_type(T_F16);
+        case TOK_TYPE_KEYWORD_F32:   return make_type(T_F32);
+        case TOK_TYPE_KEYWORD_F64:
+        case TOK_TYPE_KEYWORD_FLOAT: return make_type(T_F64);
+        case TOK_TYPE_KEYWORD_ADDR:  return make_type(T_ADDR);
+        case TOK_TYPE_KEYWORD_BOOL:  return make_type(T_BOOL);
         }
     } break;
     case AST_struct_type_expr: { TODO("struct types"); } break;

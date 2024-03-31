@@ -45,7 +45,7 @@ typedef struct entity_table {
     entity_table* parent;
     arena alloca;
 
-    entity** restrict at;
+    entity** at;
     size_t len;
     size_t cap;
 } entity_table;
@@ -54,7 +54,7 @@ extern entity_table_list entity_tables;
 
 u64 FNV_1a(string key); // for implementing a hash table later
 
-entity_table* new_entity_table(entity_table* restrict parent);
+entity_table* new_entity_table(entity_table* parent);
 
-entity* restrict search_for_entity(entity_table* restrict et, string ident);
-entity* restrict new_entity(entity_table* restrict et, string ident, AST decl);
+entity* search_for_entity(entity_table* et, string ident);
+entity* new_entity(entity_table* et, string ident, AST decl);

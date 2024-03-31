@@ -18,14 +18,14 @@
 #define peek_char(lex, n) ((lex->cursor + (n)) < lex->src.len ? lex->src.raw[lex->cursor + (n)] : '\0')
 
 
-int skip_block_comment(lexer* restrict lex);
-void skip_until_char(lexer* restrict lex, char c);
-void skip_whitespace(lexer* restrict lex);
+int skip_block_comment(lexer* lex);
+void skip_until_char(lexer* lex, char c);
+void skip_whitespace(lexer* lex);
 
-token_type scan_ident_or_keyword(lexer* restrict lex);
-token_type scan_number(lexer* restrict lex);
-token_type scan_string_or_char(lexer* restrict lex);
-token_type scan_operator(lexer* restrict lex);
+token_type scan_ident_or_keyword(lexer* lex);
+token_type scan_number(lexer* lex);
+token_type scan_string_or_char(lexer* lex);
+token_type scan_operator(lexer* lex);
 
 char* token_type_str[] = {
 #define TOKEN(enum, str) str,
@@ -43,21 +43,21 @@ lexer new_lexer(string path, string src) {
     return lex;
 }
 
-void construct_token_buffer(lexer* restrict lex) {
+void construct_token_buffer(lexer* lex) {
     if (lex == NULL || is_null_str(lex->src) || is_null_str(lex->path))
         CRASH("bad lexer provided to construct_token_buffer");
 
     do {
         append_next_token(lex);
-    } while (lex->buffer.at[lex->buffer.len-1].type != TT_EOF);
+    } while (lex->buffer.at[lex->buffer.len-1].type != TOK_EOF);
 
     da_shrink(&lex->buffer);
 }
 
-void append_next_token(lexer* restrict lex) {
+void append_next_token(lexer* lex) {
 
     // if the top token is an EOF, early return
-    // if (lex->buffer.at[lex->buffer.len-1].type == TT_EOF) {
+    // if (lex->buffer.at[lex->buffer.len-1].type == TOK_EOF) {
     //     return;
     // }
 
@@ -94,7 +94,7 @@ void append_next_token(lexer* restrict lex) {
     if (lex->cursor >= lex->src.len) {
         da_append(
             &lex->buffer, 
-            ((token){substring_len(lex->src, lex->cursor, 1), TT_EOF})
+            ((token){substring_len(lex->src, lex->cursor, 1), TOK_EOF})
         );
         return;
     }
@@ -117,7 +117,7 @@ void append_next_token(lexer* restrict lex) {
     }));
 }
 
-token_type scan_ident_or_keyword(lexer* restrict lex) {
+token_type scan_ident_or_keyword(lexer* lex) {
     u64 beginning = lex->cursor;
     
     advance_char(lex);
@@ -125,76 +125,76 @@ token_type scan_ident_or_keyword(lexer* restrict lex) {
 
     string word = substring(lex->src, beginning, lex->cursor);
 
-    if (string_eq(word, to_string("_")))            return TT_IDENTIFIER_DISCARD;
+    if (string_eq(word, to_string("_")))            return TOK_IDENTIFIER_DISCARD;
 
-    if (string_eq(word, to_string("int")))          return TT_TYPE_KEYWORD_INT;
-    if (string_eq(word, to_string("i8")))           return TT_TYPE_KEYWORD_I8;
-    if (string_eq(word, to_string("i16")))          return TT_TYPE_KEYWORD_I16;
-    if (string_eq(word, to_string("i32")))          return TT_TYPE_KEYWORD_I32;
-    if (string_eq(word, to_string("i64")))          return TT_TYPE_KEYWORD_I64;
-    if (string_eq(word, to_string("uint")))         return TT_TYPE_KEYWORD_UINT;
-    if (string_eq(word, to_string("u8")))           return TT_TYPE_KEYWORD_U8;
-    if (string_eq(word, to_string("u16")))          return TT_TYPE_KEYWORD_U16;
-    if (string_eq(word, to_string("u32")))          return TT_TYPE_KEYWORD_U32;
-    if (string_eq(word, to_string("u64")))          return TT_TYPE_KEYWORD_U64;
-    if (string_eq(word, to_string("bool")))         return TT_TYPE_KEYWORD_BOOL;
-    if (string_eq(word, to_string("float")))        return TT_TYPE_KEYWORD_FLOAT;
-    if (string_eq(word, to_string("f16")))          return TT_TYPE_KEYWORD_F16;
-    if (string_eq(word, to_string("f32")))          return TT_TYPE_KEYWORD_F32;
-    if (string_eq(word, to_string("f64")))          return TT_TYPE_KEYWORD_F64;
-    if (string_eq(word, to_string("addr")))         return TT_TYPE_KEYWORD_ADDR;
+    if (string_eq(word, to_string("int")))          return TOK_TYPE_KEYWORD_INT;
+    if (string_eq(word, to_string("i8")))           return TOK_TYPE_KEYWORD_I8;
+    if (string_eq(word, to_string("i16")))          return TOK_TYPE_KEYWORD_I16;
+    if (string_eq(word, to_string("i32")))          return TOK_TYPE_KEYWORD_I32;
+    if (string_eq(word, to_string("i64")))          return TOK_TYPE_KEYWORD_I64;
+    if (string_eq(word, to_string("uint")))         return TOK_TYPE_KEYWORD_UINT;
+    if (string_eq(word, to_string("u8")))           return TOK_TYPE_KEYWORD_U8;
+    if (string_eq(word, to_string("u16")))          return TOK_TYPE_KEYWORD_U16;
+    if (string_eq(word, to_string("u32")))          return TOK_TYPE_KEYWORD_U32;
+    if (string_eq(word, to_string("u64")))          return TOK_TYPE_KEYWORD_U64;
+    if (string_eq(word, to_string("bool")))         return TOK_TYPE_KEYWORD_BOOL;
+    if (string_eq(word, to_string("float")))        return TOK_TYPE_KEYWORD_FLOAT;
+    if (string_eq(word, to_string("f16")))          return TOK_TYPE_KEYWORD_F16;
+    if (string_eq(word, to_string("f32")))          return TOK_TYPE_KEYWORD_F32;
+    if (string_eq(word, to_string("f64")))          return TOK_TYPE_KEYWORD_F64;
+    if (string_eq(word, to_string("addr")))         return TOK_TYPE_KEYWORD_ADDR;
 
-    if (string_eq(word, to_string("let")))          return TT_KEYWORD_LET;
-    if (string_eq(word, to_string("mut")))          return TT_KEYWORD_MUT;
-    if (string_eq(word, to_string("def")))          return TT_KEYWORD_DEF;
-    if (string_eq(word, to_string("type")))         return TT_KEYWORD_TYPE;
-    if (string_eq(word, to_string("if")))           return TT_KEYWORD_IF;
-    if (string_eq(word, to_string("in")))           return TT_KEYWORD_IN;
-    if (string_eq(word, to_string("elif")))         return TT_KEYWORD_ELIF;
-    if (string_eq(word, to_string("else")))         return TT_KEYWORD_ELSE;
-    if (string_eq(word, to_string("for")))          return TT_KEYWORD_FOR;
-    if (string_eq(word, to_string("fn")))           return TT_KEYWORD_FN;
-    if (string_eq(word, to_string("break")))        return TT_KEYWORD_BREAK;
-    if (string_eq(word, to_string("continue")))     return TT_KEYWORD_CONTINUE;
-    if (string_eq(word, to_string("case")))         return TT_KEYWORD_CASE;
-    if (string_eq(word, to_string("cast")))         return TT_KEYWORD_CAST;
-    if (string_eq(word, to_string("defer")))        return TT_KEYWORD_DEFER;
-    if (string_eq(word, to_string("distinct")))     return TT_KEYWORD_DISTINCT;
-    if (string_eq(word, to_string("enum")))         return TT_KEYWORD_ENUM;
-    if (string_eq(word, to_string("extern")))       return TT_KEYWORD_EXTERN;
-    // if (string_eq(word, to_string("goto")))         return TT_KEYWORD_GOTO;
-    if (string_eq(word, to_string("asm")))          return TT_KEYWORD_ASM;
-    if (string_eq(word, to_string("bitcast")))      return TT_KEYWORD_BITCAST;
-    if (string_eq(word, to_string("import")))       return TT_KEYWORD_IMPORT;
-    if (string_eq(word, to_string("fallthrough")))  return TT_KEYWORD_FALLTHROUGH;
-    if (string_eq(word, to_string("module")))       return TT_KEYWORD_MODULE;
-    if (string_eq(word, to_string("return")))       return TT_KEYWORD_RETURN;
-    if (string_eq(word, to_string("struct")))       return TT_KEYWORD_STRUCT;
-    if (string_eq(word, to_string("switch")))       return TT_KEYWORD_SWITCH;
-    if (string_eq(word, to_string("union")))        return TT_KEYWORD_UNION;
-    if (string_eq(word, to_string("while")))        return TT_KEYWORD_WHILE;
-    if (string_eq(word, to_string("inline")))       return TT_KEYWORD_INLINE;
-    if (string_eq(word, to_string("sizeof")))       return TT_KEYWORD_SIZEOF;
-    if (string_eq(word, to_string("alignof")))      return TT_KEYWORD_ALIGNOF;
-    if (string_eq(word, to_string("offsetof")))     return TT_KEYWORD_OFFSETOF;
+    if (string_eq(word, to_string("let")))          return TOK_KEYWORD_LET;
+    if (string_eq(word, to_string("mut")))          return TOK_KEYWORD_MUT;
+    if (string_eq(word, to_string("def")))          return TOK_KEYWORD_DEF;
+    if (string_eq(word, to_string("type")))         return TOK_KEYWORD_TYPE;
+    if (string_eq(word, to_string("if")))           return TOK_KEYWORD_IF;
+    if (string_eq(word, to_string("in")))           return TOK_KEYWORD_IN;
+    if (string_eq(word, to_string("elif")))         return TOK_KEYWORD_ELIF;
+    if (string_eq(word, to_string("else")))         return TOK_KEYWORD_ELSE;
+    if (string_eq(word, to_string("for")))          return TOK_KEYWORD_FOR;
+    if (string_eq(word, to_string("fn")))           return TOK_KEYWORD_FN;
+    if (string_eq(word, to_string("break")))        return TOK_KEYWORD_BREAK;
+    if (string_eq(word, to_string("continue")))     return TOK_KEYWORD_CONTINUE;
+    if (string_eq(word, to_string("case")))         return TOK_KEYWORD_CASE;
+    if (string_eq(word, to_string("cast")))         return TOK_KEYWORD_CAST;
+    if (string_eq(word, to_string("defer")))        return TOK_KEYWORD_DEFER;
+    if (string_eq(word, to_string("distinct")))     return TOK_KEYWORD_DISTINCT;
+    if (string_eq(word, to_string("enum")))         return TOK_KEYWORD_ENUM;
+    if (string_eq(word, to_string("extern")))       return TOK_KEYWORD_EXTERN;
+    // if (string_eq(word, to_string("goto")))         return TOK_KEYWORD_GOTO;
+    if (string_eq(word, to_string("asm")))          return TOK_KEYWORD_ASM;
+    if (string_eq(word, to_string("bitcast")))      return TOK_KEYWORD_BITCAST;
+    if (string_eq(word, to_string("import")))       return TOK_KEYWORD_IMPORT;
+    if (string_eq(word, to_string("fallthrough")))  return TOK_KEYWORD_FALLTHROUGH;
+    if (string_eq(word, to_string("module")))       return TOK_KEYWORD_MODULE;
+    if (string_eq(word, to_string("return")))       return TOK_KEYWORD_RETURN;
+    if (string_eq(word, to_string("struct")))       return TOK_KEYWORD_STRUCT;
+    if (string_eq(word, to_string("switch")))       return TOK_KEYWORD_SWITCH;
+    if (string_eq(word, to_string("union")))        return TOK_KEYWORD_UNION;
+    if (string_eq(word, to_string("while")))        return TOK_KEYWORD_WHILE;
+    if (string_eq(word, to_string("inline")))       return TOK_KEYWORD_INLINE;
+    if (string_eq(word, to_string("sizeof")))       return TOK_KEYWORD_SIZEOF;
+    if (string_eq(word, to_string("alignof")))      return TOK_KEYWORD_ALIGNOF;
+    if (string_eq(word, to_string("offsetof")))     return TOK_KEYWORD_OFFSETOF;
     
-    if (string_eq(word, to_string("true")))         return TT_LITERAL_BOOL;
-    if (string_eq(word, to_string("false")))        return TT_LITERAL_BOOL;
+    if (string_eq(word, to_string("true")))         return TOK_LITERAL_BOOL;
+    if (string_eq(word, to_string("false")))        return TOK_LITERAL_BOOL;
 
-    if (string_eq(word, to_string("null")))         return TT_LITERAL_NULL;
+    if (string_eq(word, to_string("null")))         return TOK_LITERAL_NULL;
 
 
-    return TT_IDENTIFIER;
+    return TOK_IDENTIFIER;
 }
 
-token_type scan_number(lexer* restrict lex) {
+token_type scan_number(lexer* lex) {
     advance_char(lex);
     while (true) {
         if (current_char(lex) == '.') {
             
             // really quick, check if its one of the range operators? this causes bugs very often :sob:
             if (peek_char(lex, 1) == '.') {
-                return TT_LITERAL_INT;
+                return TOK_LITERAL_INT;
             }
 
             advance_char(lex);
@@ -203,18 +203,18 @@ token_type scan_number(lexer* restrict lex) {
                     advance_char_n(lex, 2);
                 }
                 if (!valid_digit(current_char(lex))) {
-                    return TT_LITERAL_FLOAT;
+                    return TOK_LITERAL_FLOAT;
                 }
                 advance_char(lex);
             }
         }
         if (!valid_digit(current_char(lex))) {
-            return TT_LITERAL_INT;
+            return TOK_LITERAL_INT;
         }
         advance_char(lex);
     }
 }
-token_type scan_string_or_char(lexer* restrict lex) {
+token_type scan_string_or_char(lexer* lex) {
     char quote_char = current_char(lex);
     u64  start_cursor = lex->cursor;
 
@@ -224,7 +224,7 @@ token_type scan_string_or_char(lexer* restrict lex) {
             advance_char(lex);
         } else if (current_char(lex) == quote_char) {
             advance_char(lex);
-            return quote_char == '\"' ? TT_LITERAL_STRING : TT_LITERAL_CHAR;
+            return quote_char == '\"' ? TOK_LITERAL_STRING : TOK_LITERAL_CHAR;
         } else if (current_char(lex) == '\n') {
             if (quote_char == '\"') error_at_string(lex->path, lex->src, substring(lex->src, start_cursor, lex->cursor),
                 "unclosed string literal");
@@ -234,188 +234,188 @@ token_type scan_string_or_char(lexer* restrict lex) {
         advance_char(lex);
     }
 }
-token_type scan_operator(lexer* restrict lex) {
+token_type scan_operator(lexer* lex) {
     switch (current_char(lex)) {
     case '+':
         advance_char(lex);
         if (current_char(lex) == '=') {
             advance_char(lex);
-            return TT_ADD_EQUAL;
+            return TOK_ADD_EQUAL;
         }
-        return TT_ADD;
+        return TOK_ADD;
     case '-':
         advance_char(lex);
 
         if (current_char(lex) == '=') {
             advance_char(lex);
-            return TT_SUB_EQUAL;
+            return TOK_SUB_EQUAL;
         }
         if (current_char(lex) == '>') {
             advance_char(lex);
-            return TT_ARROW_RIGHT;
+            return TOK_ARROW_RIGHT;
         }
         if (current_char(lex) == '-' && peek_char(lex, 1) == '-') {
             advance_char_n(lex, 2);
-            return TT_UNINIT;
+            return TOK_UNINIT;
         }
-        return TT_SUB;
+        return TOK_SUB;
     case '*':
         advance_char(lex);
         if (current_char(lex) == '=') {
             advance_char(lex);
-            return TT_MUL_EQUAL;
+            return TOK_MUL_EQUAL;
         }
-        return TT_MUL;
+        return TOK_MUL;
     case '/':
         advance_char(lex);
         if (current_char(lex) == '=') {
             advance_char(lex);
-            return TT_DIV_EQUAL;
+            return TOK_DIV_EQUAL;
         }
-        return TT_DIV;
+        return TOK_DIV;
     case '%':
         advance_char(lex);
         if (current_char(lex) == '=') {
             advance_char(lex);
-            return TT_MOD_EQUAL;
+            return TOK_MOD_EQUAL;
         }
         if (current_char(lex) == '%') {
             advance_char(lex);
                 if (current_char(lex) == '=') {
                 advance_char(lex);
-                return TT_MOD_MOD_EQUAL;
+                return TOK_MOD_MOD_EQUAL;
             }
-            return TT_MOD_MOD;
+            return TOK_MOD_MOD;
         }
-        return TT_MOD;
+        return TOK_MOD;
     case '~':
         advance_char(lex);
         if (current_char(lex) == '=') {
             advance_char(lex);
-            return TT_XOR_EQUAL;
+            return TOK_XOR_EQUAL;
         }
         if (current_char(lex) == '|') {
             advance_char(lex);
             if (current_char(lex) == '=') {
                 advance_char(lex);
-                return TT_NOR_EQUAL;
+                return TOK_NOR_EQUAL;
             }
-            return TT_NOR;
+            return TOK_NOR;
         }
-        return TT_TILDE;
+        return TOK_TILDE;
     case '&':
         advance_char(lex);
         if (current_char(lex) == '=') {
             advance_char(lex);
-            return TT_AND_EQUAL;
+            return TOK_AND_EQUAL;
         }
         if (current_char(lex) == '&') {
             advance_char(lex);
-            return TT_AND_AND;
+            return TOK_AND_AND;
         }
-        return TT_AND;
+        return TOK_AND;
     case '|':
         advance_char(lex);
         if (current_char(lex) == '|') {
             advance_char(lex);
-            return TT_OR_OR;
+            return TOK_OR_OR;
         }
         if (current_char(lex) == '=') {
             advance_char(lex);
-            return TT_OR_EQUAL;
+            return TOK_OR_EQUAL;
         }
-        return TT_OR;
+        return TOK_OR;
     case '<':
         advance_char(lex);
         if (current_char(lex) == '<') {
             advance_char(lex);
             if (current_char(lex) == '=') {
                 advance_char(lex);
-                return TT_LSHIFT_EQUAL;
+                return TOK_LSHIFT_EQUAL;
             }
-            return TT_LSHIFT;
+            return TOK_LSHIFT;
         }
         if (current_char(lex) == '=') {
             advance_char(lex);
-            return TT_LESS_EQUAL;
+            return TOK_LESS_EQUAL;
         }
-        return TT_LESS_THAN;
+        return TOK_LESS_THAN;
     case '>':
         advance_char(lex);
         if (current_char(lex) == '>') {
             advance_char(lex);
             if (current_char(lex) == '=') {
                 advance_char(lex);
-                return TT_RSHIFT_EQUAL;
+                return TOK_RSHIFT_EQUAL;
             }
-            return TT_RSHIFT;
+            return TOK_RSHIFT;
         }
         if (current_char(lex) == '=') {
             advance_char(lex);
-            return TT_GREATER_EQUAL;
+            return TOK_GREATER_EQUAL;
         }
-        return TT_GREATER_THAN;
+        return TOK_GREATER_THAN;
     case '=':
         advance_char(lex);
         if (current_char(lex) == '=') {
             advance_char(lex);
-            return TT_EQUAL_EQUAL;
+            return TOK_EQUAL_EQUAL;
         }
-        return TT_EQUAL;
+        return TOK_EQUAL;
     case '!':
         advance_char(lex);
         if (current_char(lex) == '=') {
             advance_char(lex);
-            return TT_NOT_EQUAL;
+            return TOK_NOT_EQUAL;
         }
-        return TT_EXCLAM;
+        return TOK_EXCLAM;
     case ':':
         advance_char(lex);
         if (current_char(lex) == ':') {
             advance_char(lex);
-            return TT_COLON_COLON;
+            return TOK_COLON_COLON;
         }
-        return TT_COLON;
+        return TOK_COLON;
     case '.':
         advance_char(lex);
         if (current_char(lex) == '.') {
             if (peek_char(lex, 1) == '<') {
                 advance_char_n(lex, 2);
-                return TT_RANGE_LESS;
+                return TOK_RANGE_LESS;
             }
             if (peek_char(lex, 1) == '=') {
                 advance_char_n(lex, 2);
-                return TT_RANGE_EQ;
+                return TOK_RANGE_EQ;
             }
         } else if (valid_0d(current_char(lex))) {
             advance_char_n(lex, -2);
             return scan_number(lex);
         }
-        return TT_PERIOD;
+        return TOK_PERIOD;
 
-    case '#': advance_char(lex); return TT_HASH;
-    case ';': advance_char(lex); return TT_SEMICOLON;
-    case '$': advance_char(lex); return TT_DOLLAR;
-    case ',': advance_char(lex); return TT_COMMA;
-    case '^': advance_char(lex); return TT_CARAT;
-    case '@': advance_char(lex); return TT_AT;
+    case '#': advance_char(lex); return TOK_HASH;
+    case ';': advance_char(lex); return TOK_SEMICOLON;
+    case '$': advance_char(lex); return TOK_DOLLAR;
+    case ',': advance_char(lex); return TOK_COMMA;
+    case '^': advance_char(lex); return TOK_CARAT;
+    case '@': advance_char(lex); return TOK_AT;
 
-    case '(': advance_char(lex); return TT_OPEN_PAREN;
-    case ')': advance_char(lex); return TT_CLOSE_PAREN;
-    case '[': advance_char(lex); return TT_OPEN_BRACKET;
-    case ']': advance_char(lex); return TT_CLOSE_BRACKET;
-    case '{': advance_char(lex); return TT_OPEN_BRACE;
-    case '}': advance_char(lex); return TT_CLOSE_BRACE;
+    case '(': advance_char(lex); return TOK_OPEN_PAREN;
+    case ')': advance_char(lex); return TOK_CLOSE_PAREN;
+    case '[': advance_char(lex); return TOK_OPEN_BRACKET;
+    case ']': advance_char(lex); return TOK_CLOSE_BRACKET;
+    case '{': advance_char(lex); return TOK_OPEN_BRACE;
+    case '}': advance_char(lex); return TOK_CLOSE_BRACE;
 
     default:
         error_at_string(lex->path, lex->src, substring_len(lex->src, lex->cursor, 1), 
             "unrecognized character");
         break;
     }
-    return TT_INVALID;
+    return TOK_INVALID;
 }
 
-int skip_block_comment(lexer* restrict lex) {
+int skip_block_comment(lexer* lex) {
     int level = 1;
     while (level != 0) {
         if (lex->cursor >= lex->src.len) {
@@ -434,13 +434,13 @@ int skip_block_comment(lexer* restrict lex) {
     return level;
 }
 
-void skip_until_char(lexer* restrict lex, char c) {
+void skip_until_char(lexer* lex, char c) {
     while (current_char(lex) != c && lex->cursor < lex->src.len) {
         advance_char(lex);
     }
 }
 
-void skip_whitespace(lexer* restrict lex) {
+void skip_whitespace(lexer* lex) {
     while (true) {
         char r = current_char(lex);
         if ((r != ' ' && r != '\t' && r != '\n' && r != '\r' && r != '\v') || lex->cursor >= lex->src.len) {
