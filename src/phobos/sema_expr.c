@@ -80,7 +80,7 @@ u64 get_field_offset(type* t, string query) {
 
         if (string_eq(query, field->name)) return field->offset;
 
-        if (string_eq(field->name, to_string("_"))) {
+        if (string_eq(field->name, to_string("_")) && (field->subtype->tag == T_STRUCT || field->subtype->tag == T_UNION)) {
             u64 subfield_offset = get_field_offset(field->subtype, query);
             if (subfield_offset != UINT64_MAX) return subfield_offset + field->offset;
         }
