@@ -46,7 +46,7 @@ let kprintf = fn(format: []let u8, args: []let addr) {
             i += 3;
             current_arg += 1;
             continue;
-        }        
+        }
     }
 };
 

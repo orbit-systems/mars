@@ -45,8 +45,8 @@ mars_module* parse_module(string input_path);
 
 // creates a compilation unit from a list of parsers.
 // stitches the unchecked ASTs together and such
-mars_module* create_module(da(parser)* restrict pl, arena alloca);
+mars_module* create_module(da(parser)* pl, arena alloca);
 
 // find the source file of a snippet of code
 // NOTE: the snippet must be an actual substring (is_within() must return true) of one of the files
-mars_file* find_source_file(mars_module* restrict cu, string snippet);
+mars_file* find_source_file(mars_module* cu, string snippet);

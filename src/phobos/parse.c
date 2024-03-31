@@ -7,7 +7,7 @@
 // sandwichman's BLAZINGLY 🔥🔥 FAST 🚀🚀 parser in RUST 🦀🦀 + AI POWERED with ChatGPT 5.0 🤖🧠 and BLOCKCHAIN NFT ETHEREUM WEB3 TECHNOLOGY
 
 // construct a parser struct from a lexer and an arena allocator
-parser make_parser(lexer* restrict l, arena* alloca) {
+parser make_parser(lexer* l, arena* alloca) {
     parser p = {0};
     p.alloca = alloca;
     p.tokens = l->buffer;
@@ -18,7 +18,7 @@ parser make_parser(lexer* restrict l, arena* alloca) {
     return p;
 }
 
-AST parse_module_decl(parser* restrict p) {
+AST parse_module_decl(parser* p) {
 
     AST n = new_ast_node_p(p, AST_module_decl);
 
@@ -42,7 +42,7 @@ AST parse_module_decl(parser* restrict p) {
     return n;
 }
 
-void parse_file(parser* restrict p) {
+void parse_file(parser* p) {
     
     p->module_decl = parse_module_decl(p);
 
@@ -88,7 +88,7 @@ int op_precedence(token_type type) {
     }
 }
 
-AST parse_binary_expr(parser* restrict p, int precedence, bool no_cl) {
+AST parse_binary_expr(parser* p, int precedence, bool no_cl) {
     AST lhs = NULL_AST;
     
     lhs = parse_unary_expr(p, no_cl);
@@ -101,7 +101,7 @@ AST parse_binary_expr(parser* restrict p, int precedence, bool no_cl) {
     return lhs;
 }
 
-AST parse_non_unary_expr(parser* restrict p, AST lhs, int precedence, bool no_cl) {
+AST parse_non_unary_expr(parser* p, AST lhs, int precedence, bool no_cl) {
     AST n = new_ast_node_p(p, AST_binary_op_expr);
     n.as_binary_op_expr->base.start = lhs.base->start;
     n.as_binary_op_expr->op = &current_token;
@@ -116,7 +116,7 @@ AST parse_non_unary_expr(parser* restrict p, AST lhs, int precedence, bool no_cl
     return n;
 }
 
-AST parse_unary_expr(parser* restrict p, bool no_cl) {
+AST parse_unary_expr(parser* p, bool no_cl) {
     AST n = NULL_AST;
     
     switch (current_token.type) {
@@ -223,7 +223,7 @@ AST parse_unary_expr(parser* restrict p, bool no_cl) {
     return n;
 }
 
-int ascii_to_digit_val(parser* restrict p, char c, u8 base) {
+int ascii_to_digit_val(parser* p, char c, u8 base) {
     char val = (char)base;
     if (c >= '0' && c <= '9') val = (char)(c-'0');
     if (c >= 'a' && c <= 'f') val = (char)(c-'a' + 10);
@@ -234,7 +234,7 @@ int ascii_to_digit_val(parser* restrict p, char c, u8 base) {
     return val;
 }
 
-i64 char_lit_value(parser* restrict p) {
+i64 char_lit_value(parser* p) {
     string t = current_token.text;
 
     if (t.raw[1] != '\\') { // trivial case
@@ -275,7 +275,7 @@ i64 char_lit_value(parser* restrict p) {
     return -1;
 }
 
-f64 float_lit_value(parser* restrict p) {
+f64 float_lit_value(parser* p) {
     string t = current_token.text;
     f64 val = 0;
 
@@ -317,7 +317,7 @@ f64 float_lit_value(parser* restrict p) {
     return val;
 }
 
-i64 int_lit_value(parser* restrict p) {
+i64 int_lit_value(parser* p) {
     string t = current_token.text;
     i64 val = 0;
 
@@ -365,7 +365,7 @@ i64 int_lit_value(parser* restrict p) {
     return val * (is_negative ? -1 : 1);
 }
 
-string string_lit_value(parser* restrict p) {
+string string_lit_value(parser* p) {
     string t = current_token.text;
     string val = NULL_STR;
     size_t val_len = 0;
@@ -461,7 +461,7 @@ bool is_possible_type_expr(AST n) {
 
 #define is_definitely_not_type_expr_trust_me_bro(ast_node) (!is_possible_type_expr((ast_node)))
 
-void parse_typed_field_list(parser* restrict p, da(AST_typed_field)* list, token_type ending) {
+void parse_typed_field_list(parser* p, da(AST_typed_field)* list, token_type ending) {
     while (current_token.type != ending) {
 
         AST field = parse_expr(p, true);
@@ -516,7 +516,7 @@ void parse_typed_field_list(parser* restrict p, da(AST_typed_field)* list, token
 }
 
 // jesus christ
-AST parse_atomic_expr(parser* restrict p, bool no_cl) {
+AST parse_atomic_expr(parser* p, bool no_cl) {
     AST n = NULL_AST;
 
     bool out = false;
@@ -1162,7 +1162,7 @@ AST parse_atomic_expr(parser* restrict p, bool no_cl) {
     return n;
 }
 
-AST parse_import_stmt(parser* restrict p) {
+AST parse_import_stmt(parser* p) {
     AST n = new_ast_node_p(p, AST_import_stmt);
     n.as_import_stmt->base.start = &current_token;
     advance_token;
@@ -1189,7 +1189,7 @@ AST parse_import_stmt(parser* restrict p) {
     return n;
 }
 
-AST parse_stmt(parser* restrict p) {
+AST parse_stmt(parser* p) {
     AST n = NULL_AST;
 
     switch (current_token.type) {
@@ -1661,7 +1661,7 @@ AST parse_stmt(parser* restrict p) {
 }
 
 // only for use within parse_stmt
-AST parse_elif(parser* restrict p) {
+AST parse_elif(parser* p) {
     AST n = new_ast_node_p(p, AST_if_stmt);
     n.as_if_stmt->is_elif = true;
     n.as_if_stmt->base.start = &current_token;
@@ -1686,7 +1686,7 @@ AST parse_elif(parser* restrict p) {
     return n;
 }
 
-AST parse_block_stmt(parser* restrict p) {
+AST parse_block_stmt(parser* p) {
     AST n = new_ast_node_p(p, AST_block_stmt);
 
     if (current_token.type != tt_open_brace)

@@ -22,7 +22,7 @@ char* ast_type_str[] = {
 };
 
 // allocate and zero a new AST node with an arena
-AST new_ast_node(arena* restrict alloca, ast_type type) {
+AST new_ast_node(arena* alloca, ast_type type) {
     AST node;
     void* node_ptr = arena_alloc(alloca, ast_type_size[type], 8);
     if (node_ptr == NULL) {
@@ -40,7 +40,6 @@ void print_indent(int n) {
 
 // FOR DEBUGGING PURPOSES!! THIS IS NOT GOING TO BE MEMORY SAFE LMFAO
 void dump_tree(AST node, int n) {
-
 
     print_indent(n);
 

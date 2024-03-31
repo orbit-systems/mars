@@ -35,7 +35,7 @@ void collect_globals(mars_module* restrict mod, entity_table* restrict et) {
     collect_entites(mod, et, mod->program_tree, true);
 }
 
-void collect_decl(mars_module* restrict mod, entity_table* restrict et, AST stmt) {
+void collect_decl(mars_module* mod, entity_table* et, AST stmt) {
     if (stmt.type == AST_decl_stmt) {
         ast_decl_stmt* decl = stmt.as_decl_stmt;
         FOR_URANGE(j, 0, decl->lhs.len) {

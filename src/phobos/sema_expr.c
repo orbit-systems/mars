@@ -29,7 +29,7 @@ forceinline type* normalize_simple_untyped_type(type* t) {
     }
 }
 
-forceinline bool is_type_integer(type* restrict t) {
+forceinline bool is_type_integer(type* t) {
     switch (t->tag) {
     case T_UNTYPED_INT:
     case T_I8:
@@ -42,7 +42,7 @@ forceinline bool is_type_integer(type* restrict t) {
     }
 }
 
-forceinline bool is_type_uinteger(type* restrict t) {
+forceinline bool is_type_uinteger(type* t) {
     switch (t->tag) {
     case T_U8:
     case T_U16:
@@ -54,28 +54,28 @@ forceinline bool is_type_uinteger(type* restrict t) {
     }
 }
 
-forceinline bool is_pointer(type* restrict t) {
+forceinline bool is_pointer(type* t) {
    return (t->tag == T_POINTER || t->tag == T_ADDR);
 }
 
-forceinline bool is_untyped(type* restrict t) {
+forceinline bool is_untyped(type* t) {
     return (t->tag == T_UNTYPED_INT || t->tag == T_UNTYPED_FLOAT || t->tag == T_UNTYPED_AGGREGATE);
 }
 
-forceinline bool is_numeric(type* restrict t) {
+forceinline bool is_numeric(type* t) {
     return (t->tag >= T_UNTYPED_INT && t->tag <= T_F64);
 }
 
-forceinline entity_table* global_et(entity_table* restrict et) {
+forceinline entity_table* global_et(entity_table* et) {
     while (et->parent) et = et->parent;
     return et;
 }
 
-forceinline bool is_global(entity* restrict e) {
+forceinline bool is_global(entity* e) {
     return (e->top == global_et(e->top));
 }
 
-struct_field* get_field_properties(type* restrict t, string query) {
+struct_field* get_field_properties(type* t, string query) {
     if (query.len == 1 && *query.raw == '_') return NULL;
 
     FOR_URANGE(i, 0, t->as_aggregate.fields.len) {
@@ -94,7 +94,7 @@ struct_field* get_field_properties(type* restrict t, string query) {
     return NULL;
 }
 
-void check_expr(mars_module* restrict mod, entity_table* restrict et, AST expr, checked_expr* restrict info, bool must_comptime_const, type* restrict typehint) {
+void check_expr(mars_module* mod, entity_table* et, AST expr, checked_expr* info, bool must_comptime_const, type* typehint) {
     info->expr = expr;
 
     // dispatch
@@ -110,8 +110,8 @@ void check_expr(mars_module* restrict mod, entity_table* restrict et, AST expr, 
     }
 }
 
-void check_literal_expr(mars_module* restrict mod, entity_table* restrict et, AST expr, checked_expr* restrict info, bool must_comptime_const, type* restrict typehint) {
-    ast_literal_expr* restrict literal = expr.as_literal_expr;
+void check_literal_expr(mars_module* mod, entity_table* et, AST expr, checked_expr* info, bool must_comptime_const, type* typehint) {
+    ast_literal_expr* literal = expr.as_literal_expr;
     info->ev = &literal->value;
 
     info->local_ref   = false;
@@ -128,12 +128,12 @@ void check_literal_expr(mars_module* restrict mod, entity_table* restrict et, AS
     }
 }
 
-void check_ident_expr(mars_module* restrict mod, entity_table* restrict et, AST expr, checked_expr* restrict info, bool must_comptime_const, type* restrict typehint) {
-    ast_identifier_expr* restrict ident = expr.as_identifier_expr;
+void check_ident_expr(mars_module* mod, entity_table* et, AST expr, checked_expr* info, bool must_comptime_const, type* typehint) {
+    ast_identifier_expr* ident = expr.as_identifier_expr;
 
     if (ident->is_discard) error_at_node(mod, expr, "_ cannot be used in expression");
     if (!ident->entity) ident->entity = search_for_entity(et, ident->tok->text);
-    entity* restrict ent = ident->entity;
+    entity* ent = ident->entity;
 
     if (!ent || is_null_AST(ent->decl)) error_at_node(mod, expr, "'"str_fmt"' undefined", str_arg(ident->tok->text));
 
@@ -163,8 +163,8 @@ void check_ident_expr(mars_module* restrict mod, entity_table* restrict et, AST 
 }
 
 
-void check_unary_op_expr(mars_module* restrict mod, entity_table* restrict et, AST expr, checked_expr* restrict info, bool must_comptime_const, type* restrict typehint) {
-    ast_unary_op_expr* restrict unary = expr.as_unary_op_expr;
+void check_unary_op_expr(mars_module* mod, entity_table* et, AST expr, checked_expr* info, bool must_comptime_const, type* typehint) {
+    ast_unary_op_expr* unary = expr.as_unary_op_expr;
 
     checked_expr subexpr = {0};
     check_expr(mod, et, unary->inside, &subexpr, must_comptime_const, NULL);
@@ -266,7 +266,7 @@ void check_unary_op_expr(mars_module* restrict mod, entity_table* restrict et, A
             error_at_node(mod, unary->inside, "cannot get offset of expression");
         }
         
-        exact_value* restrict ev = new_exact_value(NO_AGGREGATE, USE_MALLOC);
+        exact_value* ev = new_exact_value(NO_AGGREGATE, USE_MALLOC);
         ev->kind = ev_untyped_int;
 
         if (unary->inside.type != AST_selector_expr) {
@@ -295,12 +295,12 @@ void check_unary_op_expr(mars_module* restrict mod, entity_table* restrict et, A
     }
 }
 
-void check_binary_op_expr(mars_module* restrict mod, entity_table* restrict et, AST expr, checked_expr* restrict info, bool must_comptime_const, type* restrict typehint) {
+void check_binary_op_expr(mars_module* mod, entity_table* et, AST expr, checked_expr* info, bool must_comptime_const, type* typehint) {
     TODO("");
 }
 
 // construct a type and embed it in the type graph
-type* type_from_expr(mars_module* restrict mod, entity_table* restrict et, AST expr, bool no_error, bool top) {
+type* type_from_expr(mars_module* mod, entity_table* et, AST expr, bool no_error, bool top) {
     if (is_null_AST(expr)) return NULL;
 
     switch (expr.type) {
@@ -357,7 +357,7 @@ type* type_from_expr(mars_module* restrict mod, entity_table* restrict et, AST e
         return distinct;
     } break;
     case AST_identifier_expr: { // T
-        entity* restrict ent = search_for_entity(et, expr.as_identifier_expr->tok->text);
+        entity* ent = search_for_entity(et, expr.as_identifier_expr->tok->text);
         if (ent == NULL) {
             if (no_error) return NULL;
             else error_at_node(mod, expr, "'"str_fmt"' undefined", str_arg(expr.as_identifier_expr->tok->text));

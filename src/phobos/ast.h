@@ -311,5 +311,5 @@ da_typedef(AST_typed_field);
 extern char* ast_type_str[];
 extern const size_t ast_type_size[];
 
-AST new_ast_node(arena* restrict alloca, ast_type type);
+AST new_ast_node(arena* alloca, ast_type type);
 void dump_tree(AST node, int n);
