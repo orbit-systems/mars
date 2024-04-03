@@ -213,7 +213,7 @@ void check_ident_expr(mars_module* mod, entity_table* et, AST expr, checked_expr
         error_at_node(mod, expr, "constant expression has cyclic dependencies");
     }
 
-    if (!ent->checked) check_stmt(mod, global_et(et), ent->decl); // on-the-fly global checking
+    if (!ent->checked)  check_stmt(mod, global_et(et), ent->decl); // on-the-fly global checking
 
     if (ent->is_module) error_at_node(mod, expr, "expected value expression, got imported module");
     if (ent->is_type)   error_at_node(mod, expr, "expected value expression, got type expression");
@@ -324,7 +324,7 @@ void check_unary_op_expr(mars_module* mod, entity_table* et, AST expr, checked_e
         info->type->as_reference.mutable = subexpr.mutable;
         info->local_ref = subexpr.local_derived;
     } break;
-    case TOK_CARAT: { // ^ dereference operator
+    case TOK_CARET: { // ^ dereference operator
         if (!is_pointer(subexpr.type)) {
             error_at_node(mod, unary->inside, "expression is not dereferencable");
         }
@@ -363,7 +363,7 @@ void check_unary_op_expr(mars_module* mod, entity_table* et, AST expr, checked_e
         type* inside_type = type_from_expr(mod, et, unary->inside, true, false);
         if (inside_type != NULL) {
             if (is_untyped(inside_type)) error_at_node(mod, unary->inside, "cannot get align of untyped expression");
-            info->ev->as_untyped_int = type_real_size_of(inside_type);
+            info->ev->as_untyped_int = type_real_align_of(inside_type);
         } else {
             // try parsing value expression
             check_expr(mod, et, unary->inside, &subexpr, must_comptime_const, NULL);

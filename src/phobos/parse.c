@@ -163,7 +163,7 @@ AST parse_unary_expr(parser* p, bool no_cl) {
 
         n.as_cast_expr->base.end = &peek_token(-1);
     } break;
-    case TOK_CARAT: {
+    case TOK_CARET: {
         n = new_ast_node_p(p, AST_pointer_type_expr);
         n.as_pointer_type_expr->base.start = &current_token;
         advance_token;
@@ -887,7 +887,7 @@ AST parse_atomic_expr(parser* p, bool no_cl) {
                 error_at_parser(p, "expected ':' or ']'");
             }
         } break;
-        case TOK_CARAT: {
+        case TOK_CARET: {
             if (is_null_AST(n))
                 error_at_parser(p, "expected expression before deref (THIS SHOULD NEVER HAPPEN - CONTACT SANDWICH)");
             

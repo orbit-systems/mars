@@ -397,7 +397,7 @@ token_type scan_operator(lexer* lex) {
     case ';': advance_char(lex); return TOK_SEMICOLON;
     case '$': advance_char(lex); return TOK_DOLLAR;
     case ',': advance_char(lex); return TOK_COMMA;
-    case '^': advance_char(lex); return TOK_CARAT;
+    case '^': advance_char(lex); return TOK_CARET;
     case '@': advance_char(lex); return TOK_AT;
 
     case '(': advance_char(lex); return TOK_OPEN_PAREN;
