@@ -1,0 +1,21 @@
+the compiler defines a built in "module" called `intrinsics`.
+it mainly contains constants that the compiler fills out with information
+about itself or the module being compiled.
+
+// instrinsics::arch - the target architecture.
+let arch : enum int {
+    aphelion = 0,
+    /* more to come! */
+} = (...);
+
+// instrinsics::system - the target OS or environment.
+let system : enum int {
+    freestanding = 0,d
+    /* more to come! */
+} = (...);
+
+// instrinsics::product - the type of file made by the compiler.
+let product : enum int {
+    assembly = 0,
+    /* more to come! */
+} = (...);
