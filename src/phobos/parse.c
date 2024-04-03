@@ -133,6 +133,9 @@ AST parse_unary_expr(parser* p, bool no_cl) {
         advance_token;
 
         n.as_unary_op_expr->inside = parse_unary_expr(p, no_cl);
+        if (is_null_AST(n.as_unary_op_expr->inside)) {
+            error_at_parser(p, "expected an expression");
+        }
 
         n.as_unary_op_expr->base.end = &peek_token(-1);
     } break;
@@ -154,6 +157,9 @@ AST parse_unary_expr(parser* p, bool no_cl) {
         advance_token;
 
         n.as_cast_expr->rhs = parse_unary_expr(p, no_cl);
+        if (is_null_AST(n.as_cast_expr->rhs)) {
+            error_at_parser(p, "expected an expression");
+        }
 
         n.as_cast_expr->base.end = &peek_token(-1);
     } break;
@@ -181,6 +187,9 @@ AST parse_unary_expr(parser* p, bool no_cl) {
         advance_token;
 
         n.as_distinct_type_expr->subexpr = parse_unary_expr(p, no_cl);
+        if (is_null_AST(n.as_distinct_type_expr->subexpr)) {
+            error_at_parser(p, "expected an expression");
+        }
 
         n.as_distinct_type_expr->base.end = &peek_token(-1);
     } break;
@@ -200,6 +209,9 @@ AST parse_unary_expr(parser* p, bool no_cl) {
             advance_token;
 
             n.as_slice_type_expr->subexpr = parse_unary_expr(p, no_cl);
+            if (is_null_AST(n.as_slice_type_expr->subexpr)) {
+                error_at_parser(p, "expected an expression");
+            }
 
             n.as_slice_type_expr->base.end = &peek_token(-1);
         } else {
@@ -213,6 +225,10 @@ AST parse_unary_expr(parser* p, bool no_cl) {
 
             advance_token;
             n.as_array_type_expr->subexpr = parse_unary_expr(p, no_cl);
+            if (is_null_AST(n.as_array_type_expr->subexpr)) {
+                error_at_parser(p, "expected an expression");
+            }
+            
             n.as_array_type_expr->base.end = &peek_token(-1);
         }
     } break;
@@ -702,6 +718,9 @@ AST parse_atomic_expr(parser* p, bool no_cl) {
                 advance_token;
 
                 n.as_paren_expr->subexpr = parse_expr(p, false);
+                if (is_null_AST(n.as_paren_expr->subexpr))
+                    error_at_parser(p, "expected expression");
+
                 if (current_token.type != TOK_CLOSE_PAREN)
                     error_at_parser(p, "expected ')'");
                 

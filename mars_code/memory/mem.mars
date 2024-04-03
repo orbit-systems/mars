@@ -1,6 +1,6 @@
 module memory;
 
-let copy = fn(to, from: addr, len: uint) {
+let copy = fn(to: ^mut, from: ^let, len: uint) {
     mut to_byte: ^mut u8 = to;
     mut from_byte: ^mut u8 = from;
     let to_stop = to_byte + cast(^mut u8) len;
@@ -14,7 +14,7 @@ let copy = fn(to, from: addr, len: uint) {
     }
 };
 
-let equal = fn(block1, block2: addr, len: uint) -> bool {
+let equal = fn(block1, block2: ^let, len: uint) -> bool {
     mut block1_byte = cast(^mut u8) block1;
     mut block2_byte = cast(^mut u8) block2;
     let block1_stop = block1_byte + cast(^mut u8) len;
@@ -37,7 +37,7 @@ let str_equal = fn(a, b: []let u8) -> bool {
     return equal(a.raw, b.raw, a.len);
 };
 
-let set = fn(dest: addr, len: uint, val: u8) -> bool {
+let set = fn(dest: ^mut, len: uint, val: u8) -> bool {
     mut cursor = cast(^mut u8) dest;
     let stop = cursor + cast(^mut u8) len;
     while cursor != stop {

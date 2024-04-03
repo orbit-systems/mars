@@ -23,9 +23,9 @@ types
         float = f64
 
     pointer
-        addr            raw address - behaves like ^let u8 except cannot dereference.
         fn() -> ()      pointer to function
-        ^T              pointer to type T
+        ^(let/mut) T    pointer to type T
+        ^(let/mut)      raw pointer, behaves like a ^(let/mut) u8, but cannot be dereferenced
 
     untyped
         (untyped_int)   internal int literal - can implicitly convert to any numeric type (if in range)
@@ -33,7 +33,7 @@ types
 
     compound
         [N]T            concrete array type with determined length at compile-time
-        []T             slice of array defined as struct {raw: ^T, len: uint}
+        [](let/mut) T   slice of array defined as struct {raw: ^T, len: uint}
 
         struct {}       data structure / record type
         union {}        sum type (basically a struct with no offset between fields)
@@ -95,7 +95,6 @@ operators
     unary boolean
         !       boolean not             with type T in (bool, all pointers): !<T> -> <T>
 
-
     unary conversion
         cast(T)     value cast to type T        cast(T) <X> -> <T>
         bitcast(T)  raw data cast to type T     bitcast(T) <X> -> <T>
@@ -129,11 +128,12 @@ operators
         ^       dereference pointer     using type T in (all): <^T>^ -> <T>
     
     unary type info
-        sizeof(T)   get the size of a type. takes a type expression or value expression, returns an untyped integer. the type must not be untyped.
-        alignof(T)  get the alignment characteristics of a type. takes a raw type expression, returns an untyped integer. the type must not be untyped.
-        offsetof(T, field) get the offset of a field from an entity's base address. only works for struct and union types.
+        sizeof(T)           get the size of a type. takes a type expression or value expression, returns an untyped integer. the type must not be untyped.
+        alignof(T)          get the alignment characteristics of a type. takes a raw type expression, returns an untyped integer. the type must not be untyped.
+        offsetof(T, field)  get the offset of a field from an entity's base address. only works for struct and union types.
+    
     index
-        []      index array             using entity T with type (any array, pointer to any array, slice) and A with type (any int, uint, enum) : <T>[<A>]
+        [n]     index array             using entity T with type (any array, pointer to any array, slice) and A with type (any int, uint, enum) : <T>[<A>]
 
     slice
         [:]     generate slice          using entity T with type (any array, pointer to any array, slice) and A with type (any int, uint, enum) : <T>[:], <T>[<A>:] <T>[:<A>], <T>[<A>:<A>]

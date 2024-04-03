@@ -123,12 +123,8 @@ void canonicalize_type_graph() {
 
 bool types_are_equivalent(type* a, type* b, bool* executed_TSA) {
 
-    LOG("%p == %p?\n", a, b);
-
     while (a->tag == T_ALIAS) a = get_target(a);
     while (b->tag == T_ALIAS) b = get_target(b);
-
-    LOG("dealiased!\n");
 
     // simple checks
     if (a == b) return true;
@@ -185,8 +181,6 @@ bool types_are_equivalent(type* a, type* b, bool* executed_TSA) {
         return a == b;
     default: break;
     }
-
-    LOG("simple checks finished\n");
 
 
     // total structure analysis

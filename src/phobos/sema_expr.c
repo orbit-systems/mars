@@ -328,6 +328,9 @@ void check_unary_op_expr(mars_module* mod, entity_table* et, AST expr, checked_e
         if (!is_pointer(subexpr.type)) {
             error_at_node(mod, unary->inside, "expression is not dereferencable");
         }
+        if (subexpr.type->as_reference.subtype->tag == T_NONE) {
+            error_at_node(mod, unary->inside, "cannot dereference raw pointer");
+        }
 
         info->type = get_target(subexpr.type);
         info->mutable = subexpr.type->as_reference.mutable;
@@ -376,29 +379,29 @@ void check_unary_op_expr(mars_module* mod, entity_table* et, AST expr, checked_e
     }
 }
 
-// void check_binary_op_expr(mars_module* mod, entity_table* et, AST expr, checked_expr* info, bool must_comptime_const, type* typehint) {
-//     checked_expr lhs = {0};
-//     checked_expr rhs = {0};
-//     ast_binary_op_expr* binary = expr.as_binary_op_expr;
+void check_binary_op_expr(mars_module* mod, entity_table* et, AST expr, checked_expr* info, bool must_comptime_const, type* typehint) {
+    checked_expr lhs = {0};
+    checked_expr rhs = {0};
+    ast_binary_op_expr* binary = expr.as_binary_op_expr;
 
 
-//     if (binary->op->type != TOK_KEYWORD_OFFSETOF) {
-//         check_expr(mod, et, expr.as_binary_op_expr->lhs, &lhs, must_comptime_const, NULL);
-//         check_expr(mod, et, expr.as_binary_op_expr->rhs, &rhs, must_comptime_const, NULL);
-//     }
+    if (binary->op->type != TOK_KEYWORD_OFFSETOF) {
+        check_expr(mod, et, expr.as_binary_op_expr->lhs, &lhs, must_comptime_const, NULL);
+        check_expr(mod, et, expr.as_binary_op_expr->rhs, &rhs, must_comptime_const, NULL);
+    }
 
-//     switch (binary->op->type) {
-//     case TOK_ADD: {
+    switch (binary->op->type) {
+    case TOK_ADD: {
 
-//         if (!types_are_equivalent(lhs.type, rhs.type, NULL)) {
+        if (!types_are_equivalent(lhs.type, rhs.type, NULL)) {
             
-//         }
+        }
 
-//     } break;
-//     }
+    } break;
+    }
     
-//     TODO("");
-// }
+    TODO("");
+}
 
 // construct a type and embed it in the type graph
 type* type_from_expr(mars_module* mod, entity_table* et, AST expr, bool no_error, bool top) {
@@ -496,18 +499,26 @@ type* type_from_expr(mars_module* mod, entity_table* et, AST expr, bool no_error
     case AST_fn_type_expr: {TODO("fn types"); } break;
     case AST_pointer_type_expr: { // ^let T, ^mut T
         type* ptr = make_type(T_POINTER);
+        ptr->as_reference.mutable = expr.as_pointer_type_expr->mutable;
+        if (is_null_AST(expr.as_pointer_type_expr->subexpr)) {
+            ptr->as_reference.subtype = make_type(T_NONE);
+            return ptr;
+        }
         type* subtype = type_from_expr(mod, et, expr.as_pointer_type_expr->subexpr, no_error, false);
         if (subtype == NULL) return NULL;
-        ptr->as_reference.mutable = expr.as_pointer_type_expr->mutable;
         ptr->as_reference.subtype = subtype;
         if (top) canonicalize_type_graph();
         return ptr;
     } break;
     case AST_slice_type_expr: { // []let T, []mut T
         type* ptr = make_type(T_SLICE);
+        ptr->as_reference.mutable = expr.as_slice_type_expr->mutable;
+        if (is_null_AST(expr.as_pointer_type_expr->subexpr)) {
+            ptr->as_reference.subtype = make_type(T_NONE);
+            return ptr;
+        }
         type* subtype = type_from_expr(mod, et, expr.as_slice_type_expr->subexpr, no_error, false);
         if (subtype == NULL) return NULL;
-        ptr->as_reference.mutable = expr.as_slice_type_expr->mutable;
         ptr->as_reference.subtype = subtype;
         if (top) canonicalize_type_graph();
         return ptr;
