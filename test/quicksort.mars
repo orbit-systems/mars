@@ -1,17 +1,17 @@
 module test;
 
-let quicksort = fn #always_inline (array: []int) {
+let quicksort = fn #always_inline (array: []mut int) {
     quicksort_real(array, 0, array.len - 1);
 };
 
-let quicksort_real = fn(array: []int, low, high: int) {
+let quicksort_real = fn(array: []mut int, low, high: int) {
     if low >= high || low < 0 { return; }
     let pivot = partition(array, low, high);
     quicksort(array, low, pivot - 1);
     quicksort(array, pivot + 1, high);
 };
 
-let partition = fn(array: []int, low, high: int) -> int {
+let partition = fn(array: []mut int, low, high: int) -> int {
     let pivot = array[high];
     mut i = low - 1;
     for j in low..<high {

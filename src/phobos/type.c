@@ -23,6 +23,8 @@ static u64 forceinline align_forward(u64 n, u64 align) {
 
 void canonicalize_type_graph() {
 
+    LOG("preliminary normalization\n");
+
     // preliminary normalization
     FOR_URANGE(i, 0, typegraph.len) {
         type* t = typegraph.at[i];
@@ -48,6 +50,8 @@ void canonicalize_type_graph() {
         }
     }
 
+    LOG("preliminary normalization done\n");
+
     da(type_pair) equalities;
     da_init(&equalities, 1);
 
@@ -67,8 +71,12 @@ void canonicalize_type_graph() {
                 if (typegraph.at[j]->moved) continue;
                 // if (!(typegraph.at[i]->dirty || typegraph.at[j]->dirty)) continue;
                 bool executed_TSA = false;
+                LOG("are %d and %d equivalent?\n", i, j);
                 if (types_are_equivalent(typegraph.at[i], typegraph.at[j], &executed_TSA)) {
+                    LOG("yes!\n");
                     da_append(&equalities, ((type_pair){typegraph.at[i], typegraph.at[j]}));
+                } else {
+                    LOG("no!\n");
                 }
                 if (executed_TSA) {
                     executed_TSA_at_all = true;
@@ -115,8 +123,12 @@ void canonicalize_type_graph() {
 
 bool types_are_equivalent(type* a, type* b, bool* executed_TSA) {
 
+    LOG("%p == %p?\n", a, b);
+
     while (a->tag == T_ALIAS) a = get_target(a);
     while (b->tag == T_ALIAS) b = get_target(b);
+
+    LOG("dealiased!\n");
 
     // simple checks
     if (a == b) return true;
@@ -171,14 +183,15 @@ bool types_are_equivalent(type* a, type* b, bool* executed_TSA) {
         break;
     case T_DISTINCT: // distinct types are VERY strict
         return a == b;
-    case T_ADDR:
-        return a == b; // this should really not do anything
     default: break;
     }
 
+    LOG("simple checks finished\n");
+
+
     // total structure analysis
 
-    *executed_TSA = true;
+    if (executed_TSA) *executed_TSA = true;
 
     u64 a_numbers = 1;
     type_locally_number(a, &a_numbers, 0);
@@ -376,6 +389,7 @@ void type_locally_number(type* t, u64* number, int num_set) {
         break;
     case T_ARRAY:
         type_locally_number(t->as_array.subtype, number, num_set);
+        break;
     case T_POINTER:
     case T_SLICE:
     case T_DISTINCT:
@@ -467,7 +481,6 @@ void type_reset_numbers(int num_set) {
 }
 
 type* get_type_from_num(u16 num, int num_set) {
-    // printf("FUCK %hu %d\n", num, num_set);
     FOR_URANGE(i, 0, typegraph.len) {
         if (typegraph.at[i]->type_nums[num_set] == num) return typegraph.at[i];
     }
@@ -599,7 +612,6 @@ void print_type_graph() {
                 printf("\t\t.%s : %zu\n", get_field(t, field)->name, get_index(get_field(t, field)->subtype));
             }
             break;
-        
         default:
             printf("unknown tag %d\n", t->tag);
             break;

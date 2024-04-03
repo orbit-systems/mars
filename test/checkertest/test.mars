@@ -1,3 +1,3 @@
 module checkertest;
 
-let x = sizeof([3]int);
+let x = sizeof([2]bool);

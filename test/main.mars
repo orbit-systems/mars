@@ -1,7 +1,7 @@
 module test;
 
 let main = fn() {
-    let arr = [6]int {4, 6, 5, 1, 3, 2};
+    mut arr = [6]int {4, 6, 5, 1, 3, 2};
     quicksort(arr[:]);
     // arr == {1, 2, 3, 4, 5, 6}
 };

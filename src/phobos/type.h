@@ -4,7 +4,7 @@
 #include "orbit.h"
 
 enum {
-    // does not really do anything. serves as an invalid/none type.
+    // does not really do anything. serves as an invalid/void type.
     T_NONE,
 
     T_UNTYPED_INT,
@@ -52,7 +52,7 @@ enum {
     // function type! has sort of the same semantics as a struct
     T_FUNCTION,
 
-    // an alias is an "entrypoint" for the type graph
+    // an alias is an "entry point" for the type graph
     // an outside system can point to an alias and
     // the canonicalizer will make sure the alias never becomes invalid
     // references to an alias type get canonicalized into 

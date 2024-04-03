@@ -14,6 +14,13 @@ typedef struct flag_set_s {
     string output_path;
     bool output_dot;
     bool print_timings;
+
+/*
+    u8 target_arch;
+    u8 target_system;
+    u8 target_product;
+*/
+
 } flag_set;
 
 cmd_arg make_argument(char* s);

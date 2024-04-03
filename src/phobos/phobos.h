@@ -30,10 +30,10 @@ typedef struct mars_module {
 
     da(AST) program_tree;
     arena AST_alloca;
+    arena temp_alloca;
 
     bool visited : 1; // checking shit
     bool checked : 1; // has been FULLY CHECKED by the checker
-
 } mars_module;
 
 typedef char* cstring;

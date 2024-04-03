@@ -65,7 +65,7 @@ noreturn void error_at_string(string path, string text, string pos, char* messag
     printf("\n %4d | ", line);
     printf(STYLE_Reset);
 
-    for (int i = 0; i < line_len; i ++) {
+    for (int i = 0; i < line_len; i++) {
         if (column-1 == i) printf(STYLE_FG_Red STYLE_Bold);
         if (column-1 + pos.len == i) printf(STYLE_Reset);
         putchar(line_ptr[i]);
@@ -89,7 +89,7 @@ noreturn void error_at_string(string path, string text, string pos, char* messag
             printf("~");
     }
     if (pos.len > 1) {
-        printf("^");
+        printf("~");
     }
     printf(STYLE_Reset);
     printf("\n");
@@ -129,7 +129,7 @@ void warning_at_string(string path, string text, string pos, char* message, ...)
     // printf("\n        | ");
     printf("\n   % 4d | ", line);
     printf(STYLE_Reset);
-    for (int i = 0; i < line_len; i ++) {
+    for (int i = 0; i < line_len; i++) {
         if (column-1 == i) printf(STYLE_FG_Yellow STYLE_Bold);
         if (column-1 + pos.len == i) printf(STYLE_Reset);
         putchar(line_ptr[i]);
@@ -152,7 +152,7 @@ void warning_at_string(string path, string text, string pos, char* message, ...)
             printf("~");
     }
     if (pos.len > 1) {
-        printf("^");
+        printf("~");
     }
     printf(STYLE_Reset);
 

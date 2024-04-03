@@ -23,7 +23,7 @@ types
         float = f64
 
     pointer
-        addr            raw address - behaves like ^u8 except cannot dereference.
+        addr            raw address - behaves like ^let u8 except cannot dereference.
         fn() -> ()      pointer to function
         ^T              pointer to type T
 

@@ -1,7 +1,10 @@
 #include "exactval.h"
 #include "arena.h"
 
-exact_value* new_exact_value(int aggregate_len, arena* alloca) {
+// TODO rework exactvals to use a type* instead of a kind tag.
+// it sucks to keep the 'exact_value's and the 'checked_expr's synced up
+
+exact_value* alloc_exact_value(int aggregate_len, arena* alloca) {
     exact_value* ev;
     if (alloca == NULL) return NULL;
     if (alloca == USE_MALLOC) {
@@ -20,7 +23,6 @@ exact_value* new_exact_value(int aggregate_len, arena* alloca) {
         memset(ev->as_aggregate.vals, 0, sizeof(exact_value*) * aggregate_len);
     }
     return ev;
-
 }
 
 void destroy_exact_value(exact_value* ev) {
@@ -28,4 +30,11 @@ void destroy_exact_value(exact_value* ev) {
     if (!ev->freeable) return;
     free(ev->as_aggregate.vals);
     free(ev);
+}
+
+exact_value* copy_ev_to_permanent(exact_value* ev) {
+    exact_value* new = malloc(sizeof(exact_value));
+    memcpy(new, ev, sizeof(exact_value));
+    new->freeable = true;
+    return new;
 }

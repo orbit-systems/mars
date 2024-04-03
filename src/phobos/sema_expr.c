@@ -1,3 +1,5 @@
+#include <math.h>
+
 #include "orbit.h"
 #include "mars.h"
 
@@ -7,6 +9,8 @@
 
 // i may in fact explode
 // writing this is agony
+
+// TODO go back and use the temp allocator for exactvals
 
 static type* make_string() {
     static type* str = NULL;
@@ -33,6 +37,23 @@ forceinline bool is_type_integer(type* t) {
     case T_I16:
     case T_I32:
     case T_I64:
+    case T_U8:
+    case T_U16:
+    case T_U32:
+    case T_U64:
+        return true;
+    default:
+        return false;
+    }
+}
+
+forceinline bool is_type_sinteger(type* t) {
+    switch (t->tag) {
+    case T_UNTYPED_INT:
+    case T_I8:
+    case T_I16:
+    case T_I32:
+    case T_I64:
         return true;
     default:
         return false;
@@ -49,6 +70,41 @@ forceinline bool is_type_uinteger(type* t) {
     default:
         return false;
     }
+}
+
+exact_value_kind ev_kind_from_type(u8 tag) {
+    switch (tag) {
+    case T_UNTYPED_INT:   return EV_UNTYPED_INT;
+    case T_UNTYPED_FLOAT: return EV_UNTYPED_FLOAT;
+
+    case T_I8:  return EV_I8;
+    case T_I16: return EV_I16;
+    case T_I32: return EV_I32;
+    case T_I64: return EV_I64;
+
+    case T_U8:  return EV_U8;
+    case T_U16: return EV_U16;
+    case T_U32: return EV_U32;
+    case T_U64: return EV_U64;
+
+    case T_F16: return EV_F16;
+    case T_F32: return EV_F32;
+    case T_F64: return EV_F64;
+
+    default: return EV_INVALID;
+    }
+}
+
+void exactval_convert_from_untyped(exact_value* v, u8 tag, bool error) {
+    exact_value_kind to_kind = ev_kind_from_type(tag);
+
+    if (v->kind == T_UNTYPED_FLOAT) {
+
+    } else if (v->kind == T_UNTYPED_INT) {
+
+    }
+
+    TODO("ev cvt from untyped");
 }
 
 forceinline bool is_pointer(type* t) {
@@ -153,7 +209,7 @@ void check_ident_expr(mars_module* mod, entity_table* et, AST expr, checked_expr
 
     if (ent == NULL) error_at_node(mod, expr, "'"str_fmt"' undefined", str_arg(ident->tok->text));
 
-    if (must_comptime_const&& ent->visited) {
+    if (must_comptime_const && ent->visited) {
         error_at_node(mod, expr, "constant expression has cyclic dependencies");
     }
 
@@ -198,7 +254,7 @@ void check_unary_op_expr(mars_module* mod, entity_table* et, AST expr, checked_e
         }
 
         if (subexpr.ev) {
-            info->ev = new_exact_value(NO_AGGREGATE, USE_MALLOC);
+            info->ev = alloc_exact_value(NO_AGGREGATE, USE_MALLOC);
             switch (subexpr.ev->kind) {
             case EV_UNTYPED_INT:
                 info->ev->as_untyped_int = -subexpr.ev->as_untyped_int;
@@ -220,11 +276,11 @@ void check_unary_op_expr(mars_module* mod, entity_table* et, AST expr, checked_e
             error_at_node(mod, unary->inside, "expected a numeric type");
         }
         if (is_untyped(subexpr.type)) {
-            error_at_node(mod, unary->inside, "'~' cannot be used with an untyped literal");
+            error_at_node(mod, unary->inside, "'~' requires a concretely-typed value");
         }
 
         if (subexpr.ev) {
-            info->ev = new_exact_value(NO_AGGREGATE, USE_MALLOC);
+            info->ev = alloc_exact_value(NO_AGGREGATE, USE_MALLOC);
             switch (subexpr.ev->kind) {
             case EV_U8:
             case EV_I8:  info->ev->as_i8  = (i8)~(u8)subexpr.ev->as_i8; break;
@@ -260,7 +316,7 @@ void check_unary_op_expr(mars_module* mod, entity_table* et, AST expr, checked_e
     } break;
     case TOK_AND: { // & reference operator
         if (!subexpr.addressable) {
-            error_at_node(mod, unary->inside, "expression is not addressable");
+            error_at_node(mod, unary->inside, "expression is not referenceable");
         }
 
         info->type = make_type(T_POINTER);
@@ -277,12 +333,12 @@ void check_unary_op_expr(mars_module* mod, entity_table* et, AST expr, checked_e
         info->mutable = subexpr.type->as_reference.mutable;
     } break;
     case TOK_KEYWORD_SIZEOF: {
-        exact_value* ev = new_exact_value(NO_AGGREGATE, USE_MALLOC);
+        exact_value* ev = alloc_exact_value(NO_AGGREGATE, USE_MALLOC);
         ev->kind = EV_UNTYPED_INT;
         info->ev = ev;
 
         // try parsing a type?
-        type* inside_type = type_from_expr(mod, et, unary->inside, true, false);
+        type* inside_type = type_from_expr(mod, et, unary->inside, true, true);
         if (inside_type != NULL) {
             if (is_untyped(inside_type)) error_at_node(mod, unary->inside, "cannot get size of untyped expression");
             info->ev->as_untyped_int = type_real_size_of(inside_type);
@@ -296,7 +352,7 @@ void check_unary_op_expr(mars_module* mod, entity_table* et, AST expr, checked_e
         info->type = make_type(T_UNTYPED_INT);
     } break;
     case TOK_KEYWORD_ALIGNOF: {
-        exact_value* ev = new_exact_value(NO_AGGREGATE, USE_MALLOC);
+        exact_value* ev = alloc_exact_value(NO_AGGREGATE, USE_MALLOC);
         ev->kind = EV_UNTYPED_INT;
         info->ev = ev;
 
@@ -320,9 +376,29 @@ void check_unary_op_expr(mars_module* mod, entity_table* et, AST expr, checked_e
     }
 }
 
-void check_binary_op_expr(mars_module* mod, entity_table* et, AST expr, checked_expr* info, bool must_comptime_const, type* typehint) {
-    TODO("");
-}
+// void check_binary_op_expr(mars_module* mod, entity_table* et, AST expr, checked_expr* info, bool must_comptime_const, type* typehint) {
+//     checked_expr lhs = {0};
+//     checked_expr rhs = {0};
+//     ast_binary_op_expr* binary = expr.as_binary_op_expr;
+
+
+//     if (binary->op->type != TOK_KEYWORD_OFFSETOF) {
+//         check_expr(mod, et, expr.as_binary_op_expr->lhs, &lhs, must_comptime_const, NULL);
+//         check_expr(mod, et, expr.as_binary_op_expr->rhs, &rhs, must_comptime_const, NULL);
+//     }
+
+//     switch (binary->op->type) {
+//     case TOK_ADD: {
+
+//         if (!types_are_equivalent(lhs.type, rhs.type, NULL)) {
+            
+//         }
+
+//     } break;
+//     }
+    
+//     TODO("");
+// }
 
 // construct a type and embed it in the type graph
 type* type_from_expr(mars_module* mod, entity_table* et, AST expr, bool no_error, bool top) {
@@ -361,50 +437,60 @@ type* type_from_expr(mars_module* mod, entity_table* et, AST expr, bool no_error
         checked_expr length = {0};
         check_expr(mod, et, expr.as_array_type_expr->length, &length, true, NULL);
         if (length.ev == NULL) {
-            if (no_error) return NULL;
-            else error_at_node(mod, expr, "length of expression must be constant at compiletime");
+            error_at_node(mod, expr, "length of expression must be constant at compiletime");
         }
         u64 real_len = 0;
         switch (length.ev->kind) {
+        case EV_UNTYPED_FLOAT: {
+            if (rint(length.ev->as_untyped_float) == length.ev->as_untyped_float) {
+                // float is an integer
+                if (length.ev->as_untyped_float < 0) {
+                    error_at_node(mod, expr.as_array_type_expr->length, "length of array must be positive");
+                }
+
+                real_len = (u64) length.ev->as_untyped_float;
+            } else {
+                error_at_node(mod, expr.as_array_type_expr->length, "length of array must be an integer");
+            }
+            } break;
         case EV_U8:  real_len = (u64) length.ev->as_u8;  break;
         case EV_U16: real_len = (u64) length.ev->as_u16; break;
         case EV_U32: real_len = (u64) length.ev->as_u32; break;
         case EV_U64: real_len = (u64) length.ev->as_u64; break;
-        
         case EV_I8:
             if (length.ev->as_i8 < 0) {
-                if (no_error) return NULL;
-                else error_at_node(mod, expr, "length cannot be negative");
+                error_at_node(mod, expr.as_array_type_expr->length, "length cannot be negative");
             }
             real_len = (u64) length.ev->as_i8;
             break;
         case EV_I16:
             if (length.ev->as_i16 < 0) {
-                if (no_error) return NULL;
-                else error_at_node(mod, expr, "length cannot be negative");
+                error_at_node(mod, expr.as_array_type_expr->length, "length cannot be negative");
             }
             real_len = (u64) length.ev->as_i16;
             break;
         case EV_I32:
             if (length.ev->as_i32 < 0) {
-                if (no_error) return NULL;
-                else error_at_node(mod, expr, "length cannot be negative");
+                error_at_node(mod, expr.as_array_type_expr->length, "length cannot be negative");
             }
             real_len = (u64) length.ev->as_i32;
             break;
         case EV_I64:
         case EV_UNTYPED_INT:
             if (length.ev->as_i64 < 0) {
-                if (no_error) return NULL;
-                else error_at_node(mod, expr, "length cannot be negative");
+                error_at_node(mod, expr.as_array_type_expr->length, "length cannot be negative");
             }
             real_len = (u64) length.ev->as_i64;
             break;
         default:
-            if (no_error) return NULL;
-            else error_at_node(mod, expr, "length must be an integer");
+            error_at_node(mod, expr.as_array_type_expr->length, "length must be an integer");
         }
-    }
+
+        array->as_array.len = real_len;
+
+        return array;
+
+    } break;
     case AST_struct_type_expr: { TODO("struct types"); } break;
     case AST_union_type_expr: { TODO("union types"); } break;
     case AST_fn_type_expr: {TODO("fn types"); } break;
@@ -413,7 +499,7 @@ type* type_from_expr(mars_module* mod, entity_table* et, AST expr, bool no_error
         type* subtype = type_from_expr(mod, et, expr.as_pointer_type_expr->subexpr, no_error, false);
         if (subtype == NULL) return NULL;
         ptr->as_reference.mutable = expr.as_pointer_type_expr->mutable;
-        set_target(ptr, subtype);
+        ptr->as_reference.subtype = subtype;
         if (top) canonicalize_type_graph();
         return ptr;
     } break;
@@ -422,7 +508,7 @@ type* type_from_expr(mars_module* mod, entity_table* et, AST expr, bool no_error
         type* subtype = type_from_expr(mod, et, expr.as_slice_type_expr->subexpr, no_error, false);
         if (subtype == NULL) return NULL;
         ptr->as_reference.mutable = expr.as_slice_type_expr->mutable;
-        set_target(ptr, subtype);
+        ptr->as_reference.subtype = subtype;
         if (top) canonicalize_type_graph();
         return ptr;
     } break;
@@ -430,15 +516,14 @@ type* type_from_expr(mars_module* mod, entity_table* et, AST expr, bool no_error
         type* distinct = make_type(T_DISTINCT);
         type* subtype = type_from_expr(mod, et, expr.as_distinct_type_expr->subexpr, no_error, false);
         if (subtype == NULL) return NULL;
-        set_target(distinct, subtype);
+        distinct->as_reference.subtype = subtype;
         if (top) canonicalize_type_graph();
         return distinct;
     } break;
     case AST_identifier_expr: { // T
         entity* ent = search_for_entity(et, expr.as_identifier_expr->tok->text);
         if (ent == NULL) {
-            if (no_error) return NULL;
-            else error_at_node(mod, expr, "'"str_fmt"' undefined", str_arg(expr.as_identifier_expr->tok->text));
+            error_at_node(mod, expr, "'"str_fmt"' undefined", str_arg(expr.as_identifier_expr->tok->text));
         }
 
         if (!ent->checked) check_stmt(mod, global_et(et), ent->decl); // on-the-fly global checking

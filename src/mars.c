@@ -45,7 +45,7 @@ int main(int argc, char** argv) {
         NULL
     );
 
-    printf("%p %p\n", e.ev->kind, e.ev->as_untyped_int);
+    printf("%lld\n", e.ev->as_untyped_int);
 
 
     // check_module_and_dependencies(main_mod);

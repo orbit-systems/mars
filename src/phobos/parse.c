@@ -678,6 +678,7 @@ AST parse_atomic_expr(parser* p, bool no_cl) {
             }
             n = new_ast_node_p(p, AST_binary_op_expr);
             n.as_binary_op_expr->base.start = &current_token;
+            n.as_binary_op_expr->op = &current_token;
             advance_token;
             n.as_binary_op_expr->lhs = parse_expr(p, false);
             advance_token;
