@@ -74,7 +74,7 @@ void collect_decl(mars_module* mod, entity_table* et, AST stmt) {
             error_at_node(mod, decl->lhs, "'"str_fmt"' already declared", str_arg(ident));
         }
         if (e->entity_type == NULL) {
-            e->entity_type = make_type(T_ALIAS);
+            e->entity_type = make_type(TYPE_ALIAS);
         }
         e->is_type = true;
         ident_expr->entity = e;

@@ -142,7 +142,10 @@ token_type scan_ident_or_keyword(lexer* lex) {
     if (string_eq(word, to_string("f16")))          return TOK_TYPE_KEYWORD_F16;
     if (string_eq(word, to_string("f32")))          return TOK_TYPE_KEYWORD_F32;
     if (string_eq(word, to_string("f64")))          return TOK_TYPE_KEYWORD_F64;
-    if (string_eq(word, to_string("addr")))         return TOK_TYPE_KEYWORD_ADDR;
+
+    if (string_eq(word, to_string("true")))         return TOK_LITERAL_BOOL;
+    if (string_eq(word, to_string("false")))        return TOK_LITERAL_BOOL;
+    if (string_eq(word, to_string("null")))         return TOK_LITERAL_NULL;
 
     if (string_eq(word, to_string("let")))          return TOK_KEYWORD_LET;
     if (string_eq(word, to_string("mut")))          return TOK_KEYWORD_MUT;
@@ -162,7 +165,6 @@ token_type scan_ident_or_keyword(lexer* lex) {
     if (string_eq(word, to_string("distinct")))     return TOK_KEYWORD_DISTINCT;
     if (string_eq(word, to_string("enum")))         return TOK_KEYWORD_ENUM;
     if (string_eq(word, to_string("extern")))       return TOK_KEYWORD_EXTERN;
-    // if (string_eq(word, to_string("goto")))         return TOK_KEYWORD_GOTO;
     if (string_eq(word, to_string("asm")))          return TOK_KEYWORD_ASM;
     if (string_eq(word, to_string("bitcast")))      return TOK_KEYWORD_BITCAST;
     if (string_eq(word, to_string("import")))       return TOK_KEYWORD_IMPORT;
@@ -177,12 +179,6 @@ token_type scan_ident_or_keyword(lexer* lex) {
     if (string_eq(word, to_string("sizeof")))       return TOK_KEYWORD_SIZEOF;
     if (string_eq(word, to_string("alignof")))      return TOK_KEYWORD_ALIGNOF;
     if (string_eq(word, to_string("offsetof")))     return TOK_KEYWORD_OFFSETOF;
-    
-    if (string_eq(word, to_string("true")))         return TOK_LITERAL_BOOL;
-    if (string_eq(word, to_string("false")))        return TOK_LITERAL_BOOL;
-
-    if (string_eq(word, to_string("null")))         return TOK_LITERAL_NULL;
-
 
     return TOK_IDENTIFIER;
 }

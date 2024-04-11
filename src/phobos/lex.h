@@ -135,7 +135,6 @@
     TOKEN(TOK_TYPE_KEYWORD_F32,  "f32") \
     TOKEN(TOK_TYPE_KEYWORD_F64,  "f64") \
 \
-    TOKEN(TOK_TYPE_KEYWORD_ADDR, "addr") \
     TOKEN(TOK_META_COUNT, "") \
 
 typedef u8 token_type; enum {

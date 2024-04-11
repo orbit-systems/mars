@@ -1,14 +1,16 @@
 module memory;
 
 let copy = fn(to: ^mut, from: ^let, len: uint) {
+    if (to == null || from == null || len == 0) {
+        return false;
+    }
+    
     mut to_byte: ^mut u8 = to;
-    mut from_byte: ^mut u8 = from;
+    mut from_byte: ^let u8 = from;
     let to_stop = to_byte + cast(^mut u8) len;
 
     while to_byte != to_stop {
-
         to_byte^ = from_byte^;
-
         from_byte += 1;
         to_byte += 1;
     }

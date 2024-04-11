@@ -5,62 +5,60 @@
 
 enum {
     // does not really do anything. serves as an invalid/void type.
-    T_NONE,
+    TYPE_NONE,
 
-    T_UNTYPED_INT,
-    T_UNTYPED_FLOAT,
+    TYPE_UNTYPED_INT,
+    TYPE_UNTYPED_FLOAT,
 
     // signed integer types
-    T_I8,
-    T_I16,
-    T_I32,
-    T_I64,
+    TYPE_I8,
+    TYPE_I16,
+    TYPE_I32,
+    TYPE_I64,
     // unsigned integer types
-    T_U8,
-    T_U16,
-    T_U32,
-    T_U64,
+    TYPE_U8,
+    TYPE_U16,
+    TYPE_U32,
+    TYPE_U64,
     // floating point types
-    T_F16,
-    T_F32,
-    T_F64,
-    // bare address type
-    T_ADDR,
+    TYPE_F16,
+    TYPE_F32,
+    TYPE_F64,
     // boolean type
-    T_BOOL,
+    TYPE_BOOL,
 
     // for checking purposes, is not an actual type lol
-    T_meta_INTEGRAL,
+    TYPE_META_INTEGRAL,
 
     // reference to another type
-    T_POINTER,
+    TYPE_POINTER,
 
     // reference to an array of another type + len
-    T_SLICE,
+    TYPE_SLICE,
 
     // array of a type
-    T_ARRAY,
+    TYPE_ARRAY,
 
     // enumeration over an integral type
-    T_ENUM,
+    TYPE_ENUM,
 
     // aggregate types
-    T_STRUCT,
-    T_UNION,
-    T_UNTYPED_AGGREGATE,
+    TYPE_STRUCT,
+    TYPE_UNION,
+    TYPE_UNTYPED_AGGREGATE,
 
     // function type! has sort of the same semantics as a struct
-    T_FUNCTION,
+    TYPE_FUNCTION,
 
     // an alias is an "entry point" for the type graph
     // an outside system can point to an alias and
     // the canonicalizer will make sure the alias never becomes invalid
     // references to an alias type get canonicalized into 
     // references to the underlying type
-    T_ALIAS,
+    TYPE_ALIAS,
     // like an alias, except checks against other types always fail.
     // references do not get canonicalized away like aliases
-    T_DISTINCT,
+    TYPE_DISTINCT,
 
 };
 
@@ -84,10 +82,10 @@ da_typedef(enum_variant);
 typedef struct type {
     union {
         struct {
-            string name; // only used by T_ALIAS
+            string name; // only used by TYPE_ALIAS
             type* subtype;
             bool mutable; // only used by pointers and slices
-        } as_reference; // used by T_POINTER, T_SLICE, T_ALIAS, and T_DISTINCT
+        } as_reference; // used by TYPE_POINTER, TYPE_SLICE, TYPE_ALIAS, and TYPE_DISTINCT
         struct {
             type* subtype;
             u64 len;

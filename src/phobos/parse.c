@@ -646,7 +646,6 @@ AST parse_atomic_expr(parser* p, bool no_cl) {
             n.as_literal_expr->base.end = &peek_token(-1);
 
         } break;
-        case TOK_TYPE_KEYWORD_ADDR:
         case TOK_TYPE_KEYWORD_BOOL:
         case TOK_TYPE_KEYWORD_INT:
         case TOK_TYPE_KEYWORD_I8:

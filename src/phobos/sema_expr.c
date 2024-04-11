@@ -17,30 +17,52 @@ static type* make_string() {
     if (str != NULL) {
         return str;
     }
-    str = make_type(T_SLICE);
-    set_target(str, make_type(T_U8));
+    str = make_type(TYPE_SLICE);
+    set_target(str, make_type(TYPE_U8));
     return str;
 }
 
+static type* make_rawptr(bool mutable) {
+    static type* let = NULL;
+    static type* mut = NULL;
+    if (mutable) {
+        if (!mut) {
+            mut = make_type(TYPE_POINTER);
+            mut->as_reference.mutable = true;
+            mut->as_reference.subtype = make_type(TYPE_NONE);
+        }
+        return mut;
+    } else {
+        if (!let) {
+            let = make_type(TYPE_POINTER);
+            let->as_reference.mutable = false;
+            let->as_reference.subtype = make_type(TYPE_NONE);
+        }
+        return let;
+    }
+
+}
+
+
 forceinline type* normalize_simple_untyped_type(type* t) {
     switch (t->tag) {
-    case T_UNTYPED_FLOAT: return make_type(T_F64);
-    case T_UNTYPED_INT:   return make_type(T_I64);
+    case TYPE_UNTYPED_FLOAT: return make_type(TYPE_F64);
+    case TYPE_UNTYPED_INT:   return make_type(TYPE_I64);
     default:              return t;
     }
 }
 
 forceinline bool is_type_integer(type* t) {
     switch (t->tag) {
-    case T_UNTYPED_INT:
-    case T_I8:
-    case T_I16:
-    case T_I32:
-    case T_I64:
-    case T_U8:
-    case T_U16:
-    case T_U32:
-    case T_U64:
+    case TYPE_UNTYPED_INT:
+    case TYPE_I8:
+    case TYPE_I16:
+    case TYPE_I32:
+    case TYPE_I64:
+    case TYPE_U8:
+    case TYPE_U16:
+    case TYPE_U32:
+    case TYPE_U64:
         return true;
     default:
         return false;
@@ -49,11 +71,11 @@ forceinline bool is_type_integer(type* t) {
 
 forceinline bool is_type_sinteger(type* t) {
     switch (t->tag) {
-    case T_UNTYPED_INT:
-    case T_I8:
-    case T_I16:
-    case T_I32:
-    case T_I64:
+    case TYPE_UNTYPED_INT:
+    case TYPE_I8:
+    case TYPE_I16:
+    case TYPE_I32:
+    case TYPE_I64:
         return true;
     default:
         return false;
@@ -62,10 +84,10 @@ forceinline bool is_type_sinteger(type* t) {
 
 forceinline bool is_type_uinteger(type* t) {
     switch (t->tag) {
-    case T_U8:
-    case T_U16:
-    case T_U32:
-    case T_U64:
+    case TYPE_U8:
+    case TYPE_U16:
+    case TYPE_U32:
+    case TYPE_U64:
         return true;
     default:
         return false;
@@ -74,22 +96,22 @@ forceinline bool is_type_uinteger(type* t) {
 
 exact_value_kind ev_kind_from_type(u8 tag) {
     switch (tag) {
-    case T_UNTYPED_INT:   return EV_UNTYPED_INT;
-    case T_UNTYPED_FLOAT: return EV_UNTYPED_FLOAT;
+    case TYPE_UNTYPED_INT:   return EV_UNTYPED_INT;
+    case TYPE_UNTYPED_FLOAT: return EV_UNTYPED_FLOAT;
 
-    case T_I8:  return EV_I8;
-    case T_I16: return EV_I16;
-    case T_I32: return EV_I32;
-    case T_I64: return EV_I64;
+    case TYPE_I8:  return EV_I8;
+    case TYPE_I16: return EV_I16;
+    case TYPE_I32: return EV_I32;
+    case TYPE_I64: return EV_I64;
 
-    case T_U8:  return EV_U8;
-    case T_U16: return EV_U16;
-    case T_U32: return EV_U32;
-    case T_U64: return EV_U64;
+    case TYPE_U8:  return EV_U8;
+    case TYPE_U16: return EV_U16;
+    case TYPE_U32: return EV_U32;
+    case TYPE_U64: return EV_U64;
 
-    case T_F16: return EV_F16;
-    case T_F32: return EV_F32;
-    case T_F64: return EV_F64;
+    case TYPE_F16: return EV_F16;
+    case TYPE_F32: return EV_F32;
+    case TYPE_F64: return EV_F64;
 
     default: return EV_INVALID;
     }
@@ -98,9 +120,9 @@ exact_value_kind ev_kind_from_type(u8 tag) {
 void exactval_convert_from_untyped(exact_value* v, u8 tag, bool error) {
     exact_value_kind to_kind = ev_kind_from_type(tag);
 
-    if (v->kind == T_UNTYPED_FLOAT) {
+    if (v->kind == TYPE_UNTYPED_FLOAT) {
 
-    } else if (v->kind == T_UNTYPED_INT) {
+    } else if (v->kind == TYPE_UNTYPED_INT) {
 
     }
 
@@ -108,15 +130,15 @@ void exactval_convert_from_untyped(exact_value* v, u8 tag, bool error) {
 }
 
 forceinline bool is_pointer(type* t) {
-   return (t->tag == T_POINTER || t->tag == T_ADDR);
+   return (t->tag == TYPE_POINTER);
 }
 
 forceinline bool is_untyped(type* t) {
-    return (t->tag == T_UNTYPED_INT || t->tag == T_UNTYPED_FLOAT || t->tag == T_UNTYPED_AGGREGATE);
+    return (t->tag == TYPE_UNTYPED_INT || t->tag == TYPE_UNTYPED_FLOAT || t->tag == TYPE_UNTYPED_AGGREGATE);
 }
 
 forceinline bool is_numeric(type* t) {
-    return (t->tag >= T_UNTYPED_INT && t->tag <= T_F64);
+    return (t->tag >= TYPE_UNTYPED_INT && t->tag <= TYPE_F64);
 }
 
 forceinline entity_table* global_et(entity_table* et) {
@@ -136,7 +158,7 @@ u64 get_field_offset(type* t, string query) {
 
         if (string_eq(query, field->name)) return field->offset;
 
-        if (string_eq(field->name, to_string("_")) && (field->subtype->tag == T_STRUCT || field->subtype->tag == T_UNION)) {
+        if (string_eq(field->name, to_string("_")) && (field->subtype->tag == TYPE_STRUCT || field->subtype->tag == TYPE_UNION)) {
             u64 subfield_offset = get_field_offset(field->subtype, query);
             if (subfield_offset != UINT64_MAX) return subfield_offset + field->offset;
         }
@@ -146,11 +168,11 @@ u64 get_field_offset(type* t, string query) {
 }
 
 void fill_aggregate_offsets(type* t) {
-    assert(t->tag == T_STRUCT || t->tag == T_UNION);
+    assert(t->tag == TYPE_STRUCT || t->tag == TYPE_UNION);
 
     TODO("fill aggregate offsets");
 
-    if (t->tag == T_UNION) {
+    if (t->tag == TYPE_UNION) {
         FOR_URANGE(i, 0, t->as_aggregate.fields.len) {
             t->as_aggregate.fields.at[i].offset = 0;
         }
@@ -191,10 +213,10 @@ void check_literal_expr(mars_module* mod, entity_table* et, AST expr, checked_ex
     info->use_returns = false;
 
     switch (literal->value.kind) {
-    case EV_BOOL:          info->type = make_type(T_BOOL);          break;
-    case EV_UNTYPED_FLOAT: info->type = make_type(T_UNTYPED_FLOAT); break;
-    case EV_UNTYPED_INT:   info->type = make_type(T_UNTYPED_INT);   break;
-    case EV_POINTER:       info->type = make_type(T_ADDR);          break;
+    case EV_BOOL:          info->type = make_type(TYPE_BOOL);          break;
+    case EV_UNTYPED_FLOAT: info->type = make_type(TYPE_UNTYPED_FLOAT); break;
+    case EV_UNTYPED_INT:   info->type = make_type(TYPE_UNTYPED_INT);   break;
+    case EV_POINTER:       info->type = make_rawptr(true);          break;
     case EV_STRING:        info->type = make_string();              break;
     default:               CRASH("unhandled literal ev type");
     }
@@ -302,7 +324,7 @@ void check_unary_op_expr(mars_module* mod, entity_table* et, AST expr, checked_e
         }
     } break;
     case TOK_EXCLAM: { // ! boolean NOT
-        if (subexpr.type->tag != T_BOOL) {
+        if (subexpr.type->tag != TYPE_BOOL) {
             error_at_node(mod, unary->inside, "expected pointer or boolean");
         }
 
@@ -312,14 +334,14 @@ void check_unary_op_expr(mars_module* mod, entity_table* et, AST expr, checked_e
             info->local_derived = subexpr.local_derived;
         }
 
-        info->type = make_type(T_BOOL);
+        info->type = make_type(TYPE_BOOL);
     } break;
     case TOK_AND: { // & reference operator
         if (!subexpr.addressable) {
             error_at_node(mod, unary->inside, "expression is not referenceable");
         }
 
-        info->type = make_type(T_POINTER);
+        info->type = make_type(TYPE_POINTER);
         set_target(info->type, subexpr.type);
         info->type->as_reference.mutable = subexpr.mutable;
         info->local_ref = subexpr.local_derived;
@@ -328,7 +350,7 @@ void check_unary_op_expr(mars_module* mod, entity_table* et, AST expr, checked_e
         if (!is_pointer(subexpr.type)) {
             error_at_node(mod, unary->inside, "expression is not dereferencable");
         }
-        if (subexpr.type->as_reference.subtype->tag == T_NONE) {
+        if (subexpr.type->as_reference.subtype->tag == TYPE_NONE) {
             error_at_node(mod, unary->inside, "cannot dereference raw pointer");
         }
 
@@ -352,7 +374,7 @@ void check_unary_op_expr(mars_module* mod, entity_table* et, AST expr, checked_e
             
             info->ev->as_untyped_int = type_real_size_of(subexpr.type);
         }
-        info->type = make_type(T_UNTYPED_INT);
+        info->type = make_type(TYPE_UNTYPED_INT);
     } break;
     case TOK_KEYWORD_ALIGNOF: {
         exact_value* ev = alloc_exact_value(NO_AGGREGATE, USE_MALLOC);
@@ -371,7 +393,7 @@ void check_unary_op_expr(mars_module* mod, entity_table* et, AST expr, checked_e
             
             info->ev->as_untyped_int = type_real_align_of(subexpr.type);
         }
-        info->type = make_type(T_UNTYPED_INT);
+        info->type = make_type(TYPE_UNTYPED_INT);
     } break;
 
     default:
@@ -413,26 +435,25 @@ type* type_from_expr(mars_module* mod, entity_table* et, AST expr, bool no_error
     }
     case AST_basic_type_expr: { // i32, bool, addr, et cetera
         switch (expr.as_basic_type_expr->lit->type) {
-        case TOK_TYPE_KEYWORD_I8:    return make_type(T_I8);
-        case TOK_TYPE_KEYWORD_I16:   return make_type(T_I16);
-        case TOK_TYPE_KEYWORD_I32:   return make_type(T_I32);
+        case TOK_TYPE_KEYWORD_I8:    return make_type(TYPE_I8);
+        case TOK_TYPE_KEYWORD_I16:   return make_type(TYPE_I16);
+        case TOK_TYPE_KEYWORD_I32:   return make_type(TYPE_I32);
         case TOK_TYPE_KEYWORD_I64:
-        case TOK_TYPE_KEYWORD_INT:   return make_type(T_I64);
-        case TOK_TYPE_KEYWORD_U8:    return make_type(T_U8);
-        case TOK_TYPE_KEYWORD_U16:   return make_type(T_U16);
-        case TOK_TYPE_KEYWORD_U32:   return make_type(T_U32);
+        case TOK_TYPE_KEYWORD_INT:   return make_type(TYPE_I64);
+        case TOK_TYPE_KEYWORD_U8:    return make_type(TYPE_U8);
+        case TOK_TYPE_KEYWORD_U16:   return make_type(TYPE_U16);
+        case TOK_TYPE_KEYWORD_U32:   return make_type(TYPE_U32);
         case TOK_TYPE_KEYWORD_U64:
-        case TOK_TYPE_KEYWORD_UINT:  return make_type(T_U64);
-        case TOK_TYPE_KEYWORD_F16:   return make_type(T_F16);
-        case TOK_TYPE_KEYWORD_F32:   return make_type(T_F32);
+        case TOK_TYPE_KEYWORD_UINT:  return make_type(TYPE_U64);
+        case TOK_TYPE_KEYWORD_F16:   return make_type(TYPE_F16);
+        case TOK_TYPE_KEYWORD_F32:   return make_type(TYPE_F32);
         case TOK_TYPE_KEYWORD_F64:
-        case TOK_TYPE_KEYWORD_FLOAT: return make_type(T_F64);
-        case TOK_TYPE_KEYWORD_ADDR:  return make_type(T_ADDR);
-        case TOK_TYPE_KEYWORD_BOOL:  return make_type(T_BOOL);
+        case TOK_TYPE_KEYWORD_FLOAT: return make_type(TYPE_F64);
+        case TOK_TYPE_KEYWORD_BOOL:  return make_type(TYPE_BOOL);
         }
     } break;
     case AST_array_type_expr: {
-        type* array = make_type(T_ARRAY);
+        type* array = make_type(TYPE_ARRAY);
         type* subtype = type_from_expr(mod, et, expr.as_array_type_expr->subexpr, no_error, false);
         if (subtype == NULL) return NULL;
         array->as_array.subtype = subtype;
@@ -497,11 +518,12 @@ type* type_from_expr(mars_module* mod, entity_table* et, AST expr, bool no_error
     case AST_struct_type_expr: { TODO("struct types"); } break;
     case AST_union_type_expr: { TODO("union types"); } break;
     case AST_fn_type_expr: {TODO("fn types"); } break;
+    case AST_enum_type_expr: {TODO("enum types"); } break;
     case AST_pointer_type_expr: { // ^let T, ^mut T
-        type* ptr = make_type(T_POINTER);
+        type* ptr = make_type(TYPE_POINTER);
         ptr->as_reference.mutable = expr.as_pointer_type_expr->mutable;
         if (is_null_AST(expr.as_pointer_type_expr->subexpr)) {
-            ptr->as_reference.subtype = make_type(T_NONE);
+            ptr->as_reference.subtype = make_type(TYPE_NONE);
             return ptr;
         }
         type* subtype = type_from_expr(mod, et, expr.as_pointer_type_expr->subexpr, no_error, false);
@@ -511,10 +533,10 @@ type* type_from_expr(mars_module* mod, entity_table* et, AST expr, bool no_error
         return ptr;
     } break;
     case AST_slice_type_expr: { // []let T, []mut T
-        type* ptr = make_type(T_SLICE);
+        type* ptr = make_type(TYPE_SLICE);
         ptr->as_reference.mutable = expr.as_slice_type_expr->mutable;
         if (is_null_AST(expr.as_pointer_type_expr->subexpr)) {
-            ptr->as_reference.subtype = make_type(T_NONE);
+            ptr->as_reference.subtype = make_type(TYPE_NONE);
             return ptr;
         }
         type* subtype = type_from_expr(mod, et, expr.as_slice_type_expr->subexpr, no_error, false);
@@ -524,7 +546,7 @@ type* type_from_expr(mars_module* mod, entity_table* et, AST expr, bool no_error
         return ptr;
     } break;
     case AST_distinct_type_expr: { // disctinct T
-        type* distinct = make_type(T_DISTINCT);
+        type* distinct = make_type(TYPE_DISTINCT);
         type* subtype = type_from_expr(mod, et, expr.as_distinct_type_expr->subexpr, no_error, false);
         if (subtype == NULL) return NULL;
         distinct->as_reference.subtype = subtype;

@@ -33,9 +33,9 @@ types
 
     compound
         [N]T            concrete array type with determined length at compile-time
-        [](let/mut) T   slice of array defined as struct {raw: ^T, len: uint}
+        [](let/mut) T   slice of array defined as struct {raw: ^(let/mut) T, len: uint}
 
-        struct {}       data structure / record type
+        struct {}       record type
         union {}        sum type (basically a struct with no offset between fields)
 
         enum T {}       enumeration over type T (default: int). T must be in (all integers, uintegers)
@@ -93,7 +93,7 @@ operators
         ~       bitwise complement      with type T in (all integers, uintegers, floats): ~ <T> -> <T>
 
     unary boolean
-        !       boolean not             with type T in (bool, all pointers): !<T> -> <T>
+        !       boolean not             with type T in (bool): !<T> -> <T>
 
     unary conversion
         cast(T)     value cast to type T        cast(T) <X> -> <T>
@@ -119,13 +119,17 @@ operators
         | but only changes what type the data is interpreted as.
 
         note : the ONLY types that can cast implicitly are:
-        | addr -> any pointer type
-        | any pointer type -> addr
-        | any enum -> backing type
+        | ^mut   -> ^(mut/let) (T)
+        | ^mut T -> ^let T
+        | ^let   -> ^let T
+        | ^let T -> ^let
+        | enum T -> T
+        |
+        | (u/i)N -> (u/i)M where N, M ∈ {8, 16, 32, 64}, N > M
     
     unary reference
         &       generate pointer        using type T in (all): &<T> -> <^T>
-        ^       dereference pointer     using type T in (all): <^T>^ -> <T>
+        ^       dereference pointer     using type T in (all): <^(let/mut) T>^ -> <T>
     
     unary type info
         sizeof(T)           get the size of a type. takes a type expression or value expression, returns an untyped integer. the type must not be untyped.
@@ -133,10 +137,10 @@ operators
         offsetof(T, field)  get the offset of a field from an entity's base address. only works for struct and union types.
     
     index
-        [n]     index array             using entity T with type (any array, pointer to any array, slice) and A with type (any int, uint, enum) : <T>[<A>]
+        [n]     index array             using entity T with type (any array, pointer, slice) and A with type (any int, uint, enum) : <T>[<A>]
 
     slice
-        [:]     generate slice          using entity T with type (any array, pointer to any array, slice) and A with type (any int, uint, enum) : <T>[:], <T>[<A>:] <T>[:<A>], <T>[<A>:<A>]
+        [:]     generate slice          using entity T with type (any array, pointer, slice) and A with type (any int, uint, enum) : <T>[:], <T>[<A>:] <T>[:<A>], <T>[<A>:<A>]
 
 
     selector
@@ -167,7 +171,7 @@ operators
         4   +   -   |   ~
         3   ==  !=  <   >   <=  >=
         2   &&
-        1   ||  ~~
+        1   ||
 
         operators of the same precedence are evaluated left-to-right.
         ex. a * b / c == (a * b) / c

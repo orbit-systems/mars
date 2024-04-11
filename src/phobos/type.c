@@ -29,13 +29,13 @@ void canonicalize_type_graph() {
     FOR_URANGE(i, 0, typegraph.len) {
         type* t = typegraph.at[i];
         switch (t->tag) {
-        case T_ALIAS: // alias retargeting
-            while (t->tag == T_ALIAS) {
+        case TYPE_ALIAS: // alias retargeting
+            while (t->tag == TYPE_ALIAS) {
                 merge_type_references(get_target(t), t, false);
                 t = get_target(t);
             }
             break;
-        case T_ENUM: // variant sorting
+        case TYPE_ENUM: // variant sorting
             // using insertion sort for nice best-case complexity
             FOR_URANGE(i, 1, t->as_enum.variants.len) {
                 u64 j = i;
@@ -60,14 +60,14 @@ void canonicalize_type_graph() {
     while (keep_going) {
         // num_of_types = typegraph.len;
         keep_going = false;
-        FOR_URANGE(i, T_meta_INTEGRAL, typegraph.len) {
+        FOR_URANGE(i, TYPE_META_INTEGRAL, typegraph.len) {
             bool executed_TSA_at_all = false;
-            if (typegraph.at[i]->tag == T_ALIAS) continue;
-            if (typegraph.at[i]->tag == T_DISTINCT) continue;
+            if (typegraph.at[i]->tag == TYPE_ALIAS) continue;
+            if (typegraph.at[i]->tag == TYPE_DISTINCT) continue;
             if (typegraph.at[i]->moved) continue;
             FOR_URANGE(j, i+1, typegraph.len) {
-                if (typegraph.at[j]->tag == T_ALIAS) continue;
-                if (typegraph.at[j]->tag == T_DISTINCT) continue;
+                if (typegraph.at[j]->tag == TYPE_ALIAS) continue;
+                if (typegraph.at[j]->tag == TYPE_DISTINCT) continue;
                 if (typegraph.at[j]->moved) continue;
                 // if (!(typegraph.at[i]->dirty || typegraph.at[j]->dirty)) continue;
                 bool executed_TSA = false;
@@ -123,24 +123,24 @@ void canonicalize_type_graph() {
 
 bool types_are_equivalent(type* a, type* b, bool* executed_TSA) {
 
-    while (a->tag == T_ALIAS) a = get_target(a);
-    while (b->tag == T_ALIAS) b = get_target(b);
+    while (a->tag == TYPE_ALIAS) a = get_target(a);
+    while (b->tag == TYPE_ALIAS) b = get_target(b);
 
     // simple checks
     if (a == b) return true;
     if (a->tag != b->tag) return false;
-    if (a->tag < T_meta_INTEGRAL) return true;
+    if (a->tag < TYPE_META_INTEGRAL) return true;
     
     // a little more complex
     switch (a->tag) {
-    case T_POINTER:
-    case T_SLICE:
+    case TYPE_POINTER:
+    case TYPE_SLICE:
         if (a->as_reference.mutable != b->as_reference.mutable) return false;
         if (get_target(a) == get_target(b)) return true;
         break;
-    case T_STRUCT:
-    case T_UNION:
-    case T_UNTYPED_AGGREGATE:
+    case TYPE_STRUCT:
+    case TYPE_UNION:
+    case TYPE_UNTYPED_AGGREGATE:
         if (a->as_aggregate.fields.len != b->as_aggregate.fields.len) return false;
         bool subtype_equals = true;
         FOR_URANGE(i, 0, a->as_aggregate.fields.len) {
@@ -151,7 +151,7 @@ bool types_are_equivalent(type* a, type* b, bool* executed_TSA) {
         }
         if (subtype_equals) return true;
         break;
-    case T_FUNCTION:
+    case TYPE_FUNCTION:
         if (a->as_function.params.len != b->as_function.params.len) {
             return false;
         }
@@ -174,10 +174,10 @@ bool types_are_equivalent(type* a, type* b, bool* executed_TSA) {
         }
         if (subtype_equals) return true;
         break;
-    case T_ARRAY:
+    case TYPE_ARRAY:
         if (a->as_array.len != b->as_array.len) return false;
         break;
-    case T_DISTINCT: // distinct types are VERY strict
+    case TYPE_DISTINCT: // distinct types are VERY strict
         return a == b;
     default: break;
     }
@@ -209,19 +209,19 @@ bool type_element_equivalent(type* a, type* b, int num_set_a, int num_set_b) {
     if (a->tag != b->tag) return false;
 
     switch (a->tag) {
-    case T_NONE:
-    case T_I8:  case T_I16: case T_I32: case T_I64:
-    case T_U8:  case T_U16: case T_U32: case T_U64:
-    case T_F16: case T_F32: case T_F64: case T_ADDR:
+    case TYPE_NONE:
+    case TYPE_I8:  case TYPE_I16: case TYPE_I32: case TYPE_I64:
+    case TYPE_U8:  case TYPE_U16: case TYPE_U32: case TYPE_U64:
+    case TYPE_F16: case TYPE_F32: case TYPE_F64:
         return true;
         // if (a->type_nums[num_set_a] == b->type_nums[num_set_b]) return true;
         break;
 
-    case T_ALIAS:
-    case T_DISTINCT:
+    case TYPE_ALIAS:
+    case TYPE_DISTINCT:
         return a == b;
 
-    case T_ENUM:
+    case TYPE_ENUM:
         if (a->as_enum.variants.len != b->as_enum.variants.len) {
             return false;
         }
@@ -238,9 +238,9 @@ bool type_element_equivalent(type* a, type* b, int num_set_a, int num_set_b) {
             }
         }
         break;
-    case T_STRUCT:
-    case T_UNION:
-    case T_UNTYPED_AGGREGATE:
+    case TYPE_STRUCT:
+    case TYPE_UNION:
+    case TYPE_UNTYPED_AGGREGATE:
         if (a->as_aggregate.fields.len != b->as_aggregate.fields.len) {
             return false;
         }
@@ -253,7 +253,7 @@ bool type_element_equivalent(type* a, type* b, int num_set_a, int num_set_b) {
             }
         }
         break;
-    case T_FUNCTION:
+    case TYPE_FUNCTION:
         if (a->as_function.params.len != b->as_function.params.len) {
             return false;
         }
@@ -277,7 +277,7 @@ bool type_element_equivalent(type* a, type* b, int num_set_a, int num_set_b) {
             }
         }
         break;
-    case T_ARRAY:
+    case TYPE_ARRAY:
         if (a->as_array.len != b->as_array.len) {
             return false;
         }
@@ -285,8 +285,8 @@ bool type_element_equivalent(type* a, type* b, int num_set_a, int num_set_b) {
             return false;
         }
         break;
-    case T_POINTER:
-    case T_SLICE:
+    case TYPE_POINTER:
+    case TYPE_SLICE:
         if (a->as_reference.mutable != b->as_reference.mutable) return false;
         if (get_target(a)->type_nums[num_set_a] != get_target(b)->type_nums[num_set_b]) {
             return false;
@@ -311,9 +311,9 @@ void merge_type_references(type* dest, type* src, bool disable) {
     FOR_URANGE(i, 0, typegraph.len) {
         type* t = typegraph.at[i];
         switch (t->tag) {
-        case T_STRUCT:
-        case T_UNION:
-        case T_UNTYPED_AGGREGATE:
+        case TYPE_STRUCT:
+        case TYPE_UNION:
+        case TYPE_UNTYPED_AGGREGATE:
             FOR_URANGE(i, 0, t->as_aggregate.fields.len) {
                 if (get_field(t, i)->subtype == src) {
                     get_field(t, i)->subtype = dest;
@@ -321,7 +321,7 @@ void merge_type_references(type* dest, type* src, bool disable) {
                 }
             }
             break;
-        case T_FUNCTION:
+        case TYPE_FUNCTION:
             FOR_URANGE(i, 0, t->as_function.params.len) {
                 if (t->as_function.params.at[i].subtype == src) {
                     t->as_function.params.at[i].subtype = dest;
@@ -335,16 +335,16 @@ void merge_type_references(type* dest, type* src, bool disable) {
                 }
             }
             break;
-        case T_POINTER:
-        case T_SLICE:
-        case T_ALIAS:
-        case T_DISTINCT:
+        case TYPE_POINTER:
+        case TYPE_SLICE:
+        case TYPE_ALIAS:
+        case TYPE_DISTINCT:
             if (get_target(t) == src) {
                 set_target(t, dest);
                 // t->dirty = true;
             }
             break;
-        case T_ARRAY:
+        case TYPE_ARRAY:
             if (t->as_array.subtype == src) {
                 t->as_array.subtype = dest;
                 // t->dirty = true;
@@ -366,14 +366,14 @@ void type_locally_number(type* t, u64* number, int num_set) {
     t->type_nums[num_set] = (*number)++;
 
     switch (t->tag) {
-    case T_STRUCT:
-    case T_UNION:
-    case T_UNTYPED_AGGREGATE:
+    case TYPE_STRUCT:
+    case TYPE_UNION:
+    case TYPE_UNTYPED_AGGREGATE:
         FOR_URANGE(i, 0, t->as_aggregate.fields.len) {
             type_locally_number(get_field(t, i)->subtype, number, num_set);
         }
         break;
-    case T_FUNCTION:
+    case TYPE_FUNCTION:
         FOR_URANGE(i, 0, t->as_function.params.len) {
             type_locally_number(t->as_function.params.at[i].subtype, number, num_set);
         }
@@ -381,13 +381,13 @@ void type_locally_number(type* t, u64* number, int num_set) {
             type_locally_number(t->as_function.returns.at[i].subtype, number, num_set);
         }
         break;
-    case T_ARRAY:
+    case TYPE_ARRAY:
         type_locally_number(t->as_array.subtype, number, num_set);
         break;
-    case T_POINTER:
-    case T_SLICE:
-    case T_DISTINCT:
-    case T_ALIAS:
+    case TYPE_POINTER:
+    case TYPE_SLICE:
+    case TYPE_DISTINCT:
+    case TYPE_ALIAS:
         type_locally_number(get_target(t), number, num_set);
         break;
     default:
@@ -397,24 +397,24 @@ void type_locally_number(type* t, u64* number, int num_set) {
 
 // do checking on the fly, improved method for ""incomplete"" type graphs
 bool otf_types_are_equivalent(type* a, type* b) {
-    while (a->tag == T_ALIAS) a = get_target(a);
-    while (b->tag == T_ALIAS) b = get_target(b);
+    while (a->tag == TYPE_ALIAS) a = get_target(a);
+    while (b->tag == TYPE_ALIAS) b = get_target(b);
 
     // simple checks
     if (a == b) return true;
     if (a->tag != b->tag) return false;
-    if (a->tag < T_meta_INTEGRAL) return true;
+    if (a->tag < TYPE_META_INTEGRAL) return true;
     
     // a little more complex
     switch (a->tag) {
-    case T_POINTER:
-    case T_SLICE:
+    case TYPE_POINTER:
+    case TYPE_SLICE:
         if (a->as_reference.mutable != b->as_reference.mutable) return false;
         if (get_target(a) == get_target(b)) return true;
         break;
-    case T_STRUCT:
-    case T_UNION:
-    case T_UNTYPED_AGGREGATE:
+    case TYPE_STRUCT:
+    case TYPE_UNION:
+    case TYPE_UNTYPED_AGGREGATE:
         if (a->as_aggregate.fields.len != b->as_aggregate.fields.len) return false;
         bool subtype_equals = true;
         FOR_URANGE(i, 0, a->as_aggregate.fields.len) {
@@ -425,7 +425,7 @@ bool otf_types_are_equivalent(type* a, type* b) {
         }
         if (subtype_equals) return true;
         break;
-    case T_FUNCTION:
+    case TYPE_FUNCTION:
         if (a->as_function.params.len != b->as_function.params.len) {
             return false;
         }
@@ -448,14 +448,12 @@ bool otf_types_are_equivalent(type* a, type* b) {
         }
         if (subtype_equals) return true;
         break;
-    case T_ARRAY:
+    case TYPE_ARRAY:
         if (a->as_array.len != b->as_array.len) return false;
         if (a->as_array.subtype == b->as_array.subtype) return true;
         break;
-    case T_DISTINCT: // distinct types are VERY strict
+    case TYPE_DISTINCT: // distinct types are VERY strict
         return a == b;
-    case T_ADDR:
-        return a == b; // this should really not do anything
     default: break;
     }
     
@@ -485,7 +483,7 @@ type* make_type(u8 tag) {
     if (typegraph.at == NULL) {
         make_type_graph();
     }
-    if (tag < T_meta_INTEGRAL && (typegraph.len >= T_meta_INTEGRAL)) {
+    if (tag < TYPE_META_INTEGRAL && (typegraph.len >= TYPE_META_INTEGRAL)) {
         return typegraph.at[tag];
     }
 
@@ -495,14 +493,14 @@ type* make_type(u8 tag) {
     t->tag = tag;
 
     switch (tag) {
-    case T_STRUCT:
-    case T_UNION:
-    case T_UNTYPED_AGGREGATE:
+    case TYPE_STRUCT:
+    case TYPE_UNION:
+    case TYPE_UNTYPED_AGGREGATE:
         da_init(&t->as_aggregate.fields, 1);
         break;
-    case T_ENUM:
+    case TYPE_ENUM:
         da_init(&t->as_enum.variants, 1);
-        t->as_enum.backing_type = typegraph.at[T_I64];
+        t->as_enum.backing_type = typegraph.at[TYPE_I64];
         break;
     default: break;
     }
@@ -517,7 +515,7 @@ void make_type_graph() {
     typegraph = (type_graph){0};
     da_init(&typegraph, 3);
 
-    FOR_RANGE(i, 0, T_meta_INTEGRAL) {
+    FOR_RANGE(i, 0, TYPE_META_INTEGRAL) {
         make_type(i);
     }
 }
@@ -571,37 +569,36 @@ void print_type_graph() {
         printf("%-2zu\t", i);
         // printf(t->dirty ? "[dirty]\t" : "[clean]\t");
         switch (t->tag){
-        case T_NONE:    printf("(none)\n"); break;
-        case T_I8:      printf("i8\n");     break;
-        case T_I16:     printf("i16\n");    break;
-        case T_I32:     printf("i32\n");    break;
-        case T_I64:     printf("i64\n");    break;
-        case T_U8:      printf("u8\n");     break;
-        case T_U16:     printf("u16\n");    break;
-        case T_U32:     printf("u32\n");    break;
-        case T_U64:     printf("u64\n");    break;
-        case T_F16:     printf("f16\n");    break;
-        case T_F32:     printf("f32\n");    break;
-        case T_F64:     printf("f64\n");    break;
-        case T_ADDR:    printf("addr\n");   break;
-        case T_ALIAS:
+        case TYPE_NONE:    printf("(none)\n"); break;
+        case TYPE_I8:      printf("i8\n");     break;
+        case TYPE_I16:     printf("i16\n");    break;
+        case TYPE_I32:     printf("i32\n");    break;
+        case TYPE_I64:     printf("i64\n");    break;
+        case TYPE_U8:      printf("u8\n");     break;
+        case TYPE_U16:     printf("u16\n");    break;
+        case TYPE_U32:     printf("u32\n");    break;
+        case TYPE_U64:     printf("u64\n");    break;
+        case TYPE_F16:     printf("f16\n");    break;
+        case TYPE_F32:     printf("f32\n");    break;
+        case TYPE_F64:     printf("f64\n");    break;
+        case TYPE_ALIAS:
             printf("alias %zu\n", get_index(get_target(t)));
             break;
-        case T_DISTINCT:
+        case TYPE_DISTINCT:
             printf("distinct %zu\n", get_index(get_target(t)));
             break;
-        case T_POINTER:
+        case TYPE_POINTER:
             printf("pointer %zu\n", get_index(get_target(t)));
             break;
-        case T_SLICE:
+        case TYPE_SLICE:
             printf("slice %zu\n", get_index(get_target(t)));
             break;
-        case T_ARRAY:
+        case TYPE_ARRAY:
             printf("array %zu\n", get_index(t->as_array.subtype));
             break;
-        case T_STRUCT:
-        case T_UNION:
-            printf(t->tag == T_STRUCT ? "struct\n" : "union\n");
+        case TYPE_STRUCT:
+        case TYPE_UNION:
+            printf(t->tag == TYPE_STRUCT ? "struct\n" : "union\n");
             FOR_URANGE(field, 0, t->as_aggregate.fields.len) {
                 printf("\t\t.%s : %zu\n", get_field(t, field)->name, get_index(get_field(t, field)->subtype));
             }
@@ -621,8 +618,8 @@ bool type_is_infinite(type* t) {
     bool is_inf = false;
 
     switch (t->tag) {
-    case T_STRUCT:
-    case T_UNION:
+    case TYPE_STRUCT:
+    case TYPE_UNION:
         FOR_URANGE(i, 0, t->as_aggregate.fields.len) {
             if (type_is_infinite(get_field(t, i)->subtype)) {
                 is_inf = true;
@@ -630,7 +627,7 @@ bool type_is_infinite(type* t) {
             }
         }
         break;
-    case T_FUNCTION:
+    case TYPE_FUNCTION:
         FOR_URANGE(i, 0, t->as_function.params.len) {
             if (type_is_infinite(t->as_function.params.at[i].subtype)) {
                 is_inf = true;
@@ -644,15 +641,15 @@ bool type_is_infinite(type* t) {
             }
         }
         break;
-    case T_ARRAY:
+    case TYPE_ARRAY:
         is_inf = type_is_infinite(t->as_array.subtype);
         break;
-    case T_POINTER:
-    case T_SLICE:
+    case TYPE_POINTER:
+    case TYPE_SLICE:
         break;
 
-    case T_DISTINCT:
-    case T_ALIAS:
+    case TYPE_DISTINCT:
+    case TYPE_ALIAS:
         type_is_infinite(get_target(t));
         break;
     default:
@@ -667,37 +664,36 @@ u32 static size_of_internal(type* t) {
     if (t->size != UINT32_MAX) return t->size;
 
     switch (t->tag) {
-    case T_NONE:
+    case TYPE_NONE:
         return t->size = 0;
-    case T_I8:
-    case T_U8:
-    case T_BOOL:
+    case TYPE_I8:
+    case TYPE_U8:
+    case TYPE_BOOL:
         return t->size = 1;
-    case T_I16:
-    case T_U16:
-    case T_F16:
+    case TYPE_I16:
+    case TYPE_U16:
+    case TYPE_F16:
         return t->size = 2;
-    case T_I32:
-    case T_U32:
-    case T_F32:
+    case TYPE_I32:
+    case TYPE_U32:
+    case TYPE_F32:
         return t->size = 4;
-    case T_I64:
-    case T_U64:
-    case T_F64:
-    case T_POINTER:
-    case T_ADDR:
-    case T_FUNCTION: // remember, its a function POINTER!
+    case TYPE_I64:
+    case TYPE_U64:
+    case TYPE_F64:
+    case TYPE_POINTER:
+    case TYPE_FUNCTION: // remember, its a function POINTER!
         return t->size = 8;
-    case T_SLICE:
+    case TYPE_SLICE:
         return t->size = 16;
-    case T_ENUM:
+    case TYPE_ENUM:
         return t->size = size_of_internal(t->as_enum.backing_type);
-    case T_ALIAS:
-    case T_DISTINCT:
+    case TYPE_ALIAS:
+    case TYPE_DISTINCT:
         return t->size = size_of_internal(t->as_reference.subtype);
-    case T_ARRAY:
+    case TYPE_ARRAY:
         return t->size = size_of_internal(t->as_array.subtype) * t->as_array.len;
-    case T_UNION: {
+    case TYPE_UNION: {
         u64 max_size = 0;
         FOR_URANGE(i, 0, t->as_aggregate.fields.len) {
             u64 size = size_of_internal(get_field(t, i)->subtype);
@@ -705,7 +701,7 @@ u32 static size_of_internal(type* t) {
         }
         return max_size;
         } break;
-    case T_STRUCT: {
+    case TYPE_STRUCT: {
         u64 full_size = 0;
         FOR_URANGE(i, 0, t->as_aggregate.fields.len) {
             full_size += size_of_internal(get_field(t, i)->subtype);
@@ -726,37 +722,36 @@ u32 static align_of_internal(type* t) {
     if (t->align != UINT32_MAX) return t->align;
 
     switch (t->tag) {
-    case T_NONE:
+    case TYPE_NONE:
         return t->align = 0;
-    case T_I8:
-    case T_U8:
+    case TYPE_I8:
+    case TYPE_U8:
         return t->align = 1;
-    case T_I16:
-    case T_U16:
-    case T_F16:
+    case TYPE_I16:
+    case TYPE_U16:
+    case TYPE_F16:
         return t->align = 2;
-    case T_I32:
-    case T_U32:
-    case T_F32:
+    case TYPE_I32:
+    case TYPE_U32:
+    case TYPE_F32:
         return t->align = 4;
-    case T_I64:
-    case T_U64:
-    case T_F64:
-    case T_POINTER:
-    case T_ADDR:
-    case T_FUNCTION: // remember, its a function POINTER!
-    case T_SLICE:
+    case TYPE_I64:
+    case TYPE_U64:
+    case TYPE_F64:
+    case TYPE_POINTER:
+    case TYPE_FUNCTION: // remember, its a function POINTER!
+    case TYPE_SLICE:
         return t->align = 8;
-    case T_ENUM:
+    case TYPE_ENUM:
         return t->align = align_of_internal(t->as_enum.backing_type);
-    case T_ALIAS:
-    case T_DISTINCT:
+    case TYPE_ALIAS:
+    case TYPE_DISTINCT:
         return t->align = align_of_internal(t->as_reference.subtype);
-    case T_ARRAY:
+    case TYPE_ARRAY:
         return t->align = align_of_internal(t->as_array.subtype);
     
-    case T_UNION:
-    case T_STRUCT: {
+    case TYPE_UNION:
+    case TYPE_STRUCT: {
         u64 max_align = 0;
         FOR_URANGE(i, 0, t->as_aggregate.fields.len) {
             u64 align = align_of_internal(get_field(t, i)->subtype);
@@ -772,4 +767,43 @@ u32 static align_of_internal(type* t) {
 u32 type_real_align_of(type* t) {
     if (type_is_infinite(t)) return UINT32_MAX;
     return align_of_internal(t);
+}
+
+forceinline bool is_raw_pointer(type* p) {
+    return (p->tag == TYPE_POINTER && p->as_reference.subtype->tag == TYPE_NONE);
+}
+
+bool implicitly_cast(type* to, type* from) {
+    if (types_are_equivalent(to, from, NULL)) return true;
+
+    switch(from->tag) {
+    case TYPE_UNTYPED_INT:
+    case TYPE_UNTYPED_FLOAT:
+        return (to->tag >= TYPE_UNTYPED_INT && to->tag <= TYPE_F64);
+    case TYPE_POINTER:
+        if (to->tag != TYPE_POINTER) return false;
+
+        // ^mut -> ^(mut/let) T
+        if (from->as_reference.mutable && 
+            from->as_reference.subtype->tag == TYPE_NONE) return true;
+
+        // ^mut T -> ^(mut/let)
+        if (from->as_reference.mutable && 
+            to->as_reference.subtype->tag == TYPE_NONE) return true;
+        
+        // ^let T -> ^let
+        if (!from->as_reference.mutable && 
+            to->as_reference.subtype->tag == TYPE_NONE && 
+            !to->as_reference.mutable) return true;
+        
+        // ^let -> ^let T
+        if (!from->as_reference.mutable &&
+            from->as_reference.subtype == NULL &&
+            !to->as_reference.mutable) return true;
+
+        return false;
+    case TYPE_ENUM:
+        return types_are_equivalent(to, from->as_enum.backing_type, NULL);
+    }
+    return false;
 }
