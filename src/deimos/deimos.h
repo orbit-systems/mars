@@ -4,4 +4,4 @@
 #include "../phobos/ast.h"
 #include "pass.h"
 
-void process_ast(AST base_node);
+void deimos_init(AST base_node);

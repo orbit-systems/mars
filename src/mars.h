@@ -14,6 +14,8 @@ typedef struct flag_set_s {
     string output_path;
     bool output_dot;
     bool print_timings;
+    bool deimos_disabled;
+    bool semanal_disabled;
 
 /*
     u8 target_arch;

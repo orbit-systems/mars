@@ -1,5 +1,5 @@
 #include "deimos.h"
 
-void process_ast(AST base_node) {
+void deimos_init(AST base_node) {
 	run_passes(base_node);
 }

@@ -21,7 +21,10 @@ int main(int argc, char** argv) {
 
     FOR_URANGE(i, 0, main_mod->program_tree.len) {
         dump_tree(main_mod->program_tree.at[i], 0);
-        // process_ast(main_mod->program_tree.at[i]);
+        if (!mars_flags.deimos_disabled) {
+            deimos_init(main_mod->program_tree.at[i]);
+        }
+
     }
 
     if (mars_flags.output_dot == true) {  
@@ -35,17 +38,21 @@ int main(int argc, char** argv) {
     // }
 
     // recursive check
-    checked_expr e = {0};
-    check_expr(
-        main_mod, 
-        NULL, 
-        main_mod->program_tree.at[0].as_decl_stmt->rhs,
-        &e,
-        true,
-        NULL
-    );
+    if (!mars_flags.semanal_disabled) {
+        checked_expr e = {0};
+        check_expr(
+            main_mod, 
+            NULL, 
+            main_mod->program_tree.at[0].as_decl_stmt->rhs,
+            &e,
+            true,
+            NULL
+        );
 
-    printf("%lld\n", e.ev->as_untyped_int);
+        printf("%lld\n", e.ev->as_untyped_int);
+    }
+
+    
 
 
     // check_module_and_dependencies(main_mod);
@@ -66,6 +73,8 @@ void print_help() {
     printf("-help               display this text\n\n");
     printf("-timings            print compiler stage timings\n");
     printf("-dot                convert the parse tree to a DOT file for graphviz\n");
+    printf("-no-deimos          disables the deimos module\n");
+    printf("-no-checker         disables the semantic analyzer\n");
 }
 
 cmd_arg make_argument(char* s) {
@@ -125,6 +134,10 @@ void load_arguments(int argc, char* argv[], flag_set* fl) {
             fl->output_dot = true;
         } else if (string_eq(a.key, to_string("-timings"))) {
             fl->print_timings = true;
+        } else if (string_eq(a.key, to_string("-no-deimos"))) {
+            fl->deimos_disabled = true;
+        } else if (string_eq(a.key, to_string("-no-checker"))) {
+            fl->semanal_disabled = true;
         } else {
             general_error("unrecognized option \""str_fmt"\"", str_arg(a.key));
         }
