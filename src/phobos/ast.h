@@ -113,7 +113,7 @@ typedef struct {
         da(AST) lhs; \
         AST rhs; \
         AST type; \
-        bool has_expl_type : 1; \
+        bool has_expl_type : 1; /*FIXME: REMOVE THIS*/\ 
         bool is_mut        : 1; \
         bool is_static     : 1; \
         bool is_volatile   : 1; \

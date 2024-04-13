@@ -18,4 +18,5 @@ void run_passes(AST base_node) {
 	//the legalising pass is special, and doesnt actually take in a DAG, it takes in the AST.
 	
 	DAG legalised_dag = pass_legalise(base_node);
+	general_warning("TODO: linearise the DAG please <3");
 }

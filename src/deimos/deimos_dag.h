@@ -5,11 +5,19 @@
 #include "../phobos/lex.h"
 #include "../arena.h"
 #include "../term.h"
+#include "../phobos/ast.h"
 
 typedef struct {
     token* start;
     token* end;
 } dag_base;
+
+typedef struct {
+    token* identifier;
+    struct entity* entity;
+} dag_identifier_entity;
+
+da_typedef(dag_identifier_entity);
 
 // define all the DAG node macros
 #define DAG_NODES \
@@ -26,13 +34,38 @@ typedef struct {
 	/*statements*/						\
 	DAG_TYPE(decl_stmt, "declaration", {\
 		dag_base base;					\
-		da(token) lhs;					\
+		da(dag_identifier_entity) lhs;	\
 		DAG rhs;						\
 		DAG type;						\
-		bool has_expl_type : 1;			\
 		bool is_volatile   : 1;			\
 		bool is_uninit     : 1;			\
 	})									\
+    DAG_TYPE(block_stmt, "statement block", { \
+        dag_base base; \
+        da(DAG) statements; \
+    }) \
+    DAG_TYPE(return_stmt, "return statement", { \
+        dag_base base; \
+        da(DAG) returns; \
+    }) \
+    /*literals*/                        \
+    DAG_TYPE(func_literal, "function literal", { \
+        dag_base base; \
+        DAG code_block; \
+    }) \
+    /*operators*/                          \
+    DAG_TYPE(binary_op, "binary op", { \
+        dag_base base; \
+        token* op; \
+        AST Alhs; \
+        AST Arhs; \
+        DAG Dlhs; \
+        DAG Drhs; \
+        bool lhsAST : 1; \
+        bool rhsAST : 1; \
+    }) \
+
+
 	/*
 	    AST_TYPE(decl_stmt, "declaration", { \
         ast_base base; \
