@@ -125,7 +125,7 @@ operators
         | ^let T -> ^let
         | enum T -> T
         |
-        | (u/i)N -> (u/i)M where N, M ∈ {8, 16, 32, 64}, N > M
+        | (u/i)N -> (u/i)M where N, M ∈ {8, 16, 32, 64}, N <= M
     
     unary reference
         &       generate pointer        using type T in (all): &<T> -> <^T>
