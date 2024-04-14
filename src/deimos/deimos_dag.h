@@ -8,19 +8,22 @@
 #include "../phobos/ast.h"
 
 typedef struct {
-    token* start;
-    token* end;
 } dag_base;
 
 typedef struct {
     token* identifier;
     struct entity* entity;
+    bool is_volatile;
+    bool is_uninit;
 } dag_identifier_entity;
 
 da_typedef(dag_identifier_entity);
 
 // define all the DAG node macros
 #define DAG_NODES \
+    DAG_TYPE(pruned, "pruned dag node", { \
+        dag_base base; \
+    }) \
 	DAG_TYPE(entry, "dag entry node", { \
 		dag_base base;					\
 		DAG node; 						\
@@ -31,14 +34,22 @@ da_typedef(dag_identifier_entity);
 		token* operator;				\
 		DAG operand;					\
 	})									\
+    DAG_TYPE(binary_op, "binary op", { \
+        dag_base base; \
+        token* op; \
+        AST Alhs; \
+        AST Arhs; \
+        DAG Dlhs; \
+        DAG Drhs; \
+        bool lhsAST : 1; \
+        bool rhsAST : 1; \
+    }) \
 	/*statements*/						\
 	DAG_TYPE(decl_stmt, "declaration", {\
 		dag_base base;					\
 		da(dag_identifier_entity) lhs;	\
 		DAG rhs;						\
 		DAG type;						\
-		bool is_volatile   : 1;			\
-		bool is_uninit     : 1;			\
 	})									\
     DAG_TYPE(block_stmt, "statement block", { \
         dag_base base; \
@@ -53,17 +64,14 @@ da_typedef(dag_identifier_entity);
         dag_base base; \
         DAG code_block; \
     }) \
-    /*operators*/                          \
-    DAG_TYPE(binary_op, "binary op", { \
+    \
+    /*first transform set*/ \
+    DAG_TYPE(t_assign, "ASSIGN", { \
         dag_base base; \
-        token* op; \
-        AST Alhs; \
-        AST Arhs; \
-        DAG Dlhs; \
-        DAG Drhs; \
-        bool lhsAST : 1; \
-        bool rhsAST : 1; \
+        dag_identifier_entity lhs; \
+        DAG rhs; \
     }) \
+
 
 
 	/*
@@ -340,6 +348,7 @@ typedef struct DAG {
 #undef DAG_TYPE
     };
     dag_type type;
+    int depth;
 } DAG;
 /*
 typedef struct {
@@ -389,4 +398,4 @@ typedef struct {
 extern char* dag_type_str[];
 extern size_t dag_type_size[];
 
-DAG new_dag_node(arena* restrict alloca, dag_type type);
+DAG new_dag_node(arena* restrict alloca, dag_type type, int depth);

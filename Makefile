@@ -1,4 +1,4 @@
-SRCPATHS = src/*.c src/phobos/*.c src/deimos/*.c
+SRCPATHS = src/*.c src/phobos/*.c src/deimos/*.c src/deimos/passes/*.c
 SRC = $(wildcard $(SRCPATHS))
 OBJECTS = $(SRC:src/%.c=build/%.o)
 
@@ -14,7 +14,7 @@ LD = gcc
 DEBUGFLAGS = -lm -rdynamic -pg -g
 ASANFLAGS = -fsanitize=undefined -fsanitize=address
 DONTBEAFUCKINGIDIOT = -Wall -Wextra -pedantic -Wno-missing-field-initializers -Wno-unused-result
-CFLAGS = -Wincompatible-pointer-types -lm
+CFLAGS = -Wno-incompatible-pointer-types -lm
 OPT = -O2
 
 all: build
@@ -24,8 +24,8 @@ build/%.o: src/%.c
 	@$(CC) -c -o $@ $< -Isrc/ -MD $(CFLAGS) $(OPT)
 
 build: $(OBJECTS)
-	@-cp build/deimos/* build/
-	@-cp build/phobos/* build/
+	@-cp -r build/deimos/* build/
+	@-cp    build/phobos/* build/
 
 	@echo linking with $(LD)
 	@$(LD) $(OBJECTS) -o $(EXECUTABLE_NAME) $(CFLAGS)
@@ -37,8 +37,8 @@ dbgbuild/%.o: src/%.c
 	@$(CC) -c -o $@ $< -Isrc/ -MD $(DEBUGFLAGS)
 
 dbgbuild: $(OBJECTS)
-	@-cp build/deimos/* build/
-	@-cp build/phobos/* build/
+	@-cp -r build/deimos/* build/
+	@-cp    build/phobos/* build/
 
 	@$(LD) $(OBJECTS) -o $(EXECUTABLE_NAME) $(DEBUGFLAGS)
 	
@@ -52,7 +52,9 @@ clean:
 	@rm -rf build
 	@mkdir build
 	@mkdir build/deimos
+	@mkdir build/deimos/passes
 	@mkdir build/phobos
+
 
 printbuildinfo:
 	@echo using $(CC) with flags $(CFLAGS) $(OPT)

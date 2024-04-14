@@ -17,7 +17,7 @@ char* dag_type_str[] = {
 };
 
 // allocate and zero a new DAG node with an arena
-DAG new_dag_node(arena* restrict alloca, dag_type type) {
+DAG new_dag_node(arena* restrict alloca, dag_type type, int depth) {
     DAG node;
     void* node_ptr = arena_alloc(alloca, dag_type_size[type], 8);
     if (node_ptr == NULL) {
@@ -26,5 +26,6 @@ DAG new_dag_node(arena* restrict alloca, dag_type type) {
     memset(node_ptr, 0, dag_type_size[type]);
     node.rawptr = node_ptr;
     node.type = type;
+    node.depth = depth;
     return node;
 }
