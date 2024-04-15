@@ -2,17 +2,19 @@
 #define DEIMOS_PASS_H
 
 #include "../phobos/ast.h"
-#include "deimos_dag.h"
 #include "passes/passes.h"
+#include "deimos_ir.h"
+#include "deimos_ssa.h"
 
 void run_passes(AST base_node);
 
 void init_passes();
 
-DAG pass_legalise(AST base_node);
+IR pass_legalise(AST base_node);
 
 typedef enum {
-	PASS_DAG_2_DAG,
+	PASS_IR_2_IR,
+	PASS_SSA_2_SSA,
 	//PASS_DAG_2_SSA,
 	//PASS_SSA_2_SSA,
 	PASS_ID_COUNT,
@@ -21,7 +23,8 @@ typedef enum {
 typedef struct {
 	union {
 		void (*callback)();
-		DAG  (*DAG_2_DAG)(DAG);
+		IR  (*IR_2_IR)(IR);
+		SSA (*SSA_2_SSA)(SSA);
 		//FIXME: include SSA stuff
 	};
 	string pass_name;

@@ -3,7 +3,6 @@
 
 #include "../phobos/ast.h"
 #include "pass.h"
-#include "deimos_dag.h"
 
 void deimos_init(AST base_node);
 

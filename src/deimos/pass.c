@@ -32,7 +32,7 @@ void run_passes(AST base_node) {
 	//the legalising pass is special, and doesnt actually take in a DAG, it takes in the AST.
 	
 	printf("Running pass 0: AST to IR transform pass | Crude transform from AST to IR\n");
-	DAG current_dag = pass_legalise(base_node);
+	IR current_ir = pass_legalise(base_node);
 
 	FOR_URANGE(i, 0, passes.len) {
 		pass current_pass = passes.at[i];
@@ -42,8 +42,8 @@ void run_passes(AST base_node) {
 		free(pass_name);
 
 		switch(current_pass.id) {
-			case PASS_DAG_2_DAG:
-				current_dag = current_pass.DAG_2_DAG(current_dag);
+			case PASS_IR_2_IR:
+				current_ir = current_pass.IR_2_IR(current_ir);
 				break;
 			default:
 				general_error("Unexpected pass_id of %d", current_pass.id);
