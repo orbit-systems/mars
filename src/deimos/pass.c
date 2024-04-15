@@ -3,6 +3,16 @@
 
 //implements the pass system for processing the aphelion AST and transforming it into a DAG
 
+/*
+ *KAYLA YOU SILLY GIT
+ *fix the architectural problem with the dag
+ *make the dag_base contain a base pointer to the dag itself or something
+ *you gotta fix this, girlie
+ *
+ *
+ *
+ */
+
 da(pass) passes;
 
 void add_pass(pass_id id, void (*callback)(), char* pass_name) {
@@ -15,14 +25,13 @@ void add_pass(pass_id id, void (*callback)(), char* pass_name) {
 
 void init_passes() {
 	da_init(&passes, 1);
-	add_pass(PASS_DAG_2_DAG, pass_dag2tdag, "DAG to TDAG transform pass | Prunes extraneous information from the AST");
 }
 
 void run_passes(AST base_node) {
 	//execute passes in order of init
 	//the legalising pass is special, and doesnt actually take in a DAG, it takes in the AST.
 	
-	printf("Running pass 0: AST to DAG transform pass | Crude transform from AST to DAG to extract information needed for TICG\n");
+	printf("Running pass 0: AST to IR transform pass | Crude transform from AST to IR\n");
 	DAG current_dag = pass_legalise(base_node);
 
 	FOR_URANGE(i, 0, passes.len) {

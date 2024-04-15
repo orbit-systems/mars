@@ -4,6 +4,14 @@
 #include "../phobos/ast.h"
 #include "pass.h"
 #include "deimos_dag.h"
-#include "dag_utils.h"
 
 void deimos_init(AST base_node);
+
+typedef struct {
+    token* identifier;
+    struct entity* entity;
+    bool is_volatile;
+    bool is_uninit;
+} identifier_entity_pair;
+
+da_typedef(identifier_entity_pair);
