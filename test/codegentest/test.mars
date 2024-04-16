@@ -1,0 +1,3 @@
+module codegentest;
+
+return a + b - c * d;
