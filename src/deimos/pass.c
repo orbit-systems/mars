@@ -30,7 +30,11 @@ void init_passes() {
 void run_passes(AST base_node) {
 	//execute passes in order of init
 	//the legalising pass is special, and doesnt actually take in a DAG, it takes in the AST.
+	 
+	printf("AST->AST Passes:");
+	printf("Running pass 0: Convert return_stmt !-> identifier_expr to return_stmt -> identifier by inserting dummy returns.\n");
 	
+
 	printf("Running pass 0: AST to IR transform pass | Crude transform from AST to IR\n");
 	IR current_ir = pass_legalise(base_node);
 
