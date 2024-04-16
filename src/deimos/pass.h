@@ -22,9 +22,9 @@ typedef enum {
 
 typedef struct {
 	union {
-		void (*callback)();
-		IR  (*IR_2_IR)(IR);
-		SSA (*SSA_2_SSA)(SSA);
+		void   (*callback)();
+		da(IR) (*IR_2_IR)(da(IR));
+		SSA    (*SSA_2_SSA)(SSA);
 		//FIXME: include SSA stuff
 	};
 	string pass_name;

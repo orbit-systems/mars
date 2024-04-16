@@ -36,11 +36,11 @@ int pcr_walk_ast(AST node, AST parent, int depth) {
 							general_warning("FIXME: pcr_walk_ast is assuming the typing info for the statement");
 							general_warning("FIXME: \"return a + b\", where typeof(a) == typeof(b) == i64");
 							general_warning("FIXME: this is BAD. fix it.");
-							general_warning("FIXME: it is currently extracting the et from the a identifier.");
+							general_warning("FIXME: type_from_expr currently doesnt parse binary_op, so this will have to do.");
 							general_warning("FIXME: this pass also only works on returns of ONE value currently.");
 							//we cant yet fill out the identifier, but we CAN copy over the decl_stmt info
 							new_decl_stmt.as_decl_stmt->rhs = potential_non_identifier;
-
+							new_decl_stmt.type = AST_decl_stmt;
 							AST new_identifier = new_ast_node(&deimos_alloca, AST_identifier_expr);
 							//potential CAE issue? new_entity() extracts info from
 							//the AST, but the new AST nodes arent yet built. hopefully no issues here
@@ -62,6 +62,19 @@ int pcr_walk_ast(AST node, AST parent, int depth) {
 							if (new_token == NULL) general_error("Failed to allocate space for new identifier token.");
 							new_token->type = TOK_IDENTIFIER;
 							new_token->text = identifier_name;
+							new_identifier.as_identifier_expr->tok = new_token;
+
+							new_decl_stmt.as_decl_stmt->type = NULL_AST;
+							//fix the return_stmt
+
+							return_stmt.as_return_stmt->returns.at[i] = new_identifier;
+
+							//add the identifier to the decl_stmt, and then append it to the list of block_stmt
+							da_init(&new_decl_stmt.as_decl_stmt->lhs, 1);
+							da_append(&new_decl_stmt.as_decl_stmt->lhs, new_identifier);
+							da_insert_at(&node.as_block_stmt->stmts, new_decl_stmt, i);
+
+
 
 							//if (identifier_a_et == NULL) general_error("FUCK %s", ast_type_str[potential_non_identifier.type]);
 							//new_identifier.as_identifier_expr->entity = new_entity(identifier_a_et, to_string(random_string(8)), new_decl_stmt);

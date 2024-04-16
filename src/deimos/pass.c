@@ -37,7 +37,7 @@ void run_passes(AST base_node) {
 	printf("Running pass 0: Convert return_stmt !-> identifier_expr to return_stmt -> identifier by inserting dummy identifiers.\n");
 	AST current_ast = pass_convert_return(base_node);
 	printf("Running pass 1: AST to IR transform pass | Crude transform from AST to IR\n");
-	IR current_ir = pass_legalise(base_node);
+	da(IR) current_ir = pass_ast_to_ir(base_node);
 
 	FOR_URANGE(i, 0, passes.len) {
 		pass current_pass = passes.at[i];
@@ -48,14 +48,11 @@ void run_passes(AST base_node) {
 
 		switch(current_pass.id) {
 			case PASS_IR_2_IR:
-				current_ir = current_pass.IR_2_IR(current_ir);
+				current_pass.IR_2_IR(current_ir);
 				break;
 			default:
 				general_error("Unexpected pass_id of %d", current_pass.id);
 				break;
 		}
 	}
-
-
-	general_warning("TODO: linearise the DAG please <3");
 }
