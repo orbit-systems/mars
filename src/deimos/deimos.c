@@ -10,11 +10,9 @@ void deimos_init(AST base_node) {
 	// (sandwichman): hijacking this to test
 	da(IR) ir_stream = {0};
 	da_init(&ir_stream, 1);
-	
-	generate_return(base_node, &ir_stream);
-	print_ir(ir_stream);	
-	
 
+	generate_return(base_node, &ir_stream);
+	print_ir(ir_stream);
 
 	// init_passes();
 	// run_passes(base_node);
