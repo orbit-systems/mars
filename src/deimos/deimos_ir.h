@@ -12,9 +12,26 @@ typedef struct {
 
 // define all the IR node macros
 #define IR_NODES \
-    IR_TYPE(pruned, "pruned ir node", { \
+    IR_TYPE(function_label, "label", { \
         ir_base base; \
+        string label_text; \
     }) \
+    IR_TYPE(arg_mov, "argument mov", { \
+        ir_base base; \
+        string identifier_name; \
+        int argument; \
+    }) \
+    IR_TYPE(binary_op, "binary op", { \
+        ir_base base; \
+        string lhs; \
+        string rhs; \
+        string out; \
+        operator op; \
+    }) \
+    IR_TYPE(return_stmt, "return statement", { \
+        ir_base base; \
+        string identifier_name; \
+    })\
 
 // generate the enum tags for the IR tagged union
 typedef u16 ir_type; enum {
@@ -39,6 +56,17 @@ typedef struct IR {
 
 da_typedef(IR);
 
+typedef enum {
+    NO_OP,
+    ADD,
+    SUB,
+    MUL,
+    DIV,
+    OP_COUNT,
+} operator;
+
+extern char* operator_strings[];
+
 // generate DIR node typedefs
 #define IR_TYPE(ident, identstr, structdef) typedef struct ir_##ident structdef ir_##ident;
     IR_NODES
@@ -50,4 +78,6 @@ da_typedef(IR);
 extern char* ir_type_str[];
 extern size_t ir_type_size[];
 
-IR new_dir_entry(arena* restrict alloca, ir_type type);
+IR new_ir_entry(arena* restrict alloca, ir_type type);
+
+void print_ir(da(IR) ir_elems);

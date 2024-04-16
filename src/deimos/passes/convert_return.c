@@ -11,6 +11,7 @@ AST pass_convert_return(AST base_node) {
 }
 
 int pcr_walk_ast(AST node, AST parent, int depth) {
+	general_warning("FIXME: Break up binary_op_expr like return_stmt if binary_op->rhs !-> identifier_expr");
 	switch(node.type) {
 		case AST_decl_stmt: {
 			//ignore lhs
