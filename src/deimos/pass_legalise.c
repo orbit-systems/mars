@@ -2,17 +2,11 @@
 #include "deimos_ir.h"
 #include "../phobos/ast.h"
 
-//this pass legalises the phobos AST into a deimos DAG
-
-#define IR_ARENA_SIZE 0x100000
+//this pass legalises the phobos AST into a deimos IR
 
 void recurse_legalisation_ast(AST node, int depth);
 
-arena ir_alloca;
-
 IR pass_legalise(AST base_node) {
-	//setup new DAG
-	ir_alloca = arena_make(IR_ARENA_SIZE);
 
 	//need to do some fucky shit.
 	recurse_legalisation_ast(base_node, 0);

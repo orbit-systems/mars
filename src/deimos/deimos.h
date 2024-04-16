@@ -14,3 +14,7 @@ typedef struct {
 } identifier_entity_pair;
 
 da_typedef(identifier_entity_pair);
+
+#define DEIMOS_ARENA_SIZE 0x100000
+
+extern arena deimos_alloca;
