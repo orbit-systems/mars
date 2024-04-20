@@ -17,6 +17,10 @@ Mars was born out of a desire to hold on to C's simplicity (no runtime, implicit
 large stdlibs, etc.) but dig deeper into the nitty-gritty and give the programmer more low-level control.
 
 ## Building
+# Prerequisites:
+- C Compiler
+- Make (optional)
+
 
 To build the compiler, navigate to the project folder and compile/run `anvil.c`:
 ```shell
