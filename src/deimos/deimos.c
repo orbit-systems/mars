@@ -16,14 +16,6 @@ common trait is that they operate on the IR structure itself.
 
 */
 
-IR_Module* generate_ir(mars_module* mod) {
-	IR_Module* mod = ir_new_module(mod->module_name);
-	
-	/* do some codegen shit prolly */
-
-	return mod;
-}
-
 char* random_string(int len) {
 	if (len < 3) {
 		general_error("random_string() needs to be called with len >= 3");
