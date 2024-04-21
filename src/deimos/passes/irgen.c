@@ -4,6 +4,8 @@
 
 static mars_module* mars_mod;
 
+IR* ir_generate_expr(IR_Function* f, IR_BasicBlock* bb, AST ast);
+
 IR_Module* ir_pass_generate(mars_module* mod) {
 	IR_Module* m = ir_new_module(mod->module_name);
     mars_mod = mod;
@@ -52,7 +54,7 @@ IR* ir_generate_expr_binop(IR_Function* f, IR_BasicBlock* bb, AST ast) {
         break;
     }
 
-    return;
+    return ir;
 }
 
 typedef struct EntityExtra {
