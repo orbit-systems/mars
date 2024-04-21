@@ -21,14 +21,14 @@ all: build
 
 build/%.o: src/%.c
 	@echo compiling $<
-	@$(CC) -c -o $@ $< -Isrc/ -MD $(CFLAGS) $(OPT) $(DEBUGFLAGS)
+	@$(CC) -c -o $@ $< -Isrc/ -MD $(CFLAGS) $(OPT)
 
 build: $(OBJECTS)
 	@-cp -r build/deimos/* build/
 	@-cp    build/phobos/* build/
 
 	@echo linking with $(LD)
-	@$(LD) $(OBJECTS) -o $(EXECUTABLE_NAME) $(CFLAGS) $(DEBUGFLAGS)
+	@$(LD) $(OBJECTS) -o $(EXECUTABLE_NAME) $(CFLAGS)
 
 	@echo $(EXECUTABLE_NAME) built
 	

@@ -42,17 +42,8 @@ entity* search_for_entity(entity_table* et, string ident) {
 }
 
 entity* new_entity(entity_table* et, string ident, AST decl) {
-    entity* e;
-    if (et) e = arena_alloc(&et->alloca,    sizeof(entity), alignof(entity));
-    else    e = arena_alloc(&deimos_alloca, sizeof(entity), alignof(entity));
+    entity* e = arena_alloc(&et->alloca, sizeof(entity), alignof(entity));
     *e = (entity){0};
-    if (et == NULL) {
-        general_warning("FIXME: bodge from deimos, just until the checker works enough to parse mars_code/add/*");
-        
-        e->identifier = ident;
-        e->decl = decl;
-        return e;
-    }
     e->identifier = ident;
     e->decl = decl;
     e->top = et;
