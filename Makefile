@@ -11,6 +11,7 @@ endif
 CC = gcc
 LD = gcc
 
+INCLUDEPATHS = -Isrc/ -Isrc/phobos/ -Isrc/deimos/
 DEBUGFLAGS = -lm -rdynamic -pg -g
 ASANFLAGS = -fsanitize=undefined -fsanitize=address
 DONTBEAFUCKINGIDIOT = -Wall -Wextra -pedantic -Wno-missing-field-initializers -Wno-unused-result
@@ -21,7 +22,7 @@ all: build
 
 build/%.o: src/%.c
 	@echo compiling $<
-	@$(CC) -c -o $@ $< -Isrc/ -MD $(CFLAGS) $(OPT)
+	@$(CC) -c -o $@ $< $(INCLUDEPATHS) -MD $(CFLAGS) $(OPT)
 
 build: $(OBJECTS)
 	@-cp -r build/deimos/* build/
@@ -34,7 +35,7 @@ build: $(OBJECTS)
 	
 
 dbgbuild/%.o: src/%.c
-	@$(CC) -c -o $@ $< -Isrc/ -MD $(DEBUGFLAGS)
+	@$(CC) -c -o $@ $< $(INCLUDEPATHS) -MD $(DEBUGFLAGS)
 
 dbgbuild: $(OBJECTS)
 	@-cp -r build/deimos/* build/

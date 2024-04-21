@@ -27,11 +27,6 @@ int main(int argc, char** argv) {
         emit_dot(str("test"), main_mod->program_tree);
     }
 
-    // printf("main_mod module parsed %p\n", main_mod);
-
-    // FOR_URANGE(i, 0, main_mod->program_tree.len) {
-    //     dump_tree(main_mod->program_tree.at[i], 0);
-    // }
 
     // recursive check
     if (!mars_flags.semanal_disabled) {
@@ -48,7 +43,9 @@ int main(int argc, char** argv) {
         printf("%lld\n", e.ev->as_untyped_int);
     }
 
-    
+    if (!mars_flags.deimos_disabled) {
+        generate_ir(main_mod);
+    }
 
 
     // check_module_and_dependencies(main_mod);

@@ -1,5 +1,29 @@
 #include "deimos.h"
 
+/* (sandwich): okay, heres how this is going to work.
+
+the function generate_ir() encompasses the simple AST -> IR
+translation phase. it does not do any optimizations.
+this is explicitly NOT a structured pass in the pass system
+because it is of a completely different form to the rest of 
+the passes, which are IR -> IR and modify the IR directly. 
+also, there is only one AST -> IR pass, so treating it as a 
+general pass only makes things more complex.
+
+the compiler driver can then schedule one or more IR passes. 
+They can be optimization passes, analysis passes, but their 
+common trait is that they operate on the IR structure itself.
+
+*/
+
+IR_Module* generate_ir(mars_module* mod) {
+	IR_Module* mod = ir_new_module(mod->module_name);
+	
+	/* do some codegen shit prolly */
+
+	return mod;
+}
+
 char* random_string(int len) {
 	if (len < 3) {
 		general_error("random_string() needs to be called with len >= 3");
