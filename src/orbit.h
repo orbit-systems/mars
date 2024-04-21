@@ -26,8 +26,8 @@ typedef int32_t  i32;
 typedef int16_t  i16;
 typedef int8_t   i8;
 
-typedef double f64;
-typedef float f32;
+typedef double   f64;
+typedef float    f32;
 typedef _Float16 f16;
 
 #if !defined(PATH_MAX)
@@ -57,20 +57,18 @@ typedef _Float16 f16;
 #endif
 
 #define TODO(msg) do {\
-    printf("\x1b[36m\x1b[1mTODO\x1b[0m: \"%s\" at %s:%d\n", (msg), (__FILE__), (__LINE__)); \
+    printf("\x1b[36m\x1b[1mTODO\x1b[0m \"%s\" in %s() at %s:%d\n", (msg), (__func__), (__FILE__), (__LINE__)); \
     exit(EXIT_FAILURE); } while (0)
 
 #define CRASH(msg) do { \
-    printf("\x1b[31m\x1b[1mCRASH\x1b[0m: \"%s\" at %s:%d\n", (msg), (__FILE__), (__LINE__)); \
+    printf("\x1b[31m\x1b[1mCRASH\x1b[0m \"%s\" in %s() at %s:%d\n", (msg), (__func__), (__FILE__), (__LINE__)); \
     exit(EXIT_FAILURE); } while (0)
 
-#ifdef __GNUC__
-#   define UNREACHABLE __builtin_unreachable()
-#else
-#   define UNREACHABLE do { \
-        printf("\x1b[31m\x1b[1mUNREACHABLE\x1b[0m at %s:%d\n", (__FILE__), (__LINE__)); \
-        exit(EXIT_FAILURE);} while (0)
-#endif
+
+#define UNREACHABLE do { \
+    printf("\x1b[31m\x1b[1mUNREACHABLE\x1b[0m in %s() at %s:%d\n", (__func__) ,(__FILE__), (__LINE__)); \
+    exit(EXIT_FAILURE);} while (0)
+
 
 
 #define max(a,b) ((a) > (b) ? (a) : (b))
