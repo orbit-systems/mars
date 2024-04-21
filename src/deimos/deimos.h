@@ -1,20 +1,10 @@
 #pragma once
 #define DEIMOS_H
 
-#include "../phobos/ast.h"
-#include "pass.h"
+#include "mars.h"
+#include "ir.h"
+#include "phobos.h"
 
-void deimos_init(AST base_node);
+char* random_string(int len);
 
-typedef struct {
-    token* identifier;
-    struct entity* entity;
-    bool is_volatile;
-    bool is_uninit;
-} identifier_entity_pair;
-
-da_typedef(identifier_entity_pair);
-
-#define DEIMOS_ARENA_SIZE 0x100000
-
-extern arena deimos_alloca;
+IR_Module* generate_ir(mars_module* mod);

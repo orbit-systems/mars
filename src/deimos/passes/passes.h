@@ -1,6 +1,7 @@
 #pragma once
-#include "../deimos_ir.h"
+#define DEIMOS_PASSES_H
 
-AST pass_convert_return(AST base_node);
+#include "deimos.h"
+#include "ir.h"
 
-da(IR) pass_ast_to_ir(AST base_node);
+IR_Module* ir_pass_generate(mars_module* mod);

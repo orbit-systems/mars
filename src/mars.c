@@ -21,21 +21,12 @@ int main(int argc, char** argv) {
 
     FOR_URANGE(i, 0, main_mod->program_tree.len) {
         dump_tree(main_mod->program_tree.at[i], 0);
-        if (!mars_flags.deimos_disabled) {
-            deimos_init(main_mod->program_tree.at[i]);
-        }
-
     }
 
     if (mars_flags.output_dot == true) {  
-        emit_dot(to_string("test"), main_mod->program_tree);
+        emit_dot(str("test"), main_mod->program_tree);
     }
 
-    // printf("main_mod module parsed %p\n", main_mod);
-
-    // FOR_URANGE(i, 0, main_mod->program_tree.len) {
-    //     dump_tree(main_mod->program_tree.at[i], 0);
-    // }
 
     // recursive check
     if (!mars_flags.semanal_disabled) {
@@ -52,7 +43,9 @@ int main(int argc, char** argv) {
         printf("%lld\n", e.ev->as_untyped_int);
     }
 
-    
+    if (!mars_flags.deimos_disabled) {
+        IR_Module* ir_mod = generate_ir(main_mod);
+    }
 
 
     // check_module_and_dependencies(main_mod);
@@ -70,21 +63,23 @@ void print_help() {
     printf("(directory)         where the main_mod module is.\n");
     printf("\n");
     printf("-o:(path)           specify an output path\n");
-    printf("-help               display this text\n\n");
-    printf("-timings            print compiler stage timings\n");
-    printf("-dot                convert the parse tree to a DOT file for graphviz\n");
-    printf("-no-deimos          disables the deimos module\n");
+    printf("-help               display this text\n");
+    printf("\n");
+    printf("-timings            print stage timings\n");
+    printf("-dump-AST           print readable AST\n");
+    printf("-dot                convert the AST to a graphviz .dot file\n");
     printf("-no-checker         disables the semantic analyzer\n");
+    printf("-no-deimos          disables the compiler backend\n");
 }
 
 cmd_arg make_argument(char* s) {
     for (size_t i = 0; s[i] != '\0'; i++) {
         if (s[i] == ':') {
             s[i] = '\0';
-            return (cmd_arg){to_string(s), to_string(s+i+1)};
+            return (cmd_arg){str(s), str(s+i+1)};
         }
     }
-    return (cmd_arg){to_string(s), NULL_STR};
+    return (cmd_arg){str(s), NULL_STR};
 }
 
 void load_arguments(int argc, char* argv[], flag_set* fl) {
@@ -96,7 +91,7 @@ void load_arguments(int argc, char* argv[], flag_set* fl) {
     *fl = (flag_set){0};
 
     cmd_arg input_directory_arg = make_argument(argv[1]);
-    if (string_eq(input_directory_arg.key, to_string("-help"))) {
+    if (string_eq(input_directory_arg.key, str("-help"))) {
         print_help();
         exit(EXIT_SUCCESS);
     }
@@ -110,17 +105,17 @@ void load_arguments(int argc, char* argv[], flag_set* fl) {
         general_error("could not find '%s'", input_directory_arg.key.raw);
     }
 
-    fl->input_path = string_clone(to_string(dumbass_shit_buffer));
+    fl->input_path = string_clone(str(dumbass_shit_buffer));
 
     if (argc <= 2) return;
 
     int flag_start_index = 2;
     FOR_RANGE(i, flag_start_index, argc) {
         cmd_arg a = make_argument(argv[i]);
-        if (string_eq(a.key, to_string("-help"))) {
+        if (string_eq(a.key, str("-help"))) {
             print_help();
             exit(EXIT_SUCCESS);
-        } else if (string_eq(a.key, to_string("-o"))) {
+        } else if (string_eq(a.key, str("-o"))) {
 
             char dumbass_shit_buffer[PATH_MAX] = {0};
 
@@ -129,14 +124,14 @@ void load_arguments(int argc, char* argv[], flag_set* fl) {
                 general_error("could not find '%s'", a.val.raw);
             }
 
-            fl->output_path = string_clone(to_string(dumbass_shit_buffer));
-        } else if (string_eq(a.key, to_string("-dot"))) {
+            fl->output_path = string_clone(str(dumbass_shit_buffer));
+        } else if (string_eq(a.key, str("-dot"))) {
             fl->output_dot = true;
-        } else if (string_eq(a.key, to_string("-timings"))) {
+        } else if (string_eq(a.key, str("-timings"))) {
             fl->print_timings = true;
-        } else if (string_eq(a.key, to_string("-no-deimos"))) {
+        } else if (string_eq(a.key, str("-no-deimos"))) {
             fl->deimos_disabled = true;
-        } else if (string_eq(a.key, to_string("-no-checker"))) {
+        } else if (string_eq(a.key, str("-no-checker"))) {
             fl->semanal_disabled = true;
         } else {
             general_error("unrecognized option \""str_fmt"\"", str_arg(a.key));
