@@ -564,7 +564,7 @@ AST parse_atomic_expr(parser* p, bool no_cl) {
             n.as_literal_expr->base.end = &current_token;
 
             n.as_literal_expr->value.kind = EV_BOOL;
-            n.as_literal_expr->value.as_bool = string_eq(current_token.text, to_string("true"));
+            n.as_literal_expr->value.as_bool = string_eq(current_token.text, str("true"));
             n.as_literal_expr->value.freeable = false;
 
             advance_token;
@@ -914,7 +914,7 @@ AST parse_atomic_expr(parser* p, bool no_cl) {
                 if (current_token.type != TOK_IDENTIFIER)
                     error_at_parser(p, "expected an identifer");
 
-                if (string_eq(current_token.text, to_string("smart_pack"))) {
+                if (string_eq(current_token.text, str("smart_pack"))) {
                     n.as_struct_type_expr->smart_pack = true;
                     advance_token;
                 } else {
@@ -1057,7 +1057,7 @@ AST parse_atomic_expr(parser* p, bool no_cl) {
                 if (current_token.type != TOK_IDENTIFIER)
                     error_at_parser(p, "expected an identifer");
 
-                if (string_eq(current_token.text, to_string("block_symbol"))) {
+                if (string_eq(current_token.text, str("block_symbol"))) {
                     advance_token;
                     if (current_token.type != TOK_OPEN_PAREN)
                         error_at_parser(p, "expected '('");
@@ -1071,7 +1071,7 @@ AST parse_atomic_expr(parser* p, bool no_cl) {
                     if (current_token.type != TOK_CLOSE_PAREN)
                         error_at_parser(p, "expected ')'");
                     advance_token;
-                } else if (string_eq(current_token.text, to_string("always_inline"))) {
+                } else if (string_eq(current_token.text, str("always_inline"))) {
                     advance_token;
                     n.as_fn_type_expr->always_inline = true;
                 }
@@ -1311,7 +1311,7 @@ AST parse_stmt(parser* p) {
             // catch #reverse
             if (current_token.type == TOK_HASH) {
                 advance_token;
-                if (string_eq(current_token.text, to_string("reverse"))) {
+                if (string_eq(current_token.text, str("reverse"))) {
                     n.as_for_in_stmt->is_reverse = true;
                     advance_token;
                 } else {
@@ -1444,9 +1444,9 @@ AST parse_stmt(parser* p) {
         // maybe directives?
         if (current_token.type == TOK_HASH) {
             advance_token;
-            if (string_eq(current_token.text, to_string("static"))) {
+            if (string_eq(current_token.text, str("static"))) {
                 n.as_decl_stmt->is_static = true;
-            } else if (string_eq(current_token.text, to_string("volatile"))) {
+            } else if (string_eq(current_token.text, str("volatile"))) {
                 n.as_decl_stmt->is_volatile = true;
             } else {
                 error_at_parser(p, "invalid directive \'%s\' in declaration", clone_to_cstring(current_token.text));

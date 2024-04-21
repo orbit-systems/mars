@@ -112,7 +112,7 @@ typedef struct string_s {
 
 #define substring_len(str, start, len) ((string){(str).raw + (start), (len)})
 #define can_be_cstring(str) ((str).raw[(str).len] == '\0')
-#define to_string(cstring) ((string){(cstring), strlen((cstring))})
+#define str(cstring) ((string){(cstring), strlen((cstring))})
 
 char*  clone_to_cstring(string str); // this allocates
 
@@ -199,7 +199,7 @@ void build(); // main function in anvil.c
 
 int main(int argc, char** argv) {
 
-    if (fs_exists(to_string("./anvilold"))) {
+    if (fs_exists(str("./anvilold"))) {
         execute("rm -f anvilold");
         clear(cmd);
     }
@@ -223,14 +223,14 @@ int main(int argc, char** argv) {
 
     // rebuild anvil if source code has been modified
     fs_file anvil_c;
-    fs_get(to_string("anvil.c"), &anvil_c);
+    fs_get(str("anvil.c"), &anvil_c);
     fs_file anvil_h;
-    fs_get(to_string("anvil.h"), &anvil_h);
+    fs_get(str("anvil.h"), &anvil_h);
     fs_file anvil_prog;
-    fs_get(to_string(argv[0]), &anvil_prog);
+    fs_get(str(argv[0]), &anvil_prog);
     if (timespec_greater(anvil_c.last_mod, anvil_prog.last_mod) || timespec_greater(anvil_h.last_mod, anvil_prog.last_mod)) {
 
-        if (fs_exists(to_string("./anvilold"))) {
+        if (fs_exists(str("./anvilold"))) {
             execute("rm -f anvilold");
             clear(cmd);
         }
@@ -279,7 +279,7 @@ void anvil_build() {
     else realpath(include_dir, real_include_dir);
 
     // clean build directory
-    if (fs_exists(to_string(build_dir))) {
+    if (fs_exists(str(build_dir))) {
         strcat(cmd, "rm -rf ");
         strcat(cmd, build_dir);
         execute(cmd);
@@ -296,7 +296,7 @@ void anvil_build() {
 
     FOR_RANGE(i, 0, sizeof(source_dirs) / sizeof(*source_dirs)) {
         fs_file source_directory;
-        if (!fs_get(to_string(source_dirs[i]), &source_directory))
+        if (!fs_get(str(source_dirs[i]), &source_directory))
             error("could not open source directory '%s'", source_dirs[i]);
 
         if (!fs_is_directory(&source_directory))
@@ -314,7 +314,7 @@ void anvil_build() {
     int total_files_to_build = 0;
     FOR_RANGE(i, 0, sizeof(source_dirs) / sizeof(*source_dirs)) {
         fs_file source_directory;
-        if (!fs_get(to_string(real_src_dirs[i]), &source_directory))
+        if (!fs_get(str(real_src_dirs[i]), &source_directory))
             error("could not open source directory '%s'", source_dirs[i]);
 
         int src_dir_subfile_count = fs_subfile_count(&source_directory);
@@ -327,7 +327,7 @@ void anvil_build() {
         fs_get_subfiles(&source_directory, src_dir_subfiles);
         FOR_RANGE(j, 0, src_dir_subfile_count) {
             if (!fs_is_regular(&src_dir_subfiles[j])) continue;
-            if (string_ends_with(src_dir_subfiles[j].path, to_string(".c"))) {
+            if (string_ends_with(src_dir_subfiles[j].path, str(".c"))) {
                 total_files_to_build++;
             }
         }
@@ -342,7 +342,7 @@ void anvil_build() {
     int file_num = 1;
     FOR_RANGE(i, 0, sizeof(source_dirs) / sizeof(*source_dirs)) {
         fs_file source_directory;
-        if (!fs_get(to_string(real_src_dirs[i]), &source_directory))
+        if (!fs_get(str(real_src_dirs[i]), &source_directory))
             error("could not open source directory '%s'", source_dirs[i]);
 
         int src_dir_subfile_count = fs_subfile_count(&source_directory);
@@ -355,7 +355,7 @@ void anvil_build() {
         fs_get_subfiles(&source_directory, src_dir_subfiles);
         FOR_RANGE(j, 0, src_dir_subfile_count) {
             if (!fs_is_regular(&src_dir_subfiles[j])) continue;
-            if (string_ends_with(src_dir_subfiles[j].path, to_string(".c"))) {
+            if (string_ends_with(src_dir_subfiles[j].path, str(".c"))) {
                 // build file!
                 char* slashchar;
                 if (real_src_dirs[i][strlen(real_src_dirs[i])-1] == '\\' ||
@@ -407,7 +407,7 @@ void anvil_build() {
     sprintf(output_name, "%s/%s",  real_output_dir, project_name);
 #endif
 
-    if (fs_exists(to_string(output_name))) {
+    if (fs_exists(str(output_name))) {
         strcat(cmd, "rm ");
         strcat(cmd, output_name);
         execute(cmd);
@@ -704,7 +704,7 @@ bool fs_get_subfiles(fs_file* file, fs_file* file_array) {
     {
         if (strcmp(find_data.cFileName, ".") == 0) continue;
         if (strcmp(find_data.cFileName, "..") == 0) continue;
-        string path = to_string(find_data.cFileName);
+        string path = str(find_data.cFileName);
         bool success = fs_get(path, &file_array[i]);
         if (!success) {
             chdir(file_realpath);
@@ -716,10 +716,10 @@ bool fs_get_subfiles(fs_file* file, fs_file* file_array) {
     for (int i = 0; (dir_entry = readdir(directory)) != NULL;) {
         if (strcmp(dir_entry->d_name, ".") == 0) continue;
         if (strcmp(dir_entry->d_name, "..") == 0) continue;
-        //string temp1 = string_concat(file->path, to_string("/"));
-        //string path = string_concat(temp1, to_string(dir_entry->d_name));
+        //string temp1 = string_concat(file->path, str("/"));
+        //string path = string_concat(temp1, str(dir_entry->d_name));
         //printf("\ny\n[%s]\n\n", dir_entry->d_name);
-        string path = to_string(dir_entry->d_name);
+        string path = str(dir_entry->d_name);
         bool success = fs_get(path, &file_array[i]);
         if (!success) {
             chdir(file_realpath);

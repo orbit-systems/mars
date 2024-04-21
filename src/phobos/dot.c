@@ -11,7 +11,7 @@ void emit_dot(string path, da(AST) nodes) {
 	sprintf(buffer, "%.1024s.dot", path_cstr); //capped at 1024 characters for file name
 	free(path_cstr);
 
-	string filename = to_string(buffer);
+	string filename = str(buffer);
 	if (fs_exists(filename)) {
 		//we delete the file and recreate a new one
 		fs_file file;

@@ -92,7 +92,7 @@ mars_module* parse_module(string input_path) {
 
         // filter out non-files and non-mars files.
         if (!fs_is_regular(&subfiles[i])) continue;
-        if (!string_ends_with(subfiles[i].path, to_string(".mars"))) continue;
+        if (!string_ends_with(subfiles[i].path, str(".mars"))) continue;
 
         mars_file_count++;
 
@@ -100,7 +100,7 @@ mars_module* parse_module(string input_path) {
 
         // stop the lexer from shitting itself
         if (subfiles[i].size == 0) 
-            loaded_file = string_clone(to_string(" \n "));
+            loaded_file = string_clone(str(" \n "));
         else 
             loaded_file = string_alloc(subfiles[i].size);
 
@@ -271,7 +271,7 @@ mars_module* create_module(da(parser)* pl, arena alloca) {
         }));
     }
 
-    if (string_eq(mod->module_name, to_string("mars")))
+    if (string_eq(mod->module_name, str("mars")))
         error_at_string(pl->at[0].path, pl->at[0].src, pl->at[0].module_decl.as_module_decl->name->text,
             "module name 'mars' is reserved");
 

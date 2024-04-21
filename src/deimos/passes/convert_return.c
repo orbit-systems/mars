@@ -53,7 +53,7 @@ int pcr_walk_ast(AST node, AST parent, int depth) {
 							general_warning("FIXME: this is because we arent yet running the checker, which WOULD have populated");
 							general_warning("FIXME: the entity* inside of all identifier_expr.");
 
-							string identifier_name = to_string(random_string(8));
+							string identifier_name = str(random_string(8));
 
 							new_identifier.as_identifier_expr->entity = new_entity(NULL, identifier_name, new_decl_stmt);
 							printf("created new identifier with identifier name %s\n", clone_to_cstring(identifier_name));
@@ -78,7 +78,7 @@ int pcr_walk_ast(AST node, AST parent, int depth) {
 
 
 							//if (identifier_a_et == NULL) general_error("FUCK %s", ast_type_str[potential_non_identifier.type]);
-							//new_identifier.as_identifier_expr->entity = new_entity(identifier_a_et, to_string(random_string(8)), new_decl_stmt);
+							//new_identifier.as_identifier_expr->entity = new_entity(identifier_a_et, str(random_string(8)), new_decl_stmt);
 						}
 					}
 				}

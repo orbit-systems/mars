@@ -191,7 +191,7 @@ typedef struct string_s {
 #define substring(str, start, end) ((string){(str).raw + (start), (end) - (start)})
 #define substring_len(str, start, len) ((string){(str).raw + (start), (len)})
 #define can_be_cstring(str) ((str).raw[(str).len] == '\0')
-#define to_string(cstring) ((string){(cstring), strlen((cstring))})
+#define str(cstring) ((string){(cstring), strlen((cstring))})
 
 char*  clone_to_cstring(string str); // this allocates
 void   printstr(string str);
@@ -703,10 +703,10 @@ bool fs_get_subfiles(fs_file* file, fs_file* file_array) {
     {
         if (strcmp(find_data.cFileName, ".") == 0) continue;
         if (strcmp(find_data.cFileName, "..") == 0) continue;
-//        string path = to_string(find_data.cFileName);
+//        string path = str(find_data.cFileName);
         char* pathcstr = malloc(PATH_MAX);
         realpath(find_data.cFileName, pathcstr);
-        string path = to_string(pathcstr);
+        string path = str(pathcstr);
         bool success = fs_get(path, &file_array[i]);
         if (!success) {
             chdir(file_realpath);
@@ -718,12 +718,12 @@ bool fs_get_subfiles(fs_file* file, fs_file* file_array) {
     for (int i = 0; (dir_entry = readdir(directory)) != NULL;) {
         if (strcmp(dir_entry->d_name, ".") == 0) continue;
         if (strcmp(dir_entry->d_name, "..") == 0) continue;
-        //string temp1 = string_concat(file->path, to_string("/"));
-        //string path = string_concat(temp1, to_string(dir_entry->d_name));
+        //string temp1 = string_concat(file->path, str("/"));
+        //string path = string_concat(temp1, str(dir_entry->d_name));
         //printf("\ny\n[%s]\n\n", dir_entry->d_name);
         char* pathcstr = malloc(PATH_MAX);
         realpath(dir_entry->d_name, pathcstr);
-        string path = to_string(pathcstr);
+        string path = str(pathcstr);
         bool success = fs_get(path, &file_array[i]);
         if (!success) {
             chdir(file_realpath);

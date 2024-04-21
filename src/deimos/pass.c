@@ -18,7 +18,7 @@ da(pass) passes;
 void add_pass(pass_id id, void (*callback)(), char* pass_name) {
 	pass new_pass;
 	new_pass.id = id;
-	new_pass.pass_name = to_string(pass_name);
+	new_pass.pass_name = str(pass_name);
 	new_pass.callback = callback;
 	da_append(&passes, new_pass);
 }

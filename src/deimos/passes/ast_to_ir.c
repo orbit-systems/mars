@@ -66,10 +66,10 @@ void ast_to_ir_walk(AST node, AST parent, int depth, da(IR) *ir_elems) {
 			binary_op.as_binary_op->out = parent.as_decl_stmt->lhs.at[0].as_identifier_expr->tok->text;
 			operator ir_op = NO_OP;
 			string ast_op = node.as_binary_op_expr->op->text;
-			if(string_eq(ast_op, to_string("+"))) ir_op = ADD;
-			if(string_eq(ast_op, to_string("-"))) ir_op = SUB;
-			if(string_eq(ast_op, to_string("*"))) ir_op = MUL;
-			if(string_eq(ast_op, to_string("/"))) ir_op = DIV;
+			if(string_eq(ast_op, str("+"))) ir_op = ADD;
+			if(string_eq(ast_op, str("-"))) ir_op = SUB;
+			if(string_eq(ast_op, str("*"))) ir_op = MUL;
+			if(string_eq(ast_op, str("/"))) ir_op = DIV;
 			binary_op.as_binary_op->op = ir_op;
 			
 			if (ir_op == NO_OP) general_error("Unhandled AST_binary_op_expr lowering for op: %s", clone_to_cstring(ast_op));
