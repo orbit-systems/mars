@@ -36,11 +36,9 @@ typedef _Float16 f16;
 
 
 
-#if !defined(bool)
-    typedef uint8_t  bool;
-#   define false ((bool)0)
-#   define true ((bool)1)
-#endif
+typedef uint8_t bool;
+#define false ((bool)0)
+#define true ((bool)1)
 
 #ifdef _MSC_VER
 #   define forceinline __forceinline
