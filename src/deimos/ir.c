@@ -176,6 +176,7 @@ const size_t ir_sizes[] = {
     [IR_ZEXT]  = sizeof(IR_BinOp),
 
     [IR_STACKALLOC] = sizeof(IR_StackAlloc),
+    [IR_GETFIELDPTR] = sizeof(IR_GetFieldPtr),
 
     [IR_LOAD]     = sizeof(IR_Load),
     [IR_VOL_LOAD] = sizeof(IR_Load),
@@ -229,22 +230,20 @@ IR* ir_make_getfieldptr(IR_Function* f, u16 index, IR* source) {
     return (IR*) ir;
 }
 
-IR* ir_make_load(IR_Function* f, IR* location, type* T, bool is_vol) {
+IR* ir_make_load(IR_Function* f, IR* location, bool is_vol) {
     IR_Load* ir = (IR_Load*) ir_make(f, IR_LOAD);
 
     if (is_vol) ir->base.tag = IR_VOL_LOAD;
     ir->location = location;
-    ir->T = T;
     return (IR*) ir;
 }
 
-IR* ir_make_store(IR_Function* f, IR* location, IR* value, type* T, bool is_vol) {
+IR* ir_make_store(IR_Function* f, IR* location, IR* value, bool is_vol) {
     IR_Store* ir = (IR_Store*) ir_make(f, IR_STORE);
     
     if (is_vol) ir->base.tag = IR_VOL_STORE;
     ir->location = location;
     ir->value = value;
-    ir->T = T;
     return (IR*) ir;
 }
 

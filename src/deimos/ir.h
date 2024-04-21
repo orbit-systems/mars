@@ -205,7 +205,6 @@ typedef struct IR_Load {
     IR base;
 
     IR* location;
-    type* T;
 } IR_Load;
 
 typedef struct IR_Store {
@@ -213,7 +212,6 @@ typedef struct IR_Store {
 
     IR* location;
     IR* value;
-    type* T;
 } IR_Store;
 
 typedef struct IR_Const {
@@ -236,7 +234,6 @@ typedef struct IR_Const {
         f32 f32;
         f64 f64;
     };
-    type* T;
 } IR_Const;
 
 typedef struct IR_LoadSymbol {
@@ -337,8 +334,8 @@ IR* ir_make_binop(IR_Function* f, u8 type, IR* lhs, IR* rhs);
 IR* ir_make_cast(IR_Function* f, IR* source, type* to);
 IR* ir_make_stackalloc(IR_Function* f, u32 size, u32 align, type* T);
 IR* ir_make_getfieldptr(IR_Function* f, u16 index, IR* source);
-IR* ir_make_load(IR_Function* f, IR* location, type* T, bool is_vol);
-IR* ir_make_store(IR_Function* f, IR* location, IR* value, type* T, bool is_vol);
+IR* ir_make_load(IR_Function* f, IR* location, bool is_vol);
+IR* ir_make_store(IR_Function* f, IR* location, IR* value, bool is_vol);
 IR* ir_make_const(IR_Function* f);
 IR* ir_make_loadsymbol(IR_Function* f, IR_Symbol* symbol);
 IR* ir_make_mov(IR_Function* f, IR* source);

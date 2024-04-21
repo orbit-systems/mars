@@ -7,4 +7,4 @@
 
 char* random_string(int len);
 
-IR_Module* generate_ir(mars_module* mod);
+IR_Module* ir_pass_generate(mars_module* mod);

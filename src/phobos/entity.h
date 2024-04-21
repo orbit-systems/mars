@@ -23,6 +23,8 @@ typedef struct entity {
     exact_value* const_val;
     entity_table* top; // scope in which it is declared
 
+    void* extra; // arbitrary data. probably used by the IR generator
+
     bool is_const      : 1;
     bool is_mutable    : 1;
     bool is_type       : 1;
