@@ -4,7 +4,7 @@
 
 static mars_module* mars_mod;
 
-IR* ir_generate_expr(IR_Function* f, IR_BasicBlock* bb, AST ast);
+IR* ir_generate_expr_value(IR_Function* f, IR_BasicBlock* bb, AST ast);
 
 IR_Module* ir_pass_generate(mars_module* mod) {
 	IR_Module* m = ir_new_module(mod->module_name);
@@ -39,8 +39,8 @@ IR* ir_generate_expr_literal(IR_Function* f, IR_BasicBlock* bb, AST ast) {
 IR* ir_generate_expr_binop(IR_Function* f, IR_BasicBlock* bb, AST ast) {
     ast_binary_op_expr* binop = ast.as_binary_op_expr;
 
-    IR* lhs = ir_generate_expr(f, bb, binop->lhs);
-    IR* rhs = ir_generate_expr(f, bb, binop->rhs);
+    IR* lhs = ir_generate_expr_value(f, bb, binop->lhs);
+    IR* rhs = ir_generate_expr_value(f, bb, binop->rhs);
     IR_BinOp* ir = (IR_BinOp*) ir_make_binop(f, IR_INVALID, lhs, rhs);
 
     switch (binop->op->type) {
@@ -61,18 +61,19 @@ typedef struct EntityExtra {
     IR* stackalloc;
 } EntityExtra;
 
-// this generates a load btw!!!
 IR* ir_generate_expr_ident_load(IR_Function* f, IR_BasicBlock* bb, AST ast) {
     ast_identifier_expr* ident = ast.as_identifier_expr;
     if (ident->is_discard) return ir_add(bb, ir_make(f, IR_INVALID));
 
     // if a stackalloc and entityextra havent been generated, generate them
     if (!ident->entity->extra) {
-        IR* stackalloc = ir_add(bb, ir_make_stackalloc(f, 
-            type_real_size_of(ident->entity->entity_type),
-            type_real_align_of(ident->entity->entity_type),
-            ident->entity->entity_type
-        ));
+
+        if (!ident->entity->entity_type) {
+            warning_at_node(mars_mod, ast, "bodge! assuming i64 type");
+            ident->entity->entity_type = make_type(TYPE_I64);
+        }
+
+        IR* stackalloc = ir_add(bb, ir_make_stackalloc(f, ident->entity->entity_type));
 
         EntityExtra* extra = arena_alloc(&f->alloca, sizeof(*extra), alignof(*extra));
         extra->stackalloc = stackalloc;
@@ -84,16 +85,25 @@ IR* ir_generate_expr_ident_load(IR_Function* f, IR_BasicBlock* bb, AST ast) {
     return ir_add(bb, ir_make_load(f, stackalloc, false));
 }
 
-IR* ir_generate_expr(IR_Function* f, IR_BasicBlock* bb, AST ast) {
+IR* ir_generate_expr_value(IR_Function* f, IR_BasicBlock* bb, AST ast) {
 
     switch (ast.type) {
     case AST_literal_expr:    return ir_generate_expr_literal(f, bb, ast);
     case AST_binary_op_expr:  return ir_generate_expr_binop(f, bb, ast);
     case AST_identifier_expr: return ir_generate_expr_ident_load(f, bb, ast);
-
     default:
         warning_at_node(mars_mod, ast, "unhandled AST type");
         CRASH("unhandled AST type");
         break;
+    }
+}
+
+IR* ir_generate_expr_address(IR_Function* f, IR_BasicBlock* bb, AST ast) {
+    switch (ast.type) {
+    case AST_literal_expr:
+        return ((EntityExtra*)ast.as_identifier_expr->entity->extra)->stackalloc;
+    default:
+        warning_at_node(mars_mod, ast, "unhandled AST type");
+        CRASH("unhandled AST type");
     }
 }

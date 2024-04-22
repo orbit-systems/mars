@@ -175,8 +175,9 @@ const size_t ir_sizes[] = {
     [IR_SEXT]  = sizeof(IR_BinOp),
     [IR_ZEXT]  = sizeof(IR_BinOp),
 
-    [IR_STACKALLOC] = sizeof(IR_StackAlloc),
+    [IR_STACKALLOC]  = sizeof(IR_StackAlloc),
     [IR_GETFIELDPTR] = sizeof(IR_GetFieldPtr),
+    [IR_GETINDEXPTR] = sizeof(IR_GetIndexPtr),
 
     [IR_LOAD]     = sizeof(IR_Load),
     [IR_VOL_LOAD] = sizeof(IR_Load),
@@ -214,17 +215,22 @@ IR* ir_make_cast(IR_Function* f, IR* source, type* to) {
     return (IR*) ir;
 }
 
-IR* ir_make_stackalloc(IR_Function* f, u32 size, u32 align, type* T) {
+IR* ir_make_stackalloc(IR_Function* f, type* T) {
     IR_StackAlloc* ir = (IR_StackAlloc*) ir_make(f, IR_STACKALLOC);
-    
-    ir->size = size;
-    ir->align = align;
-    ir->T = T;
+
+    ir->alloctype = T;
     return (IR*) ir;
 }
 
-IR* ir_make_getfieldptr(IR_Function* f, u16 index, IR* source) {
+IR* ir_make_getfieldptr(IR_Function* f, u32 index, IR* source) {
     IR_GetFieldPtr* ir = (IR_GetFieldPtr*) ir_make(f, IR_GETFIELDPTR);
+    ir->index = index;
+    ir->source = source;
+    return (IR*) ir;
+}
+
+IR* ir_make_getindexptr(IR_Function* f, IR* index, IR* source) {
+    IR_GetIndexPtr* ir = (IR_GetIndexPtr*) ir_make(f, IR_GETINDEXPTR);
     ir->index = index;
     ir->source = source;
     return (IR*) ir;
@@ -265,7 +271,7 @@ IR* ir_make_mov(IR_Function* f, IR* source) {
 }
 
 // use in the format (f, source_count, source_1, source_BB_1, source_2, source_BB_2, ...)
-IR* ir_make_phi(IR_Function* f, u16 count, ...) {
+IR* ir_make_phi(IR_Function* f, u32 count, ...) {
     IR_Phi* ir = (IR_Phi*) ir_make(f, IR_PHI);
     ir->len = count;
 
@@ -322,13 +328,13 @@ IR* ir_make_branch(IR_Function* f, u8 cond, IR* lhs, IR* rhs, IR_BasicBlock* if_
     return (IR*) ir;
 }
 
-IR* ir_make_paramval(IR_Function* f, u16 param) {
+IR* ir_make_paramval(IR_Function* f, u32 param) {
     IR_ParamVal* ir = (IR_ParamVal*) ir_make(f, IR_PARAMVAL);
     ir->param_idx = param;
     return (IR*) ir;
 }
 
-IR* ir_make_returnval(IR_Function* f, u16 param, IR* source) {
+IR* ir_make_returnval(IR_Function* f, u32 param, IR* source) {
     IR_ReturnVal* ir = (IR_ReturnVal*) ir_make(f, IR_RETURNVAL);
     ir->return_idx = param;
     ir->source = source;

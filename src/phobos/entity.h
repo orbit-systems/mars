@@ -25,6 +25,10 @@ typedef struct entity {
 
     void* extra; // arbitrary data. probably used by the IR generator
 
+    u16 param_return_idx;
+    bool is_param : 1;
+    bool is_return : 1;
+
     bool is_const      : 1;
     bool is_mutable    : 1;
     bool is_type       : 1;
