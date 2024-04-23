@@ -330,9 +330,9 @@ IR_Module*     ir_new_module(string name);
 IR_Function*   ir_new_function(IR_Module* mod, IR_Symbol* sym, bool global);
 IR_BasicBlock* ir_new_basic_block(IR_Function* fn, string name);
 IR_Global*     ir_new_global(IR_Module* mod, IR_Symbol* sym, bool global, bool read_only);
-IR_Symbol*     ir_new_symbol(IR_Module* mod, string name, u8 tag, bool function, void* ref);
+IR_Symbol*     ir_new_symbol(IR_Module* mod, string name, u8 visibility, bool function, void* ref);
 IR_Symbol*     ir_find_symbol(IR_Module* mod, string name);
-IR_Symbol*     ir_find_or_new_symbol(IR_Module* mod, string name, u8 tag, bool function, void* ref);
+IR_Symbol*     ir_find_or_new_symbol(IR_Module* mod, string name, u8 visibility, bool function, void* ref);
 
 void ir_set_func_params(IR_Function* f, u16 count, ...);
 void ir_set_func_returns(IR_Function* f, u16 count, ...);

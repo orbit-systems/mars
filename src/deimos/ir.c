@@ -113,21 +113,21 @@ void ir_set_global_symref(IR_Global* global, IR_Symbol* symref) {
 
 // WARNING: does NOT check if a symbol already exists
 // in most cases, use ir_find_or_create_symbol
-IR_Symbol* ir_new_symbol(IR_Module* mod, string name, u8 tag, bool function, void* ref) {
+IR_Symbol* ir_new_symbol(IR_Module* mod, string name, u8 visibility, bool function, void* ref) {
     IR_Symbol* sym = malloc(sizeof(IR_Symbol));
     sym->name = name;
     sym->ref = ref;
     sym->is_function = function;
-    sym->tag = tag;
+    sym->visibility = visibility;
 
     da_append(&mod->symtab, sym);
     return sym;
 }
 
 // use this instead of ir_new_symbol
-IR_Symbol* ir_find_or_new_symbol(IR_Module* mod, string name, u8 tag, bool function, void* ref) {
+IR_Symbol* ir_find_or_new_symbol(IR_Module* mod, string name, u8 visibility, bool function, void* ref) {
     IR_Symbol* sym = ir_find_symbol(mod, name);
-    return sym ? sym : ir_new_symbol(mod, name, tag, function, ref);
+    return sym ? sym : ir_new_symbol(mod, name, visibility, function, ref);
 }
 
 IR_Symbol* ir_find_symbol(IR_Module* mod, string name) {

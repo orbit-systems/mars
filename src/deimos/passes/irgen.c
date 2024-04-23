@@ -16,8 +16,34 @@ IR_Module* ir_pass_generate(mars_module* mod) {
 	
 	/* do some codegen shit prolly */
 
+    FOR_URANGE(i, 0, mod->program_tree.len) {
+        if (mod->program_tree.at[i].type == ast_decl_stmt) 
+    }
+
 	return m;
 }
+
+IR_Global* ir_generate_global_from_stmt_decl(IR_Module* mod, AST ast) {
+    ast_decl_stmt* decl_stmt = ast.as_decl_stmt;
+
+    //note: CAE problem, we update the IR_Symbol name after IR_Global creation
+
+    //note: global decl_stmts are single entries on the lhs, so we can just assume that lhs[0] == ast_identifier_expr
+
+    IR_Global* ir_g = ir_new_global(mod, NULL, /*global=*/true, /*read_only=*/decl_stmt->is_mut);
+    ir_g->sym->name = decl_stmt->lhs.at[0].as_identifier_expr->tok->text; 
+
+    if (decl_stmt->rhs.type == AST_func_literal_expr) {
+        IR_Function* fn = ir_generate_function(mod, decl_stmt->rhs);
+        ir_set_global_symref(ir_g, fn->sym);
+    } else { //AST_literal
+        general_error("FIXME: unhandled RHS of decl_stmt, it wasnt an AST_func_literal_expr");
+    }
+
+    return ir_g;
+}
+
+//FIXME: add ir_generate_local_from_stmt_decl
 
 IR* ir_generate_expr_literal(IR_Function* f, IR_BasicBlock* bb, AST ast) {
     ast_literal_expr* literal = ast.as_literal_expr;
