@@ -543,6 +543,8 @@ void ir_print_ir(IR* ir) {
         return;
     }
 
+    char* binopstr; //hacky but w/e
+
     printf("#%zu "str_fmt"\t = ", ir->number, str_arg(type_to_string(ir->T)));
     switch (ir->tag) {
     case IR_INVALID: 
@@ -552,21 +554,20 @@ void ir_print_ir(IR* ir) {
     case IR_ELIMINATED: 
         return;
 
-    case IR_ADD: char* binopstr = "add"; goto print_binop;
-    case IR_SUB: binopstr = "sub"; goto print_binop;
-    case IR_MUL: binopstr = "mul"; goto print_binop;
-    case IR_DIV: binopstr = "div"; goto print_binop;
-    case IR_AND: binopstr = "and"; goto print_binop;
-    case IR_OR:  binopstr = "or"; goto print_binop;
-    case IR_NOR: binopstr = "nor"; goto print_binop;
-    case IR_XOR: binopstr = "xor"; goto print_binop;
-    case IR_SHL: binopstr = "shl"; goto print_binop;
-    case IR_LSR: binopstr = "lsr"; goto print_binop;
-    case IR_ASR: binopstr = "asr"; goto print_binop;
-    case IR_TRUNC: binopstr = "trunc"; goto print_binop;
-    case IR_SEXT: binopstr = "sext"; goto print_binop;
-    case IR_ZEXT: binopstr = "zext"; goto print_binop;
-        print_binop:
+    if(0){case IR_ADD:   binopstr = "add";} //common path fallthroughs
+    if(0){case IR_SUB:   binopstr = "sub";}
+    if(0){case IR_MUL:   binopstr = "mul";}
+    if(0){case IR_DIV:   binopstr = "div";}
+    if(0){case IR_AND:   binopstr = "and";}
+    if(0){case IR_OR:    binopstr = "or";} 
+    if(0){case IR_NOR:   binopstr = "nor";}
+    if(0){case IR_XOR:   binopstr = "xor";}
+    if(0){case IR_SHL:   binopstr = "shl";}
+    if(0){case IR_LSR:   binopstr = "lsr";}
+    if(0){case IR_ASR:   binopstr = "asr";}
+    if(0){case IR_TRUNC: binopstr = "trunc";}
+    if(0){case IR_SEXT:  binopstr = "sext";}
+    if(0){case IR_ZEXT:  binopstr = "zext";}
         IR_BinOp* binop = (IR_BinOp*) ir;
         printf("%s #%zu, #%zu", binopstr, binop->lhs->number, binop->rhs->number);
         break;
