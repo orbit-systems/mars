@@ -4,6 +4,10 @@
 
 static mars_module* mars_mod;
 
+typedef struct EntityExtra {
+    IR* stackalloc;
+} EntityExtra;
+
 IR* ir_generate_expr_value(IR_Function* f, IR_BasicBlock* bb, AST ast);
 
 IR_Module* ir_pass_generate(mars_module* mod) {
@@ -29,8 +33,7 @@ IR* ir_generate_expr_literal(IR_Function* f, IR_BasicBlock* bb, AST ast) {
         CRASH("unhandled EV type");
     }
 
-    ir_add(bb, (IR*) ir);
-    return (IR*) ir;
+    return ir_add(bb, (IR*) ir);
 }
 
 IR* ir_generate_expr_binop(IR_Function* f, IR_BasicBlock* bb, AST ast) {
@@ -51,12 +54,8 @@ IR* ir_generate_expr_binop(IR_Function* f, IR_BasicBlock* bb, AST ast) {
         break;
     }
 
-    return ir;
+    return ir_add(bb, ir);
 }
-
-typedef struct EntityExtra {
-    IR* stackalloc;
-} EntityExtra;
 
 IR* ir_generate_expr_ident_load(IR_Function* f, IR_BasicBlock* bb, AST ast) {
     ast_identifier_expr* ident = ast.as_identifier_expr;
@@ -66,7 +65,7 @@ IR* ir_generate_expr_ident_load(IR_Function* f, IR_BasicBlock* bb, AST ast) {
     if (!ident->entity->extra) {
 
         if (!ident->entity->entity_type) {
-            warning_at_node(mars_mod, ast, "bodge! assuming i64 type");
+            warning_at_node(mars_mod, ast, "FIXME: assuming i64 type");
             ident->entity->entity_type = make_type(TYPE_I64);
         }
 
