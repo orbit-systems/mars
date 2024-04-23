@@ -20,13 +20,10 @@ IR* ir_generate_expr_literal(IR_Function* f, IR_BasicBlock* bb, AST ast) {
     IR_Const* ir = (IR_Const*) ir_make_const(f);
     
     switch (literal->value.kind) {
-    case EV_UNTYPED_INT:
     case EV_I64:
         ir->base.T = make_type(TYPE_I64);
         ir->i64 = literal->value.as_i64;
-    case EV_U64:
-        ir->base.T = make_type(TYPE_U64);
-        ir->u64 = literal->value.as_u64;
+        break;
     default:
         warning_at_node(mars_mod, ast, "unhandled EV type");
         CRASH("unhandled EV type");
@@ -118,7 +115,7 @@ IR* ir_generate_expr_address(IR_Function* f, IR_BasicBlock* bb, AST ast) {
     }
 }
 
-IR* ir_generate_stmt_assign(IR_Function*f, IR_BasicBlock* bb, AST ast) {
+void ir_generate_stmt_assign(IR_Function* f, IR_BasicBlock* bb, AST ast) {
     ast_assign_stmt* assign = ast.as_assign_stmt;
 
     if (assign->lhs.len == 1) {
@@ -142,24 +139,94 @@ IR* ir_generate_stmt_assign(IR_Function*f, IR_BasicBlock* bb, AST ast) {
     }
 }
 
+void ir_generate_stmt_return(IR_Function* f, IR_BasicBlock* bb, AST ast) {
+    ast_return_stmt* astret = ast.as_return_stmt;
+    
+    // if its a plain return, we need to get the 
+    // return values from the return variables
+    if (astret->returns.len != 0) {
+        FOR_URANGE(i, 0, astret->returns.len) {
+            entity* e = f->returns[i]->e;
+            IR* stackalloc = ((EntityExtra*)e->extra)->stackalloc;
+
+            IR* load = ir_add(bb, ir_make_load(f, stackalloc, false));
+            IR* retval = ir_add(bb, ir_make_returnval(f, i, load));
+        }
+    } else {
+        // this is NOT a plain return, which means that we can just get the values directly
+        FOR_URANGE(i, 0, astret->returns.len) {
+            IR* value = ir_generate_expr_value(f, bb, astret->returns.at[i]);
+            IR* retval = ir_add(bb, ir_make_returnval(f, i, value));
+        }
+    }
+    
+    IR* ret = ir_add(bb, ir_make_return(f));
+}
+
 IR_Function* ir_generate_function(IR_Module* mod, AST ast) {
     if (ast.type != AST_func_literal_expr) CRASH("ast type is not func literal");
     ast_func_literal_expr* astfunc = ast.as_func_literal_expr;
 
     // assume all functions are global at the moment
     IR_Function* f = ir_new_function(mod, NULL, true);
+
+    ir_set_func_params(f, astfunc->paramlen, NULL); // passing NULL means that it will allocate list but not fill anything
+    FOR_URANGE(i, 0, f->params_len) {
+        f->params[i]->e = astfunc->params[i];
+    }
+
+    ir_set_func_returns(f, astfunc->returnlen, NULL); // same here
+    FOR_URANGE(i, 0, f->returns_len) {
+        f->returns[i]->e = astfunc->returns[i];
+    }
+
     IR_BasicBlock* bb = ir_new_basic_block(f, str("begin"));
 
     da(AST_typed_field) params = astfunc->type.as_fn_type_expr->parameters;
 
-    // generate entity storage for parameters
+    // generate storage for param variables
     FOR_URANGE(i, 0, params.len) {
-        if (params.at->field.base->T != TYPE_I64) {
+        assert(params.at[i].field.type == AST_identifier_expr);
+        if (params.at[i].field.base->T != TYPE_I64) {
             CRASH("only i64 params supported (for testing)");
         }
+        
+        /* the sequence we want to generate is:
+            %1 = paramval <i>
+            %2 = stackalloc <type of i>
+            %3 = store <type of i> %2, %1
+        */
+        
         IR* paramval = ir_add(bb, ir_make_paramval(f, i));
+        IR* stackalloc = ir_add(bb, ir_make_stackalloc(f, params.at[i].field.base->T));
+        IR* store = ir_add(bb, ir_make_store(f, stackalloc, paramval, false));
 
+        // store the entity's stackalloc
+        entity* e = params.at[i].field.as_identifier_expr->entity;
+        ((EntityExtra*)e->extra)->stackalloc = stackalloc;
     }
+
+    da(AST_typed_field) returns = astfunc->type.as_fn_type_expr->returns;
+
+    // generate storage for return variables
+    FOR_URANGE(i, 0, returns.len) {
+        assert(returns.at[i].field.type == AST_identifier_expr);
+        if (returns.at[i].field.base->T != TYPE_I64) {
+            CRASH("only i64 returns supported (for testing)");
+        }
+        
+        /* just generate the stackalloc:
+            %1 = stackalloc <type of i>
+        */
+        
+        IR* stackalloc = ir_add(bb, ir_make_stackalloc(f, returns.at[i].field.base->T));
+
+        // store the entity's stackalloc
+        entity* e = returns.at[i].field.as_identifier_expr->entity;
+        ((EntityExtra*)e->extra)->stackalloc = stackalloc;
+    }
+
+    TODO("actually generate the function's code");
 
     return f;
 }

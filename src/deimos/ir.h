@@ -4,6 +4,7 @@
 #include "orbit.h"
 #include "type.h"
 #include "arena.h"
+#include "entity.h"
 
 typedef struct IR IR;
 typedef struct IR_BasicBlock IR_BasicBlock;
@@ -88,7 +89,7 @@ typedef struct IR_Function {
 } IR_Function;
 
 typedef struct IR_FuncItem {
-    type* T;
+    entity* e;
     // probably more here later!
 } IR_FuncItem;
 

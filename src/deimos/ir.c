@@ -29,38 +29,57 @@ IR_Function* ir_new_function(IR_Module* mod, IR_Symbol* sym, bool global) {
     return fn;
 }
 
-// takes multiple type*
+// takes multiple entity*
 void ir_set_func_params(IR_Function* f, u16 count, ...) {
     f->params_len = count;
 
     if (f->params) free(f->params);
 
-    f->params = malloc(sizeof(IR_FuncItem) * count);
-
+    f->params = malloc(sizeof(*f->params) * count);
     if (!f->params) CRASH("malloc failed");
 
+    bool no_set = false;
     va_list args;
     va_start(args, count);
     FOR_RANGE(i, 0, count) {
         IR_FuncItem* item = malloc(sizeof(IR_FuncItem));
         if (!item) CRASH("item malloc failed");
-        item->T = va_arg(args, type*);
+        
+        if (!no_set) {
+            item->e = va_arg(args, entity*);
+            if (item->e == NULL) {
+                no_set = true;
+            }
+        }
+        
         f->params[i] = item;
     }
     va_end(args);
 }
 
-// takes multiple type*
+// takes multiple entity*
 void ir_set_func_returns(IR_Function* f, u16 count, ...) {
     f->returns_len = count;
 
-    f->returns = malloc(sizeof(*f->returns) * count);
+    if (f->returns) free(f->returns);
 
+    f->returns = malloc(sizeof(*f->returns) * count);
+    if (!f->params) CRASH("malloc failed");
+
+    bool no_set = false;
     va_list args;
     va_start(args, count);
     FOR_RANGE(i, 0, count) {
         IR_FuncItem* item = malloc(sizeof(IR_FuncItem));
-        item->T = va_arg(args, type*);
+        if (!item) CRASH("item malloc failed");
+        
+        if (!no_set) {
+            item->e = va_arg(args, entity*);
+            if (item->e == NULL) {
+                no_set = true;
+            }
+        }
+        
         f->returns[i] = item;
     }
     va_end(args);
@@ -446,11 +465,11 @@ void ir_type_resolve(IR_Module* mod, IR_Function* f, IR* ir, bool assume_correct
         break;
     case IR_PARAMVAL:
         IR_ParamVal* paramval = (IR_ParamVal*) ir;
-        ir->T = f->params[paramval->param_idx]->T;
+        ir->T = f->params[paramval->param_idx]->e->entity_type;
         break;
     case IR_RETURNVAL:
         IR_ReturnVal* returnval = (IR_ReturnVal*) ir;
-        ir->T = f->returns[returnval->return_idx]->T;
+        ir->T = f->returns[returnval->return_idx]->e->entity_type;
         break;
     case IR_RETURN:
         ir->T = make_type(TYPE_NONE);
@@ -479,7 +498,7 @@ void ir_print_function(IR_Function* f) {
 
     printf("(");
     FOR_URANGE(i, 0, f->params_len) {
-        string typestr = type_to_string(f->params[i]->T);
+        string typestr = type_to_string(f->params[i]->e->entity_type);
         printf(str_fmt, str_arg(typestr));
 
         if (i + 1 != f->params_len) {
@@ -489,7 +508,7 @@ void ir_print_function(IR_Function* f) {
 
     printf(") -> (");
     FOR_URANGE(i, 0, f->returns_len) {
-        string typestr = type_to_string(f->returns[i]->T);
+        string typestr = type_to_string(f->returns[i]->e->entity_type);
         printf(str_fmt, str_arg(typestr));
         
         if (i + 1 != f->returns_len) {
