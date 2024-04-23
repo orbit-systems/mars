@@ -4,10 +4,6 @@
 
 static mars_module* mars_mod;
 
-typedef struct EntityExtra {
-    IR* stackalloc;
-} EntityExtra;
-
 IR* ir_generate_expr_value(IR_Function* f, IR_BasicBlock* bb, AST ast);
 
 IR_Module* ir_pass_generate(mars_module* mod) {
@@ -17,14 +13,15 @@ IR_Module* ir_pass_generate(mars_module* mod) {
 	/* do some codegen shit prolly */
 
     FOR_URANGE(i, 0, mod->program_tree.len) {
-        if (mod->program_tree.at[i].type == ast_decl_stmt) 
+        if (mod->program_tree.at[i].type == ast_decl_stmt) ir_generate_global_from_stmt_decl(mod, mod->program_tree.at[i].type);
+        else general_error("FIXME: unhandled AST root");
     }
 
 	return m;
 }
 
-IR_Global* ir_generate_global_from_stmt_decl(IR_Module* mod, AST ast) {
-    ast_decl_stmt* decl_stmt = ast.as_decl_stmt;
+IR_Global* ir_generate_global_from_stmt_decl(IR_Module* mod, AST ast) { //FIXME: add sanity
+    ast_decl_stmt* decl_stmt = ast.as_decl_stmt; 
 
     //note: CAE problem, we update the IR_Symbol name after IR_Global creation
 
@@ -59,7 +56,8 @@ IR* ir_generate_expr_literal(IR_Function* f, IR_BasicBlock* bb, AST ast) {
         CRASH("unhandled EV type");
     }
 
-    return ir_add(bb, (IR*) ir);
+    ir_add(bb, (IR*) ir);
+    return (IR*) ir;
 }
 
 IR* ir_generate_expr_binop(IR_Function* f, IR_BasicBlock* bb, AST ast) {
@@ -80,8 +78,12 @@ IR* ir_generate_expr_binop(IR_Function* f, IR_BasicBlock* bb, AST ast) {
         break;
     }
 
-    return ir_add(bb, ir);
+    return ir;
 }
+
+typedef struct EntityExtra {
+    IR* stackalloc;
+} EntityExtra;
 
 IR* ir_generate_expr_ident_load(IR_Function* f, IR_BasicBlock* bb, AST ast) {
     ast_identifier_expr* ident = ast.as_identifier_expr;
@@ -91,7 +93,7 @@ IR* ir_generate_expr_ident_load(IR_Function* f, IR_BasicBlock* bb, AST ast) {
     if (!ident->entity->extra) {
 
         if (!ident->entity->entity_type) {
-            warning_at_node(mars_mod, ast, "FIXME: assuming i64 type");
+            warning_at_node(mars_mod, ast, "bodge! assuming i64 type");
             ident->entity->entity_type = make_type(TYPE_I64);
         }
 
