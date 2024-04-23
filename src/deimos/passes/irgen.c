@@ -100,10 +100,66 @@ IR* ir_generate_expr_value(IR_Function* f, IR_BasicBlock* bb, AST ast) {
 
 IR* ir_generate_expr_address(IR_Function* f, IR_BasicBlock* bb, AST ast) {
     switch (ast.type) {
-    case AST_literal_expr:
-        return ((EntityExtra*)ast.as_identifier_expr->entity->extra)->stackalloc;
+    case AST_identifier_expr:
+        if (ast.as_identifier_expr->entity->extra != NULL) {
+            return ((EntityExtra*)ast.as_identifier_expr->entity->extra)->stackalloc;
+        }
+        ast_identifier_expr* ident = ast.as_identifier_expr;
+        if (!ident->entity->extra) {
+
+            // generate stackalloc
+            IR* stackalloc = ir_add(bb, ir_make_stackalloc(f, ident->entity->entity_type));
+            TODO("bruh");
+        }
+        break;
     default:
         warning_at_node(mars_mod, ast, "unhandled AST type");
         CRASH("unhandled AST type");
     }
+}
+
+IR* ir_generate_stmt_assign(IR_Function*f, IR_BasicBlock* bb, AST ast) {
+    ast_assign_stmt* assign = ast.as_assign_stmt;
+
+    if (assign->lhs.len == 1) {
+        IR* dest_address = ir_generate_expr_address(f, bb, assign->lhs.at[0]);
+
+        if (assign->rhs.type == AST_call_expr) {
+            // function calls need special handling
+            warning_at_node(mars_mod, ast, "unhandled call in assignment");
+            CRASH("unhandled call in assignment");
+        }
+
+        // this does not take into account struct assignments either, just regular ol values
+
+        if (!(assign->rhs.type == AST_identifier_expr && assign->rhs.as_identifier_expr->is_discard)) {
+            IR* source_val = ir_generate_expr_value(f, bb, assign->rhs);
+            IR* store = ir_add(bb, ir_make_store(f, dest_address, source_val, false));
+        }
+    } else {
+        warning_at_node(mars_mod, ast, "unhandled multi-assign");
+        CRASH("unhandled multi-assign");
+    }
+}
+
+IR_Function* ir_generate_function(IR_Module* mod, AST ast) {
+    if (ast.type != AST_func_literal_expr) CRASH("ast type is not func literal");
+    ast_func_literal_expr* astfunc = ast.as_func_literal_expr;
+
+    // assume all functions are global at the moment
+    IR_Function* f = ir_new_function(mod, NULL, true);
+    IR_BasicBlock* bb = ir_new_basic_block(f, str("begin"));
+
+    da(AST_typed_field) params = astfunc->type.as_fn_type_expr->parameters;
+
+    // generate entity storage for parameters
+    FOR_URANGE(i, 0, params.len) {
+        if (params.at->field.base->T != TYPE_I64) {
+            CRASH("only i64 params supported (for testing)");
+        }
+        IR* paramval = ir_add(bb, ir_make_paramval(f, i));
+
+    }
+
+    return f;
 }

@@ -5,10 +5,12 @@
 #include "lex.h"
 #include "arena.h"
 #include "exactval.h"
+#include "type.h"
 
 typedef struct {
     token* start;
     token* end;
+    type* T; // yes each ast expr stores a type. this is deliberate and makes codegen a breeze
 } ast_base;
 
 // define all the AST node macros
@@ -65,6 +67,7 @@ typedef struct {
         ast_base base; \
         AST lhs; \
         AST rhs; \
+        u32 field_index; /* filled out by checker */ \
     }) \
     AST_TYPE(return_selector_expr, "return selector", { \
         ast_base base; \
@@ -90,6 +93,7 @@ typedef struct {
         ast_base base; \
         AST lhs; \
         da(AST) params; \
+        bool force_inline; \
     }) \
     \
     \

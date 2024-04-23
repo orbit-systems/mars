@@ -201,6 +201,7 @@ void check_expr(mars_module* mod, entity_table* et, AST expr, checked_expr* info
     default:
         error_at_node(mod, expr, "expected value expression, got %s", ast_type_str[expr.type]);
     }
+    expr.base->T = info->type;
 
 }
 
