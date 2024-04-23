@@ -1,10 +1,13 @@
 #include "deimos.h"
 #include "passes.h"
 #include "phobos/sema.h"
+#include "irgen.h"
 
 static mars_module* mars_mod;
 
-IR* ir_generate_expr_value(IR_Function* f, IR_BasicBlock* bb, AST ast);
+typedef struct EntityExtra {
+    IR* stackalloc;
+} EntityExtra;
 
 IR_Module* ir_pass_generate(mars_module* mod) {
 	IR_Module* m = ir_new_module(mod->module_name);
@@ -13,8 +16,11 @@ IR_Module* ir_pass_generate(mars_module* mod) {
 	/* do some codegen shit prolly */
 
     FOR_URANGE(i, 0, mod->program_tree.len) {
-        if (mod->program_tree.at[i].type == ast_decl_stmt) ir_generate_global_from_stmt_decl(mod, mod->program_tree.at[i].type);
-        else general_error("FIXME: unhandled AST root");
+        if (mod->program_tree.at[i].type == AST_decl_stmt) {
+            ir_generate_global_from_stmt_decl(mod, mod->program_tree.at[i]);
+        } else {
+            general_error("FIXME: unhandled AST root");
+        }
     }
 
 	return m;
@@ -80,10 +86,6 @@ IR* ir_generate_expr_binop(IR_Function* f, IR_BasicBlock* bb, AST ast) {
 
     return ir;
 }
-
-typedef struct EntityExtra {
-    IR* stackalloc;
-} EntityExtra;
 
 IR* ir_generate_expr_ident_load(IR_Function* f, IR_BasicBlock* bb, AST ast) {
     ast_identifier_expr* ident = ast.as_identifier_expr;
@@ -214,7 +216,7 @@ IR_Function* ir_generate_function(IR_Module* mod, AST ast) {
     // generate storage for param variables
     FOR_URANGE(i, 0, params.len) {
         assert(params.at[i].field.type == AST_identifier_expr);
-        if (params.at[i].field.base->T != TYPE_I64) {
+        if (params.at[i].field.base->T->tag != TYPE_I64) {
             CRASH("only i64 params supported (for testing)");
         }
         
@@ -238,7 +240,7 @@ IR_Function* ir_generate_function(IR_Module* mod, AST ast) {
     // generate storage for return variables
     FOR_URANGE(i, 0, returns.len) {
         assert(returns.at[i].field.type == AST_identifier_expr);
-        if (returns.at[i].field.base->T != TYPE_I64) {
+        if (returns.at[i].field.base->T->tag != TYPE_I64) {
             CRASH("only i64 returns supported (for testing)");
         }
         

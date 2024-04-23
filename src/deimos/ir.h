@@ -45,7 +45,7 @@ typedef struct IR_Symbol {
     };
     bool is_function;
     bool is_extern;
-    u8 tag;
+    u8 visibility;
 } IR_Symbol;
 
 typedef struct IR_Global {

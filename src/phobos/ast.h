@@ -6,7 +6,6 @@
 #include "arena.h"
 #include "exactval.h"
 #include "type.h"
-#include "entity.h"
 
 typedef struct {
     token* start;
@@ -39,8 +38,8 @@ typedef struct {
         AST code_block; \
         \
         /* this is filled out by the checker */ \
-        entity** params;\
-        entity** returns;\
+        struct entity** params;\
+        struct entity** returns;\
         u16 paramlen;\
         u16 returnlen;\
     }) \
