@@ -699,14 +699,16 @@ u32 static size_of_internal(type* t) {
             u64 size = size_of_internal(get_field(t, i)->subtype);
             if (size > max_size) max_size = size;
         }
-        return max_size;
+        return align_forward(max_size, type_real_align_of(t));
         } break;
     case TYPE_STRUCT: {
         u64 full_size = 0;
         FOR_URANGE(i, 0, t->as_aggregate.fields.len) {
-            full_size += size_of_internal(get_field(t, i)->subtype);
+            get_field(t, i)->offset = full_size;
+            u64 elem_size = size_of_internal(get_field(t, i)->subtype);
+            full_size += elem_size;
         }
-        return full_size;
+        return align_forward(full_size, type_real_align_of(t));
         } break;
     default:
         CRASH("unreachable");

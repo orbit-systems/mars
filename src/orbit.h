@@ -131,7 +131,7 @@ typedef uint8_t bool;
 
 #define da_reserve(da_ptr, num_slots) do { \
     (da_ptr)->cap += num_slots; \
-    (da_ptr)->at *= realloc((da_ptr)->at, sizeof((da_ptr)->at[0]) * (da_ptr)->cap); \
+    (da_ptr)->at = realloc((da_ptr)->at, sizeof(*(da_ptr)->at) * (da_ptr)->cap); \
     if ((da_ptr)->at == NULL) { \
         printf("(%s:%d) da_reserve realloc failed for capacity %zu", (__FILE__), (__LINE__), (da_ptr)->cap); \
         exit(1); \
@@ -778,4 +778,3 @@ bool fs_write(fs_file* file, void* buf, size_t len) {
     return (size_written == len);
 }
 #endif
-

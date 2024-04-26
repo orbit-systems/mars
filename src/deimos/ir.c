@@ -586,6 +586,22 @@ void ir_print_ir(IR* ir) {
         printf("return");
         break;
 
+    case IR_STACKALLOC:
+        IR_StackAlloc* stackalloc = (IR_StackAlloc*) ir;
+        string typestr = type_to_string(stackalloc->alloctype);
+        printf("stackalloc <"str_fmt">", str_arg(typestr));
+        break;
+
+    case IR_STORE:
+        IR_Store* store = (IR_Store*) ir;
+        printf("store #%zu, #%zu", store->location->number, store->value->number);
+        break;
+    
+    case IR_LOAD:
+        IR_Load* load = (IR_Load*) ir;
+        printf("load #%zu", load->location->number);
+        break;
+
     default:
         printf("unimplemented %zu", (size_t)ir->tag);
         break;

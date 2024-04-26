@@ -10,13 +10,13 @@ char* default_cc = "";
 char* project_name  = "mars";
 
 char* cc            = "gcc";
-char* flags         = "-O3";
+char* flags         = "-O3 -Isrc/phobos/ -Isrc/deimos/";
 char* source_dirs[] = {
         "src/",
         "src/phobos/",
         "src/deimos/",
 };
-char* include_dir   = "src";
+char* include_dir   = "src/";
 char* build_dir     = "build";
 char* output_dir    = "./";
 char* link_flags    = "-lm";

@@ -5,10 +5,6 @@
 
 static mars_module* mars_mod;
 
-typedef struct EntityExtra {
-    IR* stackalloc;
-} EntityExtra;
-
 IR_Module* ir_pass_generate(mars_module* mod) {
 	IR_Module* m = ir_new_module(mod->module_name);
     mars_mod = mod;
@@ -17,7 +13,7 @@ IR_Module* ir_pass_generate(mars_module* mod) {
 
     FOR_URANGE(i, 0, mod->program_tree.len) {
         if (mod->program_tree.at[i].type == AST_decl_stmt) {
-            ir_generate_global_from_stmt_decl(mod, mod->program_tree.at[i]);
+            ir_generate_global_from_stmt_decl(m, mod->program_tree.at[i]);
         } else {
             general_error("FIXME: unhandled AST root");
         }
@@ -33,6 +29,7 @@ IR_Global* ir_generate_global_from_stmt_decl(IR_Module* mod, AST ast) { //FIXME:
 
     //note: global decl_stmts are single entries on the lhs, so we can just assume that lhs[0] == ast_identifier_expr
 
+    
     IR_Global* ir_g = ir_new_global(mod, NULL, /*global=*/true, /*read_only=*/decl_stmt->is_mut);
     ir_g->sym->name = decl_stmt->lhs.at[0].as_identifier_expr->tok->text; 
 
@@ -71,13 +68,14 @@ IR* ir_generate_expr_binop(IR_Function* f, IR_BasicBlock* bb, AST ast) {
 
     IR* lhs = ir_generate_expr_value(f, bb, binop->lhs);
     IR* rhs = ir_generate_expr_value(f, bb, binop->rhs);
-    IR_BinOp* ir = (IR_BinOp*) ir_make_binop(f, IR_INVALID, lhs, rhs);
+    IR* ir  = ir_add(bb, ir_make_binop(f, IR_ADD, lhs, rhs));
+    ir->T = lhs->T;
 
     switch (binop->op->type) {
-    case TOK_ADD: ir->base.tag = IR_ADD; break;
-    case TOK_SUB: ir->base.tag = IR_SUB; break;
-    case TOK_MUL: ir->base.tag = IR_MUL; break;
-    case TOK_DIV: ir->base.tag = IR_DIV; break;
+    case TOK_ADD: ir->tag = IR_ADD; break;
+    case TOK_SUB: ir->tag = IR_SUB; break;
+    case TOK_MUL: ir->tag = IR_MUL; break;
+    case TOK_DIV: ir->tag = IR_DIV; break;
     default:
         warning_at_node(mars_mod, ast, "unhandled binop type");
         CRASH("unhandled binop type");
@@ -92,7 +90,7 @@ IR* ir_generate_expr_ident_load(IR_Function* f, IR_BasicBlock* bb, AST ast) {
     if (ident->is_discard) return ir_add(bb, ir_make(f, IR_INVALID));
 
     // if a stackalloc and entityextra havent been generated, generate them
-    if (!ident->entity->extra) {
+    if (!ident->entity->stackalloc) {
 
         if (!ident->entity->entity_type) {
             warning_at_node(mars_mod, ast, "bodge! assuming i64 type");
@@ -101,14 +99,14 @@ IR* ir_generate_expr_ident_load(IR_Function* f, IR_BasicBlock* bb, AST ast) {
 
         IR* stackalloc = ir_add(bb, ir_make_stackalloc(f, ident->entity->entity_type));
 
-        EntityExtra* extra = arena_alloc(&f->alloca, sizeof(*extra), alignof(*extra));
-        extra->stackalloc = stackalloc;
-
-        ident->entity->extra = extra;
+        ident->entity->stackalloc = stackalloc;
     }
-    IR* stackalloc = ((EntityExtra*)ident->entity->extra)->stackalloc;
+    IR* stackalloc = ident->entity->stackalloc;
 
-    return ir_add(bb, ir_make_load(f, stackalloc, false));
+    IR* load = ir_make_load(f, stackalloc, false);
+    load->T = ident->entity->entity_type;
+
+    return ir_add(bb, load);
 }
 
 IR* ir_generate_expr_value(IR_Function* f, IR_BasicBlock* bb, AST ast) {
@@ -127,11 +125,11 @@ IR* ir_generate_expr_value(IR_Function* f, IR_BasicBlock* bb, AST ast) {
 IR* ir_generate_expr_address(IR_Function* f, IR_BasicBlock* bb, AST ast) {
     switch (ast.type) {
     case AST_identifier_expr:
-        if (ast.as_identifier_expr->entity->extra != NULL) {
-            return ((EntityExtra*)ast.as_identifier_expr->entity->extra)->stackalloc;
+        if (ast.as_identifier_expr->entity->stackalloc != NULL) {
+            return ast.as_identifier_expr->entity->stackalloc;
         }
         ast_identifier_expr* ident = ast.as_identifier_expr;
-        if (!ident->entity->extra) {
+        if (!ident->entity->stackalloc) {
 
             // generate stackalloc
             IR* stackalloc = ir_add(bb, ir_make_stackalloc(f, ident->entity->entity_type));
@@ -173,12 +171,13 @@ void ir_generate_stmt_return(IR_Function* f, IR_BasicBlock* bb, AST ast) {
     
     // if its a plain return, we need to get the 
     // return values from the return variables
-    if (astret->returns.len != 0) {
+    if (astret->returns.len == 0) {
         FOR_URANGE(i, 0, astret->returns.len) {
             entity* e = f->returns[i]->e;
-            IR* stackalloc = ((EntityExtra*)e->extra)->stackalloc;
+            IR* stackalloc = e->stackalloc;
 
             IR* load = ir_add(bb, ir_make_load(f, stackalloc, false));
+            load->T = get_target(stackalloc->T);
             IR* retval = ir_add(bb, ir_make_returnval(f, i, load));
         }
     } else {
@@ -186,10 +185,12 @@ void ir_generate_stmt_return(IR_Function* f, IR_BasicBlock* bb, AST ast) {
         FOR_URANGE(i, 0, astret->returns.len) {
             IR* value = ir_generate_expr_value(f, bb, astret->returns.at[i]);
             IR* retval = ir_add(bb, ir_make_returnval(f, i, value));
+            retval->T = make_type(TYPE_NONE);
         }
     }
     
     IR* ret = ir_add(bb, ir_make_return(f));
+    ret->T = make_type(TYPE_NONE);
 }
 
 IR_Function* ir_generate_function(IR_Module* mod, AST ast) {
@@ -211,12 +212,10 @@ IR_Function* ir_generate_function(IR_Module* mod, AST ast) {
 
     IR_BasicBlock* bb = ir_new_basic_block(f, str("begin"));
 
-    da(AST_typed_field) params = astfunc->type.as_fn_type_expr->parameters;
-
     // generate storage for param variables
-    FOR_URANGE(i, 0, params.len) {
-        assert(params.at[i].field.type == AST_identifier_expr);
-        if (params.at[i].field.base->T->tag != TYPE_I64) {
+    FOR_URANGE(i, 0, astfunc->paramlen) {
+
+        if (astfunc->params[i]->entity_type->tag != TYPE_I64) {
             CRASH("only i64 params supported (for testing)");
         }
         
@@ -225,22 +224,26 @@ IR_Function* ir_generate_function(IR_Module* mod, AST ast) {
             %2 = stackalloc <type of i>
             %3 = store <type of i> %2, %1
         */
-        
+
+
         IR* paramval = ir_add(bb, ir_make_paramval(f, i));
-        IR* stackalloc = ir_add(bb, ir_make_stackalloc(f, params.at[i].field.base->T));
+        paramval->T = f->params[i]->e->entity_type;
+        IR* stackalloc = ir_add(bb, ir_make_stackalloc(f, astfunc->params[i]->entity_type));
+        stackalloc->T = make_type(TYPE_POINTER);
+        set_target(stackalloc->T, paramval->T);
         IR* store = ir_add(bb, ir_make_store(f, stackalloc, paramval, false));
+        store->T = make_type(TYPE_NONE);
+
 
         // store the entity's stackalloc
-        entity* e = params.at[i].field.as_identifier_expr->entity;
-        ((EntityExtra*)e->extra)->stackalloc = stackalloc;
+        entity* e = astfunc->params[i];
+        e->stackalloc = stackalloc;
     }
 
-    da(AST_typed_field) returns = astfunc->type.as_fn_type_expr->returns;
-
     // generate storage for return variables
-    FOR_URANGE(i, 0, returns.len) {
-        assert(returns.at[i].field.type == AST_identifier_expr);
-        if (returns.at[i].field.base->T->tag != TYPE_I64) {
+    FOR_URANGE(i, 0, astfunc->returnlen) {
+
+        if (astfunc->returns[i]->entity_type->tag != TYPE_I64) {
             CRASH("only i64 returns supported (for testing)");
         }
         
@@ -248,12 +251,18 @@ IR_Function* ir_generate_function(IR_Module* mod, AST ast) {
             %1 = stackalloc <type of i>
         */
         
-        IR* stackalloc = ir_add(bb, ir_make_stackalloc(f, returns.at[i].field.base->T));
+        IR* stackalloc = ir_add(bb, ir_make_stackalloc(f, astfunc->returns[i]->entity_type));
+        stackalloc->T = make_type(TYPE_POINTER);
+        set_target(stackalloc->T, f->returns[i]->e->entity_type);
 
         // store the entity's stackalloc
-        entity* e = returns.at[i].field.as_identifier_expr->entity;
-        ((EntityExtra*)e->extra)->stackalloc = stackalloc;
+        entity* e = astfunc->returns[i];
+        e->stackalloc = stackalloc;
     }
+
+    ir_generate_stmt_return(f, bb, astfunc->code_block.as_block_stmt->stmts.at[0]);
+
+    ir_print_function(f);
 
     TODO("actually generate the function's code");
 

@@ -123,7 +123,12 @@ void dump_tree(AST node, int n) {
             dump_tree(node.as_call_expr->params.at[i], n+1);
         }
         break;
-    
+    case AST_return_stmt:
+        printf("return stmt\n");
+        FOR_URANGE(i, 0, node.as_return_stmt->returns.len) {
+            dump_tree(node.as_return_stmt->returns.at[i], n+1);
+        }
+        break;
     case AST_module_decl:
         printf("module %s\n", clone_to_cstring(node.as_module_decl->name->text));
         break;

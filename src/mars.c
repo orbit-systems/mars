@@ -19,9 +19,6 @@ int main(int argc, char** argv) {
 
     mars_module* main_mod = parse_module(mars_flags.input_path);
 
-    FOR_URANGE(i, 0, main_mod->program_tree.len) {
-        dump_tree(main_mod->program_tree.at[i], 0);
-    }
 
     if (mars_flags.output_dot == true) {  
         emit_dot(str("test"), main_mod->program_tree);
@@ -30,17 +27,21 @@ int main(int argc, char** argv) {
 
     // recursive check
     if (!mars_flags.semanal_disabled) {
-        checked_expr e = {0};
-        check_expr(
-            main_mod, 
-            NULL, 
-            main_mod->program_tree.at[0].as_decl_stmt->rhs,
-            &e,
-            true,
-            NULL
-        );
+        // checked_expr e = {0};
+        // check_expr(
+        //     main_mod, 
+        //     NULL, 
+        //     main_mod->program_tree.at[0].as_decl_stmt->rhs,
+        //     &e,
+        //     true,
+        //     NULL
+        // );
+        // printf("%lld\n", e.ev->as_untyped_int);
+        check_module_and_dependencies(main_mod);
+    }
 
-        printf("%lld\n", e.ev->as_untyped_int);
+    if (mars_flags.dump_AST) FOR_URANGE(i, 0, main_mod->program_tree.len) {
+        dump_tree(main_mod->program_tree.at[i], 0);
     }
 
     if (!mars_flags.deimos_disabled) {
@@ -129,6 +130,8 @@ void load_arguments(int argc, char* argv[], flag_set* fl) {
             fl->output_dot = true;
         } else if (string_eq(a.key, str("-timings"))) {
             fl->print_timings = true;
+        } else if (string_eq(a.key, str("-dump-AST"))) {
+            fl->dump_AST = true;
         } else if (string_eq(a.key, str("-no-deimos"))) {
             fl->deimos_disabled = true;
         } else if (string_eq(a.key, str("-no-checker"))) {

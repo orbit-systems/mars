@@ -10,7 +10,7 @@
 typedef struct {
     token* start;
     token* end;
-    type* T; // yes each ast expr stores a type. this is deliberate and makes codegen a breeze
+    // type* T; /* tentatively deleting this, it may be useful in the future but not now */
 } ast_base;
 
 // define all the AST node macros

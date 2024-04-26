@@ -44,9 +44,9 @@ typedef struct checked_expr {
     bool local_derived : 1;
 } checked_expr;
 
-void check_stmt(mars_module* mod, entity_table* et, AST stmt);
-
-
+void check_stmt(mars_module* mod, entity_table* et, ast_func_literal_expr* fn, AST stmt, bool global);
+void check_decl_stmt(mars_module* mod, entity_table* et, ast_func_literal_expr* fn, AST stmt, bool global);
+void check_return_stmt(mars_module* mod, entity_table* et, ast_func_literal_expr* fn, AST stmt);
 
 // pass in a checked_expr struct for check_expr to fill out
 void check_expr          (mars_module* mod, entity_table* et, AST expr, checked_expr* info, bool must_comptime_const, type* typehint);
@@ -55,5 +55,6 @@ void check_literal_expr  (mars_module* mod, entity_table* et, AST expr, checked_
 void check_unary_op_expr (mars_module* mod, entity_table* et, AST expr, checked_expr* info, bool must_comptime_const, type* typehint);
 void check_binary_op_expr(mars_module* mod, entity_table* et, AST expr, checked_expr* info, bool must_comptime_const, type* typehint);
 void check_cast_expr     (mars_module* mod, entity_table* et, AST expr, checked_expr* info, bool must_comptime_const, type* typehint);
+void check_fn_literal_expr(mars_module* mod, entity_table* et, AST expr, checked_expr* info, bool must_comptime_const, type* typehint);
 
 type* type_from_expr(mars_module* mod, entity_table* et, AST expr, bool no_error, bool top);

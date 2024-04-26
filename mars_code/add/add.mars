@@ -1,4 +1,4 @@
-module add;
+module add_test;
 
 let add = fn(a: i64, b: i64) -> i64 {
 	return a + b;

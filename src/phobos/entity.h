@@ -23,9 +23,14 @@ typedef struct entity {
     exact_value* const_val;
     entity_table* top; // scope in which it is declared
 
-    void* extra; // arbitrary data. probably used by the IR generator
+    // filled out by checker
+    struct IR* stackalloc;
 
-    u16 param_return_idx;
+    union {
+        u16 param_idx;
+        u16 return_idx;
+    };
+
     bool is_param : 1;
     bool is_return : 1;
 

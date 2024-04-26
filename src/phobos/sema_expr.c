@@ -198,11 +198,10 @@ void check_expr(mars_module* mod, entity_table* et, AST expr, checked_expr* info
     case AST_identifier_expr: check_ident_expr     (mod, et, expr, info, must_comptime_const, typehint); break;
     case AST_unary_op_expr:   check_unary_op_expr  (mod, et, expr, info, must_comptime_const, typehint); break;
     case AST_binary_op_expr:  check_binary_op_expr (mod, et, expr, info, must_comptime_const, typehint); break;
+    case AST_func_literal_expr: check_fn_literal_expr(mod, et, expr, info, must_comptime_const, typehint); break;
     default:
         error_at_node(mod, expr, "expected value expression, got %s", ast_type_str[expr.type]);
     }
-    expr.base->T = info->type;
-
 }
 
 void check_literal_expr(mars_module* mod, entity_table* et, AST expr, checked_expr* info, bool must_comptime_const, type* typehint) {
@@ -236,12 +235,12 @@ void check_ident_expr(mars_module* mod, entity_table* et, AST expr, checked_expr
         error_at_node(mod, expr, "constant expression has cyclic dependencies");
     }
 
-    if (!ent->checked)  check_stmt(mod, global_et(et), ent->decl); // on-the-fly global checking
+    if (!ent->checked)  check_stmt(mod, global_et(et), NULL, ent->decl, true); // on-the-fly global checking
 
     if (ent->is_module) error_at_node(mod, expr, "expected value expression, got imported module");
     if (ent->is_type)   error_at_node(mod, expr, "expected value expression, got type expression");
 
-    assert(!ent->entity_type);
+    assert(ent->entity_type);
 
     if (must_comptime_const && !ent->const_val) error_at_node(mod, expr, "expression must be compile-time constant");
 
@@ -407,24 +406,71 @@ void check_binary_op_expr(mars_module* mod, entity_table* et, AST expr, checked_
     checked_expr rhs = {0};
     ast_binary_op_expr* binary = expr.as_binary_op_expr;
 
-
     if (binary->op->type != TOK_KEYWORD_OFFSETOF) {
         check_expr(mod, et, expr.as_binary_op_expr->lhs, &lhs, must_comptime_const, NULL);
         check_expr(mod, et, expr.as_binary_op_expr->rhs, &rhs, must_comptime_const, NULL);
     }
 
     switch (binary->op->type) {
-    case TOK_ADD: {
-
+    case TOK_ADD: 
+    case TOK_SUB: 
+    case TOK_MUL: 
+    case TOK_DIV: {
         if (!types_are_equivalent(lhs.type, rhs.type, NULL)) {
-            
+            error_at_node(mod, expr, "possible implicit casts not supported yet");
         }
 
+        // lhs.type == rhs.type
+        info->type = lhs.type;
     } break;
     }
     
-    TODO("");
+    // TODO("");
 }
+
+void check_fn_literal_expr(mars_module* mod, entity_table* et, AST expr, checked_expr* info, bool must_comptime_const, type* typehint) {
+    ast_func_literal_expr* astfunc = expr.as_func_literal_expr;
+    entity_table* glob = global_et(et);
+    entity_table* etab = new_entity_table(glob);
+
+    type* fn_type = type_from_expr(mod, et, astfunc->type, false, true);
+    assert(fn_type->tag == TYPE_FUNCTION);
+    
+    // FIXME astfunc->base.T = fn_type;
+
+    // add param entites
+    da(struct_field)* params = &fn_type->as_function.params;
+    astfunc->params = malloc(sizeof(*astfunc->params) * params->len);
+    astfunc->paramlen = params->len;
+    FOR_URANGE(i, 0, params->len) {
+        entity* e = new_entity(etab, params->at[i].name, expr);
+        e->checked = true;
+        e->entity_type = params->at[i].subtype;
+        e->is_param = true;
+        e->is_mutable = true;
+        e->param_idx = i;
+
+        astfunc->params[i] = e;
+    }
+
+    // add return entites
+    da(struct_field)* returns = &fn_type->as_function.returns;
+    astfunc->returns = malloc(sizeof(*astfunc->returns) * returns->len);
+    astfunc->returnlen = returns->len;
+    FOR_URANGE(i, 0, returns->len) {
+        entity* e = new_entity(etab, returns->at[i].name, expr);
+        e->checked = true;
+        e->entity_type = returns->at[i].subtype;
+        e->is_return = true;
+        e->is_mutable = true;
+        e->return_idx = i;
+
+        astfunc->returns[i] = e;
+    }
+
+    check_stmt(mod, etab, astfunc, astfunc->code_block, false);
+}
+
 
 // construct a type and embed it in the type graph
 type* type_from_expr(mars_module* mod, entity_table* et, AST expr, bool no_error, bool top) {
@@ -516,9 +562,47 @@ type* type_from_expr(mars_module* mod, entity_table* et, AST expr, bool no_error
         return array;
 
     } break;
+    case AST_fn_type_expr: {
+        type* fn = make_type(TYPE_FUNCTION);
+        ast_fn_type_expr* ast_fn = expr.as_fn_type_expr;
+
+        // parse parameters in
+        da_reserve(&fn->as_function.params, ast_fn->parameters.len);
+        fn->as_function.params.len = ast_fn->parameters.len;
+
+        type* current_type;
+        for (i64 i = ast_fn->parameters.len-1; i >= 0; i--) {
+            // traversing in reverse order so we dont need to backfill types
+            if (!is_null_AST(ast_fn->parameters.at[i].type)) {
+                current_type = type_from_expr(mod, et, ast_fn->parameters.at[i].type, false, true);
+            }
+            fn->as_function.params.at[i].subtype = current_type;
+            fn->as_function.params.at[i].name = ast_fn->parameters.at[i].field.as_identifier_expr->tok->text; // bruh
+        }
+
+        // parse returns in
+        da_reserve(&fn->as_function.returns, ast_fn->returns.len);
+        fn->as_function.returns.len = ast_fn->returns.len;
+
+        if (ast_fn->simple_return) {
+            fn->as_function.returns.at[0].name = str("[simple return]");
+            fn->as_function.returns.at[0].subtype = type_from_expr(mod, et, ast_fn->returns.at[0].type, false, true);
+        } else {
+            type* current_type;
+            for (i64 i = ast_fn->returns.len-1; i >= 0; i--) {
+                // traversing in reverse order so we dont need to backfill types
+                if (!is_null_AST(ast_fn->returns.at[i].type)) {
+                    current_type = type_from_expr(mod, et, ast_fn->parameters.at[i].type, false, true);
+                }
+                fn->as_function.params.at[i].subtype = current_type;
+                fn->as_function.params.at[i].name = ast_fn->parameters.at[i].field.as_identifier_expr->tok->text; // bruh
+            }
+        }
+
+        return fn;
+    } break;
     case AST_struct_type_expr: { TODO("struct types"); } break;
     case AST_union_type_expr: { TODO("union types"); } break;
-    case AST_fn_type_expr: {TODO("fn types"); } break;
     case AST_enum_type_expr: {TODO("enum types"); } break;
     case AST_pointer_type_expr: { // ^let T, ^mut T
         type* ptr = make_type(TYPE_POINTER);
@@ -560,7 +644,7 @@ type* type_from_expr(mars_module* mod, entity_table* et, AST expr, bool no_error
             error_at_node(mod, expr, "'"str_fmt"' undefined", str_arg(expr.as_identifier_expr->tok->text));
         }
 
-        if (!ent->checked) check_stmt(mod, global_et(et), ent->decl); // on-the-fly global checking
+        if (!ent->checked) check_stmt(mod, global_et(et), NULL, ent->decl, true); // on-the-fly global checking
 
         if (!ent->is_type) {
             if (no_error) return NULL;
