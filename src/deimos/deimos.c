@@ -16,6 +16,11 @@ common trait is that they operate on the IR structure itself.
 
 */
 
+void deimos_run(mars_module* main_mod) {
+	IR_Module* ir_mod = ir_pass_generate(main_mod);
+	run_passes(ir_mod);
+}
+
 char* random_string(int len) {
 	if (len < 3) {
 		general_error("random_string() needs to be called with len >= 3");

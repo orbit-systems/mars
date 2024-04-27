@@ -69,7 +69,7 @@ void print_help() {
     printf("-timings            print stage timings\n");
     printf("-dump-AST           print readable AST\n");
     printf("-dot                convert the AST to a graphviz .dot file\n");
-    printf("-no-checker         disables the semantic analyzer\n");
+    printf("-no-checker         disables the semantic analyzer (kill the child, no witnesses.)\n");
     printf("-no-deimos          disables the compiler backend\n");
 }
 
