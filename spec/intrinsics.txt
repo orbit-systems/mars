@@ -6,16 +6,16 @@ about itself or the module being compiled.
 let arch : enum int {
     aphelion = 0,
     /* more to come! */
-} = (...);
+} = ---;
 
 // instrinsics::system - the target OS or environment.
 let system : enum int {
-    freestanding = 0,d
+    freestanding = 0,
     /* more to come! */
-} = (...);
+} = ---;
 
 // instrinsics::product - the type of file made by the compiler.
 let product : enum int {
     assembly = 0,
     /* more to come! */
-} = (...);
+} = ---;

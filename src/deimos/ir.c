@@ -602,6 +602,31 @@ void ir_print_ir(IR* ir) {
         printf("load #%zu", load->location->number);
         break;
 
+    case IR_CONST:
+        IR_Const* con = (IR_Const*) ir;
+
+        string typestr_ = type_to_string(con->base.T);
+        printf("const <"str_fmt", ", str_arg(typestr_));
+
+        switch (con->base.T->tag) {
+        case TYPE_I8:  printf("%lld", (i64)con->i8);  break;
+        case TYPE_I16: printf("%lld", (i64)con->i16); break;
+        case TYPE_I32: printf("%lld", (i64)con->i32); break;
+        case TYPE_I64: printf("%lld", (i64)con->i64); break;
+        case TYPE_U8:  printf("%llu", (u64)con->u8);  break;
+        case TYPE_U16: printf("%llu", (u64)con->u16); break;
+        case TYPE_U32: printf("%llu", (u64)con->u32); break;
+        case TYPE_U64: printf("%llu", (u64)con->u64); break;
+        case TYPE_F16: printf("%f",   (f32)con->f16); break;
+        case TYPE_F32: printf("%f",   con->f32); break;
+        case TYPE_F64: printf("%lf",  con->f64); break;
+        default:
+            printf("???");
+            break;
+        }
+        printf(">");
+        break;
+
     default:
         printf("unimplemented %zu", (size_t)ir->tag);
         break;

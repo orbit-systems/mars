@@ -247,13 +247,22 @@ IR_Function* ir_generate_function(IR_Module* mod, AST ast) {
             CRASH("only i64 returns supported (for testing)");
         }
         
-        /* just generate the stackalloc:
+        /* generate the stack alloc and set to zero
             %1 = stackalloc <type of i>
+            %2 = const <type of i, 0>
+            %3 = store %1, %2
         */
         
         IR* stackalloc = ir_add(bb, ir_make_stackalloc(f, astfunc->returns[i]->entity_type));
         stackalloc->T = make_type(TYPE_POINTER);
         set_target(stackalloc->T, f->returns[i]->e->entity_type);
+
+        IR* con = ir_add(bb, ir_make_const(f));
+        con->T = f->returns[i]->e->entity_type;
+        ((IR_Const*) con)->u64 = 0;
+        
+        IR* store = ir_add(bb, ir_make_store(f, stackalloc, con, false));
+        store->T = make_type(TYPE_NONE);
 
         // store the entity's stackalloc
         entity* e = astfunc->returns[i];
