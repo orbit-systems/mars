@@ -5,7 +5,7 @@
 
 static mars_module* mars_mod;
 
-IR_Module* ir_pass_generate(mars_module* mod) {
+IR_Module* ir_generate(mars_module* mod) {
 	IR_Module* m = ir_new_module(mod->module_name);
     mars_mod = mod;
 	

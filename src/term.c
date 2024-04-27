@@ -28,6 +28,10 @@ void general_warning(char* message, ...) {
     printf("\n");
 }
 
+bool is_whitespace(char c) {
+    return (c == ' ') || (c == '\t');
+}
+
 noreturn void error_at_string(string path, string text, string pos, char* message, ...) {
 
     char ERROR_MSG_BUFFER[500] = {0};
@@ -66,6 +70,8 @@ noreturn void error_at_string(string path, string text, string pos, char* messag
     printf(STYLE_Reset);
 
     for (int i = 0; i < line_len; i++) {
+        if (is_whitespace(line_ptr[i]));
+
         if (column-1 == i) printf(STYLE_FG_Red STYLE_Bold);
         if (column-1 + pos.len == i) printf(STYLE_Reset);
         putchar(line_ptr[i]);
@@ -98,6 +104,12 @@ noreturn void error_at_string(string path, string text, string pos, char* messag
 
 void warning_at_string(string path, string text, string pos, char* message, ...) {
     
+    printf("---\n");
+
+    printf("["str_fmt"]", str_arg(pos));
+
+    printf("---\n");
+
     char ERROR_MSG_BUFFER[500] = {0};
     va_list args;
     va_start(args, message);
@@ -123,6 +135,12 @@ void warning_at_string(string path, string text, string pos, char* message, ...)
     char* nextnewline = memchr(pos.raw, '\n', pos.len);
     if (nextnewline != NULL && (u64)(nextnewline - pos.raw) < pos.len) {
         pos.len = (u64)(nextnewline - pos.raw);
+    }
+
+    while (is_whitespace(*line_ptr)) {
+        line_ptr++;
+        line_len--;
+        column--;
     }
 
     printf(STYLE_Dim);
