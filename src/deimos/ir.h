@@ -359,10 +359,10 @@ IR* ir_make_paramval(IR_Function* f, u32 param);
 IR* ir_make_returnval(IR_Function* f, u32 param, IR* source);
 IR* ir_make_return(IR_Function* f);
 
+void ir_move_element(IR_BasicBlock* bb, u64 to, u64 from);
+
 void ir_add_phi_source(IR_Phi* phi, IR* source, IR_BasicBlock* source_block);
 
-void ir_type_resolve(IR_Module* mod, IR_Function* f, IR* ir, bool assume_correct);
-void ir_type_resolve_all(IR_Module* mod, IR_Function* f, bool assume_correct);
 void ir_print_module(IR_Module* mod);
 void ir_print_function(IR_Function* f);
 void ir_print_bb(IR_BasicBlock* bb);

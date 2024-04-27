@@ -16,7 +16,7 @@ DEBUGFLAGS = -lm -rdynamic -pg -g
 ASANFLAGS = -fsanitize=undefined -fsanitize=address
 DONTBEAFUCKINGIDIOT = -Wall -Wextra -pedantic -Wno-missing-field-initializers -Wno-unused-result
 CFLAGS = -Wno-incompatible-pointer-types -lm
-OPT = $(DEBUGFLAGS)
+OPT = -O2 # $(DEBUGFLAGS)
 
 all: build
 

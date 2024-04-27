@@ -364,127 +364,23 @@ IR* ir_make_return(IR_Function* f) {
     return ir_make(f, IR_RETURN);
 }
 
+void ir_move_element(IR_BasicBlock* bb, u64 to, u64 from) {
+    if (to == from) return;
 
-forceinline bool is_type_integer(type* t) {
-    switch (t->tag) {
-    case TYPE_UNTYPED_INT:
-    case TYPE_I8:
-    case TYPE_I16:
-    case TYPE_I32:
-    case TYPE_I64:
-    case TYPE_U8:
-    case TYPE_U16:
-    case TYPE_U32:
-    case TYPE_U64:
-        return true;
-    default:
-        return false;
+    IR* from_elem = bb->at[from];
+    if (to < from) {
+        memmove(&bb->at[to+1], &bb->at[to], (from - to) * sizeof(IR*));
+    } else {
+        memmove(&bb->at[to], &bb->at[to+1], (to - from) * sizeof(IR*));
     }
+    bb->at[to] = from_elem;
 }
 
-forceinline bool is_type_float(type* t) {
-    switch (t->tag) {
-    case TYPE_F16:
-    case TYPE_F32:
-    case TYPE_F64:
-        return true;
-    default:
-        return false;
-    }
-}
-
-forceinline bool is_type_sinteger(type* t) {
-    switch (t->tag) {
-    case TYPE_UNTYPED_INT:
-    case TYPE_I8:
-    case TYPE_I16:
-    case TYPE_I32:
-    case TYPE_I64:
-        return true;
-    default:
-        return false;
-    }
-}
-
-forceinline bool is_type_uinteger(type* t) {
-    switch (t->tag) {
-    case TYPE_U8:
-    case TYPE_U16:
-    case TYPE_U32:
-    case TYPE_U64:
-        return true;
-    default:
-        return false;
-    }
-}
-
-void ir_type_resolve_all(IR_Module* mod, IR_Function* f, bool assume_correct) {
-    if (!assume_correct) {
-        FOR_URANGE(bb, 0, f->blocks.len) {
-            FOR_URANGE(i, 0, f->blocks.at[bb]->len) {
-                f->blocks.at[bb]->at[i]->T = NULL;
-            }
-        }
-    }
-
-
-    FOR_URANGE(bb, 0, f->blocks.len) {
-        FOR_URANGE(i, 0, f->blocks.at[bb]->len) {
-            ir_type_resolve(mod, f, f->blocks.at[bb]->at[i], true);
-        }
-    }
-
-}
-
-void ir_type_resolve(IR_Module* mod, IR_Function* f, IR* ir, bool assume_correct) {
-    if (ir->T != NULL && assume_correct) return; // if it already has a type, assume that type is correct
-
-    switch (ir->tag) {
-    case IR_INVALID:
-    case IR_ELIMINATED:
-        ir->T = make_type(TYPE_NONE);
-        break;
-    case IR_ADD:
-    case IR_SUB:
-    case IR_MUL:
-    case IR_DIV:
-    case IR_AND:
-    case IR_OR:
-    case IR_NOR:
-    case IR_XOR:
-        IR_BinOp* binop = (IR_BinOp*) ir;
-        ir_type_resolve(mod, f, binop->lhs, true);
-        ir_type_resolve(mod, f, binop->rhs, true);
-        if (binop->lhs->T != binop->rhs->T) {
-            CRASH("type mismatch");
-        }
-        if (!is_type_integer(binop->lhs->T)) {
-            CRASH("type is not integer (TODO work w/ floats)");
-        }
-        ir->T = binop->lhs->T;
-        break;
-    case IR_PARAMVAL:
-        IR_ParamVal* paramval = (IR_ParamVal*) ir;
-        ir->T = f->params[paramval->param_idx]->e->entity_type;
-        break;
-    case IR_RETURNVAL:
-        IR_ReturnVal* returnval = (IR_ReturnVal*) ir;
-        ir->T = f->returns[returnval->return_idx]->e->entity_type;
-        break;
-    case IR_RETURN:
-        ir->T = make_type(TYPE_NONE);
-        break;
-    default:
-        CRASH("unhandled ir type");
-    }
-
-}
 
 u32 ir_renumber(IR_Function* f) {
     u32 count = 0;
     FOR_URANGE(i, 0, f->blocks.len) {
         FOR_URANGE(j, 0, f->blocks.at[i]->len) {
-            if (f->blocks.at[i]->at[j]->tag == IR_ELIMINATED) continue;
             f->blocks.at[i]->at[j]->number = ++count;
         }
     }
@@ -548,10 +444,11 @@ void ir_print_ir(IR* ir) {
     printf("#%zu "str_fmt"\t = ", ir->number, str_arg(type_to_string(ir->T)));
     switch (ir->tag) {
     case IR_INVALID: 
-        printf("invalid"); 
+        printf("invalid!");
         break;
 
-    case IR_ELIMINATED: 
+    case IR_ELIMINATED:
+        printf("---");
         return;
 
     if(0){case IR_ADD:   binopstr = "add";} //common path fallthroughs
@@ -600,6 +497,11 @@ void ir_print_ir(IR* ir) {
     case IR_LOAD:
         IR_Load* load = (IR_Load*) ir;
         printf("load #%zu", load->location->number);
+        break;
+
+    case IR_MOV:
+        IR_Mov* mov = (IR_Mov*) ir;
+        printf("mov #%zu", mov->source->number);
         break;
 
     case IR_CONST:

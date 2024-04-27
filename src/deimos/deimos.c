@@ -1,5 +1,5 @@
 #include "deimos.h"
-
+#include "passes/passes.h"
 /* (sandwich): okay, heres how this is going to work.
 
 the function generate_ir() encompasses the simple AST -> IR
@@ -17,8 +17,12 @@ common trait is that they operate on the IR structure itself.
 */
 
 void deimos_run(mars_module* main_mod) {
-	register_passes();
 	IR_Module* ir_mod = ir_generate(main_mod);
+
+	register_passes();
+	add_pass("simple redundant memory elimination", ir_pass_srme, PASS_IR_TO_IR);
+	add_pass("eliminate mov instructions", ir_pass_nomov, PASS_IR_TO_IR);
+	add_pass("remove eliminated instructions", ir_pass_noelim, PASS_IR_TO_IR);
 	run_passes(ir_mod);
 }
 
