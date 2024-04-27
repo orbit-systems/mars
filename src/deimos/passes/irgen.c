@@ -115,6 +115,7 @@ IR* ir_generate_expr_value(IR_Function* f, IR_BasicBlock* bb, AST ast) {
     case AST_literal_expr:    return ir_generate_expr_literal(f, bb, ast);
     case AST_binary_op_expr:  return ir_generate_expr_binop(f, bb, ast);
     case AST_identifier_expr: return ir_generate_expr_ident_load(f, bb, ast);
+    case AST_paren_expr:      return ir_generate_expr_value(f, bb, ast.as_paren_expr->subexpr);
     default:
         warning_at_node(mars_mod, ast, "unhandled AST type");
         CRASH("unhandled AST type");
