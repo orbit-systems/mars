@@ -8,4 +8,4 @@
 
 char* random_string(int len);
 
-IR_Module* ir_pass_generate(mars_module* mod);
+IR_Module* ir_generate(mars_module* mod);

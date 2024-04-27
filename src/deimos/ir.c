@@ -634,8 +634,9 @@ void ir_print_ir(IR* ir) {
 }
 
 void ir_print_module(IR_Module* mod) {
-    printf("module \""str_fmt"\"\n", str_arg(mod->name));
-    printf("-> %zu functions:\n", mod->functions_len);
+    FOR_URANGE(i, 0, mod->functions_len) {
+        ir_print_function(mod->functions[i]);
+    }
 }
 
 static char* write_str(char* buf, char* src) {

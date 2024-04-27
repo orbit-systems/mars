@@ -5,7 +5,7 @@
 #include "passes.h"
 #include "phobos/sema.h"
 
-IR_Module* ir_pass_generate(mars_module* mod);
+IR_Module* ir_generate(mars_module* mod);
 IR_Global* ir_generate_global_from_stmt_decl(IR_Module* mod, AST ast);
 IR* ir_generate_expr_literal(IR_Function* f, IR_BasicBlock* bb, AST ast);
 IR* ir_generate_expr_value(IR_Function* f, IR_BasicBlock* bb, AST ast);
