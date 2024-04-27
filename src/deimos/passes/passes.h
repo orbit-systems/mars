@@ -6,6 +6,8 @@
 
 IR_Module* ir_generate(mars_module* mod);
 
+IR_Module* ir_pass_stackorg(IR_Module* mod);
+
 /* REQIRED PASSES
     stackorg        reoganize stackallocs
 */

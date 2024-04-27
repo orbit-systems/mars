@@ -17,7 +17,8 @@ common trait is that they operate on the IR structure itself.
 */
 
 void deimos_run(mars_module* main_mod) {
-	IR_Module* ir_mod = ir_pass_generate(main_mod);
+	register_passes();
+	IR_Module* ir_mod = ir_generate(main_mod);
 	run_passes(ir_mod);
 }
 

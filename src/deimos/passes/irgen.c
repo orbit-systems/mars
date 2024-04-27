@@ -272,9 +272,5 @@ IR_Function* ir_generate_function(IR_Module* mod, AST ast) {
 
     ir_generate_stmt_return(f, bb, astfunc->code_block.as_block_stmt->stmts.at[0]);
 
-    ir_print_function(f);
-
-    TODO("actually generate the function's code");
-
     return f;
 }

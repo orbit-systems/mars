@@ -45,7 +45,7 @@ int main(int argc, char** argv) {
     }
 
     if (!mars_flags.deimos_disabled) {
-        IR_Module* ir_mod = ir_generate(main_mod);
+        deimos_run(main_mod);
     }
 
 

@@ -1,8 +1,15 @@
 #include "deimos.h"
+#include "passes/passes.h"
+
+da(Pass) deimos_passes;
 
 void add_pass(char* name, void (*callback)(), pass_type type) {
 	if (deimos_passes.at == NULL) da_init(&deimos_passes, 1);
-	da_append(&deimos_passes, (Pass){.name = name, .callback = callback, .type = type});
+	da_append(&deimos_passes, ((Pass){.name = name, .callback = callback, .type = type}));
+}
+
+void register_passes() {
+	add_pass("Organise stackalloc so that they sit at the top of the IR", ir_pass_stackorg, PASS_IR_TO_IR);
 }
 
 void run_passes(IR_Module* current_program) {

@@ -16,6 +16,9 @@ typedef struct {
 	pass_type type;
 } Pass;
 
+void run_passes(IR_Module* current_program);
+void register_passes();
+
 da_typedef(Pass);
 
-da(Pass) deimos_passes;
+extern da(Pass) deimos_passes;
