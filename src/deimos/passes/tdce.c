@@ -35,6 +35,10 @@ static void register_uses(IR* ir) {
         binop->lhs->use_count++;
         binop->rhs->use_count++;
         break;
+    case IR_LOAD:
+        IR_Load* load = (IR_Load*) ir;
+        load->location->use_count++;
+        break;
     case IR_STORE:
         IR_Store* store = (IR_Store*) ir;
         store->location->use_count++;
@@ -54,6 +58,7 @@ static void register_uses(IR* ir) {
     case IR_CONST:
     case IR_PARAMVAL:
     case IR_RETURN:
+    case IR_STACKALLOC:
         break;
     default:
         general_warning("unhandled IR type %d", ir->tag);
