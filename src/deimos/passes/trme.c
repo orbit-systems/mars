@@ -1,8 +1,15 @@
 #include "deimos.h"
 
-da_typedef(IR_PTR);
+/* pass "trme" - trivial redundant memory op eliminations
+
+    transforms store-load patterns into store-mov patterns (eliminating redundant loads)
+    as well as eliminating stackallocs with only stores as uses
+
+*/
 
 // this all will eventually be replaced by the "stackpromote" pass
+
+da_typedef(IR_PTR);
 
 static IR_Store* last_local_store_to_loc(IR_BasicBlock* bb, IR* location, u64 from) {
     if (location == NULL) return NULL;
@@ -47,6 +54,10 @@ IR_Module* ir_pass_trme(IR_Module* mod) {
 
                 if (last_store == NULL) continue;
 
+                // in general, this is a BAD IDEA
+                // but its fine because sizeof(IR_Load) >= sizeof(IR_Mov)
+                // dont do this kinda thing unless you're
+                // ABSOLUTELY SURE its going to be okay
                 ir->base.tag = IR_MOV;
                 ((IR_Mov*)ir)->source = last_store->value;
             }

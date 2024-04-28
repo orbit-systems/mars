@@ -6,10 +6,10 @@
 static mars_module* mars_mod;
 
 IR_Module* ir_generate(mars_module* mod) {
-	IR_Module* m = ir_new_module(mod->module_name);
+    IR_Module* m = ir_new_module(mod->module_name);
     mars_mod = mod;
-	
-	/* do some codegen shit prolly */
+    
+    /* do some codegen shit prolly */
 
     FOR_URANGE(i, 0, mod->program_tree.len) {
         if (mod->program_tree.at[i].type == AST_decl_stmt) {
@@ -19,7 +19,7 @@ IR_Module* ir_generate(mars_module* mod) {
         }
     }
 
-	return m;
+    return m;
 }
 
 IR_Global* ir_generate_global_from_stmt_decl(IR_Module* mod, AST ast) { //FIXME: add sanity

@@ -1,14 +1,12 @@
 #include "deimos.h"
-//this pass moves all stack allocations to the TOP of the IR, so that targets can extract stack frame info
 
-//this pass uses qsort to sort each IR_Function and each IR_BasicBlock
+/* pass "org" - general cleanup after ir generation
 
-//  in-place IR element move (always from > to)
-// 	take out index 4, move it to index 1)
-//	a b c d e f : save element 4
-//	a b c d   f
-//	a   b c d f : memmove 
-//	a e b c d f : store element 4
+    order instructions inside basic blocks such that 
+    paramvals come first, then stackallocs, then the rest of the code.
+
+*/
+
 static void sort_instructions(IR_BasicBlock* bb) {
     u64 last_stackalloc = 0;
     u64 last_paramval = 0;

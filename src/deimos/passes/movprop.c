@@ -1,5 +1,11 @@
 #include "deimos.h"
 
+/* pass "movprop" - mov propogation
+
+    eliminate mov instructions and rewrite its uses to the use the eliminated mov's source.
+
+*/
+
 static u64 ir_set_usage(IR_BasicBlock* bb, IR* source, u64 start_index, IR* dest) {
     for (u64 i = start_index; i < bb->len; i++) {
         if (bb->at[i]->tag == IR_ELIMINATED) continue;
@@ -27,7 +33,7 @@ static void set_uses_of(IR_Function* f, IR* source, IR* dest) {
     }
 }
 
-IR_Module* ir_pass_nomov(IR_Module* mod) {
+IR_Module* ir_pass_movprop(IR_Module* mod) {
     FOR_URANGE(i, 0, mod->functions_len) {
         FOR_URANGE(j, 0, mod->functions[i]->blocks.len) {
             IR_BasicBlock* bb = mod->functions[i]->blocks.at[j];

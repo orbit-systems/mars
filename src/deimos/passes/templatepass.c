@@ -4,5 +4,5 @@
 #include "deimos.h"
 
 IR_Module* ir_pass_template(IR_Module* mod) {
-	return mod;
+    return mod;
 }

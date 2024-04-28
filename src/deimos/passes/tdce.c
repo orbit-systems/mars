@@ -1,9 +1,12 @@
 #include "deimos.h"
 
-// trivial dead code elimination
+/* pass "tdce" - trivial dead code elimination
+
+    recursively eliminate instructions with no uses or side-effects.
+
+*/
 
 // FIXME: probably die
-
 // ^ i stopped writing this comment in the middle
 //   and idk what i was going to say
 //   its funnier like this i think

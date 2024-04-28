@@ -13,8 +13,8 @@ IR_Module* ir_generate(mars_module* mod);
 IR_Module* ir_pass_org(IR_Module* mod);
 
 /* OPTIMIZATION PASSES - optional
-    nomov           eliminate mov instructions
-    noelim          remove eliminated instructions (makes some other passes faster)
+    movprop         mov propogation
+    elim            remove instructions marked eliminated
     tdce            trivial dead code elimination
     trme            trivial redundant memory op elimination
 
@@ -26,7 +26,7 @@ IR_Module* ir_pass_org(IR_Module* mod);
     sroa            scalar replacement of aggregates
 */
 
-IR_Module* ir_pass_nomov(IR_Module* mod);
-IR_Module* ir_pass_noelim(IR_Module* mod);
+IR_Module* ir_pass_movprop(IR_Module* mod);
+IR_Module* ir_pass_elim(IR_Module* mod);
 IR_Module* ir_pass_tdce(IR_Module* mod);
 IR_Module* ir_pass_trme(IR_Module* mod);

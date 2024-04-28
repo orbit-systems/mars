@@ -15,8 +15,8 @@ void register_passes() {
     if (opt) {
         add_pass("trivial redundant memory elimination", ir_pass_trme, PASS_IR_TO_IR);
         add_pass("trivial dead code elimination", ir_pass_tdce, PASS_IR_TO_IR);
-        add_pass("eliminate mov instructions", ir_pass_nomov, PASS_IR_TO_IR);
-        add_pass("remove eliminated instructions", ir_pass_noelim, PASS_IR_TO_IR);
+        add_pass("eliminate mov instructions", ir_pass_movprop, PASS_IR_TO_IR);
+        add_pass("remove eliminated instructions", ir_pass_elim, PASS_IR_TO_IR);
     }
 }
 

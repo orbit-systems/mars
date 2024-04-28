@@ -441,7 +441,8 @@ void ir_print_ir(IR* ir) {
 
     char* binopstr; //hacky but w/e
 
-    printf("#%zu "str_fmt"\t = ", ir->number, str_arg(type_to_string(ir->T)));
+    string typestr = type_to_string(ir->T);
+    printf("#%-3zu %-4.*s = ", ir->number, str_arg(typestr));
     switch (ir->tag) {
     case IR_INVALID: 
         printf("invalid!");
