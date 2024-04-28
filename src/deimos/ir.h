@@ -7,6 +7,7 @@
 #include "entity.h"
 
 typedef struct IR IR;
+typedef IR* IR_PTR;
 typedef struct IR_BasicBlock IR_BasicBlock;
 typedef struct IR_Module IR_Module;
 typedef struct IR_Symbol IR_Symbol;
@@ -172,6 +173,7 @@ enum {
 typedef struct IR {
     type* T;
     u32 number;
+    u16 use_count;
     u8 tag;
 } IR;
 

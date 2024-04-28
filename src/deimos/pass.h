@@ -4,18 +4,18 @@
 #include "ir.h"
 
 typedef enum {
-	PASS_IR_TO_IR,
-	PASS_MI_TO_MI,
+    PASS_IR_TO_IR,
+    PASS_MI_TO_MI,
 } pass_type;
 
 typedef struct {
-	char* name;
-	union {
-		void (*callback)();
-		IR_Module* (*ir_callback)(IR_Module*);
-		//MInst->MInst
-	};
-	pass_type type;
+    char* name;
+    union {
+        void (*callback)();
+        IR_Module* (*ir_callback)(IR_Module*);
+        //MInst->MInst
+    };
+    pass_type type;
 } Pass;
 
 void run_passes(IR_Module* current_program);

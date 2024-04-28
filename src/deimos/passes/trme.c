@@ -26,7 +26,7 @@ static u64 ir_get_usage(IR_BasicBlock* bb, IR* source, u64 start_index) {
 }
 
 // this is horrible code, but like i said, it will be replaced by stackpromote
-IR_Module* ir_pass_srme(IR_Module* mod) {
+IR_Module* ir_pass_trme(IR_Module* mod) {
 
     for (u64 i = 0; i < mod->functions_len; i++) {
         IR_Function* f = mod->functions[i];
@@ -62,15 +62,6 @@ IR_Module* ir_pass_srme(IR_Module* mod) {
 
                 // if you're still around, this stackalloc is useless and can be eliminated
                 bb->at[inst]->tag = IR_ELIMINATED;
-
-                // while you're at it, eliminate the stores too
-                for (u64 search_bb = 0; search_bb < f->blocks.len; search_bb++) {
-                    u64 next_usage = ir_get_usage(f->blocks.at[search_bb], bb->at[inst], 0);
-                    while (next_usage != UINT64_MAX) {
-                        f->blocks.at[search_bb]->at[next_usage]->tag = IR_ELIMINATED;
-                        next_usage = ir_get_usage(f->blocks.at[search_bb], bb->at[inst], next_usage + 1);
-                    }
-                }
 
                 continue_stackalloc_scan:
             }

@@ -17,26 +17,23 @@ common trait is that they operate on the IR structure itself.
 */
 
 void deimos_run(mars_module* main_mod) {
-	IR_Module* ir_mod = ir_generate(main_mod);
+    IR_Module* ir_mod = ir_generate(main_mod);
 
-	register_passes();
-	add_pass("simple redundant memory elimination", ir_pass_srme, PASS_IR_TO_IR);
-	add_pass("eliminate mov instructions", ir_pass_nomov, PASS_IR_TO_IR);
-	add_pass("remove eliminated instructions", ir_pass_noelim, PASS_IR_TO_IR);
-	run_passes(ir_mod);
+    register_passes();
+    run_passes(ir_mod);
 }
 
 char* random_string(int len) {
-	if (len < 3) {
-		general_error("random_string() needs to be called with len >= 3");
-	}
-	char* str = malloc(len + 1);
-	if (str == NULL) general_error("Failed to allocate %d bytes for random_string", len + 1);
-	str[0] = '#';
-	str[len - 1] = '#';
-	FOR_URANGE(i, 1, len - 1) {
-		str[i] = 'A' + rand() % ('Z' - 'A'); //generates random ascii from 0x21 (!) to 0x7E (~)
-	}
-	str[len] = '\0';
-	return str;
+    if (len < 3) {
+        general_error("random_string() needs to be called with len >= 3");
+    }
+    char* str = malloc(len + 1);
+    if (str == NULL) general_error("Failed to allocate %d bytes for random_string", len + 1);
+    str[0] = '#';
+    str[len - 1] = '#';
+    FOR_URANGE(i, 1, len - 1) {
+        str[i] = 'A' + rand() % ('Z' - 'A'); //generates random ascii from 0x21 (!) to 0x7E (~)
+    }
+    str[len] = '\0';
+    return str;
 }

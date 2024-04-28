@@ -15,7 +15,10 @@ IR_Module* ir_pass_org(IR_Module* mod);
 /* OPTIMIZATION PASSES - optional
     nomov           eliminate mov instructions
     noelim          remove eliminated instructions (makes some other passes faster)
-    srme            simple redundant memory op elimination
+    tdce            trivial dead code elimination
+    trme            trivial redundant memory op elimination
+
+(TODO)
     algsimp         algebraic simplification
     dce             dead code elimination
     gvn             global value numbering
@@ -25,4 +28,5 @@ IR_Module* ir_pass_org(IR_Module* mod);
 
 IR_Module* ir_pass_nomov(IR_Module* mod);
 IR_Module* ir_pass_noelim(IR_Module* mod);
-IR_Module* ir_pass_srme(IR_Module* mod);
+IR_Module* ir_pass_tdce(IR_Module* mod);
+IR_Module* ir_pass_trme(IR_Module* mod);
