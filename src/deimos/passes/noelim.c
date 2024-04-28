@@ -2,28 +2,19 @@
 
 void transcribe_w_no_elims(IR_BasicBlock* bb) {
     
-    // pre-scan
-    u64 non_elim_count = 0;
+    u64 place = 0;
     FOR_URANGE(i, 0, bb->len) {
-        if (bb->at[i]->tag != IR_ELIMINATED) non_elim_count++;
-    }
+        IR* ir = bb->at[i];
+        if (ir == NULL || ir->tag == IR_ELIMINATED) continue;
 
-    if (non_elim_count == bb->len) return;
-
-    IR_BasicBlock new_bb;
-    da_init(&new_bb, non_elim_count);
-
-    FOR_URANGE(i, 0, bb->len) {
-        if (bb->at[i]->tag != IR_ELIMINATED) {
-            ir_add(&new_bb, bb->at[i]);
+        if (place == i) {
+            place++;
+            continue;
         }
+
+        bb->at[place++] = ir;
     }
-
-    da_destroy(bb);
-
-    bb->at = new_bb.at;
-    bb->cap = new_bb.cap;
-    bb->len = new_bb.len;
+    bb->len = place;
 }
 
 IR_Module* ir_pass_noelim(IR_Module* mod) {

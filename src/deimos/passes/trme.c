@@ -1,5 +1,7 @@
 #include "deimos.h"
 
+da_typedef(IR_PTR);
+
 // this all will eventually be replaced by the "stackpromote" pass
 
 static IR_Store* last_local_store_to_loc(IR_BasicBlock* bb, IR* location, u64 from) {
@@ -28,6 +30,9 @@ static u64 ir_get_usage(IR_BasicBlock* bb, IR* source, u64 start_index) {
 // this is horrible code, but like i said, it will be replaced by stackpromote
 IR_Module* ir_pass_trme(IR_Module* mod) {
 
+    da(IR_PTR) store_elim_list;
+    da_init(&store_elim_list, 4);
+
     for (u64 i = 0; i < mod->functions_len; i++) {
         IR_Function* f = mod->functions[i];
         for (u64 j = 0; j < f->blocks.len; j++) {
@@ -46,6 +51,11 @@ IR_Module* ir_pass_trme(IR_Module* mod) {
                 ((IR_Mov*)ir)->source = last_store->value;
             }
 
+        }
+
+        for (u64 j = 0; j < f->blocks.len; j++) {
+            IR_BasicBlock* bb = f->blocks.at[j];
+
             // eliminate stackallocs with only stores as their uses
             for (u64 inst = 0; inst < bb->len; inst++) {
                 if (bb->at[inst]->tag != IR_STACKALLOC) continue;
@@ -53,9 +63,11 @@ IR_Module* ir_pass_trme(IR_Module* mod) {
                 for (u64 search_bb = 0; search_bb < f->blocks.len; search_bb++) {
                     u64 next_usage = ir_get_usage(f->blocks.at[search_bb], bb->at[inst], 0);
                     while (next_usage != UINT64_MAX) {
-                        if (f->blocks.at[search_bb]->at[next_usage]->tag != IR_STORE) {
+                        IR* usage = f->blocks.at[search_bb]->at[next_usage];
+                        if (usage->tag != IR_STORE) {
                             goto continue_stackalloc_scan;
                         }
+                        da_append(&store_elim_list, usage);
                         next_usage = ir_get_usage(f->blocks.at[search_bb], bb->at[inst], next_usage + 1);
                     }
                 }
@@ -63,9 +75,19 @@ IR_Module* ir_pass_trme(IR_Module* mod) {
                 // if you're still around, this stackalloc is useless and can be eliminated
                 bb->at[inst]->tag = IR_ELIMINATED;
 
+                // eliminate the stores as well
+                for (u64 s = 0; s < store_elim_list.len; s++) {
+                    store_elim_list.at[s]->tag = IR_ELIMINATED;
+                }
+
                 continue_stackalloc_scan:
+                da_clear(&store_elim_list);
             }
+
         }
     }
+
+    da_destroy(&store_elim_list);
     return mod;
 }
+
