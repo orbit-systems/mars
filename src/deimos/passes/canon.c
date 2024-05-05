@@ -1,9 +1,11 @@
 #include "deimos.h"
 
-/* pass "org" - general cleanup after ir generation
+/* pass "canon" - general cleanup & canonicalization
 
     order instructions inside basic blocks such that 
     paramvals come first, then stackallocs, then the rest of the code.
+
+    reorder applicable commutative instructions into (register, constant) form.
 
 */
 
@@ -25,11 +27,32 @@ static void sort_instructions(IR_BasicBlock* bb) {
     }
 }
 
-IR_Module* ir_pass_org(IR_Module* mod) {
+static void canonicalize(IR* ir) {
+    switch (ir->tag) {
+    case IR_ADD:
+    case IR_MUL:
+        IR_BinOp* binop = (IR_BinOp*) ir;
+        if (binop->lhs->tag == IR_CONST && binop->rhs->tag != IR_CONST) {
+            void* temp = binop->lhs;
+            binop->lhs = binop->rhs;
+            binop->rhs = temp;
+        }
+        break;
+    default:
+        break;
+    }
+}
+
+IR_Module* ir_pass_canon(IR_Module* mod) {
     // reorg stackallocs and paramvals
     FOR_URANGE(i, 0, mod->functions_len) {
         FOR_URANGE(j, 0, mod->functions[i]->blocks.len) {
-            sort_instructions(mod->functions[i]->blocks.at[j]);
+            IR_BasicBlock* bb = mod->functions[i]->blocks.at[j];
+            sort_instructions(bb);
+
+            FOR_URANGE(inst, 0, bb->len) {
+                canonicalize(bb->at[inst]);
+            }
         }
     }
     return mod;

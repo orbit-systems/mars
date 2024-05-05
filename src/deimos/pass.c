@@ -9,7 +9,7 @@ void add_pass(char* name, void (*callback)(), pass_type type) {
 }
 
 void register_passes() {
-    add_pass("general cleanup after ir generation", ir_pass_org, PASS_IR_TO_IR);
+    add_pass("general cleanup & canonicalization", ir_pass_canon, PASS_IR_TO_IR);
 
     bool opt = true;
     if (opt) {

@@ -7,10 +7,14 @@
 IR_Module* ir_generate(mars_module* mod);
 
 /* REQIRED PASSES
-    org             general cleanup after ir generation
+    canon           general cleanup & canonicalization
 */
 
-IR_Module* ir_pass_org(IR_Module* mod);
+IR_Module* ir_pass_canon(IR_Module* mod);
+
+/* ANALYSIS PASSES - provides/populates information about the code
+
+*/
 
 /* OPTIMIZATION PASSES - optional
     movprop         mov propogation

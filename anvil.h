@@ -383,6 +383,8 @@ void anvil_build() {
                 // record object file name for link stage
                 sprintf(&objects[strlen(objects)], "%s/"str_fmt" ", real_build_dir, str_arg(outpath));
 
+                // printf("\n\n%s\n\n", cmd);
+
                 if (execute(cmd)) {
                     error("building "str_fmt" failed", str_arg(src_dir_subfiles[j].path));
                 }

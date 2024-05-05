@@ -84,7 +84,7 @@ typedef struct IR_Function {
     u16 returns_len;
 
     u32 entry_idx;
-    u32 exit_idx;
+    // u32 exit_idx;
 
     arena alloca;
 } IR_Function;
@@ -98,6 +98,11 @@ typedef struct IR_BasicBlock {
     IR** at;
     u64 len;
     u64 cap;
+
+    IR_BasicBlock** outgoing;
+    IR_BasicBlock** incoming;
+    u16 out_len;
+    u16 in_len;
 
     string name;
 } IR_BasicBlock;
@@ -172,6 +177,7 @@ enum {
 // basic IR structure
 typedef struct IR {
     type* T;
+    IR_BasicBlock* bb;
     u32 number;
     u16 use_count;
     u8 tag;

@@ -22,7 +22,7 @@ IR_Function* ir_new_function(IR_Module* mod, IR_Symbol* sym, bool global) {
     fn->alloca = arena_make(IR_FN_ALLOCA_BLOCK_SIZE);
     da_init(&fn->blocks, 1);
     fn->entry_idx = 0;
-    fn->exit_idx = 0;
+    // fn->exit_idx = 0;
 
     mod->functions = realloc(mod->functions, mod->functions_len+1);
     mod->functions[mod->functions_len++] = fn;
@@ -161,6 +161,7 @@ u32 ir_bb_index(IR_Function* fn, IR_BasicBlock* bb) {
 }
 
 IR* ir_add(IR_BasicBlock* bb, IR* ir) {
+    ir->bb = bb;
     da_append(bb, ir);
     return ir;
 }

@@ -8,6 +8,8 @@
 */
 
 // this all will eventually be replaced by the "stackpromote" pass
+// this needs to be rewritten because i dont actually think its sound
+// because of potential pointer aliasing problems
 
 da_typedef(IR_PTR);
 
@@ -42,10 +44,11 @@ IR_Module* ir_pass_trme(IR_Module* mod) {
 
     for (u64 i = 0; i < mod->functions_len; i++) {
         IR_Function* f = mod->functions[i];
+
+        // transform redundant loads into movs
         for (u64 j = 0; j < f->blocks.len; j++) {
             IR_BasicBlock* bb = f->blocks.at[j];
 
-            // transform redundant loads into movs
             for (u64 inst = 0; inst < bb->len; inst++) {
                 if (bb->at[inst]->tag != IR_LOAD) continue;
 
@@ -61,13 +64,12 @@ IR_Module* ir_pass_trme(IR_Module* mod) {
                 ir->base.tag = IR_MOV;
                 ((IR_Mov*)ir)->source = last_store->value;
             }
-
         }
 
+        // eliminate stackallocs with only stores as their uses
         for (u64 j = 0; j < f->blocks.len; j++) {
             IR_BasicBlock* bb = f->blocks.at[j];
 
-            // eliminate stackallocs with only stores as their uses
             for (u64 inst = 0; inst < bb->len; inst++) {
                 if (bb->at[inst]->tag != IR_STACKALLOC) continue;
 
