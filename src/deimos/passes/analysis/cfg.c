@@ -7,6 +7,7 @@
 #define MARKED 0xDEADBEEF
 
 static IR_BasicBlock** compute_dominator_set(IR_Function* f, IR_BasicBlock* bb, IR_BasicBlock* entry);
+static void recursive_reparent(IR_BasicBlock* bb);
 
 static void pass_cfg_func(IR_Function* f) {
 
@@ -56,7 +57,7 @@ static void pass_cfg_func(IR_Function* f) {
 
         FOR_URANGE(conn, 0, bb->out_len) {
             IR_BasicBlock* target = bb->outgoing[conn];
-            if (!target->incoming) {
+            if (target->incoming != NULL) {
                 target->incoming = malloc(sizeof(IR_BasicBlock*) * bb->in_len);
                 memset(target->incoming, 0, sizeof(IR_BasicBlock*) * bb->in_len);
             }
