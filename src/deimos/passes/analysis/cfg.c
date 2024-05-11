@@ -4,6 +4,10 @@
 
 */
 
+#define MARKED 0xDEADBEEF
+
+static IR_BasicBlock** compute_dominator_set(IR_Function* f, IR_BasicBlock* bb, IR_BasicBlock* entry);
+
 static void pass_cfg_func(IR_Function* f) {
 
     // populate forward connections and increment incoming data
@@ -65,6 +69,69 @@ static void pass_cfg_func(IR_Function* f) {
             }
         }
     }
+
+    // compute dominators
+    // 2d array of pointers [block][dominator]
+    FOR_URANGE(i, 0, f->blocks.len) {
+        f->blocks.at[i]->domset = compute_dominator_set(f, f->blocks.at[i], f->blocks.at[f->entry_idx]);
+    }
+    
+    // starting at the dominator set for the entry, recursively re-parent idom to construct dominator tree
+    // this should work ???? permission to slap me if it doesnt
+    recursive_reparent(f->blocks.at[f->entry_idx]);
+}
+
+static void recursive_reparent(IR_BasicBlock* bb) {
+    for (size_t i = 0; bb->domset[i] != NULL; i++) {
+        if (bb->domset[i] == bb) continue;
+        bb->domset[i]->idom = bb;
+    }
+
+    for (size_t i = 0; bb->domset[i] != NULL; i++) {
+        if (bb->domset[i] == bb) continue;
+        recursive_reparent(bb->domset[i]);
+    }
+}
+
+static void recursive_mark(IR_BasicBlock* bb, IR_BasicBlock* avoid, u64 mark) {
+    if (bb == avoid || bb->flags == mark) return;
+    
+    bb->flags = mark; // mark
+
+    FOR_RANGE(i, 0, bb->out_len) {
+        recursive_mark(bb->outgoing[i], avoid, mark);
+    }
+}
+
+// returns a null-terminated, list of blocks that are dominated by the input basic block
+// naive quadratic algorithm
+static IR_BasicBlock** compute_dominator_set(IR_Function* f, IR_BasicBlock* bb, IR_BasicBlock* entry) {
+
+    // reset visited flags
+    FOR_URANGE(i, 0, f->blocks.len) {
+        f->blocks.at[i]->flags = 0;
+    }
+    
+    recursive_mark(entry, bb, MARKED);
+
+    // find blocks that are not marked
+    u64 num_dominated = 0;
+    FOR_URANGE(i, 0, f->blocks.len) {
+        if (f->blocks.at[i]->flags != MARKED) {
+            num_dominated++;
+        }
+    }
+
+    IR_BasicBlock** domset = malloc(sizeof(IR_BasicBlock*) * (num_dominated + 1));
+
+    u64 next = 0;
+    FOR_URANGE(i, 0, f->blocks.len) {
+        if (f->blocks.at[i]->flags != MARKED) {
+            domset[next++] = f->blocks.at[i];
+        }
+    }
+    domset[num_dominated] = NULL;
+    return domset;
 }
 
 IR_Module* ir_pass_cfg(IR_Module* mod) {

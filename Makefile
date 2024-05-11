@@ -1,4 +1,10 @@
-SRCPATHS = src/*.c src/phobos/*.c src/deimos/*.c src/deimos/passes/*.c
+SRCPATHS = \
+	src/*.c src/phobos/*.c \
+	src/deimos/*.c \
+	src/deimos/passes/*.c \
+	src/deimos/passes/analysis/*.c \
+	src/deimos/passes/transform/*.c
+
 SRC = $(wildcard $(SRCPATHS))
 OBJECTS = $(SRC:src/%.c=build/%.o)
 
@@ -54,6 +60,8 @@ clean:
 	@mkdir build
 	@mkdir build/deimos
 	@mkdir build/deimos/passes
+	@mkdir build/deimos/passes/transform
+	@mkdir build/deimos/passes/analysis
 	@mkdir build/phobos
 
 

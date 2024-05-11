@@ -83,7 +83,7 @@ typedef struct IR_Function {
     u16 params_len;
     u16 returns_len;
 
-    u32 entry_idx;
+    u32 entry_idx; // 0 most of the time, but not guaranteed
     // u32 exit_idx;
 
     arena alloca;
@@ -99,12 +99,17 @@ typedef struct IR_BasicBlock {
     u64 len;
     u64 cap;
 
+    string name;
+
+    IR_BasicBlock* idom; // immediate dominator
+    IR_BasicBlock** domset; // all blocks that this block dominates (including self)
+
     IR_BasicBlock** outgoing;
     IR_BasicBlock** incoming;
     u16 out_len;
     u16 in_len;
 
-    string name;
+    u64 flags; // for misc use
 } IR_BasicBlock;
 
 enum {
