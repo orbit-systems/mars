@@ -1,6 +1,8 @@
 #pragma once
 #define DEIMOS_TARGET_H
 
+#include "deimos.h"
+
 typedef enum {
     OPERAND_REGISTER,
     OPERAND_IMMEDIATE,
@@ -16,7 +18,7 @@ typedef struct {
     union {
         int reg_idx;
         u64 value;
-    }
+    };
 } MI_Operand;
 
 da_typedef(MI_Operand);

@@ -29,13 +29,18 @@ static bool is_promotable(IR_Function* f, IR* stackalloc) {
         IR_BasicBlock* bb = f->blocks.at[block];
 
         for (u64 use = get_usage(bb, stackalloc, 0); use != UINT64_MAX; use = get_usage(bb, stackalloc, use)) {
-            TODO("use found");
+            IR* use_ir = bb->at[use];
+            if (use_ir->tag != IR_LOAD && use_ir->tag != IR_STORE) {
+                goto return_false;
+            }
         }
 
 
     }
 
-    return false;
+    return_false:
+        da_destroy(&uses);
+        return false;
 }
 
 da(IR_PTR) alloca_list = {0};
