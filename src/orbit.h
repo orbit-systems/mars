@@ -192,6 +192,7 @@ typedef struct string_s {
 #define substring_len(str, start, len) ((string){(str).raw + (start), (len)})
 #define can_be_cstring(str) ((str).raw[(str).len] == '\0')
 #define str(cstring) ((string){(cstring), strlen((cstring))})
+#define constr(cstring) ((string){(char*)cstring, sizeof(cstring)-1})
 
 char*  clone_to_cstring(string str); // this allocates
 void   printstr(string str);

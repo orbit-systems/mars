@@ -11,7 +11,7 @@ typedef enum {
 typedef struct {
     char* name;
     union {
-        void (*callback)();
+        void* callback;
         IR_Module* (*ir_callback)(IR_Module*);
         //MInst->MInst
     };
@@ -21,7 +21,7 @@ typedef struct {
 void run_passes(IR_Module* current_program);
 void register_passes();
 
-void add_pass(char* name, void (*callback)(), pass_type type);
+void add_pass(char* name, void* callback, pass_type type);
 
 da_typedef(Pass);
 

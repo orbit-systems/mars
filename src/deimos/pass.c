@@ -3,7 +3,7 @@
 
 da(Pass) deimos_passes;
 
-void add_pass(char* name, void (*callback)(), pass_type type) {
+void add_pass(char* name, void* callback, pass_type type) {
     if (deimos_passes.at == NULL) da_init(&deimos_passes, 1);
     da_append(&deimos_passes, ((Pass){.name = name, .callback = callback, .type = type}));
 }
