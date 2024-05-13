@@ -3,7 +3,7 @@
 #include "aphelion.h"
 
 const TargetRegisterInfo aphelion_regclass_gpr_regs[] = {
-    [APHEL_GPR_RZ] = { .name = constr("rz") },
+    [APHEL_GPR_RZ] = { .name = constr("rz"), .regalloc_ignore = true},
     [APHEL_GPR_RA] = { .name = constr("ra") },
     [APHEL_GPR_RB] = { .name = constr("rb") },
     [APHEL_GPR_RC] = { .name = constr("rc") },
@@ -17,7 +17,7 @@ const TargetRegisterInfo aphelion_regclass_gpr_regs[] = {
     [APHEL_GPR_RK] = { .name = constr("rk") },
 };
 
-const TargetInstruction aphelion_instructions[] = {
+const TargetInstInfo aphelion_instructions[] = {
     [APHEL_INST_NOP] = {
         .asm_string = constr("nop"),
     },
@@ -43,6 +43,35 @@ const TargetInstruction aphelion_instructions[] = {
     },
 };
 
+const TargetFormatInfo aphelion_format_info = (TargetFormatInfo){
+    .i64 = constr("d64 {}"),
+    .i32 = constr("d32 {}"),
+    .i16 = constr("d16 {}"),
+    .i8  = constr("d8 {}"),
+    
+    .u64 = constr("d64 {}"),
+    .u32 = constr("d32 {}"),
+    .u16 = constr("d16 {}"),
+    .u8  = constr("d8 {}"),
+
+    .zero = constr("zero {}"),
+
+    .string = NULL_STR, // just use a u8 sequence for now
+
+    .align = constr("align {}"),
+
+    .label = constr("{}:"),
+    .local_label = constr(".{}:"),
+
+    .bind_symbol_global = constr("global {}"),
+    .bind_symbol_local  = constr("local {}"),
+
+    .begin_code_section = constr(""), // nothing for now
+    .begin_data_section = constr(""), // nothing for now
+    .begin_rodata_section = constr(""), // nothing for now
+    .begin_bss_section = constr(""), // nothing for now
+};
+
 // all the information that makes up the aphelion target.
 const TargetInfo aphelion_target_info = (TargetInfo){
 
@@ -61,5 +90,7 @@ const TargetInfo aphelion_target_info = (TargetInfo){
     // instruction templates
     .insts = aphelion_instructions,
     .insts_len = APHEL_INST_LEN,
+
+    .format_info = &aphelion_format_info,
 
 };

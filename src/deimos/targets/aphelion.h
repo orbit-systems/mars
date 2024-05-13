@@ -28,7 +28,7 @@ enum {
     APHEL_GPR_LEN,
 };
 
-extern const TargetInstruction aphelion_instruction_templates[];
+extern const TargetInstInfo aphelion_instruction_templates[];
 enum {
     APHEL_INST_NOP,
     APHEL_INST_MOV,
