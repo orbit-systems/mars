@@ -13,7 +13,6 @@ typedef struct AsmSymbol AsmSymbol;
 typedef struct AsmGlobal AsmGlobal;
 
 typedef struct VirtualRegister {
-    AsmInst* def;
     // index of real register into regclass array (if REAL_REG_NOT_ASSIGNED, it has not been assigned yet)
     u32 real;
 
@@ -21,6 +20,16 @@ typedef struct VirtualRegister {
     // typically an integer GPR or a floating point GPR
     u32 required_regclass;
 } VirtualRegister;
+
+enum {
+    IMM_I64,
+    IMM_U64,
+
+    IMM_F64,
+    IMM_F32,
+    IMM_F16,
+    IMM_SYM,
+};
 
 typedef struct ImmediateVal {
     union {
@@ -32,18 +41,19 @@ typedef struct ImmediateVal {
         f16 f16;
         AsmSymbol* sym;
     };
+    u8 kind;
 } ImmediateVal;
 
 typedef struct AsmInst {
-
-    // immediate values, length dictated by its TargetInstInfo
-    ImmediateVal* imms;
 
     // input virtual registers, length dictated by its TargetInstInfo
     VirtualRegister** ins;
 
     // output virtual registers, length dictated by its TargetInstInfo
     VirtualRegister** outs;
+
+    // immediate values, length dictated by its TargetInstInfo
+    ImmediateVal* imms;
 
     // instruction kind information
     TargetInstInfo* template;
@@ -53,23 +63,42 @@ typedef struct AsmBlock {
     AsmInst* instructions;
     u32 len;
     u32 cap;
+
+    string label;
 } AsmBlock;
 
 typedef struct AsmFunction {
-    AsmBlock** blocks;
+    AsmBlock* blocks; // in order
     u32 num_blocks;
 
+    AsmSymbol* sym;
 } AsmFunction;
+
+enum {
+    SYMBIND_GLOBAL,
+    SYMBIND_LOCAL,
+    // more probably later
+};
 
 typedef struct AsmSymbol {
     string name;
 
+    u8 binding;
 } AsmSymbol;
 
 typedef struct AsmGlobal {
+    AsmSymbol* sym;
 
 } AsmGlobal;
 
+typedef struct AsmModule {
+    AsmGlobal** globals;
+    u32 globals_list;
+
+    AsmFunction** functions;
+    u32 functions_list;
+
+} AsmModule;
 
 /* TARGET DEFINITIONS AND INFORMATION */
 
@@ -123,7 +152,7 @@ typedef struct TargetFormatInfo {
     string align;
 
     string label;
-    string local_label; // for things like basic block labels.
+    string block_label; // for things like basic block labels.
 
     string bind_symbol_global;
     string bind_symbol_local;
@@ -144,6 +173,7 @@ typedef struct TargetInfo {
 
     TargetInstInfo* insts;
     u32 insts_len;
+    u8 inst_align;
 
     TargetFormatInfo* format_info;
 

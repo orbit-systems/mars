@@ -34,6 +34,7 @@ const TargetInstInfo aphelion_instructions[] = {
     },
     [APHEL_INST_ADDI] = {
         .asm_string = constr("addi {out 0}, {in 0}, {int 0}"),
+
         .num_ins = 1,
         .num_imms = 1,
         .num_outs = 1,
@@ -43,7 +44,7 @@ const TargetInstInfo aphelion_instructions[] = {
     },
 };
 
-const TargetFormatInfo aphelion_format_info = (TargetFormatInfo){
+const TargetFormatInfo aphelion_format_info = {
     .i64 = constr("d64 {}"),
     .i32 = constr("d32 {}"),
     .i16 = constr("d16 {}"),
@@ -61,7 +62,7 @@ const TargetFormatInfo aphelion_format_info = (TargetFormatInfo){
     .align = constr("align {}"),
 
     .label = constr("{}:"),
-    .local_label = constr(".{}:"),
+    .block_label = constr(".{}:"),
 
     .bind_symbol_global = constr("global {}"),
     .bind_symbol_local  = constr("local {}"),
@@ -73,7 +74,7 @@ const TargetFormatInfo aphelion_format_info = (TargetFormatInfo){
 };
 
 // all the information that makes up the aphelion target.
-const TargetInfo aphelion_target_info = (TargetInfo){
+const TargetInfo aphelion_target_info = {
 
     // name displayed
     .name = "aphelion",
@@ -90,7 +91,7 @@ const TargetInfo aphelion_target_info = (TargetInfo){
     // instruction templates
     .insts = aphelion_instructions,
     .insts_len = APHEL_INST_LEN,
+    .inst_align = 4,
 
     .format_info = &aphelion_format_info,
-
 };
