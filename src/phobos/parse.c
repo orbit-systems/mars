@@ -345,7 +345,7 @@ i64 int_lit_value(parser* p) {
     }
 
     if (t.raw[digit_start] != '0') { // basic base-10 parse
-        FOR_URANGE(i, digit_start, t.len) {
+        for_urange(i, digit_start, t.len) {
             val = val * 10 + ascii_to_digit_val(p, t.raw[i], 10);
         }
         return val * (is_negative ? -1 : 1);
@@ -374,7 +374,7 @@ i64 int_lit_value(parser* p) {
 
     if (t.len < 3 + digit_start) error_at_parser(p, "expected digit after '%c'", t.raw[digit_start+1]);
 
-    FOR_URANGE(i, 2 + digit_start, t.len) {
+    for_urange(i, 2 + digit_start, t.len) {
         val = val * base + ascii_to_digit_val(p, t.raw[i], base);
     }
     return val * (is_negative ? -1 : 1);
@@ -386,7 +386,7 @@ string string_lit_value(parser* p) {
     size_t val_len = 0;
 
     // trace string, figure out how long it needs to be
-    FOR_URANGE(i, 1, t.len-1) {
+    for_urange(i, 1, t.len-1) {
         if (t.raw[i] != '\\') {
             val_len++;
             continue;
@@ -421,7 +421,7 @@ string string_lit_value(parser* p) {
 
     // fill in string with correct bytes
     u64 val_i = 0;
-    FOR_URANGE(i, 1, t.len-1) {
+    for_urange(i, 1, t.len-1) {
         if (t.raw[i] != '\\') {
             val.raw[val_i] = t.raw[i];
             val_i++;

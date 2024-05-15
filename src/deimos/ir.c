@@ -41,7 +41,7 @@ void ir_set_func_params(IR_Function* f, u16 count, ...) {
     bool no_set = false;
     va_list args;
     va_start(args, count);
-    FOR_RANGE(i, 0, count) {
+    for_range(i, 0, count) {
         IR_FuncItem* item = malloc(sizeof(IR_FuncItem));
         if (!item) CRASH("item malloc failed");
         
@@ -69,7 +69,7 @@ void ir_set_func_returns(IR_Function* f, u16 count, ...) {
     bool no_set = false;
     va_list args;
     va_start(args, count);
-    FOR_RANGE(i, 0, count) {
+    for_range(i, 0, count) {
         IR_FuncItem* item = malloc(sizeof(IR_FuncItem));
         if (!item) CRASH("item malloc failed");
         
@@ -131,7 +131,7 @@ IR_Symbol* ir_find_or_new_symbol(IR_Module* mod, string name, u8 visibility, boo
 }
 
 IR_Symbol* ir_find_symbol(IR_Module* mod, string name) {
-    FOR_URANGE(i, 0, mod->symtab.len) {
+    for_urange(i, 0, mod->symtab.len) {
         if (string_eq(mod->symtab.at[i]->name, name)) {
             return mod->symtab.at[i];
         }
@@ -151,7 +151,7 @@ IR_BasicBlock* ir_new_basic_block(IR_Function* fn, string name) {
 }
 
 u32 ir_bb_index(IR_Function* fn, IR_BasicBlock* bb) {
-    FOR_URANGE(i, 0, fn->blocks.len) {
+    for_urange(i, 0, fn->blocks.len) {
         if (fn->blocks.at[i] != bb) continue;
 
         return i;
@@ -300,7 +300,7 @@ IR* ir_make_phi(IR_Function* f, u32 count, ...) {
 
     va_list args;
     va_start(args, count);
-    FOR_RANGE(i, 0, count) {
+    for_range(i, 0, count) {
         ir->sources[i]    = va_arg(args, IR*);
         ir->source_BBs[i] = va_arg(args, IR_BasicBlock*);
     }
@@ -380,8 +380,8 @@ void ir_move_element(IR_BasicBlock* bb, u64 to, u64 from) {
 
 u32 ir_renumber(IR_Function* f) {
     u32 count = 0;
-    FOR_URANGE(i, 0, f->blocks.len) {
-        FOR_URANGE(j, 0, f->blocks.at[i]->len) {
+    for_urange(i, 0, f->blocks.len) {
+        for_urange(j, 0, f->blocks.at[i]->len) {
             f->blocks.at[i]->at[j]->number = ++count;
         }
     }
@@ -394,7 +394,7 @@ void ir_print_function(IR_Function* f) {
     printf("fn \""str_fmt"\" ", str_arg(f->sym->name));
 
     printf("(");
-    FOR_URANGE(i, 0, f->params_len) {
+    for_urange(i, 0, f->params_len) {
         string typestr = type_to_string(f->params[i]->e->entity_type);
         printf(str_fmt, str_arg(typestr));
 
@@ -404,7 +404,7 @@ void ir_print_function(IR_Function* f) {
     }
 
     printf(") -> (");
-    FOR_URANGE(i, 0, f->returns_len) {
+    for_urange(i, 0, f->returns_len) {
         string typestr = type_to_string(f->returns[i]->e->entity_type);
         printf(str_fmt, str_arg(typestr));
         
@@ -414,7 +414,7 @@ void ir_print_function(IR_Function* f) {
     }
 
     printf(") {\n");
-    FOR_URANGE(i, 0, f->blocks.len) {
+    for_urange(i, 0, f->blocks.len) {
         printf("    ");
         if (f->entry_idx == i) printf("entry ");
         if (f->entry_idx == i) printf("exit ");
@@ -426,7 +426,7 @@ void ir_print_function(IR_Function* f) {
 void ir_print_bb(IR_BasicBlock* bb) {
     printf(str_fmt":\n", str_arg(bb->name));
 
-    FOR_URANGE(i, 0, bb->len) {
+    for_urange(i, 0, bb->len) {
         printf("        ");
         ir_print_ir(bb->at[i]);
         printf("\n");
@@ -538,7 +538,7 @@ void ir_print_ir(IR* ir) {
 }
 
 void ir_print_module(IR_Module* mod) {
-    FOR_URANGE(i, 0, mod->functions_len) {
+    for_urange(i, 0, mod->functions_len) {
         ir_print_function(mod->functions[i]);
     }
 }

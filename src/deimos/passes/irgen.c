@@ -11,7 +11,7 @@ IR_Module* ir_generate(mars_module* mod) {
     
     /* do some codegen shit prolly */
 
-    FOR_URANGE(i, 0, mod->program_tree.len) {
+    for_urange(i, 0, mod->program_tree.len) {
         if (mod->program_tree.at[i].type == AST_decl_stmt) {
             ir_generate_global_from_stmt_decl(m, mod->program_tree.at[i]);
         } else {
@@ -173,7 +173,7 @@ void ir_generate_stmt_return(IR_Function* f, IR_BasicBlock* bb, AST ast) {
     // if its a plain return, we need to get the 
     // return values from the return variables
     if (astret->returns.len == 0) {
-        FOR_URANGE(i, 0, astret->returns.len) {
+        for_urange(i, 0, astret->returns.len) {
             entity* e = f->returns[i]->e;
             IR* stackalloc = e->stackalloc;
 
@@ -183,7 +183,7 @@ void ir_generate_stmt_return(IR_Function* f, IR_BasicBlock* bb, AST ast) {
         }
     } else {
         // this is NOT a plain return, which means that we can just get the values directly
-        FOR_URANGE(i, 0, astret->returns.len) {
+        for_urange(i, 0, astret->returns.len) {
             IR* value = ir_generate_expr_value(f, bb, astret->returns.at[i]);
             IR* retval = ir_add(bb, ir_make_returnval(f, i, value));
             retval->T = make_type(TYPE_NONE);
@@ -202,19 +202,19 @@ IR_Function* ir_generate_function(IR_Module* mod, AST ast) {
     IR_Function* f = ir_new_function(mod, NULL, true);
 
     ir_set_func_params(f, astfunc->paramlen, NULL); // passing NULL means that it will allocate list but not fill anything
-    FOR_URANGE(i, 0, f->params_len) {
+    for_urange(i, 0, f->params_len) {
         f->params[i]->e = astfunc->params[i];
     }
 
     ir_set_func_returns(f, astfunc->returnlen, NULL); // same here
-    FOR_URANGE(i, 0, f->returns_len) {
+    for_urange(i, 0, f->returns_len) {
         f->returns[i]->e = astfunc->returns[i];
     }
 
     IR_BasicBlock* bb = ir_new_basic_block(f, str("begin"));
 
     // generate storage for param variables
-    FOR_URANGE(i, 0, astfunc->paramlen) {
+    for_urange(i, 0, astfunc->paramlen) {
 
         if (astfunc->params[i]->entity_type->tag != TYPE_I64) {
             CRASH("only i64 params supported (for testing)");
@@ -242,7 +242,7 @@ IR_Function* ir_generate_function(IR_Module* mod, AST ast) {
     }
 
     // generate storage for return variables
-    FOR_URANGE(i, 0, astfunc->returnlen) {
+    for_urange(i, 0, astfunc->returnlen) {
 
         if (astfunc->returns[i]->entity_type->tag != TYPE_I64) {
             CRASH("only i64 returns supported (for testing)");

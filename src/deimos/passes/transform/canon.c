@@ -45,12 +45,12 @@ static void canonicalize(IR* ir) {
 
 IR_Module* ir_pass_canon(IR_Module* mod) {
     // reorg stackallocs and paramvals
-    FOR_URANGE(i, 0, mod->functions_len) {
-        FOR_URANGE(j, 0, mod->functions[i]->blocks.len) {
+    for_urange(i, 0, mod->functions_len) {
+        for_urange(j, 0, mod->functions[i]->blocks.len) {
             IR_BasicBlock* bb = mod->functions[i]->blocks.at[j];
             sort_instructions(bb);
 
-            FOR_URANGE(inst, 0, bb->len) {
+            for_urange(inst, 0, bb->len) {
                 canonicalize(bb->at[inst]);
             }
         }

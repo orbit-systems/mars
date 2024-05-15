@@ -27,7 +27,7 @@ void emit_dot(string path, da(AST) nodes) {
 	sprintf(buffer, "digraph \"%d\" {\n\trankdir=\"LR\"\n\tnodesep=0.4\n", dot_uID());
 	fs_write(&file, buffer, strlen(buffer));
 
-	FOR_URANGE(i, 0, nodes.len) {
+	for_urange(i, 0, nodes.len) {
 		recurse_dot(nodes.at[i], &file, 1, dot_uID());
 	}
 
@@ -98,7 +98,7 @@ void recurse_dot(AST node, fs_file* file, int n, int uid) {
 	        fs_write(file, buffer, strlen(buffer));
 	        for (int i = 0; i < n; i++) fs_write(file, "\t", 1); //fix tabs
 
-	        FOR_URANGE(i, 0, node.as_decl_stmt->lhs.len) { //iterate over function itself
+	        for_urange(i, 0, node.as_decl_stmt->lhs.len) { //iterate over function itself
 	        	int int_uid = dot_uID();
 	        	sprintf(buffer, "\"%s_%d\" -> \"%s_%d\"\n", "declaration", uid, ast_type_str[node.as_decl_stmt->lhs.at[i].type], int_uid);
 	            fs_write(file, buffer, strlen(buffer));
@@ -157,7 +157,7 @@ void recurse_dot(AST node, fs_file* file, int n, int uid) {
 	       	sprintf(buffer, "label=parameters\n");
 	        fs_write(file, buffer, strlen(buffer));
 
-	        FOR_URANGE(i, 0, node.as_fn_type_expr->parameters.len) {
+	        for_urange(i, 0, node.as_fn_type_expr->parameters.len) {
 	        	int int_uid = dot_uID();
 	        	for (int i = 0; i < (n+1); i++) fs_write(file, "\t", 1);
 	        	sprintf(buffer, "\"%s_%d\" -> \"%s_%d\"\n", 
@@ -184,7 +184,7 @@ void recurse_dot(AST node, fs_file* file, int n, int uid) {
 	        fs_write(file, buffer, strlen(buffer));
 
 
-	    	FOR_URANGE(i, 0, node.as_fn_type_expr->returns.len) {
+	    	for_urange(i, 0, node.as_fn_type_expr->returns.len) {
 	        	int int_uid = dot_uID();
 	        	for (int i = 0; i < (n+1); i++) fs_write(file, "\t", 1);
 	        	sprintf(buffer, "\"%s_%d\" -> \"%s_%d\"\n", ast_type_str[node.type], uid, ast_type_str[node.as_fn_type_expr->returns.at[i].type.type], int_uid);
@@ -226,7 +226,7 @@ void recurse_dot(AST node, fs_file* file, int n, int uid) {
 	        fs_write(file, buffer, strlen(buffer));
 	        //for (int i = 0; i < n; i++) fs_write(file, "\t", 1); //fix tabs	
 
-	        FOR_URANGE(i, 0, node.as_block_stmt->stmts.len) {
+	        for_urange(i, 0, node.as_block_stmt->stmts.len) {
 	        	int int_uid = dot_uID();
 	        	for (int i = 0; i < (n); i++) fs_write(file, "\t", 1);
 	        	sprintf(buffer, "\"%s_%d\" -> \"%s_%d\"\n", 
@@ -364,7 +364,7 @@ void recurse_dot(AST node, fs_file* file, int n, int uid) {
 	        fs_write(file, buffer, strlen(buffer));
 	        for (int i = 0; i < n; i++) fs_write(file, "\t", 1); //fix tabs	
 
-	        FOR_URANGE(i, 0, node.as_block_stmt->stmts.len) {
+	        for_urange(i, 0, node.as_block_stmt->stmts.len) {
 	        	int int_uid = dot_uID();
 	        	for (int i = 0; i < (n); i++) fs_write(file, "\t", 1);
 	        	sprintf(buffer, "\"%s_%d\" -> \"%s_%d\"\n", 
@@ -649,7 +649,7 @@ void recurse_dot(AST node, fs_file* file, int n, int uid) {
 	        sprintf(buffer, "color=red\n");
 	        fs_write(file, buffer, strlen(buffer));
 
-	        FOR_URANGE(i, 0, node.as_call_expr->params.len) {
+	        for_urange(i, 0, node.as_call_expr->params.len) {
 	        	int_uid = dot_uID() + 1;
 	        	for (int i = 0; i < (n); i++) fs_write(file, "\t", 1);
 	        	sprintf(buffer, "\"%s_%d\" -> \"%s_%d\"\n", 
@@ -730,7 +730,7 @@ void recurse_dot(AST node, fs_file* file, int n, int uid) {
 	        fs_write(file, buffer, strlen(buffer));
 	        //for (int i = 0; i < n; i++) fs_write(file, "\t", 1); //fix tabs	
 
-	        FOR_URANGE(i, 0, node.as_comp_literal_expr->elems.len) {
+	        for_urange(i, 0, node.as_comp_literal_expr->elems.len) {
 	        	int int_uid = dot_uID();
 	        	for (int i = 0; i < (n); i++) fs_write(file, "\t", 1);
 	        	sprintf(buffer, "\"%s_%d\" -> \"%s_%d\"\n", 
@@ -903,7 +903,7 @@ void recurse_dot(AST node, fs_file* file, int n, int uid) {
 	       	sprintf(buffer, "label=fields\n");
 	        fs_write(file, buffer, strlen(buffer));
 
-	        FOR_URANGE(i, 0, node.as_struct_type_expr->fields.len) {
+	        for_urange(i, 0, node.as_struct_type_expr->fields.len) {
 	        	int int_uid = dot_uID();
 	        	for (int i = 0; i < (n+1); i++) fs_write(file, "\t", 1);
 	        	sprintf(buffer, "\"%s_%d\" -> \"%s_%d\"\n", 
@@ -942,7 +942,7 @@ void recurse_dot(AST node, fs_file* file, int n, int uid) {
 	        fs_write(file, buffer, strlen(buffer));
 	        for (int i = 0; i < n; i++) fs_write(file, "\t", 1); //fix tabs
 
-	        FOR_URANGE(i, 0, node.as_return_stmt->returns.len) {
+	        for_urange(i, 0, node.as_return_stmt->returns.len) {
 	        	int int_uid = dot_uID();
 	        	for (int i = 0; i < (n+1); i++) fs_write(file, "\t", 1);
 	        	sprintf(buffer, "\"%s_%d\" -> \"%s_%d\"\n", 

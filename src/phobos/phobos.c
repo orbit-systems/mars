@@ -88,7 +88,7 @@ mars_module* parse_module(string input_path) {
     da_init(&lexers, subfile_count);
 
     int mars_file_count = 0;
-    FOR_RANGE(i, 0, subfile_count) {
+    for_range(i, 0, subfile_count) {
 
         // filter out non-files and non-mars files.
         if (!fs_is_regular(&subfiles[i])) continue;
@@ -130,7 +130,7 @@ mars_module* parse_module(string input_path) {
     if (mars_flags.print_timings) gettimeofday(&lex_begin, 0);        
     size_t tokens_lexed = 0;
 
-    FOR_URANGE(i, 0, lexers.len) {
+    for_urange(i, 0, lexers.len) {
         construct_token_buffer(&lexers.at[i]);
         tokens_lexed += lexers.at[i].buffer.len;
     }
@@ -153,7 +153,7 @@ mars_module* parse_module(string input_path) {
 
     arena alloca = arena_make(PARSER_ARENA_SIZE);
 
-    FOR_URANGE(i, 0, lexers.len) {
+    for_urange(i, 0, lexers.len) {
         
         parser p = make_parser(&lexers.at[i], &alloca);
 
@@ -165,7 +165,7 @@ mars_module* parse_module(string input_path) {
     if (mars_flags.print_timings) gettimeofday(&parse_begin, 0);
     size_t ast_nodes_created = 0;
 
-    FOR_URANGE(i, 0, parsers.len) {
+    for_urange(i, 0, parsers.len) {
         parse_file(&parsers.at[i]);
         ast_nodes_created += parsers.at[i].num_nodes;
     }
@@ -192,7 +192,7 @@ mars_module* parse_module(string input_path) {
     }
 
     // index and parse imports
-    FOR_URANGE(i, 0, module->program_tree.len) {
+    for_urange(i, 0, module->program_tree.len) {
         if (module->program_tree.at[i].type == AST_import_stmt) {
             string importpath = search_for_module(
                 module, 
@@ -205,7 +205,7 @@ mars_module* parse_module(string input_path) {
             }
             // has it been imported yet?
             int found_imported_module = -1;
-            FOR_URANGE(j, 0, active_modules.len) {
+            for_urange(j, 0, active_modules.len) {
                 if (string_eq(active_modules.at[j]->module_path, importpath)) {
                     found_imported_module = j;
                 }
@@ -224,7 +224,7 @@ mars_module* parse_module(string input_path) {
                 da_append(&module->import_list, import_module);
 
                 // check module name conflicts
-                FOR_URANGE(j, 0, active_modules.len) {
+                for_urange(j, 0, active_modules.len) {
                     if (import_module == active_modules.at[j]) continue;
                     if (string_eq(active_modules.at[j]->module_name, import_module->module_name)) {
                         warning_at_node(module, module->program_tree.at[i], 
@@ -238,7 +238,7 @@ mars_module* parse_module(string input_path) {
     module->visited = false;
 
     // cleanup
-    // FOR_RANGE(i, 0, subfile_count) fs_drop(&subfiles[i]);
+    // for_range(i, 0, subfile_count) fs_drop(&subfiles[i]);
     // free(subfiles);
     // fs_drop(&input_dir);
 
@@ -259,7 +259,7 @@ mars_module* create_module(da(parser)* pl, arena alloca) {
     da_init(&mod->import_list, 1);
 
     da_init(&mod->files, pl->len);
-    FOR_URANGE(i, 0, pl->len) {
+    for_urange(i, 0, pl->len) {
         if (!string_eq(pl->at[i].module_decl.as_module_decl->name->text, mod->module_name)) {
             error_at_string(pl->at[i].path, pl->at[i].src, pl->at[i].module_decl.as_module_decl->name->text,
                 "mismatched module name, expected '"str_fmt"'", str_arg(mod->module_name));
@@ -277,8 +277,8 @@ mars_module* create_module(da(parser)* pl, arena alloca) {
 
     // stitch ASTs together
     da_init(&mod->program_tree, pl->len);
-    FOR_URANGE(file, 0, pl->len) {
-        FOR_URANGE(stmt, 0, pl->at[file].stmts.len) {
+    for_urange(file, 0, pl->len) {
+        for_urange(stmt, 0, pl->at[file].stmts.len) {
             da_append(&mod->program_tree, pl->at[file].stmts.at[stmt]);
         }
     }
@@ -287,7 +287,7 @@ mars_module* create_module(da(parser)* pl, arena alloca) {
 }
 
 mars_file *find_source_file(mars_module* cu, string snippet) {
-    FOR_URANGE(i, 0, cu->files.len) {
+    for_urange(i, 0, cu->files.len) {
         if (is_within(cu->files.at[i].src, snippet)) {
             return &cu->files.at[i];
         }

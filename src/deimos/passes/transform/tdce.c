@@ -68,16 +68,16 @@ static void register_uses(IR* ir) {
 }
 
 static void reset_use_counts(IR_Function* f) {
-    FOR_URANGE(i, 0, f->blocks.len) {
-        FOR_URANGE(j, 0, f->blocks.at[i]->len) {
+    for_urange(i, 0, f->blocks.len) {
+        for_urange(j, 0, f->blocks.at[i]->len) {
             f->blocks.at[i]->at[j]->use_count = 0;
         }
     }
 }
 
 static void count_uses_func(IR_Function* f) {
-    FOR_URANGE(i, 0, f->blocks.len) {
-        FOR_URANGE(j, 0, f->blocks.at[i]->len) {
+    for_urange(i, 0, f->blocks.len) {
+        for_urange(j, 0, f->blocks.at[i]->len) {
             register_uses(f->blocks.at[i]->at[j]);
         }
     }
@@ -135,8 +135,8 @@ static void tdce_on_function(IR_Function* f) {
     reset_use_counts(f);
     count_uses_func(f);
 
-    FOR_URANGE(i, 0, f->blocks.len) {
-        FOR_URANGE(j, 0, f->blocks.at[i]->len) {
+    for_urange(i, 0, f->blocks.len) {
+        for_urange(j, 0, f->blocks.at[i]->len) {
             IR* ir = f->blocks.at[i]->at[j];
             if (ir->tag == IR_ELIMINATED) continue;
             try_eliminate(ir);
@@ -147,7 +147,7 @@ static void tdce_on_function(IR_Function* f) {
 
 IR_Module* ir_pass_tdce(IR_Module* mod) {
 
-    FOR_URANGE(i, 0, mod->functions_len) {
+    for_urange(i, 0, mod->functions_len) {
         tdce_on_function(mod->functions[i]);
     }
 

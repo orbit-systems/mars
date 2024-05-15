@@ -8,7 +8,7 @@ u64 FNV_1a(string key) {
     const u64 FNV_PRIME  = 1099511628211ull;
 
     u64 hash = FNV_OFFSET;
-    FOR_URANGE(i, 0, key.len) {
+    for_urange(i, 0, key.len) {
         hash ^= (u64)(u8)(key.raw[i]);
         hash *= FNV_PRIME;
     }
@@ -32,7 +32,7 @@ entity* search_for_entity(entity_table* et, string ident) {
     if (et == NULL) return NULL;
     
     // for now, its linear search bc im too lazy to impl a hashmap
-    FOR_URANGE(i, 0, et->len) {
+    for_urange(i, 0, et->len) {
         if (string_eq(et->at[i]->identifier, ident)) {
             return et->at[i];
         }

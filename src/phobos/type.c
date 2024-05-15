@@ -26,7 +26,7 @@ void canonicalize_type_graph() {
     LOG("preliminary normalization\n");
 
     // preliminary normalization
-    FOR_URANGE(i, 0, typegraph.len) {
+    for_urange(i, 0, typegraph.len) {
         type* t = typegraph.at[i];
         switch (t->tag) {
         case TYPE_ALIAS: // alias retargeting
@@ -37,7 +37,7 @@ void canonicalize_type_graph() {
             break;
         case TYPE_ENUM: // variant sorting
             // using insertion sort for nice best-case complexity
-            FOR_URANGE(i, 1, t->as_enum.variants.len) {
+            for_urange(i, 1, t->as_enum.variants.len) {
                 u64 j = i;
                 while (j > 0 && type_enum_variant_less(get_variant(t, j), get_variant(t, j-1))) {
                     enum_variant temp = *get_variant(t, j);
@@ -60,12 +60,12 @@ void canonicalize_type_graph() {
     while (keep_going) {
         // num_of_types = typegraph.len;
         keep_going = false;
-        FOR_URANGE(i, TYPE_META_INTEGRAL, typegraph.len) {
+        for_urange(i, TYPE_META_INTEGRAL, typegraph.len) {
             bool executed_TSA_at_all = false;
             if (typegraph.at[i]->tag == TYPE_ALIAS) continue;
             if (typegraph.at[i]->tag == TYPE_DISTINCT) continue;
             if (typegraph.at[i]->moved) continue;
-            FOR_URANGE(j, i+1, typegraph.len) {
+            for_urange(j, i+1, typegraph.len) {
                 if (typegraph.at[j]->tag == TYPE_ALIAS) continue;
                 if (typegraph.at[j]->tag == TYPE_DISTINCT) continue;
                 if (typegraph.at[j]->moved) continue;
@@ -110,7 +110,7 @@ void canonicalize_type_graph() {
         da_clear(&equalities);
 
 
-        FOR_URANGE(i, 0, typegraph.len) {
+        for_urange(i, 0, typegraph.len) {
             if (typegraph.at[i]->moved) {
                 da_unordered_remove_at(&typegraph, i);
                 i--;
@@ -143,7 +143,7 @@ bool types_are_equivalent(type* a, type* b, bool* executed_TSA) {
     case TYPE_UNTYPED_AGGREGATE:
         if (a->as_aggregate.fields.len != b->as_aggregate.fields.len) return false;
         bool subtype_equals = true;
-        FOR_URANGE(i, 0, a->as_aggregate.fields.len) {
+        for_urange(i, 0, a->as_aggregate.fields.len) {
             if (get_field(a, i)->subtype != get_field(b, i)->subtype) {
                 subtype_equals = false;
                 break;
@@ -159,14 +159,14 @@ bool types_are_equivalent(type* a, type* b, bool* executed_TSA) {
             return false;
         }
         subtype_equals = true;
-        FOR_URANGE(i, 0, a->as_function.params.len) {
+        for_urange(i, 0, a->as_function.params.len) {
             if (a->as_function.params.at[i].subtype != b->as_function.params.at[i].subtype) {
                 subtype_equals = false;
                 break;
             }
         }
         if (subtype_equals) return true;
-        FOR_URANGE(i, 0, a->as_function.returns.len) {
+        for_urange(i, 0, a->as_function.returns.len) {
             if (a->as_function.returns.at[i].subtype != b->as_function.returns.at[i].subtype) {
                 subtype_equals = false;
                 break;
@@ -197,7 +197,7 @@ bool types_are_equivalent(type* a, type* b, bool* executed_TSA) {
         return false;
     }
 
-    FOR_URANGE(i, 1, a_numbers) {
+    for_urange(i, 1, a_numbers) {
         if (!type_element_equivalent(get_type_from_num(i, 0), get_type_from_num(i, 1), 0, 1)) {
             return false;
         }
@@ -229,7 +229,7 @@ bool type_element_equivalent(type* a, type* b, int num_set_a, int num_set_b) {
             return false;
         }
 
-        FOR_URANGE(i, 0, a->as_enum.variants.len) {
+        for_urange(i, 0, a->as_enum.variants.len) {
             if (get_variant(a, i)->enum_val != get_variant(b, i)->enum_val) {
                 return false;
             }
@@ -244,7 +244,7 @@ bool type_element_equivalent(type* a, type* b, int num_set_a, int num_set_b) {
         if (a->as_aggregate.fields.len != b->as_aggregate.fields.len) {
             return false;
         }
-        FOR_URANGE(i, 0, a->as_aggregate.fields.len) {
+        for_urange(i, 0, a->as_aggregate.fields.len) {
             if (!string_eq(get_field(a, i)->name, get_field(b, i)->name)) {
                 return false;
             }
@@ -260,7 +260,7 @@ bool type_element_equivalent(type* a, type* b, int num_set_a, int num_set_b) {
         if (a->as_function.returns.len != b->as_function.returns.len) {
             return false;
         }
-        FOR_URANGE(i, 0, a->as_function.params.len) {
+        for_urange(i, 0, a->as_function.params.len) {
             if (!string_eq(a->as_function.params.at[i].name, b->as_function.params.at[i].name)) {
                 return false;
             }
@@ -268,7 +268,7 @@ bool type_element_equivalent(type* a, type* b, int num_set_a, int num_set_b) {
                 return false;
             }
         }
-        FOR_URANGE(i, 0, a->as_function.returns.len) {
+        for_urange(i, 0, a->as_function.returns.len) {
             if (!string_eq(a->as_function.returns.at[i].name, b->as_function.returns.at[i].name)) {
                 return false;
             }
@@ -308,13 +308,13 @@ void merge_type_references(type* dest, type* src, bool disable) {
         return;
     }
 
-    FOR_URANGE(i, 0, typegraph.len) {
+    for_urange(i, 0, typegraph.len) {
         type* t = typegraph.at[i];
         switch (t->tag) {
         case TYPE_STRUCT:
         case TYPE_UNION:
         case TYPE_UNTYPED_AGGREGATE:
-            FOR_URANGE(i, 0, t->as_aggregate.fields.len) {
+            for_urange(i, 0, t->as_aggregate.fields.len) {
                 if (get_field(t, i)->subtype == src) {
                     get_field(t, i)->subtype = dest;
                     // t->dirty = true;
@@ -322,13 +322,13 @@ void merge_type_references(type* dest, type* src, bool disable) {
             }
             break;
         case TYPE_FUNCTION:
-            FOR_URANGE(i, 0, t->as_function.params.len) {
+            for_urange(i, 0, t->as_function.params.len) {
                 if (t->as_function.params.at[i].subtype == src) {
                     t->as_function.params.at[i].subtype = dest;
                     // t->dirty = true;
                 }
             }
-            FOR_URANGE(i, 0, t->as_function.returns.len) {
+            for_urange(i, 0, t->as_function.returns.len) {
                 if (t->as_function.returns.at[i].subtype == src) {
                     t->as_function.returns.at[i].subtype = dest;
                     // t->dirty = true;
@@ -369,15 +369,15 @@ void type_locally_number(type* t, u64* number, int num_set) {
     case TYPE_STRUCT:
     case TYPE_UNION:
     case TYPE_UNTYPED_AGGREGATE:
-        FOR_URANGE(i, 0, t->as_aggregate.fields.len) {
+        for_urange(i, 0, t->as_aggregate.fields.len) {
             type_locally_number(get_field(t, i)->subtype, number, num_set);
         }
         break;
     case TYPE_FUNCTION:
-        FOR_URANGE(i, 0, t->as_function.params.len) {
+        for_urange(i, 0, t->as_function.params.len) {
             type_locally_number(t->as_function.params.at[i].subtype, number, num_set);
         }
-        FOR_URANGE(i, 0, t->as_function.returns.len) {
+        for_urange(i, 0, t->as_function.returns.len) {
             type_locally_number(t->as_function.returns.at[i].subtype, number, num_set);
         }
         break;
@@ -417,7 +417,7 @@ bool otf_types_are_equivalent(type* a, type* b) {
     case TYPE_UNTYPED_AGGREGATE:
         if (a->as_aggregate.fields.len != b->as_aggregate.fields.len) return false;
         bool subtype_equals = true;
-        FOR_URANGE(i, 0, a->as_aggregate.fields.len) {
+        for_urange(i, 0, a->as_aggregate.fields.len) {
             if (get_field(a, i)->subtype != get_field(b, i)->subtype) {
                 subtype_equals = false;
                 break;
@@ -433,14 +433,14 @@ bool otf_types_are_equivalent(type* a, type* b) {
             return false;
         }
         subtype_equals = true;
-        FOR_URANGE(i, 0, a->as_function.params.len) {
+        for_urange(i, 0, a->as_function.params.len) {
             if (a->as_function.params.at[i].subtype != b->as_function.params.at[i].subtype) {
                 subtype_equals = false;
                 break;
             }
         }
         if (subtype_equals) return true;
-        FOR_URANGE(i, 0, a->as_function.returns.len) {
+        for_urange(i, 0, a->as_function.returns.len) {
             if (a->as_function.returns.at[i].subtype != b->as_function.returns.at[i].subtype) {
                 subtype_equals = false;
                 break;
@@ -467,13 +467,13 @@ bool otf_types_are_equivalent(type* a, type* b) {
 }
 
 void type_reset_numbers(int num_set) {
-    FOR_URANGE(i, 0, typegraph.len) {
+    for_urange(i, 0, typegraph.len) {
         typegraph.at[i]->type_nums[num_set] = 0;
     }
 }
 
 type* get_type_from_num(u16 num, int num_set) {
-    FOR_URANGE(i, 0, typegraph.len) {
+    for_urange(i, 0, typegraph.len) {
         if (typegraph.at[i]->type_nums[num_set] == num) return typegraph.at[i];
     }
     return NULL;
@@ -515,7 +515,7 @@ void make_type_graph() {
     typegraph = (type_graph){0};
     da_init(&typegraph, 3);
 
-    FOR_RANGE(i, 0, TYPE_META_INTEGRAL) {
+    for_range(i, 0, TYPE_META_INTEGRAL) {
         make_type(i);
     }
 }
@@ -554,7 +554,7 @@ forceinline type* get_target(type* p) {
 }
 
 u64 get_index(type* t) {
-    FOR_URANGE(i, 0, typegraph.len) {
+    for_urange(i, 0, typegraph.len) {
         if (typegraph.at[i] == t) return i;
     }
     return UINT32_MAX;
@@ -562,7 +562,7 @@ u64 get_index(type* t) {
 
 void print_type_graph() {
     printf("-------------------------\n");
-    FOR_URANGE(i, 0, typegraph.len) {
+    for_urange(i, 0, typegraph.len) {
         type* t = typegraph.at[i];
         if (t->moved) continue;
         // printf("%-2zu   [%-2hu, %-2hu]\t", i, t->type_nums[0], t->type_nums[1]);
@@ -599,7 +599,7 @@ void print_type_graph() {
         case TYPE_STRUCT:
         case TYPE_UNION:
             printf(t->tag == TYPE_STRUCT ? "struct\n" : "union\n");
-            FOR_URANGE(field, 0, t->as_aggregate.fields.len) {
+            for_urange(field, 0, t->as_aggregate.fields.len) {
                 printf("\t\t.%s : %zu\n", get_field(t, field)->name, get_index(get_field(t, field)->subtype));
             }
             break;
@@ -620,7 +620,7 @@ bool type_is_infinite(type* t) {
     switch (t->tag) {
     case TYPE_STRUCT:
     case TYPE_UNION:
-        FOR_URANGE(i, 0, t->as_aggregate.fields.len) {
+        for_urange(i, 0, t->as_aggregate.fields.len) {
             if (type_is_infinite(get_field(t, i)->subtype)) {
                 is_inf = true;
                 break;
@@ -628,13 +628,13 @@ bool type_is_infinite(type* t) {
         }
         break;
     case TYPE_FUNCTION:
-        FOR_URANGE(i, 0, t->as_function.params.len) {
+        for_urange(i, 0, t->as_function.params.len) {
             if (type_is_infinite(t->as_function.params.at[i].subtype)) {
                 is_inf = true;
                 break;
             }
         }
-        FOR_URANGE(i, 0, t->as_function.returns.len) {
+        for_urange(i, 0, t->as_function.returns.len) {
             if (type_is_infinite(t->as_function.returns.at[i].subtype)) {
                 is_inf = true;
                 break;
@@ -695,7 +695,7 @@ u32 static size_of_internal(type* t) {
         return t->size = size_of_internal(t->as_array.subtype) * t->as_array.len;
     case TYPE_UNION: {
         u64 max_size = 0;
-        FOR_URANGE(i, 0, t->as_aggregate.fields.len) {
+        for_urange(i, 0, t->as_aggregate.fields.len) {
             u64 size = size_of_internal(get_field(t, i)->subtype);
             if (size > max_size) max_size = size;
         }
@@ -703,7 +703,7 @@ u32 static size_of_internal(type* t) {
         } break;
     case TYPE_STRUCT: {
         u64 full_size = 0;
-        FOR_URANGE(i, 0, t->as_aggregate.fields.len) {
+        for_urange(i, 0, t->as_aggregate.fields.len) {
             get_field(t, i)->offset = full_size;
             u64 elem_size = size_of_internal(get_field(t, i)->subtype);
             full_size += elem_size;
@@ -755,7 +755,7 @@ u32 static align_of_internal(type* t) {
     case TYPE_UNION:
     case TYPE_STRUCT: {
         u64 max_align = 0;
-        FOR_URANGE(i, 0, t->as_aggregate.fields.len) {
+        for_urange(i, 0, t->as_aggregate.fields.len) {
             u64 align = align_of_internal(get_field(t, i)->subtype);
             if (align > max_align) max_align = align;
         }

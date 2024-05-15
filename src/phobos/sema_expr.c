@@ -153,7 +153,7 @@ forceinline bool is_global(entity* e) {
 u64 get_field_offset(type* t, string query) {
     if (query.len == 1 && *query.raw == '_') return UINT64_MAX;
 
-    FOR_URANGE(i, 0, t->as_aggregate.fields.len) {
+    for_urange(i, 0, t->as_aggregate.fields.len) {
         struct_field* field = &t->as_aggregate.fields.at[i];
 
         if (string_eq(query, field->name)) return field->offset;
@@ -173,12 +173,12 @@ void fill_aggregate_offsets(type* t) {
     TODO("fill aggregate offsets");
 
     if (t->tag == TYPE_UNION) {
-        FOR_URANGE(i, 0, t->as_aggregate.fields.len) {
+        for_urange(i, 0, t->as_aggregate.fields.len) {
             t->as_aggregate.fields.at[i].offset = 0;
         }
     } else {
         u64 running_offset = 0;
-        FOR_URANGE(i, 0, t->as_aggregate.fields.len) {
+        for_urange(i, 0, t->as_aggregate.fields.len) {
             running_offset = align_forward(running_offset, type_real_align_of(t->as_aggregate.fields.at[i].subtype));
             t->as_aggregate.fields.at[i].offset = running_offset;
             running_offset += type_real_size_of(t->as_aggregate.fields.at[i].subtype);
@@ -442,7 +442,7 @@ void check_fn_literal_expr(mars_module* mod, entity_table* et, AST expr, checked
     da(struct_field)* params = &fn_type->as_function.params;
     astfunc->params = malloc(sizeof(*astfunc->params) * params->len);
     astfunc->paramlen = params->len;
-    FOR_URANGE(i, 0, params->len) {
+    for_urange(i, 0, params->len) {
         entity* e = new_entity(etab, params->at[i].name, expr);
         e->checked = true;
         e->entity_type = params->at[i].subtype;
@@ -457,7 +457,7 @@ void check_fn_literal_expr(mars_module* mod, entity_table* et, AST expr, checked
     da(struct_field)* returns = &fn_type->as_function.returns;
     astfunc->returns = malloc(sizeof(*astfunc->returns) * returns->len);
     astfunc->returnlen = returns->len;
-    FOR_URANGE(i, 0, returns->len) {
+    for_urange(i, 0, returns->len) {
         entity* e = new_entity(etab, returns->at[i].name, expr);
         e->checked = true;
         e->entity_type = returns->at[i].subtype;

@@ -93,7 +93,7 @@ typedef uint8_t  bool;
     printf("\x1b[31m\x1b[1mCRASH\x1b[0m: \"%s\" at %s:%d\n", (msg), (__FILE__), (__LINE__)); \
     exit(EXIT_FAILURE); } while (0)
 
-#define FOR_RANGE(iterator, start, end) for (intptr_t iterator = (start); iterator < (end); iterator++)
+#define for_range(iterator, start, end) for (intptr_t iterator = (start); iterator < (end); iterator++)
 
 // #define CSTRING_COMPATIBILITY_MODE
 // ^ allocates an extra character for null termination outside the string bounds.
@@ -294,7 +294,7 @@ void anvil_build() {
         clear(cmd);
     }
 
-    FOR_RANGE(i, 0, sizeof(source_dirs) / sizeof(*source_dirs)) {
+    for_range(i, 0, sizeof(source_dirs) / sizeof(*source_dirs)) {
         fs_file source_directory;
         if (!fs_get(str(source_dirs[i]), &source_directory))
             error("could not open source directory '%s'", source_dirs[i]);
@@ -312,7 +312,7 @@ void anvil_build() {
 
     // count the files
     int total_files_to_build = 0;
-    FOR_RANGE(i, 0, sizeof(source_dirs) / sizeof(*source_dirs)) {
+    for_range(i, 0, sizeof(source_dirs) / sizeof(*source_dirs)) {
         fs_file source_directory;
         if (!fs_get(str(real_src_dirs[i]), &source_directory))
             error("could not open source directory '%s'", source_dirs[i]);
@@ -325,14 +325,14 @@ void anvil_build() {
 
         fs_file* src_dir_subfiles = malloc(sizeof(fs_file) * src_dir_subfile_count);
         fs_get_subfiles(&source_directory, src_dir_subfiles);
-        FOR_RANGE(j, 0, src_dir_subfile_count) {
+        for_range(j, 0, src_dir_subfile_count) {
             if (!fs_is_regular(&src_dir_subfiles[j])) continue;
             if (string_ends_with(src_dir_subfiles[j].path, str(".c"))) {
                 total_files_to_build++;
             }
         }
 
-        FOR_RANGE(j, 0, src_dir_subfile_count) fs_drop(&src_dir_subfiles[j]);
+        for_range(j, 0, src_dir_subfile_count) fs_drop(&src_dir_subfiles[j]);
         free(src_dir_subfiles);
 
         fs_drop(&source_directory);
@@ -340,7 +340,7 @@ void anvil_build() {
 
     // build the individual object files
     int file_num = 1;
-    FOR_RANGE(i, 0, sizeof(source_dirs) / sizeof(*source_dirs)) {
+    for_range(i, 0, sizeof(source_dirs) / sizeof(*source_dirs)) {
         fs_file source_directory;
         if (!fs_get(str(real_src_dirs[i]), &source_directory))
             error("could not open source directory '%s'", source_dirs[i]);
@@ -353,7 +353,7 @@ void anvil_build() {
 
         fs_file* src_dir_subfiles = malloc(sizeof(fs_file) * src_dir_subfile_count);
         fs_get_subfiles(&source_directory, src_dir_subfiles);
-        FOR_RANGE(j, 0, src_dir_subfile_count) {
+        for_range(j, 0, src_dir_subfile_count) {
             if (!fs_is_regular(&src_dir_subfiles[j])) continue;
             if (string_ends_with(src_dir_subfiles[j].path, str(".c"))) {
                 // build file!
@@ -393,7 +393,7 @@ void anvil_build() {
         }
 
 #ifndef _WIN32
-        FOR_RANGE(j, 0, src_dir_subfile_count) fs_drop(&src_dir_subfiles[j]);
+        for_range(j, 0, src_dir_subfile_count) fs_drop(&src_dir_subfiles[j]);
 #endif
         free(src_dir_subfiles);
 
@@ -459,7 +459,7 @@ string string_alloc(size_t len) {
 
 bool string_eq(string a, string b) {
     if (a.len != b.len) return false;
-    FOR_RANGE(i, 0, a.len) {
+    for_range(i, 0, a.len) {
         if (a.raw[i] != b.raw[i]) return false;
     }
     return true;

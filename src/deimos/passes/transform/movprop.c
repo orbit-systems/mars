@@ -24,7 +24,7 @@ static u64 ir_set_usage(IR_BasicBlock* bb, IR* source, u64 start_index, IR* dest
 
 static void set_uses_of(IR_Function* f, IR* source, IR* dest) {
     // we probably dont need to search the whole function but whatever;
-    FOR_URANGE(i, 0, f->blocks.len) {
+    for_urange(i, 0, f->blocks.len) {
         IR_BasicBlock* bb = f->blocks.at[i];
         u64 next_usage = ir_set_usage(bb, source, 0, dest);
         while (next_usage != UINT64_MAX) {
@@ -34,11 +34,11 @@ static void set_uses_of(IR_Function* f, IR* source, IR* dest) {
 }
 
 IR_Module* ir_pass_movprop(IR_Module* mod) {
-    FOR_URANGE(i, 0, mod->functions_len) {
-        FOR_URANGE(j, 0, mod->functions[i]->blocks.len) {
+    for_urange(i, 0, mod->functions_len) {
+        for_urange(j, 0, mod->functions[i]->blocks.len) {
             IR_BasicBlock* bb = mod->functions[i]->blocks.at[j];
 
-            FOR_URANGE(k, 0, bb->len) {
+            for_urange(k, 0, bb->len) {
                 if (bb->at[k]->tag != IR_MOV) continue;
 
                 set_uses_of(mod->functions[i], bb->at[k], ((IR_Mov*)bb->at[k])->source);

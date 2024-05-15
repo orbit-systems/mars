@@ -12,7 +12,7 @@ static void recursive_reparent(IR_BasicBlock* bb);
 static void pass_cfg_func(IR_Function* f) {
 
     // populate forward connections and increment incoming data
-    FOR_URANGE(i, 0, f->blocks.len) {
+    for_urange(i, 0, f->blocks.len) {
         IR_BasicBlock* bb = f->blocks.at[i];
         IR* terminator = bb->at[bb->len-1];
         
@@ -52,10 +52,10 @@ static void pass_cfg_func(IR_Function* f) {
     }
 
     // populate backward connections
-    FOR_URANGE(i, 0, f->blocks.len) {
+    for_urange(i, 0, f->blocks.len) {
         IR_BasicBlock* bb = f->blocks.at[i];
 
-        FOR_URANGE(conn, 0, bb->out_len) {
+        for_urange(conn, 0, bb->out_len) {
             IR_BasicBlock* target = bb->outgoing[conn];
             if (target->incoming != NULL) {
                 target->incoming = malloc(sizeof(IR_BasicBlock*) * bb->in_len);
@@ -73,7 +73,7 @@ static void pass_cfg_func(IR_Function* f) {
 
     // compute dominators
     // 2d array of pointers [block][dominator]
-    FOR_URANGE(i, 0, f->blocks.len) {
+    for_urange(i, 0, f->blocks.len) {
         f->blocks.at[i]->domset = compute_dominator_set(f, f->blocks.at[i], f->blocks.at[f->entry_idx]);
     }
     
@@ -99,7 +99,7 @@ static void recursive_mark(IR_BasicBlock* bb, IR_BasicBlock* avoid, u64 mark) {
     
     bb->flags = mark; // mark
 
-    FOR_RANGE(i, 0, bb->out_len) {
+    for_range(i, 0, bb->out_len) {
         recursive_mark(bb->outgoing[i], avoid, mark);
     }
 }
@@ -109,7 +109,7 @@ static void recursive_mark(IR_BasicBlock* bb, IR_BasicBlock* avoid, u64 mark) {
 static IR_BasicBlock** compute_dominator_set(IR_Function* f, IR_BasicBlock* bb, IR_BasicBlock* entry) {
 
     // reset visited flags
-    FOR_URANGE(i, 0, f->blocks.len) {
+    for_urange(i, 0, f->blocks.len) {
         f->blocks.at[i]->flags = 0;
     }
     
@@ -117,7 +117,7 @@ static IR_BasicBlock** compute_dominator_set(IR_Function* f, IR_BasicBlock* bb, 
 
     // find blocks that are not marked
     u64 num_dominated = 0;
-    FOR_URANGE(i, 0, f->blocks.len) {
+    for_urange(i, 0, f->blocks.len) {
         if (f->blocks.at[i]->flags != MARKED) {
             num_dominated++;
         }
@@ -126,7 +126,7 @@ static IR_BasicBlock** compute_dominator_set(IR_Function* f, IR_BasicBlock* bb, 
     IR_BasicBlock** domset = malloc(sizeof(IR_BasicBlock*) * (num_dominated + 1));
 
     u64 next = 0;
-    FOR_URANGE(i, 0, f->blocks.len) {
+    for_urange(i, 0, f->blocks.len) {
         if (f->blocks.at[i]->flags != MARKED) {
             domset[next++] = f->blocks.at[i];
         }
@@ -138,7 +138,7 @@ static IR_BasicBlock** compute_dominator_set(IR_Function* f, IR_BasicBlock* bb, 
 IR_Module* ir_pass_cfg(IR_Module* mod) {
 
     // TODO: only update the CFG for functions where it has been modified
-    FOR_URANGE(i, 0, mod->functions_len) {
+    for_urange(i, 0, mod->functions_len) {
         pass_cfg_func(mod->functions[i]);
     }
 

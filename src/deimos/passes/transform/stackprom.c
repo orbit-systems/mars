@@ -24,7 +24,7 @@ static bool is_promotable(IR_Function* f, IR* stackalloc) {
     da(IR_PTR) uses = {0};
     da_init(&uses, 5);
     // for every basic block, search the blocks for usages of the stackalloc.
-    FOR_URANGE(block, 0, f->blocks.len) {
+    for_urange(block, 0, f->blocks.len) {
 
         IR_BasicBlock* bb = f->blocks.at[block];
 
@@ -49,8 +49,8 @@ static void stackprom_f(IR_Function* f) {
     da_clear(&alloca_list);
 
     // add stackallocs to the list
-    FOR_URANGE(b, 0, f->blocks.len) {
-        FOR_URANGE(i, 0, f->blocks.at[b]->len) {
+    for_urange(b, 0, f->blocks.len) {
+        for_urange(i, 0, f->blocks.at[b]->len) {
             IR* inst = f->blocks.at[b]->at[i];
             if (inst->tag == IR_STACKALLOC) {
                 da_append(&alloca_list, inst);
@@ -66,7 +66,7 @@ IR_Module* ir_pass_stackprom(IR_Module* mod) {
         da_init(&alloca_list, 4);
     }
 
-    FOR_URANGE(i, 0, mod->functions_len) {
+    for_urange(i, 0, mod->functions_len) {
         stackprom_f(mod->functions[i]);
     }
 

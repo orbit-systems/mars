@@ -14,7 +14,7 @@ void check_stmt(mars_module* mod, entity_table* et, ast_func_literal_expr* fn, A
         check_return_stmt(mod, et, fn, stmt);
         break;
     case AST_block_stmt:
-        FOR_URANGE(i, 0, stmt.as_block_stmt->stmts.len) {
+        for_urange(i, 0, stmt.as_block_stmt->stmts.len) {
             check_stmt(mod, et, fn, stmt.as_block_stmt->stmts.at[i], global);
         }
         break;
@@ -63,7 +63,7 @@ void check_return_stmt(mars_module* mod, entity_table* et, ast_func_literal_expr
         error_at_node(mod, stmt, "number of returns must be zero or %d", fn->returnlen);
     }
 
-    FOR_URANGE(i, 0, ret->returns.len) {
+    for_urange(i, 0, ret->returns.len) {
         checked_expr info = {0};
         check_expr(mod, et, ret->returns.at[i], &info, false, NULL);
     }
