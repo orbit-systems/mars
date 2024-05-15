@@ -176,6 +176,14 @@ typedef struct TargetRegisterClass {
 
 } TargetRegisterClass;
 
+typedef struct TargetCallingConv {
+    TargetRegisterInfo** param_regs;
+    u16 param_regs_len;
+
+    TargetRegisterInfo** return_regs;
+    u16 return_regs_len;
+} TargetCallingConv;
+
 // instruction template, each MInst follows one.
 typedef struct TargetInstInfo {
     string asm_string;
@@ -253,4 +261,6 @@ AsmFunction* asm_new_function(AsmModule* m, AsmSymbol* sym);
 AsmGlobal*   asm_new_global(AsmModule* m, AsmSymbol* sym);
 AsmBlock*    asm_new_block(AsmFunction* f, string label);
 AsmInst*     asm_add_inst(AsmBlock* b, AsmInst* inst);
-AsmInst*     asm_new_inst(AsmModule* m, TargetInstInfo* template);
+AsmInst*     asm_new_inst(AsmModule* m, u32 template);
+
+VReg*        asm_new_vreg(AsmModule* m, u32 regclass);
