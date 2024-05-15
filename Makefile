@@ -26,7 +26,7 @@ INCLUDEPATHS = -Isrc/ -Isrc/phobos/ -Isrc/deimos/
 DEBUGFLAGS = -lm -rdynamic -pg -g
 ASANFLAGS = -fsanitize=undefined -fsanitize=address
 CFLAGS = -Wincompatible-pointer-types -Wno-discarded-qualifiers -lm
-OPT = -O2 # $(DEBUGFLAGS)
+OPT = -O2
 
 FILE_NUM = 0
 
@@ -39,6 +39,10 @@ build: $(OBJECTS)
 	@echo Linking into $(EXECUTABLE_NAME)
 	@$(LD) $(foreach obj, $(notdir $(OBJECTS)), build/$(obj)) -o $(EXECUTABLE_NAME) $(CFLAGS)
 	@echo Successfully built: $(EXECUTABLE_NAME)
+
+debug: CFLAGS += $(DEBUGFLAGS)
+debug: OPT = -O0
+debug: build
 
 clean:
 	@rm -rf build/
