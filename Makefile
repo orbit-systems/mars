@@ -1,11 +1,15 @@
+TARGETS = aphelion 
+
 SRCPATHS = \
-	src/*.c src/phobos/*.c \
+	src/*.c \
+	src/phobos/*.c \
 	src/deimos/*.c \
 	src/deimos/passes/*.c \
 	src/deimos/passes/analysis/*.c \
 	src/deimos/passes/transform/*.c \
-	src/deimos/targets/*.c
+	src/deimos/targets/*.c \
 
+SRCPATHS += $(foreach target, $(TARGETS), src/deimos/targets/$(target)/*.c) 
 SRC = $(wildcard $(SRCPATHS))
 OBJECTS = $(SRC:src/%.c=build/%.o)
 
@@ -21,55 +25,23 @@ LD = gcc
 INCLUDEPATHS = -Isrc/ -Isrc/phobos/ -Isrc/deimos/
 DEBUGFLAGS = -lm -rdynamic -pg -g
 ASANFLAGS = -fsanitize=undefined -fsanitize=address
-DONTBEAFUCKINGIDIOT = -Wall -Wextra -pedantic -Wno-missing-field-initializers -Wno-unused-result
 CFLAGS = -Wincompatible-pointer-types -Wno-discarded-qualifiers -lm
 OPT = -O2 # $(DEBUGFLAGS)
 
-all: build
+FILE_NUM = 0
 
 build/%.o: src/%.c
-	@echo compiling $<
-	@$(CC) -c -o $@ $< $(INCLUDEPATHS) -MD $(CFLAGS) $(OPT)
+	$(eval FILE_NUM=$(shell echo $$(($(FILE_NUM)+1))))
+	$(shell echo 1>&2 -e "\e[0m[\e[32m$(FILE_NUM)/$(words $(SRC))\e[0m] Compiling \e[1m$<\e[0m")
+	@$(CC) -c -o build/$(notdir $@) $< $(INCLUDEPATHS) $(CFLAGS) $(OPT)
 
 build: $(OBJECTS)
-	@-cp -r build/deimos/* build/
-	@-cp    build/phobos/* build/
-
-	@echo linking with $(LD)
-	@$(LD) $(OBJECTS) -o $(EXECUTABLE_NAME) $(CFLAGS)
-
-	@echo $(EXECUTABLE_NAME) built
-	
-
-dbgbuild/%.o: src/%.c
-	@$(CC) -c -o $@ $< $(INCLUDEPATHS) -MD $(DEBUGFLAGS)
-
-dbgbuild: $(OBJECTS)
-	@-cp -r build/deimos/* build/
-	@-cp    build/phobos/* build/
-
-	@$(LD) $(OBJECTS) -o $(EXECUTABLE_NAME) $(DEBUGFLAGS)
-	
-test: build
-	./$(EXECUTABLE_NAME) ./mars_code
-
-test2: build
-	./$(EXECUTABLE_NAME) ./test
+	@echo Linking into $(EXECUTABLE_NAME)
+	@$(LD) $(foreach obj, $(notdir $(OBJECTS)), build/$(obj)) -o $(EXECUTABLE_NAME) $(CFLAGS)
+	@echo Successfully built: $(EXECUTABLE_NAME)
 
 clean:
-	@rm -rf build
-	@mkdir build
-	@mkdir build/deimos
-	@mkdir build/deimos/targets
-	@mkdir build/deimos/passes
-	@mkdir build/deimos/passes/transform
-	@mkdir build/deimos/passes/analysis
-	@mkdir build/phobos
+	@rm -rf build/
+	@mkdir build/
 
-
-printbuildinfo:
-	@echo using $(CC) with flags $(CFLAGS) $(OPT)
-
-new: clean printbuildinfo build
-
--include $(OBJECTS:.o=.d)
+cleanbuild: clean build

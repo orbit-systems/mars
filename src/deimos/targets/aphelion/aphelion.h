@@ -1,7 +1,7 @@
 #pragma once
 #define DEIMOS_TARGET_APHELION_H
 
-#include "target.h"
+#include "../target.h"
 
 // aphelion only has one register class, the GPRs
 enum {
