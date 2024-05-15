@@ -9,7 +9,7 @@ typedef struct TargetRegisterClass TargetRegisterClass;
 typedef struct TargetFormatInfo    TargetFormatInfo;
 typedef struct TargetInfo          TargetInfo;
 
-typedef struct VirtualRegister VirtualRegister;
+typedef struct VReg VReg;
 typedef struct AsmInst         AsmInst;
 typedef struct AsmBlock        AsmBlock;
 typedef struct AsmSymbol       AsmSymbol;
@@ -19,7 +19,7 @@ typedef struct AsmModule       AsmModule;
 
 #define REAL_REG_UNASSIGNED (UINT32_MAX)
 
-typedef struct VirtualRegister {
+typedef struct VReg {
     // index of real register into regclass array (if REAL_REG_UNASSIGNED, it has not been assigned yet)
     u32 real;
 
@@ -27,7 +27,7 @@ typedef struct VirtualRegister {
     u32 required_regclass;
 
     // probably include some liveness info here later
-} VirtualRegister;
+} VReg;
 
 enum {
     IMM_I64,
@@ -55,10 +55,10 @@ typedef struct ImmediateVal {
 typedef struct AsmInst {
 
     // input virtual registers, length dictated by its TargetInstInfo
-    VirtualRegister** ins;
+    VReg** ins;
 
     // output virtual registers, length dictated by its TargetInstInfo
-    VirtualRegister** outs;
+    VReg** outs;
 
     // immediate values, length dictated by its TargetInstInfo
     ImmediateVal* imms;
@@ -82,7 +82,7 @@ typedef struct AsmFunction {
     u32 num_blocks;
 
     struct {
-        VirtualRegister** at;
+        VReg** at;
         u32 len;
         u32 cap;
     } vregs;

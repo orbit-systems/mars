@@ -37,7 +37,6 @@ const TargetInstInfo aphelion_instructions[] = {
     },
     [APHEL_INST_ADDI] = {
         .asm_string = constr("addi {out 0}, {in 0}, {int 0}"),
-
         .num_ins = 1,
         .num_imms = 1,
         .num_outs = 1,

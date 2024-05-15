@@ -59,11 +59,21 @@ AsmInst* asm_new_inst(AsmModule* m, TargetInstInfo* template) {
     *i = (AsmInst){0};
     i->template = template;
 
+    if (template->num_imms != 0) {
+        i->imms = arena_alloc(&m->alloca, sizeof(i->imms[0]) * template->num_imms, alignof(i->imms[0]));
+    }
+    if (template->num_ins != 0) {
+        i->imms = arena_alloc(&m->alloca, sizeof(i->ins[0]) * template->num_ins, alignof(i->ins[0]));
+    }
+    if (template->num_outs != 0) {
+        i->imms = arena_alloc(&m->alloca, sizeof(i->outs[0]) * template->num_outs, alignof(i->outs[0]));
+    }
+    
     return i;
 }
 
-VirtualRegister* asm_new_vreg(AsmModule* m, u32 regclass) {
-    VirtualRegister* r = arena_alloc(&m->alloca, sizeof(*r), alignof(*r));
+VReg* asm_new_vreg(AsmModule* m, u32 regclass) {
+    VReg* r = arena_alloc(&m->alloca, sizeof(*r), alignof(*r));
     
     r->required_regclass = regclass;
     r->real = REAL_REG_UNASSIGNED;
