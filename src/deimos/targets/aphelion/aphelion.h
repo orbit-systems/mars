@@ -1,10 +1,10 @@
 #pragma once
-#define DEIMOS_TARGET_APHELION_H
+#define TARGET_APHELION_H
 
 #include "../target.h"
 
-// aphelion only has one register class, the GPRs
 enum {
+    APHEL_REGCLASS_ZERO,
     APHEL_REGCLASS_GPR,
     APHEL_REGCLASS_LEN,
 };
@@ -12,7 +12,6 @@ enum {
 
 extern const TargetRegisterInfo aphelion_regclass_gpr_regs[];
 enum {
-    APHEL_GPR_RZ,
     APHEL_GPR_RA,
     APHEL_GPR_RB,
     APHEL_GPR_RC,
@@ -24,8 +23,13 @@ enum {
     APHEL_GPR_RI,
     APHEL_GPR_RJ,
     APHEL_GPR_RK,
-
     APHEL_GPR_LEN,
+};
+
+extern const TargetRegisterInfo aphelion_regclass_zero_regs[];
+enum {
+    APHEL_ZERO_RZ,
+    APHEL_ZERO_LEN,
 };
 
 extern const TargetInstInfo aphelion_instruction_templates[];

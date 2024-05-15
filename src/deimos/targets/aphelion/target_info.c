@@ -2,8 +2,11 @@
 
 #include "aphelion.h"
 
+const TargetRegisterInfo aphelion_regclass_zero_regs[] = {
+    [APHEL_ZERO_RZ] = { .name = constr("rz")},
+};
+
 const TargetRegisterInfo aphelion_regclass_gpr_regs[] = {
-    [APHEL_GPR_RZ] = { .name = constr("rz"), .regalloc_ignore = true},
     [APHEL_GPR_RA] = { .name = constr("ra") },
     [APHEL_GPR_RB] = { .name = constr("rb") },
     [APHEL_GPR_RC] = { .name = constr("rc") },
@@ -81,9 +84,13 @@ const TargetInfo aphelion_target_info = {
 
     // register classes
     .regclasses = (TargetRegisterClass[]){
+        [APHEL_REGCLASS_ZERO] = {
+            .regs = aphelion_regclass_zero_regs,
+            .regs_len = APHEL_ZERO_LEN,
+        },
         [APHEL_REGCLASS_GPR] = {
             .regs = aphelion_regclass_gpr_regs,
-            .regs_len = APHEL_GPR_LEN
+            .regs_len = APHEL_GPR_LEN,
         },
     },
     .regclasses_len = APHEL_REGCLASS_LEN,

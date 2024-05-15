@@ -3,22 +3,30 @@
 
 #include "deimos.h"
 
-#define REAL_REG_NOT_ASSIGNED ((u64)-1)
+typedef struct TargetInstInfo      TargetInstInfo;
+typedef struct TargetRegisterInfo  TargetRegisterInfo;
+typedef struct TargetRegisterClass TargetRegisterClass;
+typedef struct TargetFormatInfo    TargetFormatInfo;
+typedef struct TargetInfo          TargetInfo;
 
-typedef struct TargetInstInfo TargetInstInfo;
 typedef struct VirtualRegister VirtualRegister;
-typedef struct AsmInst   AsmInst;
-typedef struct AsmBlock  AsmBlock;
-typedef struct AsmSymbol AsmSymbol;
-typedef struct AsmGlobal AsmGlobal;
+typedef struct AsmInst         AsmInst;
+typedef struct AsmBlock        AsmBlock;
+typedef struct AsmSymbol       AsmSymbol;
+typedef struct AsmGlobal       AsmGlobal;
+typedef struct AsmFunction     AsmFunction;
+typedef struct AsmModule       AsmModule;
+
+#define REAL_REG_UNASSIGNED (UINT32_MAX)
 
 typedef struct VirtualRegister {
-    // index of real register into regclass array (if REAL_REG_NOT_ASSIGNED, it has not been assigned yet)
+    // index of real register into regclass array (if REAL_REG_UNASSIGNED, it has not been assigned yet)
     u32 real;
 
-    // register class to pick from when assigning a real register
-    // typically an integer GPR or a floating point GPR
+    // register class to pick from when assigning a machine register
     u32 required_regclass;
+
+    // probably include some liveness info here later
 } VirtualRegister;
 
 enum {
@@ -36,7 +44,7 @@ typedef struct ImmediateVal {
         i64 i64;
         u64 u64;
 
-        f64 f64;
+        f64 f64; // the float stuff isnt really useful i think
         f32 f32;
         f16 f16;
         AsmSymbol* sym;
@@ -60,18 +68,27 @@ typedef struct AsmInst {
 } AsmInst;
 
 typedef struct AsmBlock {
-    AsmInst* instructions;
+    AsmInst** at;
     u32 len;
     u32 cap;
 
     string label;
+
+    AsmFunction* f;
 } AsmBlock;
 
 typedef struct AsmFunction {
-    AsmBlock* blocks; // in order
+    AsmBlock** blocks; // in order
     u32 num_blocks;
 
+    struct {
+        VirtualRegister** at;
+        u32 len;
+        u32 cap;
+    } vregs;
+
     AsmSymbol* sym;
+    AsmModule* mod;
 } AsmFunction;
 
 enum {
@@ -84,20 +101,64 @@ typedef struct AsmSymbol {
     string name;
 
     u8 binding;
+
+    union {
+        AsmGlobal* glob;
+        AsmFunction* func;
+    };
+
 } AsmSymbol;
+
+enum {
+    GLOBAL_INVALID,
+    GLOBAL_U8,
+    GLOBAL_U16,
+    GLOBAL_U32,
+    GLOBAL_U64,
+
+    GLOBAL_I8,
+    GLOBAL_I16,
+    GLOBAL_I32,
+    GLOBAL_I64,
+
+    GLOBAL_ZEROES,
+    GLOBAL_BYTES,
+};
 
 typedef struct AsmGlobal {
     AsmSymbol* sym;
 
+    union {
+
+        u8  u8;
+        u16 u16;
+        u32 u32;
+        u64 u64;
+        
+        i8  i8;
+        i16 i16;
+        i32 i32;
+        i64 i64;
+
+        struct {
+            u8* data; // only used with GLOBAL_BYTES
+            u32 len; // only used with GLOBAL_BYTES and GLOBAL_ZEROES
+        };
+    };
+
+    u8 type;
 } AsmGlobal;
 
 typedef struct AsmModule {
+    TargetInfo* target;
+
     AsmGlobal** globals;
-    u32 globals_list;
+    u32 globals_len;
 
     AsmFunction** functions;
-    u32 functions_list;
+    u32 functions_len;
 
+    arena alloca;
 } AsmModule;
 
 /* TARGET DEFINITIONS AND INFORMATION */
@@ -106,9 +167,6 @@ typedef struct AsmModule {
 typedef struct TargetRegisterInfo {
     // thing to print in the asm
     string name;
-
-    // the register allocator should
-    bool regalloc_ignore;
 } TargetRegisterInfo;
 
 typedef struct TargetRegisterClass {
@@ -130,6 +188,17 @@ typedef struct TargetInstInfo {
 
     bool is_mov; // is this a simple move?
 } TargetInstInfo;
+
+/*
+    format strings for assembly - example:
+        addr {out 0}, {in 0}, {in 1}
+
+    with ins = {rb, rc} and outs = {ra}, this translates to:
+        addr ra, rb, rc
+    
+    if some of the arguments are immediates, use 'imm'
+        addr {out 0}, {in 0}, {imm 0}
+*/
 
 typedef struct TargetFormatInfo {
     string u64;
@@ -179,20 +248,9 @@ typedef struct TargetInfo {
 
 } TargetInfo;
 
-/*
-    format strings for assembly - example:
-        addr {out 0}, {in 0}, {in 1}
-
-    with ins = {rb, rc} and outs = {ra}, this 
-    
-    if one of the arguments is an immediate, use an immediate type instead of in or out.
-        addr {out 0}, {in 0}, {int 0}
-
-    immediate types supported are:
-        sym     : prints a symbol name if applicable
-        int     : prints as signed integer
-        uint    : prints as unsigned integer
-        hex     : prints in hexadecimal as unsigned integer
-        bin     : prints in binary as unsigned integer
-        f(bits) : prints as floating point number of (bits : {16, 32, 64}) width
-*/
+AsmModule*   asm_new_module(TargetInfo* target);
+AsmFunction* asm_new_function(AsmModule* m, AsmSymbol* sym);
+AsmGlobal*   asm_new_global(AsmModule* m, AsmSymbol* sym);
+AsmBlock*    asm_new_block(AsmFunction* f, string label);
+AsmInst*     asm_add_inst(AsmBlock* b, AsmInst* inst);
+AsmInst*     asm_new_inst(AsmModule* m, TargetInstInfo* template);
