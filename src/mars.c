@@ -40,7 +40,7 @@ int main(int argc, char** argv) {
         check_module_and_dependencies(main_mod);
     }
 
-    if (mars_flags.dump_AST) FOR_URANGE(i, 0, main_mod->program_tree.len) {
+    if (mars_flags.dump_AST) for_urange(i, 0, main_mod->program_tree.len) {
         dump_tree(main_mod->program_tree.at[i], 0);
     }
 
@@ -111,7 +111,7 @@ void load_arguments(int argc, char* argv[], flag_set* fl) {
     if (argc <= 2) return;
 
     int flag_start_index = 2;
-    FOR_RANGE(i, flag_start_index, argc) {
+    for_range(i, flag_start_index, argc) {
         cmd_arg a = make_argument(argv[i]);
         if (string_eq(a.key, str("-help"))) {
             print_help();

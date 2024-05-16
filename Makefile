@@ -31,6 +31,7 @@ OPT = -O2
 FILE_NUM = 0
 
 build/%.o: src/%.c
+
 	$(eval FILE_NUM=$(shell echo $$(($(FILE_NUM)+1))))
 	$(shell echo 1>&2 "-e" "\e[0m[\e[32m$(FILE_NUM)/$(words $(SRC))\e[0m] Compiling \e[1m$<\e[0m")
 	@$(CC) -c -o build/$(notdir $@) $< $(INCLUDEPATHS) $(CFLAGS) $(OPT)

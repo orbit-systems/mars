@@ -33,6 +33,7 @@ AsmBlock* aphelion_translate_block(AsmModule* m, AsmFunction* f, IR_Function* ir
         case IR_PARAMVAL: {
             IR_ParamVal* ir = (IR_ParamVal*) raw_ir;
 
+            // select callign convention register - TODO dont make this hardcoded
             VReg* src = asm_new_vreg(m, APHEL_REGCLASS_GPR);
             switch (ir->param_idx) {
             case 0: src->real = APHEL_GPR_RG; break;
