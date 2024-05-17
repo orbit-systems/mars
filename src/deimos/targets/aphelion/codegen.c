@@ -33,8 +33,11 @@ AsmBlock* aphelion_translate_block(AsmModule* m, AsmFunction* f, IR_Function* ir
         case IR_PARAMVAL: {
             IR_ParamVal* ir = (IR_ParamVal*) raw_ir;
 
-            // select callign convention register - TODO dont make this hardcoded
+            assert(ir_f->params[ir->param_idx]->T->tag == TYPE_I64);
+
+            // select calling convention register - TODO dont make this hardcoded
             VReg* src = asm_new_vreg(m, APHEL_REGCLASS_GPR);
+            src->special = VREG_PARAMVAL;
             switch (ir->param_idx) {
             case 0: src->real = APHEL_GPR_RG; break;
             case 1: src->real = APHEL_GPR_RH; break;
@@ -74,6 +77,24 @@ AsmBlock* aphelion_translate_block(AsmModule* m, AsmFunction* f, IR_Function* ir
 
             asm_add_inst(b, addr);
         } break;
+        case IR_RETURNVAL: {
+            IR_ReturnVal* ir = (IR_ReturnVal*) raw_ir;
+
+            VReg* out = asm_new_vreg(m, APHEL_REGCLASS_GPR);
+            ptrmap_put(&ir_to_vreg, ir, out); // i dont think this actually needs to be put in
+
+            VReg* in = ptrmap_get(&ir_to_vreg, ir->source);
+
+            AsmInst* retval = asm_new_inst(m, APHEL_INST_MOV);
+            retval->ins[0] = in;
+            retval->outs[0] = out;
+
+            asm_add_inst(b, retval);
+        } break;
+        case IR_RETURN: {
+            AsmInst* ret = asm_new_inst(m, APHEL_INST_RET);
+            asm_add_inst(b, ret);
+        }
         default:
             CRASH("unhandled ir type");
         }

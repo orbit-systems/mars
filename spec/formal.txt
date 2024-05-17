@@ -113,6 +113,8 @@ operators
         | ^ this is identical to a bitcast, but is more deeply checked by the compiler.
         | slices can cast to pointers corresponding to their backing type. a slice of type T can cast to pointer of type T (same thing as appending '.raw')
 
+        note: casting a let pointer to a mut pointer is allowed (generates a warning), but dereferencing it is undefined behavior.
+
         bitcast() rules:
         | values can be bitcast if their byte sizes are the same.
         | bitcasting does not modify the value data of a variable,
@@ -137,10 +139,10 @@ operators
         offsetof(T, field)  get the offset of a field from an entity's base address. only works for struct and union types.
     
     index
-        [n]     index array             using entity T with type (any array, pointer, slice) and A with type (any int, uint, enum) : <T>[<A>]
+        [n]     index array             using type T in (any array, pointer, slice) and type A (any int, uint, enum) : <T>[<A>]
 
     slice
-        [:]     generate slice          using entity T with type (any array, pointer, slice) and A with type (any int, uint, enum) : <T>[:], <T>[<A>:] <T>[:<A>], <T>[<A>:<A>]
+        [:]     generate slice          using type T in (any array, pointer, slice) and type A (any int, uint, enum) : <T>[:], <T>[<A>:] <T>[:<A>], <T>[<A>:<A>]
 
 
     selector
@@ -158,20 +160,27 @@ operators
         |
         | access entities from other modules: a_module::something
 
-    function
+    
+    /* function - might get removed, i dont think its worth it
         inline  inline a function call - only works with compile-time-constant functions contained in the current module
+    */
 
-        
+    if/switch
+        if      ternary expression              using type T in (all) : if <bool> do <T> else <T>
+        when    comp-time ternary expression    using type T in (all) : when <bool> do <T> else <T>
+        switch  switch expression               using type T and C in (all) : switch <C> {case <C>: <T>, case <C>: <T>, ...}
+        which   comp-time switch expression     using type T and C in (all) : which <C> {case <C>: <T>, case <C>: <T>, ...}
 
     precendence
         unary operators have highest precedence after atomic expressions (selection, array index, pointer deref, function call)
 
         non-unary operator precedence. 
-        5   *   /   %   %%  &   <<   >>  ~|
-        4   +   -   |   ~
-        3   ==  !=  <   >   <=  >=
-        2   &&
-        1   ||
+        6   *   /   %   %%  &   <<   >>  ~|
+        5   +   -   |   ~
+        4   ==  !=  <   >   <=  >=
+        3   &&
+        2   ||
+        1   if  when  switch  which
 
         operators of the same precedence are evaluated left-to-right.
         ex. a * b / c == (a * b) / c
@@ -190,41 +199,83 @@ operators
         <<=     left shift              variable of type T in (all integers, uintegers, floats, pointers): T <<= (all uintegers)
         >>=     right shift             variable of type T in (all integers, uintegers, floats, pointers): T >>= (all uintegers)
 
-    IMPORTANT: expressions are evaluated left-to-right, depth-first. 
+    IMPORTANT: expressions are evaluated left-to-right, depth-first.
         this must be followed in case of functions that may modify variables used in the expression,
         such as `modify_x(&x) + x` or something like that.
 
 name mangling
-    global entities should be mangled like so:
-        (module name)__(entity name)
-    an entity "funct" in module "example" would have the link name:
-        example__funct
+    global entity names should be mangled like so:
+        (module name).(entity name)
+    an entity "func" in module "example" would have the link name:
+        example.func
 
-program structure
+entities
 
     programs are made from modules. modules must be wholly contained within one directory, with one module per directory.
 
     programs must begin with a module declaration:
+
         module module_name;
 
-    let name : type = value;
-    let name = value;
-    
-    mut name : type;
-    mut name : type = ---;
-    mut name : type = value;
-    mut name = value;
+    entity declarations must follow this:
 
+        let name : type = value; // constant value declaration
+        let name = value; // derived type from value
+        
+        mut name : type; // mutable value declaration
+        mut name : type = ---;
+        mut name : type = value;
+        mut name = value; // derived type from value
 
+    global values must be declared with a compile-time constant value.
 
-    other modules can be imported as libraries using this syntax as well.
+    other modules can be imported as libraries.
+
         import lib_name "path/to/module";
-    the entity name does not have match the module's internal name.
-    modules may not have import cycles
+
+    the entity name does not have match the module's internal name. modules may not have import cycles.
     
-    entity names must be unique and cannot shadow entities from lower scopes.
-    e.g. this is not allowed:
+    entity names must be unique and cannot shadow entities from lower scopes. this is not allowed:
+
         mut x = 3;
         {
             mut x = 4; // not allowed, x already declared
         }
+    
+control flow: (anywhere {} is used, a 'do stmt;' pattern can also be used);
+
+    if expr {}
+    if expr {} else {}
+    if expr {} else if expr {} ... else {}
+
+    // compile-time if: each scope is the same as the outside scope
+    when expr {}
+    when expr {} else {}
+    when expr {} else when expr {} ... else {}
+
+    while expr {}
+    while {} // loop forever
+
+    for simple_stmt; expr; simple_stmt {} // if (expr) is not present, defaults to 'true'
+    for ident in range_expr {}
+    for ident: type in range_expr {} // only if both items in (range_expr) can implicitly cast to (type)
+
+    switch expr {
+    case const_expr: // each case has its own scope and implicit break
+    case const_expr, ..., const_expr:
+    case const_expr: fallthrough; // explicit fallthrough
+    }
+
+    // compile-time switch: each scope is the same as the outside scope
+    which expr {
+    case const_expr: // implicit break
+    case const_expr, ..., const_expr: // multiple cases in one
+    case const_expr: fallthrough; // explicit fallthrough
+    }
+
+    NOTES:
+        - constant expressions ('const_expr') are expressions that are constant at compile-time. 
+        - simple statements ('simple_stmt') are one of:
+            declarations
+            assignments
+            expression statements

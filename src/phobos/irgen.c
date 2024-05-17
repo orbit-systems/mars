@@ -1,5 +1,4 @@
 #include "deimos.h"
-#include "passes.h"
 #include "phobos/sema.h"
 #include "irgen.h"
 
@@ -29,7 +28,6 @@ IR_Global* ir_generate_global_from_stmt_decl(IR_Module* mod, AST ast) { //FIXME:
 
     //note: global decl_stmts are single entries on the lhs, so we can just assume that lhs[0] == ast_identifier_expr
 
-    
     IR_Global* ir_g = ir_new_global(mod, NULL, /*global=*/true, /*read_only=*/decl_stmt->is_mut);
     ir_g->sym->name = decl_stmt->lhs.at[0].as_identifier_expr->tok->text; 
 
@@ -204,11 +202,13 @@ IR_Function* ir_generate_function(IR_Module* mod, AST ast) {
     ir_set_func_params(f, astfunc->paramlen, NULL); // passing NULL means that it will allocate list but not fill anything
     for_urange(i, 0, f->params_len) {
         f->params[i]->e = astfunc->params[i];
+        f->params[i]->T = f->params[i]->e->entity_type;
     }
 
     ir_set_func_returns(f, astfunc->returnlen, NULL); // same here
     for_urange(i, 0, f->returns_len) {
         f->returns[i]->e = astfunc->returns[i];
+        f->returns[i]->T = f->returns[i]->e->entity_type;
     }
 
     IR_BasicBlock* bb = ir_new_basic_block(f, str("begin"));

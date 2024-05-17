@@ -179,7 +179,6 @@ void warning_at_string(string path, string text, string pos, char* message, ...)
     // printf(" %s\n", ERROR_MSG_BUFFER);
     // printf(STYLE_Reset);
     printf("\n");
-
 }
 
 void line_and_col(string text, size_t position, char** last_newline, int* restrict line_len, int* restrict line, int* restrict col) {

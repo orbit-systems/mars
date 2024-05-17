@@ -1,22 +1,21 @@
-FOR APHELION:
+MARS CALLING CONVENTION (for aphelion):
 
-rg through rk is for function parameters.
+    rg through rk is for function parameters.
 
-parameters that are larger than register size OR composite types (arrays, structs, slices, etc) are passed on the stack,
-even if a struct is smaller than or the same size as a register.
+    parameters that are larger than register size OR composite types (arrays, structs, etc) are passed on the stack,
+    even if a struct is smaller than or the same size as a register.
 
-if is a base type that is the size of a register or smaller, it is passed by register.
+    if is a base type that is the size of a register or smaller, it is passed by register.
 
-if all calling-convention registers are used up, they spill over onto the stack.
+    if all calling-convention registers are used up, they spill over onto the stack.
 
-take the function foo as an example:
-    let foo = fn(a: int, b: int, c: []int, d: int)
-"a", "b", and "d" are passed through registers rg, rh, and ri. "c" is put on the stack.
+    take the function foo as an example:
+        let foo = fn(a: int, b: int, c: []int, d: int)
+    "a", "b", and "d" are passed through registers rg, rh, and ri. "c" is put on the stack.
 
+    the value passing and value returning conventions are symmetric
+    (rg through rk for returns, composite types get passed back on stack)
 
-the value passing and value returning conventions are symmetric
-(rg through rk for returns, composite types get passed back on stack)
+    registers a through f are callee-saved (values should be preserved through function calls)
 
-registers a through f are callee-saved (values should be preserved through function calls)
-
-a b c d e f g h i j k
+    a b c d e f g h i j k

@@ -52,15 +52,15 @@ this applies to most language constructs, like switch cases and loops.
 
     which intrinsics::system
     case .windows {
-        let load_file = fn(...) {...}
+        let load_file = fn(...) {...};
     }
     case .linux {
-        let load_file = fn(...) {...}
+        let load_file = fn(...) {...};
     }
     case .macos {
-        let load_file = fn(...) {...}
+        let load_file = fn(...) {...};
     }
-    
+
 4: 'if' and 'switch' expressions (if `when` and `which` exist, they can also be used as expressions too)
 
     // syntax ideas
@@ -74,3 +74,21 @@ this applies to most language constructs, like switch cases and loops.
             case 2 do 10
             case do 1;
 
+5: make switch syntax more similar to C's syntax (semantically the same though)
+
+    switch intrinsics::system {
+    case .windows:
+        let load_file = fn(...) {...};
+        // implicit break
+    case .linux:
+        let load_file = fn(...) {...};
+    case .macos:
+        let load_file = fn(...) {...};
+    }
+
+    // makes switch expression syntax better
+    mut x = switch a {
+        case 1: 100,
+        case 2: 10,
+        case:   1,
+    };
