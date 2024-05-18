@@ -37,11 +37,11 @@ FILE_NUM = 0
 build/%.o: src/%.c
 	$(eval FILE_NUM=$(shell echo $$(($(FILE_NUM)+1))))
 	$(shell $(ECHO) 1>&2 -e "\e[0m[\e[32m$(FILE_NUM)/$(words $(SRC))\e[0m]\t Compiling \e[1m$<\e[0m")
-	@$(CC) -c -o build/$(notdir $@) $< $(INCLUDEPATHS) $(CFLAGS) $(OPT)
+	@$(CC) -c -o $@ $< $(INCLUDEPATHS) $(CFLAGS) $(OPT)
 
 build: $(OBJECTS)
 	@echo Linking into $(EXECUTABLE_NAME)
-	@$(LD) $(foreach obj, $(notdir $(OBJECTS)), build/$(obj)) -o $(EXECUTABLE_NAME) $(CFLAGS)
+	@$(LD) $(OBJECTS) -o $(EXECUTABLE_NAME) $(CFLAGS)
 	@echo Successfully built: $(EXECUTABLE_NAME)
 
 debug: CFLAGS += $(DEBUGFLAGS)
@@ -51,5 +51,12 @@ debug: build
 clean:
 	@rm -rf build/
 	@mkdir build/
+	@mkdir build/deimos
+	@mkdir build/deimos/targets
+	@mkdir build/deimos/passes
+	@mkdir build/deimos/passes/transform
+	@mkdir build/deimos/passes/analysis
+	@mkdir build/phobos
+	@mkdir build/deimos/targets/aphelion
 
 cleanbuild: clean build
