@@ -6,7 +6,9 @@
 
 #define MARKED 0xDEADBEEF
 
-static IR_BasicBlock** compute_dominator_set(IR_Function* f, IR_BasicBlock* bb, IR_BasicBlock* entry);
+// big fuck-off function header lol
+static IR_BasicBlock** compute_dominator_set(IR_Function* f, IR_BasicBlock* bb, IR_BasicBlock* entry, u32* domset_len);
+
 static void recursive_reparent(IR_BasicBlock* bb);
 
 static void pass_cfg_func(IR_Function* f) {
@@ -74,7 +76,8 @@ static void pass_cfg_func(IR_Function* f) {
     // compute dominators
     // 2d array of pointers [block][dominator]
     for_urange(i, 0, f->blocks.len) {
-        f->blocks.at[i]->domset = compute_dominator_set(f, f->blocks.at[i], f->blocks.at[f->entry_idx]);
+        
+        f->blocks.at[i]->domset = compute_dominator_set(f, f->blocks.at[i], f->blocks.at[f->entry_idx], &f->blocks.at[i]->domset_len);
     }
     
     // starting at the dominator set for the entry, recursively re-parent idom to construct dominator tree
@@ -106,7 +109,7 @@ static void recursive_mark(IR_BasicBlock* bb, IR_BasicBlock* avoid, u64 mark) {
 
 // returns a null-terminated, list of blocks that are dominated by the input basic block
 // naive quadratic algorithm
-static IR_BasicBlock** compute_dominator_set(IR_Function* f, IR_BasicBlock* bb, IR_BasicBlock* entry) {
+static IR_BasicBlock** compute_dominator_set(IR_Function* f, IR_BasicBlock* bb, IR_BasicBlock* entry, u32* domset_len) {
 
     // reset visited flags
     for_urange(i, 0, f->blocks.len) {
@@ -123,7 +126,7 @@ static IR_BasicBlock** compute_dominator_set(IR_Function* f, IR_BasicBlock* bb, 
         }
     }
 
-    IR_BasicBlock** domset = malloc(sizeof(IR_BasicBlock*) * (num_dominated + 1));
+    IR_BasicBlock** domset = malloc(sizeof(IR_BasicBlock*) * (num_dominated));
 
     u64 next = 0;
     for_urange(i, 0, f->blocks.len) {
@@ -131,7 +134,7 @@ static IR_BasicBlock** compute_dominator_set(IR_Function* f, IR_BasicBlock* bb, 
             domset[next++] = f->blocks.at[i];
         }
     }
-    domset[num_dominated] = NULL;
+    *domset_len = num_dominated;
     return domset;
 }
 

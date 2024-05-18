@@ -2,7 +2,7 @@
 #define DEIMOS_IRGEN_H
 
 #include "deimos.h"
-#include "passes.h"
+#include "deimos/passes/passes.h"
 #include "phobos/sema.h"
 
 IR_Module* ir_generate(mars_module* mod);

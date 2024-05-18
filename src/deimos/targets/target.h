@@ -19,6 +19,15 @@ typedef struct AsmModule       AsmModule;
 
 #define REAL_REG_UNASSIGNED (UINT32_MAX)
 
+enum {
+    VREG_NOT_SPECIAL,
+    VREG_PARAMVAL, // extend this register's liveness to the beginning of the program
+    VREG_RETURNVAL, // extend this register's liveness to the end of the program
+
+    VREG_CALLPARAMVAL, // extend this register's liveness to the next call-classified instruction
+    VREG_CALLRETURNVAL, // extend this register's liveness to the nearest previous call-classified instruction
+};
+
 typedef struct VReg {
     // index of real register into regclass array (if REAL_REG_UNASSIGNED, it has not been assigned yet)
     u32 real;
@@ -26,7 +35,8 @@ typedef struct VReg {
     // register class to pick from when assigning a machine register
     u32 required_regclass;
 
-    // probably include some liveness info here later
+    // any special handling information
+    u8 special;
 } VReg;
 
 enum {
@@ -184,6 +194,12 @@ typedef struct TargetCallingConv {
     u16 return_regs_len;
 } TargetCallingConv;
 
+enum {
+    ISPEC_NONE = 0, // no special handling
+    ISPEC_MOVE, // register allocator should try to copy-elide this
+    ISPEC_CALL, // register allocator needs to be careful about lifetimes over this
+};
+
 // instruction template, each MInst follows one.
 typedef struct TargetInstInfo {
     string asm_string;
@@ -194,7 +210,7 @@ typedef struct TargetInstInfo {
 
     // instruction specific stuffs
 
-    bool is_mov; // is this a simple move?
+    u8 special; // any special information/classification?
 } TargetInstInfo;
 
 /*
@@ -209,6 +225,9 @@ typedef struct TargetInstInfo {
 */
 
 typedef struct TargetFormatInfo {
+    string file_begin; // arbitrary text to put at the beginning
+    string file_end; // arbitrary text to put at the end
+
     string u64;
     string u32;
     string u16;

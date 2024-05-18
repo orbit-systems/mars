@@ -1,20 +1,5 @@
 #include "deimos.h"
 #include "passes/passes.h"
-/* (sandwich): okay, heres how this is going to work.
-
-the function generate_ir() encompasses the simple AST -> IR
-translation phase. it does not do any optimizations.
-this is explicitly NOT a structured pass in the pass system
-because it is of a completely different form to the rest of 
-the passes, which are IR -> IR and modify the IR directly. 
-also, there is only one AST -> IR pass, so treating it as a 
-general pass only makes things more complex.
-
-the compiler driver can then schedule one or more IR passes. 
-They can be optimization passes, analysis passes, but their 
-common trait is that they operate on the IR structure itself.
-
-*/
 
 void deimos_run(mars_module* main_mod) {
     IR_Module* ir_mod = ir_generate(main_mod);

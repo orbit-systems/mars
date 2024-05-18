@@ -9,6 +9,11 @@ enum {
     APHEL_REGCLASS_LEN,
 };
 
+extern const TargetRegisterInfo aphelion_regclass_zero_regs[];
+enum {
+    APHEL_ZERO_RZ,
+    APHEL_ZERO_LEN,
+};
 
 extern const TargetRegisterInfo aphelion_regclass_gpr_regs[];
 enum {
@@ -24,12 +29,6 @@ enum {
     APHEL_GPR_RJ,
     APHEL_GPR_RK,
     APHEL_GPR_LEN,
-};
-
-extern const TargetRegisterInfo aphelion_regclass_zero_regs[];
-enum {
-    APHEL_ZERO_RZ,
-    APHEL_ZERO_LEN,
 };
 
 extern const TargetInstInfo aphelion_instruction_templates[];

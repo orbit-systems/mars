@@ -91,7 +91,12 @@ typedef struct IR_Function {
 
 typedef struct IR_FuncItem {
     entity* e;
-    // probably more here later!
+
+    type* T;
+
+    // if its an aggregate, this is exposed as a pointer marked "by_val" so that
+    // calling conventions work without needing target-specific information.
+    bool by_val_aggregate;
 } IR_FuncItem;
 
 typedef struct IR_BasicBlock {
@@ -108,6 +113,7 @@ typedef struct IR_BasicBlock {
     IR_BasicBlock** incoming;
     u16 out_len;
     u16 in_len;
+    u32 domset_len;
 
     u64 flags; // for misc use
 } IR_BasicBlock;
@@ -323,12 +329,9 @@ typedef struct IR_ParamVal {
 } IR_ParamVal;
 
 // set register return val
-// can also be used as a source, for retrieving a pointer
-// IF SOURCE != NULL, IT MUST BE BEFORE AN IR_Return OR ANOTHER IR_ReturnVal INSTRUCTION
-// SAME REASON AS ABOVE
 typedef struct IR_ReturnVal {
     IR base;
-    IR* source; // can be NULL if referring to a stack return val
+    IR* source;
 
     u32 return_idx;
 } IR_ReturnVal;
