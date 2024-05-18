@@ -303,45 +303,6 @@ void printn(char* text, size_t len) {
 void printstr(string str) {
     printn(str.raw, str.len);
 }
-
-int printf_print_string (FILE* stream, const struct printf_info* info, const void* const* args) {
-  string* s;
-  char *buffer;
-  int len;
-
-  /* Format the output into a string. */
-  s = *((const string**) (args[0]));
-  len = asprintf(&buffer, "%.*s", s->len, s->raw);
-  if (len == -1)
-    return -1;
-
-  /* Pad to the minimum field width and print to the stream. */
-  len = fprintf (stream, "%*s",
-                 (info->left ? -info->width : info->width),
-                 buffer);
-
-  /* Clean up and return. */
-  free (buffer);
-  return len;
-}
-
-
-int printf_string_arginfo (const struct printf_info *info, size_t n,
-                      int *argtypes)
-{
-  /* We always take exactly one argument and this is a pointer to the
-     structure.. */
-  if (n > 0)
-    argtypes[0] = PA_POINTER;
-  return 1;
-}
-
-void orbit_create_printf_format() {
-    register_printf_function ('S', printf_print_string, printf_string_arginfo);
-}
-
-int opf_initialised = 0;
-
 #endif
 
 

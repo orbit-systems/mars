@@ -109,7 +109,7 @@ void load_arguments(int argc, char* argv[], flag_set* fl) {
 
             char* got = realpath(a.val.raw, dumbass_shit_buffer);
             if (got == NULL) {
-                general_error("could not find '%S'", &a.val);
+                general_error("could not find '%.*s'", a.val.len, a.val.raw);
             }
 
             fl->output_path = string_clone(str(dumbass_shit_buffer));
