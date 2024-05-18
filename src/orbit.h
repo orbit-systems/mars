@@ -16,7 +16,6 @@
 #include <float.h>
 #include <stdalign.h>
 #include <stdnoreturn.h>
-#include <printf.h>
 
 typedef uint64_t u64;
 typedef uint32_t u32;

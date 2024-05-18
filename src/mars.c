@@ -16,8 +16,6 @@ flag_set mars_flags;
 void parse_target_triple(string tt, flag_set* fl);
 
 int main(int argc, char** argv) {
-    orbit_create_printf_format();
-
     load_arguments(argc, argv, &mars_flags);
 
     mars_module* main_mod = parse_module(mars_flags.input_path);
