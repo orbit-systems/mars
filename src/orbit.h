@@ -252,7 +252,7 @@ string string_alloc(size_t len) {
 
     if (raw == NULL) return NULL_STR;
 
-    memset(raw, ' ', len);
+    memset(raw, '\0', len);
 
     #ifdef CSTRING_COMPATIBILITY_MODE
     raw[len] = '\0';
@@ -305,13 +305,13 @@ void printstr(string str) {
 }
 
 int printf_print_string (FILE* stream, const struct printf_info* info, const void* const* args) {
-  string s;
+  string* s;
   char *buffer;
   int len;
 
   /* Format the output into a string. */
-  s = *((const string*) (args[0]));
-  len = asprintf(&buffer, "%s", s.raw);
+  s = *((const string**) (args[0]));
+  len = asprintf(&buffer, "%.*s", s->len, s->raw);
   if (len == -1)
     return -1;
 
@@ -332,7 +332,7 @@ int printf_string_arginfo (const struct printf_info *info, size_t n,
   /* We always take exactly one argument and this is a pointer to the
      structure.. */
   if (n > 0)
-    argtypes[0] = PA_STRING;
+    argtypes[0] = PA_POINTER;
   return 1;
 }
 

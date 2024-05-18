@@ -33,6 +33,7 @@ IR_Global* ir_generate_global_from_stmt_decl(IR_Module* mod, AST ast) { //FIXME:
 
     if (decl_stmt->rhs.type == AST_func_literal_expr) {
         IR_Function* fn = ir_generate_function(mod, decl_stmt->rhs);
+        fn->sym->name = string_clone(string_concat(ir_g->sym->name, str(".code")));
         ir_set_global_symref(ir_g, fn->sym);
     } else { //AST_literal
         general_error("FIXME: unhandled RHS of decl_stmt, it wasnt an AST_func_literal_expr");

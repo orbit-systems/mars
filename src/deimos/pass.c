@@ -1,6 +1,8 @@
 #include "deimos.h"
 #include "passes/passes.h"
 
+#include "targets/aphelion/aphelion.h"
+
 da(Pass) deimos_passes;
 
 void add_pass(char* name, void* callback, pass_type type) {
@@ -33,4 +35,5 @@ void run_passes(IR_Module* current_program) {
     }
     //HACK
     aphelion_translate_module(current_program);
+    printf("TODO: FIX THIS FUCKING HACK\n");
 }

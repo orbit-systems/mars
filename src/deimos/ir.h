@@ -33,8 +33,8 @@ typedef struct IR_Module {
 } IR_Module;
 
 enum {
-    IR_SYM_LOCAL,
     IR_SYM_GLOBAL,
+    IR_SYM_LOCAL,
 };
 
 typedef struct IR_Symbol {

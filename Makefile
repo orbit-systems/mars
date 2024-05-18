@@ -29,7 +29,7 @@ LD = gcc
 INCLUDEPATHS = -Isrc/ -Isrc/phobos/ -Isrc/deimos/ -Isrc/deimos/targets
 DEBUGFLAGS = -lm -rdynamic -pg -g
 ASANFLAGS = -fsanitize=undefined -fsanitize=address
-CFLAGS = -Wincompatible-pointer-types -Wno-discarded-qualifiers -lm
+CFLAGS = -Wincompatible-pointer-types -Wno-discarded-qualifiers -lm -Wno-deprecated-declarations
 OPT = -O2
 
 FILE_NUM = 0

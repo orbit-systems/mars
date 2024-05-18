@@ -2,6 +2,13 @@
 
 #include "target.h"
 
+AsmSymbol* ir_sym_to_asm_sym(AsmModule* m, IR_Symbol* sym) {
+    AsmSymbol* new_sym = arena_alloc(&m->alloca, sizeof(*new_sym), alignof(*new_sym));
+    new_sym->binding = sym->visibility;
+    new_sym->name = string_clone(sym->name);
+    return new_sym;
+}
+
 AsmModule* asm_new_module(TargetInfo* target) {
     AsmModule* m = malloc(sizeof(AsmModule));
     *m = (AsmModule){0};
@@ -63,10 +70,10 @@ AsmInst* asm_new_inst(AsmModule* m, u32 template) {
         i->imms = arena_alloc(&m->alloca, sizeof(i->imms[0]) * i->template->num_imms, alignof(i->imms[0]));
     }
     if (i->template->num_ins != 0) {
-        i->imms = arena_alloc(&m->alloca, sizeof(i->ins[0]) * i->template->num_ins, alignof(i->ins[0]));
+        i->ins = arena_alloc(&m->alloca, sizeof(i->ins[0]) * i->template->num_ins, alignof(i->ins[0]));
     }
     if (i->template->num_outs != 0) {
-        i->imms = arena_alloc(&m->alloca, sizeof(i->outs[0]) * i->template->num_outs, alignof(i->outs[0]));
+        i->outs = arena_alloc(&m->alloca, sizeof(i->outs[0]) * i->template->num_outs, alignof(i->outs[0]));
     }
     
     return i;

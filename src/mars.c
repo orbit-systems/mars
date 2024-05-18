@@ -16,11 +16,11 @@ flag_set mars_flags;
 void parse_target_triple(string tt, flag_set* fl);
 
 int main(int argc, char** argv) {
-    
+    orbit_create_printf_format();
+
     load_arguments(argc, argv, &mars_flags);
 
     mars_module* main_mod = parse_module(mars_flags.input_path);
-
 
     if (mars_flags.output_dot == true) {  
         emit_dot(str("test"), main_mod->program_tree);
@@ -109,7 +109,7 @@ void load_arguments(int argc, char* argv[], flag_set* fl) {
 
             char* got = realpath(a.val.raw, dumbass_shit_buffer);
             if (got == NULL) {
-                general_error("could not find '%s'", a.val.raw);
+                general_error("could not find '%S'", &a.val);
             }
 
             fl->output_path = string_clone(str(dumbass_shit_buffer));
@@ -151,8 +151,8 @@ void parse_target_triple(string tt, flag_set* fl) {
     fl->target_arch = arch_from_str(arch);
     fl->target_system = sys_from_str(system);
     fl->target_product = product_from_str(product);
-    if (fl->target_arch == -1)    general_error("Unrecognized architecture: %s", arch.raw);
-    if (fl->target_system == -1)  general_error("Unrecognized system: %s", system.raw);
-    if (fl->target_product == -1) general_error("Unrecognized product: %s", product.raw);
+    if (fl->target_arch == -1)    general_error("Unrecognized architecture: %S", arch);
+    if (fl->target_system == -1)  general_error("Unrecognized system: %S", system);
+    if (fl->target_product == -1) general_error("Unrecognized product: %S", product);
     return;
 }
