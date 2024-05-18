@@ -31,4 +31,5 @@ void run_passes(IR_Module* current_program) {
         }
         ir_print_module(current_program);
     }
+    
 }

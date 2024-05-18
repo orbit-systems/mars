@@ -14,15 +14,12 @@ typedef struct flag_set_s {
     string output_path;
     bool output_dot;
     bool print_timings;
-    bool deimos_disabled;
-    bool semanal_disabled;
     bool dump_AST;
 
-/*
-    u8 target_arch;
-    u8 target_system;
-    u8 target_product;
-*/
+    int target_arch;
+    int target_system;
+    int target_product;
+
 
 } flag_set;
 

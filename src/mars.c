@@ -10,8 +10,10 @@
 #include "phobos/sema.h"
 
 #include "deimos/deimos.h"
+#include "deimos/targettriples.h"
 
 flag_set mars_flags;
+void parse_target_triple(string tt, flag_set* fl);
 
 int main(int argc, char** argv) {
     
@@ -26,27 +28,13 @@ int main(int argc, char** argv) {
 
 
     // recursive check
-    if (!mars_flags.semanal_disabled) {
-        // checked_expr e = {0};
-        // check_expr(
-        //     main_mod, 
-        //     NULL, 
-        //     main_mod->program_tree.at[0].as_decl_stmt->rhs,
-        //     &e,
-        //     true,
-        //     NULL
-        // );
-        // printf("%lld\n", e.ev->as_untyped_int);
-        check_module_and_dependencies(main_mod);
-    }
+    check_module_and_dependencies(main_mod);
 
     if (mars_flags.dump_AST) for_urange(i, 0, main_mod->program_tree.len) {
         dump_tree(main_mod->program_tree.at[i], 0);
     }
 
-    if (!mars_flags.deimos_disabled) {
-        deimos_run(main_mod);
-    }
+    deimos_run(main_mod);
 
 
     // check_module_and_dependencies(main_mod);
@@ -61,16 +49,15 @@ int main(int argc, char** argv) {
 
 void print_help() {
     printf("usage: mars (directory) [flags]\n\n");
-    printf("(directory)         where the main_mod module is.\n");
+    printf("(directory)                       where the main_mod module is.\n");
     printf("\n");
-    printf("-o:(path)           specify an output path\n");
-    printf("-help               display this text\n");
+    printf("-o:(path)                         specify an output path\n");
+    printf("-help                             display this text\n");
+    printf("-target:(arch)-(system)-(product) specify the target triple you are using, e.g aphelion-unknown-asm\n");
     printf("\n");
-    printf("-timings            print stage timings\n");
-    printf("-dump-AST           print readable AST\n");
-    printf("-dot                convert the AST to a graphviz .dot file\n");
-    printf("-no-checker         disables the semantic analyzer (kill the child, no witnesses.)\n");
-    printf("-no-deimos          disables the compiler backend\n");
+    printf("-timings                          print stage timings\n");
+    printf("-dump-AST                         print readable AST\n");
+    printf("-dot                              convert the AST to a graphviz .dot file\n");
 }
 
 cmd_arg make_argument(char* s) {
@@ -132,12 +119,40 @@ void load_arguments(int argc, char* argv[], flag_set* fl) {
             fl->print_timings = true;
         } else if (string_eq(a.key, str("-dump-AST"))) {
             fl->dump_AST = true;
-        } else if (string_eq(a.key, str("-no-deimos"))) {
-            fl->deimos_disabled = true;
-        } else if (string_eq(a.key, str("-no-checker"))) {
-            fl->semanal_disabled = true;
+        } else if (string_eq(a.key, str("-target"))) {
+            parse_target_triple(a.val, fl);
         } else {
             general_error("unrecognized option \""str_fmt"\"", str_arg(a.key));
         }
     }
+}
+
+void parse_target_triple(string tt, flag_set* fl) {
+    string arch = str("");
+    string system = str("");
+    string product = str("");
+    int curr_anchor = 0;
+    int curr_str = 0;
+    for (int i = 0; i < tt.len; i++) {
+        if (tt.raw[i] == '-' && curr_str == 0) {
+            arch = string_clone(substring(tt, curr_anchor, i));
+            curr_str++;
+            curr_anchor = i + 1;
+            continue;
+        }
+        if (tt.raw[i] == '-' && curr_str == 1) {
+            system = string_clone(substring(tt, curr_anchor, i));
+            curr_str++;
+            curr_anchor = i + 1;
+            continue;
+        }
+    }
+    product = string_clone(substring(tt, curr_anchor, tt.len));
+    fl->target_arch = arch_from_str(arch);
+    fl->target_system = sys_from_str(system);
+    fl->target_product = product_from_str(product);
+    if (fl->target_arch == -1)    general_error("Unrecognized architecture: %s", arch.raw);
+    if (fl->target_system == -1)  general_error("Unrecognized system: %s", system.raw);
+    if (fl->target_product == -1) general_error("Unrecognized product: %s", product.raw);
+    return;
 }
