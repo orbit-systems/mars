@@ -51,12 +51,6 @@ debug: build
 clean:
 	@rm -rf build/
 	@mkdir build/
-	@mkdir build/deimos
-	@mkdir build/deimos/targets
-	@mkdir build/deimos/passes
-	@mkdir build/deimos/passes/transform
-	@mkdir build/deimos/passes/analysis
-	@mkdir build/phobos
-	@mkdir build/deimos/targets/aphelion
+	@mkdir -p $(dir $(OBJECTS))
 
 cleanbuild: clean build
