@@ -113,6 +113,7 @@ typedef struct IR_BasicBlock {
     IR_BasicBlock** incoming;
     u16 out_len;
     u16 in_len;
+    u32 domset_len;
 
     u64 flags; // for misc use
 } IR_BasicBlock;
