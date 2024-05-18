@@ -2,6 +2,7 @@
 #define DEIMOS_PASS_H
 
 #include "ir.h"
+#include "targets/aphelion/aphelion.h"
 
 typedef enum {
     PASS_IR_TO_IR,

@@ -26,7 +26,6 @@ const TargetInstInfo aphelion_instructions[] = {
         .asm_string = constr("mov {out 0}, {in 0}"),
         .num_ins = 1,
         .num_outs = 1,
-        .is_mov = true,
     },
     [APHEL_INST_ADDR] = {
         .asm_string = constr("addr {out 0}, {in 0}, {in 1}"),
