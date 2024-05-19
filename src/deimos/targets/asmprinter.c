@@ -58,7 +58,7 @@ static size_t scan_uint(string str, size_t* index) {
     size_t val = 0;
     while ('0' <= str.raw[*index] && str.raw[*index] <= '9' && str.len > *index) {
         val = val * 10 + (str.raw[*index] - '0');
-        *index++;
+        (*index)++;
     }
     return val;
 }
