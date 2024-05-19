@@ -167,6 +167,23 @@ typedef uint8_t bool;
 #define da_pop(da_ptr) (da_ptr)->len--
 #define da_pop_front(da_ptr) da_remove_at(da_ptr, 0)
 
+#define foreach(item, da) \
+    for(int keep = 1, \
+            count = 0,\
+            size = (da).len; \
+        keep && count != size; \
+        keep = !keep, count++) \
+      for(item = (da).at[count]; keep; keep = !keep)
+
+#define foreach_non_da(item, array, length, indexer) \
+    for(int keep = 1, \
+            count = 0,\
+            size = length; \
+        keep && count != size; \
+        keep = !keep, count++) \
+      for(item = array indexer; keep; keep = !keep)
+
+
 // strings and string-related utils.
 
 // #define CSTRING_COMPATIBILITY_MODE

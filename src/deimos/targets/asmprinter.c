@@ -2,14 +2,11 @@
 
 void debugAsmPrinter(AsmModule* am) {
     //printf("func_len: %d\n", am->functions_len);
-    for_urange(i, 0, am->functions_len) {
-        AsmFunction* curr_func = am->functions[i];
+    foreach_non_da(AsmFunction* curr_func, am->functions, am->functions_len, [count]) {
         printf("Function: " str_fmt "\n", str_arg(curr_func->sym->name));
-        for_urange(j, 0, curr_func->num_blocks) {
-            AsmBlock* curr_block = curr_func->blocks[i];
+        foreach_non_da(AsmBlock* curr_block, curr_func->blocks, curr_func->num_blocks, [count]) {
             printf(str_fmt ":\n", str_arg(curr_block->label));
-            for_urange(k, 0, curr_block->len) {
-                AsmInst* curr_inst = curr_block->at[k];
+            foreach(AsmInst *curr_inst, *curr_block) {
                 printf(str_fmt"\n", str_arg(curr_inst->template->asm_string));
             }
         }
