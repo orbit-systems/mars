@@ -23,8 +23,10 @@ IR_Function* ir_new_function(IR_Module* mod, IR_Symbol* sym, bool global) {
     da_init(&fn->blocks, 1);
     fn->entry_idx = 0;
     // fn->exit_idx = 0;
-
-    mod->functions = realloc(mod->functions, mod->functions_len+1);
+    fn->params = NULL;
+    fn->returns = NULL;
+;
+    mod->functions = realloc(mod->functions, sizeof(*mod->functions) * (mod->functions_len+1));
     mod->functions[mod->functions_len++] = fn;
     return fn;
 }
@@ -94,7 +96,7 @@ IR_Global* ir_new_global(IR_Module* mod, IR_Symbol* sym, bool global, bool read_
     gl->data = NULL;
     gl->data_len = 0;
 
-    mod->globals = realloc(mod->globals, mod->globals_len+1);
+    mod->globals = realloc(mod->globals, sizeof(*mod->globals) * (mod->globals_len+1));
     mod->globals[mod->globals_len++] = gl;
     return gl;
 }

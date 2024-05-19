@@ -16,6 +16,7 @@ u64 FNV_1a(string key) {
 }
 
 entity_table* new_entity_table(entity_table* parent) {
+    if (entity_tables.at == NULL) da_init(&entity_tables, 1);
     entity_table* et = malloc(sizeof(entity_table));
     *et = (entity_table){0};
 

@@ -39,10 +39,10 @@ void asm_printer(AsmModule* m) {
 
 #define skip_whitespace(c, i) while (fmt.raw[i] == ' ' && i < fmt.len) {i++; c = fmt.raw[i];}
 
-static size_t scan_uint(char* str, size_t* index) {
+static size_t scan_uint(string str, size_t* index) {
     size_t val = 0;
-    while ('0' <= str[*index] && str[*index] <= '9') {
-        val = val * 10 + (str[*index] - '0');
+    while ('0' <= str.raw[*index] && str.raw[*index] <= '9' && str.len > *index) {
+        val = val * 10 + (str.raw[*index] - '0');
         *index++;
     }
     return val;
@@ -71,7 +71,7 @@ void print_asm_inst(AsmModule* m, AsmInst* inst) {
                 skip_whitespace(c, i);
 
                 
-                size_t in_index = scan_uint(fmt.raw, &i);
+                size_t in_index = scan_uint(fmt, &i);
 
 
                 VReg* in = inst->ins[in_index];
@@ -95,7 +95,7 @@ void print_asm_inst(AsmModule* m, AsmInst* inst) {
 
                 i += 3; // skip past the 'out'
                 skip_whitespace(c, i);
-                size_t out_index = scan_uint(fmt.raw, &i);
+                size_t out_index = scan_uint(fmt, &i);
 
                 VReg* out = inst->outs[out_index];
                 
