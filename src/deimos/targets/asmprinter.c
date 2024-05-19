@@ -54,6 +54,8 @@ void asm_printer(AsmModule* m, bool debug_mode) {
 
 #define skip_whitespace(c, i) while (fmt.raw[i] == ' ' && i < fmt.len) {i++; c = fmt.raw[i];}
 
+#define skip_until(char, c, i) while(fmt.raw[i] != (char) && i < fmt.len) {c = fmt.raw[i];}
+
 static size_t scan_uint(string str, size_t* index) {
     size_t val = 0;
     while ('0' <= str.raw[*index] && str.raw[*index] <= '9' && str.len > *index) {
@@ -81,7 +83,7 @@ void print_asm_inst(AsmModule* m, AsmInst* inst, bool debug_mode) {
 
         if (c == '{') {
             // format start!!
-
+            printf("[[%d: %s]]", i, fmt.raw + i);
             i++; // increment past the {
 
             // skip until not whitespace
@@ -116,7 +118,8 @@ void print_asm_inst(AsmModule* m, AsmInst* inst, bool debug_mode) {
 
                     printf(str_fmt, str_arg(real->name));
                 }
-                while (c != '}') c = fmt.raw[++i]; // skip until }
+
+                skip_until('}', c, i);
                 continue;
 
             } else if (strncmp(&fmt.raw[i], "out", 3) == 0) {
@@ -147,7 +150,7 @@ void print_asm_inst(AsmModule* m, AsmInst* inst, bool debug_mode) {
                     printf(str_fmt, str_arg(real->name));
                 }
 
-                while (c != '}') c = fmt.raw[++i]; // skip until }
+                skip_until('}', c, i); // skip until }
                 continue;
 
             } else if (strncmp(&fmt.raw[i], "imm", 3) == 0) {
