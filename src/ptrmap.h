@@ -9,7 +9,7 @@ typedef struct PtrMap {
     size_t cap; // capacity
 } PtrMap;
 
-#define PTRMAP_NOT_FOUND ((void*)0xDEAD)
+#define PTRMAP_NOT_FOUND ((void*)0xDEADBEEFDEADBEEF)
 
 size_t hashfunc(void* str);
 

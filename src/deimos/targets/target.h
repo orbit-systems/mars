@@ -20,12 +20,12 @@ typedef struct AsmModule       AsmModule;
 #define REAL_REG_UNASSIGNED (UINT32_MAX)
 
 enum {
-    VREG_NOT_SPECIAL,
-    VREG_PARAMVAL, // extend this register's liveness to the beginning of the program
-    VREG_RETURNVAL, // extend this register's liveness to the end of the program
+    VSPEC_NONE,
+    VSPEC_PARAMVAL, // extend this register's liveness to the beginning of the program
+    VSPEC_RETURNVAL, // extend this register's liveness to the end of the program
 
-    VREG_CALLPARAMVAL, // extend this register's liveness to the next call-classified instruction
-    VREG_CALLRETURNVAL, // extend this register's liveness to the nearest previous call-classified instruction
+    VSPEC_CALLPARAMVAL, // extend this register's liveness to the next call-classified instruction
+    VSPEC_CALLRETURNVAL, // extend this register's liveness to the nearest previous call-classified instruction
 };
 
 typedef struct VReg {

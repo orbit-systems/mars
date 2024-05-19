@@ -16,7 +16,7 @@ AsmModule* aphelion_translate_module(IR_Module* irmod) {
     }
 
     debug_asm_printer(mod);
-    asm_printer(mod);
+    asm_printer(mod, true);
 }
 
 AsmFunction* aphelion_translate_function(AsmModule* m, IR_Function* f) {
@@ -51,7 +51,7 @@ AsmBlock* aphelion_translate_block(AsmModule* m, AsmFunction* f, IR_Function* ir
 
             // select calling convention register - TODO dont make this hardcoded
             VReg* src = asm_new_vreg(m, APHEL_REGCLASS_GPR);
-            src->special = VREG_PARAMVAL;
+            src->special = VSPEC_PARAMVAL;
             switch (ir->param_idx) {
             case 0: src->real = APHEL_GPR_RG; break;
             case 1: src->real = APHEL_GPR_RH; break;
@@ -81,8 +81,6 @@ AsmBlock* aphelion_translate_block(AsmModule* m, AsmFunction* f, IR_Function* ir
             VReg* lhs = ptrmap_get(&ir_to_vreg, ir->lhs);
             VReg* rhs = ptrmap_get(&ir_to_vreg, ir->rhs);
             assert(lhs && rhs);
-            printf("--> %p\n", lhs);
-            printf("--> %p\n", rhs);
 
             VReg* out = asm_new_vreg(m, APHEL_REGCLASS_GPR);
             ptrmap_put(&ir_to_vreg, ir, out);
@@ -94,11 +92,43 @@ AsmBlock* aphelion_translate_block(AsmModule* m, AsmFunction* f, IR_Function* ir
 
             asm_add_inst(b, addr);
         } break;
+        case IR_MUL: {
+            IR_BinOp* ir = (IR_BinOp*) raw_ir;
+            
+            assert(ir->rhs->tag != IR_CONST && ir->lhs->tag != IR_CONST);
+            assert(ir->rhs->T->tag == TYPE_I64 && ir->lhs->T->tag == TYPE_I64);
+
+
+            VReg* lhs = ptrmap_get(&ir_to_vreg, ir->lhs);
+            VReg* rhs = ptrmap_get(&ir_to_vreg, ir->rhs);
+            assert(lhs && rhs);
+
+            VReg* out = asm_new_vreg(m, APHEL_REGCLASS_GPR);
+            ptrmap_put(&ir_to_vreg, ir, out);
+
+            AsmInst* addr = asm_new_inst(m, APHEL_INST_IMULR);
+            addr->ins[0] = lhs;
+            addr->ins[1] = rhs;
+            addr->outs[0] = out;
+
+            asm_add_inst(b, addr);
+        } break;
         case IR_RETURNVAL: {
             IR_ReturnVal* ir = (IR_ReturnVal*) raw_ir;
 
             VReg* out = asm_new_vreg(m, APHEL_REGCLASS_GPR);
             ptrmap_put(&ir_to_vreg, ir, out); // i dont think this actually needs to be put in
+            
+            out->special = VSPEC_RETURNVAL;
+            switch (ir->return_idx) {
+            case 0: out->real = APHEL_GPR_RG; break;
+            case 1: out->real = APHEL_GPR_RH; break;
+            case 2: out->real = APHEL_GPR_RI; break;
+            case 3: out->real = APHEL_GPR_RJ; break;
+            case 4: out->real = APHEL_GPR_RK; break;
+            default:
+                CRASH("returnval index too big");
+            }
 
             VReg* in = ptrmap_get(&ir_to_vreg, ir->source);
 

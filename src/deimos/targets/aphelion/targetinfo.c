@@ -23,7 +23,7 @@ const TargetInstInfo aphelion_instructions[] = {
         .asm_string = constr("nop"),
     },
     [APHEL_INST_MOV] = {
-        .asm_string = constr("mov {out 0}, {in 0}"),
+        .asm_string = constr("mov  {out 0}, {in 0}"),
         .num_ins = 1,
         .num_outs = 1,
     },
@@ -34,6 +34,17 @@ const TargetInstInfo aphelion_instructions[] = {
     },
     [APHEL_INST_ADDI] = {
         .asm_string = constr("addi {out 0}, {in 0}, {int 0}"),
+        .num_ins = 1,
+        .num_imms = 1,
+        .num_outs = 1,
+    },
+    [APHEL_INST_IMULR] = {
+        .asm_string = constr("imulr {out 0}, {in 0}, {in 1}"),
+        .num_ins = 2,
+        .num_outs = 1,
+    },
+    [APHEL_INST_IMULI] = {
+        .asm_string = constr("imuli {out 0}, {in 0}, {int 0}"),
         .num_ins = 1,
         .num_imms = 1,
         .num_outs = 1,
