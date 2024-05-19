@@ -37,7 +37,7 @@ void asm_printer(AsmModule* m) {
     }
 }
 
-#define skip_whitespace(c, i) while (c == ' ') c = fmt.raw[i++];
+#define skip_whitespace(c, i) while (fmt.raw[i] == ' ' && i < fmt.len) {i++; c = fmt.raw[i];}
 
 static size_t scan_uint(char* str, size_t* index) {
     size_t val = 0;
@@ -67,8 +67,28 @@ void print_asm_inst(AsmModule* m, AsmInst* inst) {
             if (strncmp(&fmt.raw[i], "in", 2) == 0) {
                 // we have an in!
 
+                i += 2; // skip past the 'in'
+                skip_whitespace(c, i);
 
-                TODO("in printing");
+                
+                size_t in_index = scan_uint(fmt.raw, &i);
+
+
+                VReg* in = inst->ins[in_index];
+                
+                if (in->real == REAL_REG_UNASSIGNED) {
+                    // print a virtual register
+
+                    printf("v%p", in); // unreadable as fuck
+                } else {
+                    // print a real register
+
+                    TargetRegisterInfo* real = &m->target->regclasses[in->required_regclass].regs[in->real];
+
+                    printf(str_fmt, str_arg(real->name));
+                }
+                while (c != '}') c = fmt.raw[i++]; // skip until }
+                continue;
 
             } else if (strncmp(&fmt.raw[i], "out", 3) == 0) {
                 // we have an out!
@@ -77,8 +97,10 @@ void print_asm_inst(AsmModule* m, AsmInst* inst) {
                 skip_whitespace(c, i);
                 size_t out_index = scan_uint(fmt.raw, &i);
 
-                VReg* out = inst->outs[i];
+                VReg* out = inst->outs[out_index];
                 
+                printf("!!!!!!!!!!!!!!!!!!!!!!!");
+
                 if (out->real == REAL_REG_UNASSIGNED) {
                     // print a virtual register
 
@@ -88,7 +110,7 @@ void print_asm_inst(AsmModule* m, AsmInst* inst) {
 
                     TargetRegisterInfo* real = &m->target->regclasses[out->required_regclass].regs[out->real];
 
-                    printf(str_fmt, out->real, str_arg(real->name));
+                    printf(str_fmt, str_arg(real->name));
                 }
 
                 while (c != '}') c = fmt.raw[i++]; // skip until }

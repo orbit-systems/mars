@@ -81,6 +81,8 @@ AsmBlock* aphelion_translate_block(AsmModule* m, AsmFunction* f, IR_Function* ir
             VReg* lhs = ptrmap_get(&ir_to_vreg, ir->lhs);
             VReg* rhs = ptrmap_get(&ir_to_vreg, ir->rhs);
             assert(lhs && rhs);
+            printf("--> %p\n", lhs);
+            printf("--> %p\n", rhs);
 
             VReg* out = asm_new_vreg(m, APHEL_REGCLASS_GPR);
             ptrmap_put(&ir_to_vreg, ir, out);

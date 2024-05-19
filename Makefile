@@ -27,7 +27,7 @@ CC = gcc
 LD = gcc
 
 INCLUDEPATHS = -Isrc/ -Isrc/phobos/ -Isrc/deimos/ -Isrc/deimos/targets
-DEBUGFLAGS = -lm -rdynamic -pg -g
+DEBUGFLAGS = -lm -pg -g
 ASANFLAGS = -fsanitize=undefined -fsanitize=address
 CFLAGS = -Wincompatible-pointer-types -Wno-discarded-qualifiers -lm -Wno-deprecated-declarations
 OPT = -O2
