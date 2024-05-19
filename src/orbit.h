@@ -207,7 +207,6 @@ typedef struct string_s {
 #define is_within(haystack, needle) (((haystack).raw <= (needle).raw) && ((haystack).raw + (haystack).len >= (needle).raw + (needle).len))
 #define substring(str, start, end) ((string){(str).raw + (start), (end) - (start)})
 #define substring_len(str, start, len) ((string){(str).raw + (start), (len)})
-#define can_be_cstring(str) ((str).raw[(str).len] == '\0')
 #define str(cstring) ((string){(cstring), strlen((cstring))})
 #define constr(cstring) ((string){(char*)cstring, sizeof(cstring)-1})
 
@@ -452,13 +451,9 @@ bool fs_exists(string path) {
     struct stat statbuffer;
     bool exists;
 
-    if (can_be_cstring(path)) {
-        exists = stat(path.raw, &statbuffer) == 0;
-    } else {
-        char* path_cstr = clone_to_cstring(path);
-        exists = stat(path_cstr, &statbuffer) == 0;
-        free(path_cstr);
-    }
+    char* path_cstr = clone_to_cstring(path);
+    exists = stat(path_cstr, &statbuffer) == 0;
+    free(path_cstr);
     return exists;
 }
 
@@ -468,13 +463,9 @@ bool fs_get(string path, fs_file* file) {
 
     {
         bool exists;
-        if (can_be_cstring(path)) {
-            exists = stat(path.raw, &statbuffer) == 0;
-        } else {
-            char* path_cstr = clone_to_cstring(path);
-            exists = stat(path_cstr, &statbuffer) == 0;
-            free(path_cstr);
-        }
+        char* path_cstr = clone_to_cstring(path);
+        exists = stat(path_cstr, &statbuffer) == 0;
+        free(path_cstr);
         if (!exists) return false;
     }
 
@@ -508,34 +499,22 @@ bool fs_create(string path, fs_file_type type, fs_file* file) {
     FILE* handle = NULL;
 
     switch (type) {
-    case oft_directory:
-        if (can_be_cstring(path)) {
-            creation_success = mkdir(path.raw
-            #if !(defined(MINGW32) || defined(__MINGW32__))
-                , S_IRWXU | S_IRWXG | S_IRWXO
-            #endif
-            ) == 0;
-        } else {
-            char* path_cstr = clone_to_cstring(path);
-            creation_success = mkdir(path_cstr
-            #if !(defined(MINGW32) || defined(__MINGW32__))
-                , S_IRWXU | S_IRWXG | S_IRWXO
-            #endif
-            ) == 0;
-            free(path_cstr);
-        }
+    case oft_directory: {
+        char* path_cstr = clone_to_cstring(path);
+        creation_success = mkdir(path_cstr
+        #if !(defined(MINGW32) || defined(__MINGW32__))
+            , S_IRWXU | S_IRWXG | S_IRWXO
+        #endif
+        ) == 0;
+        free(path_cstr);
         if (!creation_success) return false;
-        break;
-    case oft_regular:
-        if (can_be_cstring(path)) {
-            handle = fopen(path.raw, "w");
-        } else {
+        } break;
+    case oft_regular: {
             char* path_cstr = clone_to_cstring(path);
             handle = fopen(path_cstr, "w");
             free(path_cstr);
-        }
-        if (handle == NULL) return false;
-        break;
+            if (handle == NULL) return false;
+        } break;
 
     case oft_symlink: CRASH("orbitfs does not currently support creating symlinks\n");
     case oft_pipe:    CRASH("orbitfs does not currently support creating pipes\n");
@@ -570,13 +549,9 @@ bool fs_open(fs_file* file, char* mode) {
 
 
     FILE* handle = NULL;
-    if (can_be_cstring(file->path)) {
-        handle = fopen(file->path.raw, mode);
-    } else {
-        char* path_cstr = clone_to_cstring(file->path);
-        handle = fopen(path_cstr, mode);
-        free(path_cstr);
-    }
+    char* path_cstr = clone_to_cstring(file->path);
+    handle = fopen(path_cstr, mode);
+    free(path_cstr);
 
     if (handle == NULL) return false;
 
@@ -604,25 +579,16 @@ bool fs_delete(fs_file* file) {
     bool success;
 
     switch (file->type) {
-    case oft_directory:
-        if (can_be_cstring(file->path)) {
-            success = rmdir(file->path.raw) == 0;
-        } else {
+    case oft_directory: {
             char* path_cstr = clone_to_cstring(file->path);
             success = rmdir(path_cstr) == 0;
             free(path_cstr);
-        }
-        break;
-    case oft_regular:
-        if (can_be_cstring(file->path)) {
-            success = remove(file->path.raw) == 0;
-        } else {
-            char* path_cstr = clone_to_cstring(file->path);
-            success = remove(path_cstr) == 0;
-            free(path_cstr);
-        }
-        break;
-
+        } break;
+    case oft_regular: {
+        char* path_cstr = clone_to_cstring(file->path);
+        success = remove(path_cstr) == 0;
+        free(path_cstr);
+        } break;
     default:
         return false;
         break;
@@ -657,13 +623,10 @@ int fs_subfile_count(fs_file* file) {
     DIR* d;
     struct dirent* dir;
 
-    if (can_be_cstring(file->path)) {
-        d = opendir(file->path.raw);
-    } else {
-        char* path_cstr = clone_to_cstring(file->path);
-        d = opendir(path_cstr);
-        free(path_cstr);
-    }
+    char* path_cstr = clone_to_cstring(file->path);
+    d = opendir(path_cstr);
+    free(path_cstr);
+
     if (!d) return false;
 
     while ((dir = readdir(d)) != NULL) {
@@ -698,19 +661,14 @@ bool fs_get_subfiles(fs_file* file, fs_file* file_array) {
 #else
     DIR* directory;
     struct dirent* dir_entry;
-
-    if (can_be_cstring(file->path)) {
-        directory = opendir(file->path.raw);
-    } else {
+    {
         char* path_cstr = clone_to_cstring(file->path);
         directory = opendir(path_cstr);
         free(path_cstr);
     }
     if (!directory) return false;
 #endif
-    if (can_be_cstring(file->path)) {
-        chdir(file->path.raw);
-    } else {
+    {
         char* path_cstr = clone_to_cstring(file->path);
         chdir(path_cstr);
         free(path_cstr);
