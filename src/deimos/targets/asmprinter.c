@@ -3,11 +3,11 @@
 void debug_asm_printer(AsmModule* am) {
     //printf("func_len: %d\n", am->functions_len);
     foreach_non_da(AsmFunction* curr_func, am->functions, am->functions_len, [count]) {
-        printf("Function: " str_fmt "\n", str_arg(curr_func->sym->name));
+        printf("function: " str_fmt "\n", str_arg(curr_func->sym->name));
         foreach_non_da(AsmBlock* curr_block, curr_func->blocks, curr_func->num_blocks, [count]) {
-            printf(str_fmt ":\n", str_arg(curr_block->label));
+            printf("  "str_fmt ":\n", str_arg(curr_block->label));
             foreach(AsmInst *curr_inst, *curr_block) {
-                printf(str_fmt"\n", str_arg(curr_inst->template->asm_string));
+                printf("    "str_fmt"\n", str_arg(curr_inst->template->asm_string));
             }
         }
     }
@@ -88,10 +88,11 @@ void print_asm_inst(AsmModule* m, AsmInst* inst) {
 
                     TargetRegisterInfo* real = &m->target->regclasses[out->required_regclass].regs[out->real];
 
-                    printf("[%d]"str_fmt"", out->real, str_arg(real->name)); // unreadable as fuck
+                    printf(str_fmt, out->real, str_arg(real->name));
                 }
 
-                TODO("out printing");
+                while (c != '}') c = fmt.raw[i++]; // skip until }
+                continue;
 
             } else if (strncmp(&fmt.raw[i], "imm", 3) == 0) {
                 // we have an imm!

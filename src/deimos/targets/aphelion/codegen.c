@@ -15,6 +15,7 @@ AsmModule* aphelion_translate_module(IR_Module* irmod) {
         aphelion_translate_function(mod, irmod->functions[i]);
     }
 
+    debug_asm_printer(mod);
     asm_printer(mod);
 }
 
