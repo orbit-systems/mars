@@ -58,7 +58,7 @@ void asm_printer(AsmModule* m, bool debug_mode) {
 
 static size_t scan_uint(string str, size_t* index) {
     size_t val = 0;
-    while ('0' <= str.raw[*index] && str.raw[*index] <= '9' && str.len > *index) {
+    while (str.len > *index && '0' <= str.raw[*index] && str.raw[*index] <= '9') {
         val = val * 10 + (str.raw[*index] - '0');
         (*index)++;
     }
@@ -94,10 +94,8 @@ void print_asm_inst(AsmModule* m, AsmInst* inst, bool debug_mode) {
 
                 i += 2; // skip past the 'in'
                 skip_whitespace(c, i);
-
-                
+               
                 size_t in_index = scan_uint(fmt, &i);
-
 
                 VReg* in = inst->ins[in_index];
                 
@@ -127,10 +125,10 @@ void print_asm_inst(AsmModule* m, AsmInst* inst, bool debug_mode) {
 
                 i += 3; // skip past the 'out'
                 skip_whitespace(c, i);
+
                 size_t out_index = scan_uint(fmt, &i);
 
                 VReg* out = inst->outs[out_index];
-                
 
                 if (out->real == REAL_REG_UNASSIGNED) {
                     // print a virtual register
