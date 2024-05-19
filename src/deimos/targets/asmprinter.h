@@ -3,4 +3,5 @@
 
 #include "target.h"
 
-void debugAsmPrinter(AsmModule* am);
+void debug_asm_printer(AsmModule* m);
+void asm_printer(AsmModule* m);
