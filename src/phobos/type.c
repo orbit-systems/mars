@@ -487,7 +487,7 @@ type* make_type(u8 tag) {
         return typegraph.at[tag];
     }
 
-    type* t = malloc(sizeof(type));
+    type* t = mars_alloc(sizeof(type));
     *t = (type){0};
     t->moved = false;
     t->tag = tag;

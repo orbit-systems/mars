@@ -16,16 +16,14 @@ size_t hashfunc(void* key) {
 
 PtrMap* ptrmap_init(PtrMap* hm, size_t capacity) {
     hm->cap = capacity;
-    hm->vals = malloc(sizeof(hm->vals[0])*hm->cap);
-    hm->keys = malloc(sizeof(hm->keys[0])*hm->cap);
-    memset(hm->vals, 0, sizeof(hm->vals[0])*hm->cap);
-    memset(hm->keys, 0, sizeof(hm->keys[0])*hm->cap);
+    hm->vals = mars_alloc(sizeof(hm->vals[0])*hm->cap);
+    hm->keys = mars_alloc(sizeof(hm->keys[0])*hm->cap);
     return hm;
 }
 
 void ptrmap_destroy(PtrMap* hm) {
-    if (hm->keys) free(hm->keys);
-    if (hm->vals) free(hm->vals);
+    if (hm->keys) mars_free(hm->keys);
+    if (hm->vals) mars_free(hm->vals);
     *hm = (PtrMap){0};
 }
 
@@ -33,14 +31,14 @@ void ptrmap_put(PtrMap* hm, void* key, void* val) {
     if (!key) return;
     size_t hash_index = hashfunc(key) % hm->cap;
 
-    // free slot
+    // mars_free slot
     if (hm->keys[hash_index] == NULL || hm->keys[hash_index] == key) {
         hm->keys[hash_index] = key;
         hm->vals[hash_index] = val;
         return;
     }
 
-    // search for nearby free slot
+    // search for nearby mars_free slot
     for (size_t i = (hash_index + 1) % hm->cap; i != hash_index; i++) {
         if (i >= hm->cap) i = 0;
         if ((hm->keys[i] == NULL) || hm->keys[hash_index] == key) {
@@ -62,8 +60,8 @@ void ptrmap_put(PtrMap* hm, void* key, void* val) {
     ptrmap_put(&new_hm, key, val);
 
     // destroy old map
-    free(hm->keys);
-    free(hm->vals);
+    mars_free(hm->keys);
+    mars_free(hm->vals);
     *hm = new_hm;
 }
 

@@ -79,7 +79,7 @@ mars_module* parse_module(string input_path) {
         general_error("path \""str_fmt"\" has no files", str_arg(input_path));
     }
 
-    fs_file* subfiles = malloc(sizeof(fs_file) * subfile_count);
+    fs_file* subfiles = mars_alloc(sizeof(fs_file) * subfile_count);
     fs_get_subfiles(&input_dir, subfiles);
 
     change_cwd(clone_to_cstring(input_path));
@@ -239,7 +239,7 @@ mars_module* parse_module(string input_path) {
 
     // cleanup
     // for_range(i, 0, subfile_count) fs_drop(&subfiles[i]);
-    // free(subfiles);
+    // mars_free(subfiles);
     // fs_drop(&input_dir);
 
     return module;
@@ -249,7 +249,7 @@ mars_module* create_module(da(parser)* pl, arena alloca) {
     if (pl == NULL) CRASH("build_module() provided with null parser list pointer");
     if (pl->len == 0) CRASH("build_module() provided with parser list of length 0");
 
-    mars_module* mod = malloc(sizeof(mars_module));
+    mars_module* mod = mars_alloc(sizeof(mars_module));
     if (mod == NULL) CRASH("build_module() module alloc failed");
 
     mod->AST_alloca = alloca;

@@ -138,6 +138,7 @@ void load_arguments(int argc, char* argv[], flag_set* fl) {
         }
     }
 }
+
 /*
 void parse_target_triple(string tt, flag_set* fl) {
     string arch = str("");

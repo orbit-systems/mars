@@ -2,6 +2,7 @@
 #define DEIMOS_H
 
 #include "mars.h"
+#include "alloc.h"
 #include "ir.h"
 #include "phobos.h"
 #include "pass.h"

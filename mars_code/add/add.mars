@@ -1,5 +1,5 @@
 module add_test;
 
 let add = fn(a, b: i64) -> i64 {
-    return a + b + b * a;
+    return a + b;
 };

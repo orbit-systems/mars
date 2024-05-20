@@ -1,10 +1,11 @@
 #include "orbit.h"
 #include "arena.h"
 #include "term.h"
+#include "alloc.h"
 
 arena_block arena_block_make(size_t size) {
     arena_block block;
-    block.raw = malloc(size);
+    block.raw = mars_alloc(size);
     if (block.raw == NULL) {
         general_error("internal: arena block size %zu too big, can't allocate", size);
     }
@@ -14,7 +15,7 @@ arena_block arena_block_make(size_t size) {
 }
 
 void arena_block_delete(arena_block* block) {
-    free(block->raw);
+    mars_free(block->raw);
     *block = (arena_block){0};
 }
 

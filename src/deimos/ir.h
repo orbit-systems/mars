@@ -90,7 +90,7 @@ typedef struct IR_Function {
 } IR_Function;
 
 typedef struct IR_FuncItem {
-    entity* e;
+    entity* e; // FIXME: remove this
 
     type* T;
 

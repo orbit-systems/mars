@@ -1,7 +1,10 @@
-/* This is a template pass to use when creating new passes. The passes need to be registered in pass.c and passes.h, in the factory function.
- */
-
 #include "deimos.h"
+
+/* pass "template" - do nothing
+
+    this is a template pass to copy when making a new one.
+
+*/
 
 IR_Module* ir_pass_template(IR_Module* mod) {
     return mod;

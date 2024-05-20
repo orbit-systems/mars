@@ -19,7 +19,7 @@ static void pass_cfg_func(IR_Function* f) {
         IR* terminator = bb->at[bb->len-1];
         
         if (bb->out_len) {
-            free(bb->outgoing);
+            mars_free(bb->outgoing);
         }
 
         switch (terminator->tag) {
@@ -30,7 +30,7 @@ static void pass_cfg_func(IR_Function* f) {
             bb->out_len = 1;
             IR_Jump* jump = (IR_Jump*) terminator;
             
-            bb->outgoing = malloc(sizeof(bb->outgoing[0])*bb->out_len);
+            bb->outgoing = mars_alloc(sizeof(bb->outgoing[0])*bb->out_len);
             bb->outgoing[0] = jump->dest;
             jump->dest->in_len++;
             break;
@@ -38,7 +38,7 @@ static void pass_cfg_func(IR_Function* f) {
             bb->out_len = 2;
             IR_Branch* branch = (IR_Branch*) terminator;
 
-            bb->outgoing = malloc(sizeof(bb->outgoing[0])*bb->out_len);
+            bb->outgoing = mars_alloc(sizeof(bb->outgoing[0])*bb->out_len);
             bb->outgoing[0] = branch->if_false;
             bb->outgoing[1] = branch->if_true;
             branch->if_false->in_len++;
@@ -49,7 +49,7 @@ static void pass_cfg_func(IR_Function* f) {
             break;
         }
 
-        if (bb->incoming) free(bb->incoming);
+        if (bb->incoming) mars_free(bb->incoming);
         bb->incoming = NULL;
     }
 
@@ -60,8 +60,7 @@ static void pass_cfg_func(IR_Function* f) {
         for_urange(conn, 0, bb->out_len) {
             IR_BasicBlock* target = bb->outgoing[conn];
             if (target->incoming != NULL) {
-                target->incoming = malloc(sizeof(IR_BasicBlock*) * bb->in_len);
-                memset(target->incoming, 0, sizeof(IR_BasicBlock*) * bb->in_len);
+                target->incoming = mars_alloc(sizeof(IR_BasicBlock*) * bb->in_len);
             }
 
             for (uintptr_t j = 0; j < bb->in_len; j++) {
@@ -126,7 +125,7 @@ static IR_BasicBlock** compute_dominator_set(IR_Function* f, IR_BasicBlock* bb, 
         }
     }
 
-    IR_BasicBlock** domset = malloc(sizeof(IR_BasicBlock*) * (num_dominated));
+    IR_BasicBlock** domset = mars_alloc(sizeof(IR_BasicBlock*) * (num_dominated));
 
     u64 next = 0;
     for_urange(i, 0, f->blocks.len) {

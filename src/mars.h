@@ -2,6 +2,7 @@
 #define MARS_H
 
 #include "orbit.h"
+#include "alloc.h"
 #include "term.h"
 
 #define DEFAULT_TARGET str("aphelion-none-asm")

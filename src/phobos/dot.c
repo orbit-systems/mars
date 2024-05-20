@@ -9,7 +9,7 @@ void emit_dot(string path, da(AST) nodes) {
 	char* path_cstr = clone_to_cstring(path);
 	char buffer[1050];
 	sprintf(buffer, "%.1024s.dot", path_cstr); //capped at 1024 characters for file name
-	free(path_cstr);
+	mars_free(path_cstr);
 
 	string filename = str(buffer);
 	if (fs_exists(filename)) {

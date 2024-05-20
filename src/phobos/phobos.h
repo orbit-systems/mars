@@ -2,6 +2,7 @@
 #define PHOBOS_H
 
 #include "orbit.h"
+#include "alloc.h"
 #include "lex.h"
 #include "parse.h"
 #include "ast.h"

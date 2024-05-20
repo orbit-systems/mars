@@ -25,7 +25,7 @@ AsmFunction* aphelion_translate_function(AsmModule* m, IR_Function* f) {
     }
 
     AsmFunction* new_func = asm_new_function(m, ir_sym_to_asm_sym(m, f->sym));
-    new_func->blocks = malloc(sizeof(*new_func->blocks) * f->blocks.len);
+    new_func->blocks = mars_alloc(sizeof(*new_func->blocks) * f->blocks.len);
     new_func->num_blocks = f->blocks.len;
     for_urange(i, 0, f->blocks.len) {
         AsmBlock* new_block = aphelion_translate_block(m, new_func, f, f->blocks.at[i]);

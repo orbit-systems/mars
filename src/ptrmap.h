@@ -2,6 +2,7 @@
 #define PTRMAP_H
 
 #include "orbit.h"
+#include "alloc.h"
 
 typedef struct PtrMap {
     void** keys;

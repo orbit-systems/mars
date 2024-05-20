@@ -10,7 +10,7 @@ AsmSymbol* ir_sym_to_asm_sym(AsmModule* m, IR_Symbol* sym) {
 }
 
 AsmModule* asm_new_module(TargetInfo* target) {
-    AsmModule* m = malloc(sizeof(AsmModule));
+    AsmModule* m = mars_alloc(sizeof(AsmModule));
     *m = (AsmModule){0};
 
     m->target = target;
@@ -19,14 +19,14 @@ AsmModule* asm_new_module(TargetInfo* target) {
 }
 
 AsmFunction* asm_new_function(AsmModule* m, AsmSymbol* sym) {
-    AsmFunction* f = malloc(sizeof(*f));
+    AsmFunction* f = mars_alloc(sizeof(*f));
 
     f->mod = m;
 
     f->sym = sym;
     f->sym->func = f; // set the backlink
 
-    m->functions = realloc(m->functions, sizeof(AsmFunction*) * (m->functions_len+1));
+    m->functions = mars_realloc(m->functions, sizeof(AsmFunction*) * (m->functions_len+1));
     assert(m->functions != NULL);
     m->functions[m->functions_len++] = f;
 
@@ -34,12 +34,12 @@ AsmFunction* asm_new_function(AsmModule* m, AsmSymbol* sym) {
 }
 
 AsmGlobal* asm_new_global(AsmModule* m, AsmSymbol* sym) {
-    AsmGlobal* g = malloc(sizeof(*g));
+    AsmGlobal* g = mars_alloc(sizeof(*g));
 
     g->sym = sym;
     g->sym->glob = g; // set backlink
 
-    m->globals = realloc(m->globals, sizeof(AsmGlobal*) * (m->globals_len+1));
+    m->globals = mars_realloc(m->globals, sizeof(AsmGlobal*) * (m->globals_len+1));
     assert(m->globals != NULL);
     m->globals[m->globals_len++] = g;
 
@@ -47,7 +47,7 @@ AsmGlobal* asm_new_global(AsmModule* m, AsmSymbol* sym) {
 }
 
 AsmBlock* asm_new_block(AsmFunction* f, string label) {
-    AsmBlock* b = malloc(sizeof(*b));
+    AsmBlock* b = mars_alloc(sizeof(*b));
 
     da_init(b, 10);
     b->label = label;

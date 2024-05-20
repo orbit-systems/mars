@@ -18,6 +18,7 @@ static bool has_side_effects(IR* ir) {
     case IR_DIV:
     case IR_MOV:
     case IR_CONST:
+    case IR_PARAMVAL:
         return false;
 
     default: // assume side effects until proven otherwise

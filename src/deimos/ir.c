@@ -1,7 +1,7 @@
 #include "ir.h"
 
 IR_Module* ir_new_module(string name) {
-    IR_Module* mod = malloc(sizeof(IR_Module));
+    IR_Module* mod = mars_alloc(sizeof(IR_Module));
 
     mod->functions = NULL;
     mod->globals   = NULL;
@@ -16,7 +16,7 @@ IR_Module* ir_new_module(string name) {
 
 // if (sym == NULL), create new symbol with no name
 IR_Function* ir_new_function(IR_Module* mod, IR_Symbol* sym, bool global) {
-    IR_Function* fn = malloc(sizeof(IR_Function));
+    IR_Function* fn = mars_alloc(sizeof(IR_Function));
 
     fn->sym = sym ? sym : ir_new_symbol(mod, NULL_STR, global, true, fn);
     fn->alloca = arena_make(IR_FN_ALLOCA_BLOCK_SIZE);
@@ -26,7 +26,7 @@ IR_Function* ir_new_function(IR_Module* mod, IR_Symbol* sym, bool global) {
     fn->params = NULL;
     fn->returns = NULL;
 ;
-    mod->functions = realloc(mod->functions, sizeof(*mod->functions) * (mod->functions_len+1));
+    mod->functions = mars_realloc(mod->functions, sizeof(*mod->functions) * (mod->functions_len+1));
     mod->functions[mod->functions_len++] = fn;
     return fn;
 }
@@ -35,17 +35,17 @@ IR_Function* ir_new_function(IR_Module* mod, IR_Symbol* sym, bool global) {
 void ir_set_func_params(IR_Function* f, u16 count, ...) {
     f->params_len = count;
 
-    if (f->params) free(f->params);
+    if (f->params) mars_free(f->params);
 
-    f->params = malloc(sizeof(*f->params) * count);
-    if (!f->params) CRASH("malloc failed");
+    f->params = mars_alloc(sizeof(*f->params) * count);
+    if (!f->params) CRASH("mars_alloc failed");
 
     bool no_set = false;
     va_list args;
     va_start(args, count);
     for_range(i, 0, count) {
-        IR_FuncItem* item = malloc(sizeof(IR_FuncItem));
-        if (!item) CRASH("item malloc failed");
+        IR_FuncItem* item = mars_alloc(sizeof(IR_FuncItem));
+        if (!item) CRASH("item mars_alloc failed");
         
         if (!no_set) {
             item->e = va_arg(args, entity*);
@@ -63,17 +63,17 @@ void ir_set_func_params(IR_Function* f, u16 count, ...) {
 void ir_set_func_returns(IR_Function* f, u16 count, ...) {
     f->returns_len = count;
 
-    if (f->returns) free(f->returns);
+    if (f->returns) mars_free(f->returns);
 
-    f->returns = malloc(sizeof(*f->returns) * count);
-    if (!f->params) CRASH("malloc failed");
+    f->returns = mars_alloc(sizeof(*f->returns) * count);
+    if (!f->params) CRASH("mars_alloc failed");
 
     bool no_set = false;
     va_list args;
     va_start(args, count);
     for_range(i, 0, count) {
-        IR_FuncItem* item = malloc(sizeof(IR_FuncItem));
-        if (!item) CRASH("item malloc failed");
+        IR_FuncItem* item = mars_alloc(sizeof(IR_FuncItem));
+        if (!item) CRASH("item mars_alloc failed");
         
         if (!no_set) {
             item->e = va_arg(args, entity*);
@@ -89,14 +89,14 @@ void ir_set_func_returns(IR_Function* f, u16 count, ...) {
 
 // if (sym == NULL), create new symbol with default name
 IR_Global* ir_new_global(IR_Module* mod, IR_Symbol* sym, bool global, bool read_only) {
-    IR_Global* gl = malloc(sizeof(IR_Global));
+    IR_Global* gl = mars_alloc(sizeof(IR_Global));
 
     gl->sym = sym ? sym : ir_new_symbol(mod, strprintf("symbol%zu", sym), global, false, gl);
     gl->read_only = read_only;
     gl->data = NULL;
     gl->data_len = 0;
 
-    mod->globals = realloc(mod->globals, sizeof(*mod->globals) * (mod->globals_len+1));
+    mod->globals = mars_realloc(mod->globals, sizeof(*mod->globals) * (mod->globals_len+1));
     mod->globals[mod->globals_len++] = gl;
     return gl;
 }
@@ -116,7 +116,7 @@ void ir_set_global_symref(IR_Global* global, IR_Symbol* symref) {
 // WARNING: does NOT check if a symbol already exists
 // in most cases, use ir_find_or_create_symbol
 IR_Symbol* ir_new_symbol(IR_Module* mod, string name, u8 visibility, bool function, void* ref) {
-    IR_Symbol* sym = malloc(sizeof(IR_Symbol));
+    IR_Symbol* sym = mars_alloc(sizeof(IR_Symbol));
     sym->name = name;
     sym->ref = ref;
     sym->is_function = function;
@@ -142,8 +142,8 @@ IR_Symbol* ir_find_symbol(IR_Module* mod, string name) {
 }
 
 IR_BasicBlock* ir_new_basic_block(IR_Function* fn, string name) {
-    IR_BasicBlock* bb = malloc(sizeof(IR_BasicBlock));
-    if (!bb) CRASH("malloc failed");
+    IR_BasicBlock* bb = mars_alloc(sizeof(IR_BasicBlock));
+    if (!bb) CRASH("mars_alloc failed");
 
     bb->name = name;
     da_init(bb, 1);
@@ -297,8 +297,8 @@ IR* ir_make_phi(IR_Function* f, u32 count, ...) {
     IR_Phi* ir = (IR_Phi*) ir_make(f, IR_PHI);
     ir->len = count;
 
-    ir->sources    = malloc(sizeof(*ir->sources) * count);
-    ir->source_BBs = malloc(sizeof(*ir->source_BBs) * count);
+    ir->sources    = mars_alloc(sizeof(*ir->sources) * count);
+    ir->source_BBs = mars_alloc(sizeof(*ir->source_BBs) * count);
 
     va_list args;
     va_start(args, count);
@@ -312,12 +312,12 @@ IR* ir_make_phi(IR_Function* f, u32 count, ...) {
 }
 
 void ir_add_phi_source(IR_Phi* phi, IR* source, IR_BasicBlock* source_block) {
-    // wrote this and then remembered realloc exists. too late :3
-    IR** new_sources    = malloc(sizeof(*phi->sources) * (phi->len + 1));
-    IR_BasicBlock** new_source_BBs = malloc(sizeof(*phi->source_BBs) * (phi->len + 1));
+    // wrote this and then remembered mars_realloc exists. too late :3
+    IR** new_sources    = mars_alloc(sizeof(*phi->sources) * (phi->len + 1));
+    IR_BasicBlock** new_source_BBs = mars_alloc(sizeof(*phi->source_BBs) * (phi->len + 1));
 
     if (!new_sources || !new_source_BBs) {
-        CRASH("malloc returned null");
+        CRASH("mars_alloc returned null");
     }
 
     memcpy(new_sources, phi->sources, sizeof(*phi->sources) * phi->len);
@@ -326,8 +326,8 @@ void ir_add_phi_source(IR_Phi* phi, IR* source, IR_BasicBlock* source_block) {
     new_sources[phi->len]    = source;
     new_source_BBs[phi->len] = source_block;
 
-    free(phi->sources);
-    free(phi->source_BBs);
+    mars_free(phi->sources);
+    mars_free(phi->source_BBs);
 
     phi->sources = new_sources;
     phi->source_BBs = new_source_BBs;

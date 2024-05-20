@@ -2,6 +2,7 @@
 #define PHOBOS_TYPE_H
 
 #include "orbit.h"
+#include "alloc.h"
 
 enum {
     // does not really do anything. serves as an invalid/void type.

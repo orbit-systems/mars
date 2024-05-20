@@ -440,7 +440,7 @@ void check_fn_literal_expr(mars_module* mod, entity_table* et, AST expr, checked
 
     // add param entites
     da(struct_field)* params = &fn_type->as_function.params;
-    astfunc->params = malloc(sizeof(*astfunc->params) * params->len);
+    astfunc->params = mars_alloc(sizeof(*astfunc->params) * params->len);
     astfunc->paramlen = params->len;
     for_urange(i, 0, params->len) {
         entity* e = new_entity(etab, params->at[i].name, expr);
@@ -455,7 +455,7 @@ void check_fn_literal_expr(mars_module* mod, entity_table* et, AST expr, checked
 
     // add return entites
     da(struct_field)* returns = &fn_type->as_function.returns;
-    astfunc->returns = malloc(sizeof(*astfunc->returns) * returns->len);
+    astfunc->returns = mars_alloc(sizeof(*astfunc->returns) * returns->len);
     astfunc->returnlen = returns->len;
     for_urange(i, 0, returns->len) {
         entity* e = new_entity(etab, returns->at[i].name, expr);

@@ -633,7 +633,7 @@ AST parse_atomic_expr(parser* p, bool no_cl) {
             value = string_lit_value(p);
             advance_token;
             // this leaks memory but it kind of doesnt matter cause they're really tiny! 
-            // otherwise the malloc/free overhead is pretty big
+            // otherwise the mars_alloc/mars_free overhead is pretty big
             while (current_token.type == TOK_LITERAL_STRING) {
                 string str = string_lit_value(p);
                 string new_value = (string){arena_alloc(p->alloca, value.len + str.len, 1), value.len + str.len};
