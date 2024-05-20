@@ -12,32 +12,36 @@
 #include "deimos/deimos.h"
 #include "deimos/targettriples.h"
 
+#include "lltd/lexer.h"
+
 flag_set mars_flags;
 void parse_target_triple(string tt, flag_set* fl);
 
 int main(int argc, char** argv) {
     load_arguments(argc, argv, &mars_flags);
 
-    mars_module* main_mod = parse_module(mars_flags.input_path);
+    if (!mars_flags.use_lltd) {
 
-    if (mars_flags.output_dot == true) {  
-        emit_dot(str("test"), main_mod->program_tree);
+        mars_module* main_mod = parse_module(mars_flags.input_path);    
+
+        if (mars_flags.output_dot == true) {  
+            emit_dot(str("test"), main_mod->program_tree);
+        }   
+    
+        // recursive check
+        check_module_and_dependencies(main_mod);
+
+        if (mars_flags.dump_AST) for_urange(i, 0, main_mod->program_tree.len) {
+            dump_tree(main_mod->program_tree.at[i], 0);
+        }
+        
+        deimos_run(main_mod, NULL);
+    } else {
+        IR_Module* ir_mod = lltd_parse_ir(mars_flags.input_path);
+        deimos_run(NULL, ir_mod);
     }
-
-
-    // recursive check
-    check_module_and_dependencies(main_mod);
-
-    if (mars_flags.dump_AST) for_urange(i, 0, main_mod->program_tree.len) {
-        dump_tree(main_mod->program_tree.at[i], 0);
-    }
-
-    deimos_run(main_mod);
-
 
     // check_module_and_dependencies(main_mod);
-
-
 
     // process_ast(main_mod->program_tree);
 
@@ -129,7 +133,7 @@ void load_arguments(int argc, char* argv[], flag_set* fl) {
         } else if (string_eq(a.key, str("-target"))) {
             parse_target_triple(a.val, fl);
         } else if (string_eq(a.key, str("-lltd"))) {
-            general_error("not supported in main!");
+            
         } else {
             general_error("unrecognized option \""str_fmt"\"", str_arg(a.key));
         }

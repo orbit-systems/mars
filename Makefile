@@ -8,6 +8,7 @@ SRCPATHS = \
 	src/deimos/passes/analysis/*.c \
 	src/deimos/passes/transform/*.c \
 	src/deimos/targets/*.c \
+	src/lltd/*.c \
 
 SRCPATHS += $(foreach target, $(TARGETS), src/deimos/targets/$(target)/*.c) 
 SRC = $(wildcard $(SRCPATHS))
