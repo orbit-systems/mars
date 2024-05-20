@@ -56,6 +56,7 @@ void print_help() {
     printf("-timings                          print stage timings\n");
     printf("-dump-AST                         print readable AST\n");
     printf("-dot                              convert the AST to a graphviz .dot file\n");
+    printf("-lltd                             use lltd instead of phobos\n");
 }
 
 cmd_arg make_argument(char* s) {
@@ -76,6 +77,10 @@ void load_arguments(int argc, char* argv[], flag_set* fl) {
 
     *fl = (flag_set){0};
 
+    fl->target_arch = -1;
+    fl->target_system = -1;
+    fl->target_product = -1;
+
     cmd_arg input_directory_arg = make_argument(argv[1]);
     if (string_eq(input_directory_arg.key, str("-help"))) {
         print_help();
@@ -93,7 +98,11 @@ void load_arguments(int argc, char* argv[], flag_set* fl) {
 
     fl->input_path = string_clone(str(dumbass_shit_buffer));
 
-    if (argc <= 2) return;
+    if (argc <= 2) {
+        printf("No target selected, defaulting to "str_fmt "\n", str_arg(DEFAULT_TT));
+        parse_target_triple(DEFAULT_TT, fl);
+        return;
+    }
 
     int flag_start_index = 2;
     for_range(i, flag_start_index, argc) {
@@ -119,10 +128,16 @@ void load_arguments(int argc, char* argv[], flag_set* fl) {
             fl->dump_AST = true;
         } else if (string_eq(a.key, str("-target"))) {
             parse_target_triple(a.val, fl);
+        } else if (string_eq(a.key, str("-lltd"))) {
+            general_error("not supported in main!");
         } else {
             general_error("unrecognized option \""str_fmt"\"", str_arg(a.key));
         }
     }
+    if (fl->target_arch == -1 || fl->target_system == -1 || fl->target_product == -1) {
+        printf("Unknown target triple selected, defaulting to: " str_fmt, "\n", str_arg(DEFAULT_TT));
+        parse_target_triple(DEFAULT_TT, fl);
+    } 
 }
 
 void parse_target_triple(string tt, flag_set* fl) {
@@ -149,8 +164,8 @@ void parse_target_triple(string tt, flag_set* fl) {
     fl->target_arch = arch_from_str(arch);
     fl->target_system = sys_from_str(system);
     fl->target_product = product_from_str(product);
-    if (fl->target_arch == -1)    general_error("Unrecognized architecture: %S", arch);
-    if (fl->target_system == -1)  general_error("Unrecognized system: %S", system);
-    if (fl->target_product == -1) general_error("Unrecognized product: %S", product);
+    if (fl->target_arch == -1)    general_error("Unrecognized architecture: " str_fmt, str_arg(arch));
+    if (fl->target_system == -1)  general_error("Unrecognized system: " str_fmt, str_arg(system));
+    if (fl->target_product == -1) general_error("Unrecognized product: " str_fmt, str_arg(product));
     return;
 }

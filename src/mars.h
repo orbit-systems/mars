@@ -4,6 +4,8 @@
 #include "orbit.h"
 #include "term.h"
 
+#define DEFAULT_TT str("aphelion-unknown-asm")
+
 typedef struct cmd_arg_s {
     string key;
     string val;
