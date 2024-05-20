@@ -15,7 +15,6 @@
 #include "lltd/lexer.h"
 
 flag_set mars_flags;
-void parse_target_triple(string tt, flag_set* fl);
 
 int main(int argc, char** argv) {
     load_arguments(argc, argv, &mars_flags);
@@ -103,8 +102,8 @@ void load_arguments(int argc, char* argv[], flag_set* fl) {
     fl->input_path = string_clone(str(dumbass_shit_buffer));
 
     if (argc <= 2) {
-        printf("No target selected, defaulting to "str_fmt "\n", str_arg(DEFAULT_TT));
-        parse_target_triple(DEFAULT_TT, fl);
+        printf("No target selected, defaulting to "str_fmt "\n", str_arg(DEFAULT_TARGET));
+        set_target_triple(DEFAULT_TARGET, fl);
         return;
     }
 
@@ -131,19 +130,15 @@ void load_arguments(int argc, char* argv[], flag_set* fl) {
         } else if (string_eq(a.key, str("-dump-AST"))) {
             fl->dump_AST = true;
         } else if (string_eq(a.key, str("-target"))) {
-            parse_target_triple(a.val, fl);
+            set_target_triple(a.val, fl);
         } else if (string_eq(a.key, str("-lltd"))) {
             
         } else {
             general_error("unrecognized option \""str_fmt"\"", str_arg(a.key));
         }
     }
-    if (fl->target_arch == -1 || fl->target_system == -1 || fl->target_product == -1) {
-        printf("Unknown target triple selected, defaulting to: " str_fmt, "\n", str_arg(DEFAULT_TT));
-        parse_target_triple(DEFAULT_TT, fl);
-    } 
 }
-
+/*
 void parse_target_triple(string tt, flag_set* fl) {
     string arch = str("");
     string system = str("");
@@ -172,4 +167,4 @@ void parse_target_triple(string tt, flag_set* fl) {
     if (fl->target_system == -1)  general_error("Unrecognized system: " str_fmt, str_arg(system));
     if (fl->target_product == -1) general_error("Unrecognized product: " str_fmt, str_arg(product));
     return;
-}
+}*/

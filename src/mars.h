@@ -4,7 +4,7 @@
 #include "orbit.h"
 #include "term.h"
 
-#define DEFAULT_TT str("aphelion-none-asm")
+#define DEFAULT_TARGET str("aphelion-none-asm")
 
 typedef struct cmd_arg_s {
     string key;
