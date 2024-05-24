@@ -25,7 +25,7 @@ IR_Function* ir_new_function(IR_Module* mod, IR_Symbol* sym, bool global) {
     // fn->exit_idx = 0;
     fn->params = NULL;
     fn->returns = NULL;
-;
+
     mod->functions = mars_realloc(mod->functions, sizeof(*mod->functions) * (mod->functions_len+1));
     mod->functions[mod->functions_len++] = fn;
     return fn;

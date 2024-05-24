@@ -2,6 +2,7 @@
 #include "target.h"
 #include "ir.h"
 #include "ptrmap.h"
+#include "regalloc.h"
 
 PtrMap ir_to_vreg = {0};
 
@@ -12,11 +13,15 @@ AsmModule* aphelion_translate_module(IR_Module* irmod) {
     AsmModule* mod = asm_new_module(&aphelion_target_info);
     general_warning("FIXME: add globals support");
     for_urange(i, 0, irmod->functions_len) {
-        aphelion_translate_function(mod, irmod->functions[i]);
+        AsmFunction* f = aphelion_translate_function(mod, irmod->functions[i]);
     }
 
-    debug_asm_printer(mod);
     asm_printer(mod, true);
+    for_urange(i, 0, mod->functions_len) {
+        shit_regalloc(mod, mod->functions[i]);
+    }
+    asm_printer(mod, true);
+
 }
 
 AsmFunction* aphelion_translate_function(AsmModule* m, IR_Function* f) {
@@ -50,7 +55,7 @@ AsmBlock* aphelion_translate_block(AsmModule* m, AsmFunction* f, IR_Function* ir
             assert(ir_f->params[ir->param_idx]->T->tag == TYPE_I64);
 
             // select calling convention register - TODO dont make this hardcoded
-            VReg* src = asm_new_vreg(m, APHEL_REGCLASS_GPR);
+            VReg* src = asm_new_vreg(m, f, APHEL_REGCLASS_GPR);
             src->special = VSPEC_PARAMVAL;
             switch (ir->param_idx) {
             case 0: src->real = APHEL_GPR_RG; break;
@@ -62,8 +67,9 @@ AsmBlock* aphelion_translate_block(AsmModule* m, AsmFunction* f, IR_Function* ir
                 CRASH("paramval index too big");
             }
             
-            VReg* dest = asm_new_vreg(m, APHEL_REGCLASS_GPR);
+            VReg* dest = asm_new_vreg(m, f, APHEL_REGCLASS_GPR);
             ptrmap_put(&ir_to_vreg, ir, dest);
+            dest->hint = src->real;
 
             AsmInst* mov = asm_new_inst(m, APHEL_INST_MOV);
             mov->ins[0] = src;
@@ -82,7 +88,7 @@ AsmBlock* aphelion_translate_block(AsmModule* m, AsmFunction* f, IR_Function* ir
             VReg* rhs = ptrmap_get(&ir_to_vreg, ir->rhs);
             assert(lhs && rhs);
 
-            VReg* out = asm_new_vreg(m, APHEL_REGCLASS_GPR);
+            VReg* out = asm_new_vreg(m, f, APHEL_REGCLASS_GPR);
             ptrmap_put(&ir_to_vreg, ir, out);
 
             AsmInst* addr = asm_new_inst(m, APHEL_INST_ADDR);
@@ -103,7 +109,7 @@ AsmBlock* aphelion_translate_block(AsmModule* m, AsmFunction* f, IR_Function* ir
             VReg* rhs = ptrmap_get(&ir_to_vreg, ir->rhs);
             assert(lhs && rhs);
 
-            VReg* out = asm_new_vreg(m, APHEL_REGCLASS_GPR);
+            VReg* out = asm_new_vreg(m, f, APHEL_REGCLASS_GPR);
             ptrmap_put(&ir_to_vreg, ir, out);
 
             AsmInst* addr = asm_new_inst(m, APHEL_INST_IMULR);
@@ -116,7 +122,7 @@ AsmBlock* aphelion_translate_block(AsmModule* m, AsmFunction* f, IR_Function* ir
         case IR_RETURNVAL: {
             IR_ReturnVal* ir = (IR_ReturnVal*) raw_ir;
 
-            VReg* out = asm_new_vreg(m, APHEL_REGCLASS_GPR);
+            VReg* out = asm_new_vreg(m, f, APHEL_REGCLASS_GPR);
             ptrmap_put(&ir_to_vreg, ir, out); // i dont think this actually needs to be put in
             
             out->special = VSPEC_RETURNVAL;
@@ -131,6 +137,7 @@ AsmBlock* aphelion_translate_block(AsmModule* m, AsmFunction* f, IR_Function* ir
             }
 
             VReg* in = ptrmap_get(&ir_to_vreg, ir->source);
+            in->hint = out->real;
 
             AsmInst* retval = asm_new_inst(m, APHEL_INST_MOV);
             retval->ins[0] = in;

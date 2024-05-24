@@ -41,7 +41,7 @@ build/%.o: src/%.c
 	@$(CC) -c -o $@ $< $(INCLUDEPATHS) $(CFLAGS) $(OPT)
 
 build: $(OBJECTS)
-	@echo Linking into $(EXECUTABLE_NAME)
+	@echo Linking with $(LD)...
 	@$(LD) $(OBJECTS) -o $(EXECUTABLE_NAME) $(CFLAGS)
 	@echo Successfully built: $(EXECUTABLE_NAME)
 

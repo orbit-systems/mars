@@ -30,6 +30,8 @@ AsmFunction* asm_new_function(AsmModule* m, AsmSymbol* sym) {
     assert(m->functions != NULL);
     m->functions[m->functions_len++] = f;
 
+    da_init(&f->vregs, 16);
+
     return f;
 }
 
@@ -79,11 +81,15 @@ AsmInst* asm_new_inst(AsmModule* m, u32 template) {
     return i;
 }
 
-VReg* asm_new_vreg(AsmModule* m, u32 regclass) {
+VReg* asm_new_vreg(AsmModule* m, AsmFunction* f, u32 regclass) {
     VReg* r = arena_alloc(&m->alloca, sizeof(*r), alignof(*r));
     
     r->required_regclass = regclass;
     r->real = REAL_REG_UNASSIGNED;
+
+
+    da_append(&f->vregs, r);
+    
 
     return r;
 }

@@ -1,21 +1,28 @@
 MARS CALLING CONVENTION (for aphelion):
 
-    rg through rk is for function parameters.
+    {rg, rh, ri, rj, rk} are parameters, returns, and caller-saved (may be overwritten)
 
-    parameters that are larger than register size OR composite types (arrays, structs, etc) are passed on the stack,
-    even if a struct is smaller than or the same size as a register.
+    both integer and floating point are passed through these registers.
+    parameters and returns that are bigger than a register can be broken up and passed by register
+    if possible.
 
-    if is a base type that is the size of a register or smaller, it is passed by register.
+    if all calling-convention registers are used up, argument spill over onto the stack,
+    where the first stack-passed argument is below (more positive) the return address (in reverse order).
+    stack arguments must be aligned to 8, the return address must be aligned to 8.
 
-    if all calling-convention registers are used up, they spill over onto the stack.
 
-    take the function foo as an example:
-        let foo = fn(a: int, b: int, c: []int, d: int)
-    "a", "b", and "d" are passed through registers rg, rh, and ri. "c" is put on the stack.
+    a call to g() inside f() makes the stack look like this:
 
-    the value passing and value returning conventions are symmetric
-    (rg through rk for returns, composite types get passed back on stack)
-
-    registers a through f are callee-saved (values should be preserved through function calls)
-
-    a b c d e f g h i j k
+        |------ align 8 ------|
+        | return address      |
+        | saved frame pointer |
+        | locals of f()       |
+        |------ align 8 ------|
+        | stack argument N    |
+        |       ....          |
+        | stack argument 1    |
+        | stack argument 0    |
+        |------ align 8 ------|
+        | return address      |
+        | saved frame pointer |
+        | locals of g()       |

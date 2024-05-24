@@ -32,6 +32,8 @@ typedef struct VReg {
     // index of real register into regclass array (if REAL_REG_UNASSIGNED, it has not been assigned yet)
     u32 real;
 
+    u32 hint;
+
     // register class to pick from when assigning a machine register
     u32 required_regclass;
 
@@ -283,4 +285,4 @@ AsmInst*     asm_add_inst(AsmBlock* b, AsmInst* inst);
 AsmInst*     asm_new_inst(AsmModule* m, u32 template);
 AsmSymbol*   ir_sym_to_asm_sym(AsmModule* m, IR_Symbol* sym);
 
-VReg*        asm_new_vreg(AsmModule* m, u32 regclass);
+VReg*        asm_new_vreg(AsmModule* m, AsmFunction* f, u32 regclass);

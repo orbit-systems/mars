@@ -78,7 +78,7 @@ void* ptrmap_get(PtrMap* hm, void* key) {
     for (size_t i = hash_index + 1; i != hash_index; i++) {
         if (i >= hm->cap) i = 0;
         if (hm->keys[i] == NULL) return PTRMAP_NOT_FOUND;
-        if (hm->keys[hash_index] == key) return hm->vals[i];
+        if (hm->keys[i] == key) return hm->vals[i];
     }
 
     return PTRMAP_NOT_FOUND;
