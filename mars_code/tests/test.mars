@@ -1,0 +1,6 @@
+module test;
+
+let is_equal = fn(a, b: u8) -> bool {
+    if (a == b) { return true; }
+    return false;
+};

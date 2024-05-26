@@ -132,7 +132,7 @@ void load_arguments(int argc, char* argv[], flag_set* fl) {
         } else if (string_eq(a.key, str("-target"))) {
             set_target_triple(a.val, fl);
         } else if (string_eq(a.key, str("-lltd"))) {
-            
+            fl->use_lltd = true;
         } else {
             general_error("unrecognized option \""str_fmt"\"", str_arg(a.key));
         }
