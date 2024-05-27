@@ -4,15 +4,15 @@
 
 static mars_module* mars_mod;
 
-AIR_Module* air_generate(mars_module* mod) {
-    AIR_Module* m = air_new_module(mod->module_name);
+AtlasModule* generate_atlas_from_mars(mars_module* mod) {
+    AtlasModule* m = atlas_new_module(mod->module_name);
     mars_mod = mod;
     
     /* do some codegen shit prolly */
 
     for_urange(i, 0, mod->program_tree.len) {
         if (mod->program_tree.at[i].type == AST_decl_stmt) {
-            air_generate_global_from_stmt_decl(m, mod->program_tree.at[i]);
+            air_generate_global_from_stmt_decl(&m->ir_module, mod->program_tree.at[i]);
         } else {
             general_error("FIXME: unhandled AST root");
         }

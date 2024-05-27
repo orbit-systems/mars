@@ -1,9 +1,9 @@
 #pragma once
 #define LEXER_H
-#include "atlas/ir.h"
+#include "atlas.h"
 #include "term.h"
 
-AIR_Module* llta_parse_ir(string path);
+AtlasModule* llta_parse_ir(string path);
 
 da_typedef(string);
 

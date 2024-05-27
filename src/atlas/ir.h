@@ -16,13 +16,12 @@ typedef struct AIR_Function AIR_Function;
 typedef struct AIR_FuncItem AIR_FuncItem;
 
 typedef struct AIR_Module {
+
     AIR_Function** functions;
     AIR_Global** globals;
 
     u32 functions_len;
     u32 globals_len;
-
-    string name;
 
     struct {
         AIR_Symbol** at;
@@ -342,7 +341,7 @@ typedef struct AIR_Return {
 
 extern const size_t air_sizes[];
 
-AIR_Module*     air_new_module(string name);
+AIR_Module      air_new_module();
 AIR_Function*   air_new_function(AIR_Module* mod, AIR_Symbol* sym, bool global);
 AIR_BasicBlock* air_new_basic_block(AIR_Function* fn, string name);
 AIR_Global*     air_new_global(AIR_Module* mod, AIR_Symbol* sym, bool global, bool read_only);

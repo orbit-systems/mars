@@ -3,6 +3,7 @@
 
 #include "orbit.h"
 #include "mars.h"
+#include "irgen.h"
 
 #include "phobos/phobos.h"
 #include "phobos/dot.h"
@@ -11,13 +12,15 @@
 
 #include "atlas/atlas.h"
 #include "atlas/targettriples.h"
-
 #include "llta/lexer.h"
 
 flag_set mars_flags;
 
 int main(int argc, char** argv) {
     load_arguments(argc, argv, &mars_flags);
+
+
+    AtlasModule* atlas_module;
 
     if (!mars_flags.use_llta) {
 
@@ -34,16 +37,13 @@ int main(int argc, char** argv) {
             dump_tree(main_mod->program_tree.at[i], 0);
         }
         
-        atlas_run(main_mod, NULL);
+        atlas_module = atlas_new_module(main_mod->module_name);
+
+        // atlas_run(main_mod, NULL);
     } else {
-        AIR_Module* ir_mod = llta_parse_ir(mars_flags.input_path);
-        atlas_run(NULL, ir_mod);
+        atlas_module = llta_parse_ir(mars_flags.input_path);
+        // atlas_run(NULL, ir_mod);
     }
-
-    // check_module_and_dependencies(main_mod);
-
-    // process_ast(main_mod->program_tree);
-
 
     return 0;
 }

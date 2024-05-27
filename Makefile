@@ -31,7 +31,7 @@ LD = gcc
 INCLUDEPATHS = -Isrc/ -Isrc/mars/ -Isrc/mars/phobos/ -Isrc/atlas/ -Isrc/atlas/targets
 DEBUGFLAGS = -lm -pg -g
 ASANFLAGS = -fsanitize=undefined -fsanitize=address
-CFLAGS = -Wincompatible-pointer-types -Wno-discarded-qualifiers -lm -Wno-deprecated-declarations
+CFLAGS = -MD -Wincompatible-pointer-types -Wno-discarded-qualifiers -lm -Wno-deprecated-declarations
 OPT = -O2
 
 FILE_NUM = 0
@@ -56,3 +56,5 @@ clean:
 	@mkdir -p $(dir $(OBJECTS))
 
 cleanbuild: clean build
+
+-include $(OBJECTS:.o=.d)

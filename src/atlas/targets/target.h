@@ -1,7 +1,8 @@
 #pragma once
 #define ATLAS_TARGET_H
 
-#include "atlas.h"
+#include "orbit.h"
+#include "ir.h"
 
 typedef struct TargetInstInfo      TargetInstInfo;
 typedef struct TargetRegisterInfo  TargetRegisterInfo;

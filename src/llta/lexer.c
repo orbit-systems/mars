@@ -8,10 +8,10 @@
 da(icarus_token) llta_lex(string path);
 u8 str_to_type(string str);
 
-AIR_Module* llta_parse_ir(string path) {
+AtlasModule* llta_parse_ir(string path) {
     da(icarus_token) tokens = llta_lex(path);
 
-    AIR_Module* mod = air_new_module(str("test"));
+    AtlasModule* mod = atlas_new_module(str("test"));
 
     foreach (icarus_token token, tokens) {
         if (string_eq(token.tok, str("define"))) {
@@ -24,6 +24,8 @@ AIR_Module* llta_parse_ir(string path) {
             }
         }
     }
+    
+    return mod;
 }
 
 u8 str_to_type(string str) {

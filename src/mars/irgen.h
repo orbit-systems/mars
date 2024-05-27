@@ -5,7 +5,9 @@
 #include "atlas/passes/passes.h"
 #include "phobos/sema.h"
 
-AIR_Module* air_generate(mars_module* mod);
+void atlas_run(mars_module* main_mod, AIR_Module* passthrough);
+
+AtlasModule* generate_atlas_from_mars(mars_module* mod);
 AIR_Global* air_generate_global_from_stmt_decl(AIR_Module* mod, AST ast);
 AIR* air_generate_expr_literal(AIR_Function* f, AIR_BasicBlock* bb, AST ast);
 AIR* air_generate_expr_value(AIR_Function* f, AIR_BasicBlock* bb, AST ast);
