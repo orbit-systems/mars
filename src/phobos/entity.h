@@ -24,7 +24,7 @@ typedef struct entity {
     entity_table* top; // scope in which it is declared
 
     // filled out by checker
-    struct IR* stackalloc;
+    struct AIR* stackalloc;
 
     union {
         u16 param_idx;

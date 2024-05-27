@@ -9,6 +9,6 @@
 
 char* random_string(int len);
 
-IR_Module* ir_generate(mars_module* mod);
+AIR_Module* air_generate(mars_module* mod);
 
-void deimos_run(mars_module* main_mod, IR_Module* passthrough);
+void deimos_run(mars_module* main_mod, AIR_Module* passthrough);

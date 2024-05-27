@@ -5,10 +5,10 @@
 
 */
 
-static void reassoc_if_possible(IR* ir) {
+static void reassoc_if_possible(AIR* ir) {
 
 }
 
-IR_Module* ir_pass_algsimp(IR_Module* mod) {
+AIR_Module* air_pass_algsimp(AIR_Module* mod) {
     return mod;
 }

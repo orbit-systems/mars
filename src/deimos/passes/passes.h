@@ -4,13 +4,13 @@
 #include "deimos.h"
 #include "ir.h"
 
-IR_Module* ir_generate(mars_module* mod);
+AIR_Module* air_generate(mars_module* mod);
 
 /* REQIRED PASSES
     canon           general cleanup & canonicalization
 */
 
-IR_Module* ir_pass_canon(IR_Module* mod);
+AIR_Module* air_pass_canon(AIR_Module* mod);
 
 /* ANALYSIS PASSES - provides/populates information about the code
 
@@ -30,7 +30,7 @@ IR_Module* ir_pass_canon(IR_Module* mod);
     sroa            scalar replacement of aggregates
 */
 
-IR_Module* ir_pass_movprop(IR_Module* mod);
-IR_Module* ir_pass_elim(IR_Module* mod);
-IR_Module* ir_pass_tdce(IR_Module* mod);
-IR_Module* ir_pass_trme(IR_Module* mod);
+AIR_Module* air_pass_movprop(AIR_Module* mod);
+AIR_Module* air_pass_elim(AIR_Module* mod);
+AIR_Module* air_pass_tdce(AIR_Module* mod);
+AIR_Module* air_pass_trme(AIR_Module* mod);

@@ -8,10 +8,10 @@
 da(icarus_token) lltd_lex(string path);
 u8 str_to_type(string str);
 
-IR_Module* lltd_parse_ir(string path) {
+AIR_Module* lltd_parse_ir(string path) {
     da(icarus_token) tokens = lltd_lex(path);
 
-    IR_Module* mod = ir_new_module(str("test"));
+    AIR_Module* mod = air_new_module(str("test"));
 
     foreach (icarus_token token, tokens) {
         if (string_eq(token.tok, str("define"))) {

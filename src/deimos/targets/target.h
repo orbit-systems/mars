@@ -283,6 +283,6 @@ AsmGlobal*   asm_new_global(AsmModule* m, AsmSymbol* sym);
 AsmBlock*    asm_new_block(AsmFunction* f, string label);
 AsmInst*     asm_add_inst(AsmBlock* b, AsmInst* inst);
 AsmInst*     asm_new_inst(AsmModule* m, u32 template);
-AsmSymbol*   ir_sym_to_asm_sym(AsmModule* m, IR_Symbol* sym);
+AsmSymbol*   air_sym_to_asm_sym(AsmModule* m, AIR_Symbol* sym);
 
 VReg*        asm_new_vreg(AsmModule* m, AsmFunction* f, u32 regclass);

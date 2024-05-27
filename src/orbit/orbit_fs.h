@@ -344,7 +344,7 @@ bool fs_get_subfiles(fs_file* file, fs_file* file_array) {
     if(find == INVALID_HANDLE_VALUE) return false;
 #else
     DIR* directory;
-    struct dirent* dir_entry;
+    struct dirent* dair_entry;
     {
         char* path_cstr = clone_to_cstring(file->path);
         directory = opendir(path_cstr);
@@ -375,14 +375,14 @@ bool fs_get_subfiles(fs_file* file, fs_file* file_array) {
         i++;
     } while(FindNextFile(find, &find_data));
 #else
-    for (int i = 0; (dir_entry = readdir(directory)) != NULL;) {
-        if (strcmp(dir_entry->d_name, ".") == 0) continue;
-        if (strcmp(dir_entry->d_name, "..") == 0) continue;
+    for (int i = 0; (dair_entry = readdir(directory)) != NULL;) {
+        if (strcmp(dair_entry->d_name, ".") == 0) continue;
+        if (strcmp(dair_entry->d_name, "..") == 0) continue;
         //string temp1 = string_concat(file->path, str("/"));
-        //string path = string_concat(temp1, str(dir_entry->d_name));
-        //printf("\ny\n[%s]\n\n", dir_entry->d_name);
+        //string path = string_concat(temp1, str(dair_entry->d_name));
+        //printf("\ny\n[%s]\n\n", dair_entry->d_name);
         char* pathcstr = malloc(PATH_MAX);
-        realpath(dir_entry->d_name, pathcstr);
+        realpath(dair_entry->d_name, pathcstr);
         string path = str(pathcstr);
         bool success = fs_get(path, &file_array[i]);
         if (!success) {

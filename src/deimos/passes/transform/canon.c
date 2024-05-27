@@ -9,30 +9,30 @@
 
 */
 
-static void sort_instructions(IR_BasicBlock* bb) {
+static void sort_instructions(AIR_BasicBlock* bb) {
     u64 last_stackalloc = 0;
     u64 last_paramval = 0;
 
     for (u64 i = 0; i < bb->len; i++) {
         if (last_paramval >= bb->len) break;
         if (last_stackalloc >= bb->len) break;
-        if (bb->at[i]->tag == IR_PARAMVAL) {
-            ir_move_element(bb, last_paramval, i);
+        if (bb->at[i]->tag == AIR_PARAMVAL) {
+            air_move_element(bb, last_paramval, i);
             last_paramval++;
             last_stackalloc++;
-        } else if (bb->at[i]->tag == IR_STACKALLOC) {
-            ir_move_element(bb, last_stackalloc, i);
+        } else if (bb->at[i]->tag == AIR_STACKALLOC) {
+            air_move_element(bb, last_stackalloc, i);
             last_stackalloc++;
         }
     }
 }
 
-static void canonicalize(IR* ir) {
+static void canonicalize(AIR* ir) {
     switch (ir->tag) {
-    case IR_ADD:
-    case IR_MUL:
-        IR_BinOp* binop = (IR_BinOp*) ir;
-        if (binop->lhs->tag == IR_CONST && binop->rhs->tag != IR_CONST) {
+    case AIR_ADD:
+    case AIR_MUL:
+        AIR_BinOp* binop = (AIR_BinOp*) ir;
+        if (binop->lhs->tag == AIR_CONST && binop->rhs->tag != AIR_CONST) {
             void* temp = binop->lhs;
             binop->lhs = binop->rhs;
             binop->rhs = temp;
@@ -43,11 +43,11 @@ static void canonicalize(IR* ir) {
     }
 }
 
-IR_Module* ir_pass_canon(IR_Module* mod) {
+AIR_Module* air_pass_canon(AIR_Module* mod) {
     // reorg stackallocs and paramvals
     for_urange(i, 0, mod->functions_len) {
         for_urange(j, 0, mod->functions[i]->blocks.len) {
-            IR_BasicBlock* bb = mod->functions[i]->blocks.at[j];
+            AIR_BasicBlock* bb = mod->functions[i]->blocks.at[j];
             sort_instructions(bb);
 
             for_urange(inst, 0, bb->len) {

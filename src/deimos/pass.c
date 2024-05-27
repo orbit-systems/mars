@@ -11,27 +11,27 @@ void add_pass(char* name, void* callback, pass_type type) {
 }
 
 void register_passes() {
-    add_pass("general cleanup & canonicalization", ir_pass_canon, PASS_IR_TO_IR);
+    add_pass("general cleanup & canonicalization", air_pass_canon, PASS_AIR_TO_IR);
 
     bool opt = true;
     if (opt) {
-        add_pass("trivial redundant memory elimination", ir_pass_trme, PASS_IR_TO_IR);
-        add_pass("trivial dead code elimination", ir_pass_tdce, PASS_IR_TO_IR);
-        add_pass("mov propogation", ir_pass_movprop, PASS_IR_TO_IR);
-        add_pass("remove eliminated instructions", ir_pass_elim, PASS_IR_TO_IR);
+        add_pass("trivial redundant memory elimination", air_pass_trme, PASS_AIR_TO_IR);
+        add_pass("trivial dead code elimination", air_pass_tdce, PASS_AIR_TO_IR);
+        add_pass("mov propogation", air_pass_movprop, PASS_AIR_TO_IR);
+        add_pass("remove eliminated instructions", air_pass_elim, PASS_AIR_TO_IR);
     }
 }
 
-void run_passes(IR_Module* current_program) {
-    ir_print_module(current_program);
+void run_passes(AIR_Module* current_program) {
+    air_print_module(current_program);
     for_urange(i, 0, deimos_passes.len) {
         printf("Running pass: %s\n", deimos_passes.at[i].name);
-        if (deimos_passes.at[i].type == PASS_IR_TO_IR) {
-            current_program = deimos_passes.at[i].ir_callback(current_program);
+        if (deimos_passes.at[i].type == PASS_AIR_TO_IR) {
+            current_program = deimos_passes.at[i].air_callback(current_program);
         } else {
             general_error("Unexpected pass type!");
         }
-        ir_print_module(current_program);
+        air_print_module(current_program);
     }
     //HACK
     aphelion_translate_module(current_program);

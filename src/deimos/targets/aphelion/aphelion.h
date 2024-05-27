@@ -4,7 +4,7 @@
 #include "../target.h"
 #include "../asmprinter.h"
 
-AsmModule* aphelion_translate_module(IR_Module* irmod);
+AsmModule* aphelion_translate_module(AIR_Module* irmod);
 
 enum {
     APHEL_REGCLASS_ZERO,

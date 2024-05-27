@@ -36,7 +36,7 @@ int main(int argc, char** argv) {
         
         deimos_run(main_mod, NULL);
     } else {
-        IR_Module* ir_mod = lltd_parse_ir(mars_flags.input_path);
+        AIR_Module* ir_mod = lltd_parse_ir(mars_flags.input_path);
         deimos_run(NULL, ir_mod);
     }
 

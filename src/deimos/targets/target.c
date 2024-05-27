@@ -2,7 +2,7 @@
 
 #include "target.h"
 
-AsmSymbol* ir_sym_to_asm_sym(AsmModule* m, IR_Symbol* sym) {
+AsmSymbol* air_sym_to_asm_sym(AsmModule* m, AIR_Symbol* sym) {
     AsmSymbol* new_sym = arena_alloc(&m->alloca, sizeof(*new_sym), alignof(*new_sym));
     new_sym->binding = sym->visibility;
     new_sym->name = string_clone(sym->name);

@@ -1,7 +1,7 @@
 #include "ir.h"
 
-IR_Module* ir_new_module(string name) {
-    IR_Module* mod = mars_alloc(sizeof(IR_Module));
+AIR_Module* air_new_module(string name) {
+    AIR_Module* mod = mars_alloc(sizeof(AIR_Module));
 
     mod->functions = NULL;
     mod->globals   = NULL;
@@ -15,11 +15,11 @@ IR_Module* ir_new_module(string name) {
 }
 
 // if (sym == NULL), create new symbol with no name
-IR_Function* ir_new_function(IR_Module* mod, IR_Symbol* sym, bool global) {
-    IR_Function* fn = mars_alloc(sizeof(IR_Function));
+AIR_Function* air_new_function(AIR_Module* mod, AIR_Symbol* sym, bool global) {
+    AIR_Function* fn = mars_alloc(sizeof(AIR_Function));
 
-    fn->sym = sym ? sym : ir_new_symbol(mod, NULL_STR, global, true, fn);
-    fn->alloca = arena_make(IR_FN_ALLOCA_BLOCK_SIZE);
+    fn->sym = sym ? sym : air_new_symbol(mod, NULL_STR, global, true, fn);
+    fn->alloca = arena_make(AIR_FN_ALLOCA_BLOCK_SIZE);
     da_init(&fn->blocks, 1);
     fn->entry_idx = 0;
     // fn->exit_idx = 0;
@@ -32,7 +32,7 @@ IR_Function* ir_new_function(IR_Module* mod, IR_Symbol* sym, bool global) {
 }
 
 // takes multiple entity*
-void ir_set_func_params(IR_Function* f, u16 count, ...) {
+void air_set_func_params(AIR_Function* f, u16 count, ...) {
     f->params_len = count;
 
     if (f->params) mars_free(f->params);
@@ -44,7 +44,7 @@ void ir_set_func_params(IR_Function* f, u16 count, ...) {
     va_list args;
     va_start(args, count);
     for_range(i, 0, count) {
-        IR_FuncItem* item = mars_alloc(sizeof(IR_FuncItem));
+        AIR_FuncItem* item = mars_alloc(sizeof(AIR_FuncItem));
         if (!item) CRASH("item mars_alloc failed");
         
         if (!no_set) {
@@ -60,7 +60,7 @@ void ir_set_func_params(IR_Function* f, u16 count, ...) {
 }
 
 // takes multiple entity*
-void ir_set_func_returns(IR_Function* f, u16 count, ...) {
+void air_set_func_returns(AIR_Function* f, u16 count, ...) {
     f->returns_len = count;
 
     if (f->returns) mars_free(f->returns);
@@ -72,7 +72,7 @@ void ir_set_func_returns(IR_Function* f, u16 count, ...) {
     va_list args;
     va_start(args, count);
     for_range(i, 0, count) {
-        IR_FuncItem* item = mars_alloc(sizeof(IR_FuncItem));
+        AIR_FuncItem* item = mars_alloc(sizeof(AIR_FuncItem));
         if (!item) CRASH("item mars_alloc failed");
         
         if (!no_set) {
@@ -88,10 +88,10 @@ void ir_set_func_returns(IR_Function* f, u16 count, ...) {
 }
 
 // if (sym == NULL), create new symbol with default name
-IR_Global* ir_new_global(IR_Module* mod, IR_Symbol* sym, bool global, bool read_only) {
-    IR_Global* gl = mars_alloc(sizeof(IR_Global));
+AIR_Global* air_new_global(AIR_Module* mod, AIR_Symbol* sym, bool global, bool read_only) {
+    AIR_Global* gl = mars_alloc(sizeof(AIR_Global));
 
-    gl->sym = sym ? sym : ir_new_symbol(mod, strprintf("symbol%zu", sym), global, false, gl);
+    gl->sym = sym ? sym : air_new_symbol(mod, strprintf("symbol%zu", sym), global, false, gl);
     gl->read_only = read_only;
     gl->data = NULL;
     gl->data_len = 0;
@@ -101,22 +101,22 @@ IR_Global* ir_new_global(IR_Module* mod, IR_Symbol* sym, bool global, bool read_
     return gl;
 }
 
-void ir_set_global_data(IR_Global* global, u8* data, u32 data_len, bool zeroed) {
+void air_set_global_data(AIR_Global* global, u8* data, u32 data_len, bool zeroed) {
     global->is_symbol_ref = false;
     global->data = data;
     global->data_len = data_len;
     global->zeroed = zeroed;
 }
 
-void ir_set_global_symref(IR_Global* global, IR_Symbol* symref) {
+void air_set_global_symref(AIR_Global* global, AIR_Symbol* symref) {
     global->is_symbol_ref = true;
     global->symref = symref;
 }
 
 // WARNING: does NOT check if a symbol already exists
-// in most cases, use ir_find_or_create_symbol
-IR_Symbol* ir_new_symbol(IR_Module* mod, string name, u8 visibility, bool function, void* ref) {
-    IR_Symbol* sym = mars_alloc(sizeof(IR_Symbol));
+// in most cases, use air_find_or_create_symbol
+AIR_Symbol* air_new_symbol(AIR_Module* mod, string name, u8 visibility, bool function, void* ref) {
+    AIR_Symbol* sym = mars_alloc(sizeof(AIR_Symbol));
     sym->name = name;
     sym->ref = ref;
     sym->is_function = function;
@@ -126,13 +126,13 @@ IR_Symbol* ir_new_symbol(IR_Module* mod, string name, u8 visibility, bool functi
     return sym;
 }
 
-// use this instead of ir_new_symbol
-IR_Symbol* ir_find_or_new_symbol(IR_Module* mod, string name, u8 visibility, bool function, void* ref) {
-    IR_Symbol* sym = ir_find_symbol(mod, name);
-    return sym ? sym : ir_new_symbol(mod, name, visibility, function, ref);
+// use this instead of air_new_symbol
+AIR_Symbol* air_find_or_new_symbol(AIR_Module* mod, string name, u8 visibility, bool function, void* ref) {
+    AIR_Symbol* sym = air_find_symbol(mod, name);
+    return sym ? sym : air_new_symbol(mod, name, visibility, function, ref);
 }
 
-IR_Symbol* ir_find_symbol(IR_Module* mod, string name) {
+AIR_Symbol* air_find_symbol(AIR_Module* mod, string name) {
     for_urange(i, 0, mod->symtab.len) {
         if (string_eq(mod->symtab.at[i]->name, name)) {
             return mod->symtab.at[i];
@@ -141,8 +141,8 @@ IR_Symbol* ir_find_symbol(IR_Module* mod, string name) {
     return NULL;
 }
 
-IR_BasicBlock* ir_new_basic_block(IR_Function* fn, string name) {
-    IR_BasicBlock* bb = mars_alloc(sizeof(IR_BasicBlock));
+AIR_BasicBlock* air_new_basic_block(AIR_Function* fn, string name) {
+    AIR_BasicBlock* bb = mars_alloc(sizeof(AIR_BasicBlock));
     if (!bb) CRASH("mars_alloc failed");
 
     bb->name = name;
@@ -152,7 +152,7 @@ IR_BasicBlock* ir_new_basic_block(IR_Function* fn, string name) {
     return bb;
 }
 
-u32 ir_bb_index(IR_Function* fn, IR_BasicBlock* bb) {
+u32 air_bb_index(AIR_Function* fn, AIR_BasicBlock* bb) {
     for_urange(i, 0, fn->blocks.len) {
         if (fn->blocks.at[i] != bb) continue;
 
@@ -162,139 +162,139 @@ u32 ir_bb_index(IR_Function* fn, IR_BasicBlock* bb) {
     return UINT32_MAX;
 }
 
-IR* ir_add(IR_BasicBlock* bb, IR* ir) {
+AIR* air_add(AIR_BasicBlock* bb, AIR* ir) {
     ir->bb = bb;
     da_append(bb, ir);
     return ir;
 }
 
-IR* ir_make(IR_Function* f, u8 type) {
-    if (type > IR_INSTR_COUNT) type = IR_INVALID;
-    IR* ir = arena_alloc(&f->alloca, ir_sizes[type], 8);
+AIR* air_make(AIR_Function* f, u8 type) {
+    if (type > AIR_INSTR_COUNT) type = AIR_INVALID;
+    AIR* ir = arena_alloc(&f->alloca, air_sizes[type], 8);
     ir->tag = type;
     ir->T = NULL;
     ir->number = 0;
     return ir;
 }
 
-const size_t ir_sizes[] = {
-    [IR_INVALID]    = 0,
-    [IR_ELIMINATED] = 0,
+const size_t air_sizes[] = {
+    [AIR_INVALID]    = 0,
+    [AIR_ELIMINATED] = 0,
 
-    [IR_ADD] = sizeof(IR_BinOp),
-    [IR_SUB] = sizeof(IR_BinOp),
-    [IR_MUL] = sizeof(IR_BinOp),
-    [IR_DIV] = sizeof(IR_BinOp),
+    [AIR_ADD] = sizeof(AIR_BinOp),
+    [AIR_SUB] = sizeof(AIR_BinOp),
+    [AIR_MUL] = sizeof(AIR_BinOp),
+    [AIR_DIV] = sizeof(AIR_BinOp),
     
-    [IR_AND]   = sizeof(IR_BinOp),
-    [IR_OR]    = sizeof(IR_BinOp),
-    [IR_NOR]   = sizeof(IR_BinOp),
-    [IR_XOR]   = sizeof(IR_BinOp),
-    [IR_SHL]   = sizeof(IR_BinOp),
-    [IR_LSR]   = sizeof(IR_BinOp),
-    [IR_ASR]   = sizeof(IR_BinOp),
-    [IR_TRUNC] = sizeof(IR_BinOp),
-    [IR_SEXT]  = sizeof(IR_BinOp),
-    [IR_ZEXT]  = sizeof(IR_BinOp),
+    [AIR_AND]   = sizeof(AIR_BinOp),
+    [AIR_OR]    = sizeof(AIR_BinOp),
+    [AIR_NOR]   = sizeof(AIR_BinOp),
+    [AIR_XOR]   = sizeof(AIR_BinOp),
+    [AIR_SHL]   = sizeof(AIR_BinOp),
+    [AIR_LSR]   = sizeof(AIR_BinOp),
+    [AIR_ASR]   = sizeof(AIR_BinOp),
+    [AIR_TRUNC] = sizeof(AIR_BinOp),
+    [AIR_SEXT]  = sizeof(AIR_BinOp),
+    [AIR_ZEXT]  = sizeof(AIR_BinOp),
 
-    [IR_STACKALLOC]  = sizeof(IR_StackAlloc),
-    [IR_GETFIELDPTR] = sizeof(IR_GetFieldPtr),
-    [IR_GETINDEXPTR] = sizeof(IR_GetIndexPtr),
+    [AIR_STACKALLOC]  = sizeof(AIR_StackAlloc),
+    [AIR_GETFIELDPTR] = sizeof(AIR_GetFieldPtr),
+    [AIR_GETINDEXPTR] = sizeof(AIR_GetIndexPtr),
 
-    [IR_LOAD]     = sizeof(IR_Load),
-    [IR_VOL_LOAD] = sizeof(IR_Load),
+    [AIR_LOAD]     = sizeof(AIR_Load),
+    [AIR_VOL_LOAD] = sizeof(AIR_Load),
 
-    [IR_STORE]     = sizeof(IR_Store),
-    [IR_VOL_STORE] = sizeof(IR_Store),
+    [AIR_STORE]     = sizeof(AIR_Store),
+    [AIR_VOL_STORE] = sizeof(AIR_Store),
 
-    [IR_CONST]      = sizeof(IR_Const),
-    [IR_LOADSYMBOL] = sizeof(IR_LoadSymbol),
+    [AIR_CONST]      = sizeof(AIR_Const),
+    [AIR_LOADSYMBOL] = sizeof(AIR_LoadSymbol),
 
-    [IR_MOV] = sizeof(IR_Mov),
-    [IR_PHI] = sizeof(IR_Phi),
+    [AIR_MOV] = sizeof(AIR_Mov),
+    [AIR_PHI] = sizeof(AIR_Phi),
 
-    [IR_BRANCH] = sizeof(IR_Branch),
-    [IR_JUMP]   = sizeof(IR_Jump),
+    [AIR_BRANCH] = sizeof(AIR_Branch),
+    [AIR_JUMP]   = sizeof(AIR_Jump),
 
-    [IR_PARAMVAL]  = sizeof(IR_ParamVal),
-    [IR_RETURNVAL] = sizeof(IR_ReturnVal),
+    [AIR_PARAMVAL]  = sizeof(AIR_ParamVal),
+    [AIR_RETURNVAL] = sizeof(AIR_ReturnVal),
 
-    [IR_RETURN] = sizeof(IR_Return),
+    [AIR_RETURN] = sizeof(AIR_Return),
 };
 
-IR* ir_make_binop(IR_Function* f, u8 type, IR* lhs, IR* rhs) {
-    IR_BinOp* ir = (IR_BinOp*) ir_make(f, type);
+AIR* air_make_binop(AIR_Function* f, u8 type, AIR* lhs, AIR* rhs) {
+    AIR_BinOp* ir = (AIR_BinOp*) air_make(f, type);
     
     ir->lhs = lhs;
     ir->rhs = rhs;
-    return (IR*) ir;
+    return (AIR*) ir;
 }
 
-IR* ir_make_cast(IR_Function* f, IR* source, type* to) {
-    IR_Cast* ir = (IR_Cast*) ir_make(f, IR_CAST);
+AIR* air_make_cast(AIR_Function* f, AIR* source, type* to) {
+    AIR_Cast* ir = (AIR_Cast*) air_make(f, AIR_CAST);
     ir->source = source;
     ir->to = to;
-    return (IR*) ir;
+    return (AIR*) ir;
 }
 
-IR* ir_make_stackalloc(IR_Function* f, type* T) {
-    IR_StackAlloc* ir = (IR_StackAlloc*) ir_make(f, IR_STACKALLOC);
+AIR* air_make_stackalloc(AIR_Function* f, type* T) {
+    AIR_StackAlloc* ir = (AIR_StackAlloc*) air_make(f, AIR_STACKALLOC);
 
     ir->alloctype = T;
-    return (IR*) ir;
+    return (AIR*) ir;
 }
 
-IR* ir_make_getfieldptr(IR_Function* f, u32 index, IR* source) {
-    IR_GetFieldPtr* ir = (IR_GetFieldPtr*) ir_make(f, IR_GETFIELDPTR);
+AIR* air_make_getfieldptr(AIR_Function* f, u32 index, AIR* source) {
+    AIR_GetFieldPtr* ir = (AIR_GetFieldPtr*) air_make(f, AIR_GETFIELDPTR);
     ir->index = index;
     ir->source = source;
-    return (IR*) ir;
+    return (AIR*) ir;
 }
 
-IR* ir_make_getindexptr(IR_Function* f, IR* index, IR* source) {
-    IR_GetIndexPtr* ir = (IR_GetIndexPtr*) ir_make(f, IR_GETINDEXPTR);
+AIR* air_make_getindexptr(AIR_Function* f, AIR* index, AIR* source) {
+    AIR_GetIndexPtr* ir = (AIR_GetIndexPtr*) air_make(f, AIR_GETINDEXPTR);
     ir->index = index;
     ir->source = source;
-    return (IR*) ir;
+    return (AIR*) ir;
 }
 
-IR* ir_make_load(IR_Function* f, IR* location, bool is_vol) {
-    IR_Load* ir = (IR_Load*) ir_make(f, IR_LOAD);
+AIR* air_make_load(AIR_Function* f, AIR* location, bool is_vol) {
+    AIR_Load* ir = (AIR_Load*) air_make(f, AIR_LOAD);
 
-    if (is_vol) ir->base.tag = IR_VOL_LOAD;
+    if (is_vol) ir->base.tag = AIR_VOL_LOAD;
     ir->location = location;
-    return (IR*) ir;
+    return (AIR*) ir;
 }
 
-IR* ir_make_store(IR_Function* f, IR* location, IR* value, bool is_vol) {
-    IR_Store* ir = (IR_Store*) ir_make(f, IR_STORE);
+AIR* air_make_store(AIR_Function* f, AIR* location, AIR* value, bool is_vol) {
+    AIR_Store* ir = (AIR_Store*) air_make(f, AIR_STORE);
     
-    if (is_vol) ir->base.tag = IR_VOL_STORE;
+    if (is_vol) ir->base.tag = AIR_VOL_STORE;
     ir->location = location;
     ir->value = value;
-    return (IR*) ir;
+    return (AIR*) ir;
 }
 
-IR* ir_make_const(IR_Function* f) {
-    IR_Const* ir = (IR_Const*) ir_make(f, IR_CONST);
-    return (IR*) ir;
+AIR* air_make_const(AIR_Function* f) {
+    AIR_Const* ir = (AIR_Const*) air_make(f, AIR_CONST);
+    return (AIR*) ir;
 }
 
-IR* ir_make_loadsymbol(IR_Function* f, IR_Symbol* symbol) {
-    IR_LoadSymbol* ir = (IR_LoadSymbol*) ir_make(f, IR_LOADSYMBOL);
+AIR* air_make_loadsymbol(AIR_Function* f, AIR_Symbol* symbol) {
+    AIR_LoadSymbol* ir = (AIR_LoadSymbol*) air_make(f, AIR_LOADSYMBOL);
     ir->sym = symbol;
-    return (IR*) ir;
+    return (AIR*) ir;
 }
 
-IR* ir_make_mov(IR_Function* f, IR* source) {
-    IR_Mov* ir = (IR_Mov*) ir_make(f, IR_MOV);
+AIR* air_make_mov(AIR_Function* f, AIR* source) {
+    AIR_Mov* ir = (AIR_Mov*) air_make(f, AIR_MOV);
     ir->source = source;
-    return (IR*) ir;
+    return (AIR*) ir;
 }
 
 // use in the format (f, source_count, source_1, source_BB_1, source_2, source_BB_2, ...)
-IR* ir_make_phi(IR_Function* f, u32 count, ...) {
-    IR_Phi* ir = (IR_Phi*) ir_make(f, IR_PHI);
+AIR* air_make_phi(AIR_Function* f, u32 count, ...) {
+    AIR_Phi* ir = (AIR_Phi*) air_make(f, AIR_PHI);
     ir->len = count;
 
     ir->sources    = mars_alloc(sizeof(*ir->sources) * count);
@@ -303,18 +303,18 @@ IR* ir_make_phi(IR_Function* f, u32 count, ...) {
     va_list args;
     va_start(args, count);
     for_range(i, 0, count) {
-        ir->sources[i]    = va_arg(args, IR*);
-        ir->source_BBs[i] = va_arg(args, IR_BasicBlock*);
+        ir->sources[i]    = va_arg(args, AIR*);
+        ir->source_BBs[i] = va_arg(args, AIR_BasicBlock*);
     }
     va_end(args);
 
-    return (IR*) ir;
+    return (AIR*) ir;
 }
 
-void ir_add_phi_source(IR_Phi* phi, IR* source, IR_BasicBlock* source_block) {
+void air_add_phi_source(AIR_Phi* phi, AIR* source, AIR_BasicBlock* source_block) {
     // wrote this and then remembered mars_realloc exists. too late :3
-    IR** new_sources    = mars_alloc(sizeof(*phi->sources) * (phi->len + 1));
-    IR_BasicBlock** new_source_BBs = mars_alloc(sizeof(*phi->source_BBs) * (phi->len + 1));
+    AIR** new_sources    = mars_alloc(sizeof(*phi->sources) * (phi->len + 1));
+    AIR_BasicBlock** new_source_BBs = mars_alloc(sizeof(*phi->source_BBs) * (phi->len + 1));
 
     if (!new_sources || !new_source_BBs) {
         CRASH("mars_alloc returned null");
@@ -334,53 +334,53 @@ void ir_add_phi_source(IR_Phi* phi, IR* source, IR_BasicBlock* source_block) {
     phi->len++;
 }
 
-IR* ir_make_jump(IR_Function* f, IR_BasicBlock* dest) {
-    IR_Jump* ir = (IR_Jump*) ir_make(f, IR_JUMP);
+AIR* air_make_jump(AIR_Function* f, AIR_BasicBlock* dest) {
+    AIR_Jump* ir = (AIR_Jump*) air_make(f, AIR_JUMP);
     ir->dest = dest;
-    return (IR*) ir;
+    return (AIR*) ir;
 }
 
-IR* ir_make_branch(IR_Function* f, u8 cond, IR* lhs, IR* rhs, IR_BasicBlock* if_true, IR_BasicBlock* if_false) {
-    IR_Branch* ir = (IR_Branch*) ir_make(f, IR_BRANCH);
+AIR* air_make_branch(AIR_Function* f, u8 cond, AIR* lhs, AIR* rhs, AIR_BasicBlock* if_true, AIR_BasicBlock* if_false) {
+    AIR_Branch* ir = (AIR_Branch*) air_make(f, AIR_BRANCH);
     ir->cond = cond;
     ir->lhs = lhs;
     ir->rhs = rhs;
     ir->if_true  = if_true;
     ir->if_false = if_false;
-    return (IR*) ir;
+    return (AIR*) ir;
 }
 
-IR* ir_make_paramval(IR_Function* f, u32 param) {
-    IR_ParamVal* ir = (IR_ParamVal*) ir_make(f, IR_PARAMVAL);
+AIR* air_make_paramval(AIR_Function* f, u32 param) {
+    AIR_ParamVal* ir = (AIR_ParamVal*) air_make(f, AIR_PARAMVAL);
     ir->param_idx = param;
-    return (IR*) ir;
+    return (AIR*) ir;
 }
 
-IR* ir_make_returnval(IR_Function* f, u32 param, IR* source) {
-    IR_ReturnVal* ir = (IR_ReturnVal*) ir_make(f, IR_RETURNVAL);
+AIR* air_make_returnval(AIR_Function* f, u32 param, AIR* source) {
+    AIR_ReturnVal* ir = (AIR_ReturnVal*) air_make(f, AIR_RETURNVAL);
     ir->return_idx = param;
     ir->source = source;
-    return (IR*) ir;
+    return (AIR*) ir;
 }
 
-IR* ir_make_return(IR_Function* f) {
-    return ir_make(f, IR_RETURN);
+AIR* air_make_return(AIR_Function* f) {
+    return air_make(f, AIR_RETURN);
 }
 
-void ir_move_element(IR_BasicBlock* bb, u64 to, u64 from) {
+void air_move_element(AIR_BasicBlock* bb, u64 to, u64 from) {
     if (to == from) return;
 
-    IR* from_elem = bb->at[from];
+    AIR* from_elem = bb->at[from];
     if (to < from) {
-        memmove(&bb->at[to+1], &bb->at[to], (from - to) * sizeof(IR*));
+        memmove(&bb->at[to+1], &bb->at[to], (from - to) * sizeof(AIR*));
     } else {
-        memmove(&bb->at[to], &bb->at[to+1], (to - from) * sizeof(IR*));
+        memmove(&bb->at[to], &bb->at[to+1], (to - from) * sizeof(AIR*));
     }
     bb->at[to] = from_elem;
 }
 
 
-u32 ir_renumber(IR_Function* f) {
+u32 air_renumber(AIR_Function* f) {
     u32 count = 0;
     for_urange(i, 0, f->blocks.len) {
         for_urange(j, 0, f->blocks.at[i]->len) {
@@ -390,8 +390,8 @@ u32 ir_renumber(IR_Function* f) {
     return count;
 }
 
-void ir_print_function(IR_Function* f) {
-    ir_renumber(f);
+void air_print_function(AIR_Function* f) {
+    air_renumber(f);
     
     printf("fn \""str_fmt"\" ", str_arg(f->sym->name));
 
@@ -420,22 +420,22 @@ void ir_print_function(IR_Function* f) {
         printf("    ");
         if (f->entry_idx == i) printf("entry ");
         if (f->entry_idx == i) printf("exit ");
-        ir_print_bb(f->blocks.at[i]);
+        air_print_bb(f->blocks.at[i]);
     }
     printf("}\n");
 }
 
-void ir_print_bb(IR_BasicBlock* bb) {
+void air_print_bb(AIR_BasicBlock* bb) {
     printf(str_fmt":\n", str_arg(bb->name));
 
     for_urange(i, 0, bb->len) {
         printf("        ");
-        ir_print_ir(bb->at[i]);
+        air_print_ir(bb->at[i]);
         printf("\n");
     }
 }
 
-void ir_print_ir(IR* ir) {
+void air_print_ir(AIR* ir) {
     
     if (!ir) {
         printf("[null]");
@@ -447,69 +447,69 @@ void ir_print_ir(IR* ir) {
     string typestr = type_to_string(ir->T);
     printf("#%-3zu %-4.*s = ", ir->number, str_arg(typestr));
     switch (ir->tag) {
-    case IR_INVALID: 
+    case AIR_INVALID: 
         printf("invalid!");
         break;
 
-    case IR_ELIMINATED:
+    case AIR_ELIMINATED:
         printf("---");
         return;
 
-    if(0){case IR_ADD:   binopstr = "add";} //common path fallthroughs
-    if(0){case IR_SUB:   binopstr = "sub";}
-    if(0){case IR_MUL:   binopstr = "mul";}
-    if(0){case IR_DIV:   binopstr = "div";}
-    if(0){case IR_AND:   binopstr = "and";}
-    if(0){case IR_OR:    binopstr = "or";} 
-    if(0){case IR_NOR:   binopstr = "nor";}
-    if(0){case IR_XOR:   binopstr = "xor";}
-    if(0){case IR_SHL:   binopstr = "shl";}
-    if(0){case IR_LSR:   binopstr = "lsr";}
-    if(0){case IR_ASR:   binopstr = "asr";}
-    if(0){case IR_TRUNC: binopstr = "trunc";}
-    if(0){case IR_SEXT:  binopstr = "sext";}
-    if(0){case IR_ZEXT:  binopstr = "zext";}
-        IR_BinOp* binop = (IR_BinOp*) ir;
+    if(0){case AIR_ADD:   binopstr = "add";} //common path fallthroughs
+    if(0){case AIR_SUB:   binopstr = "sub";}
+    if(0){case AIR_MUL:   binopstr = "mul";}
+    if(0){case AIR_DIV:   binopstr = "div";}
+    if(0){case AIR_AND:   binopstr = "and";}
+    if(0){case AIR_OR:    binopstr = "or";} 
+    if(0){case AIR_NOR:   binopstr = "nor";}
+    if(0){case AIR_XOR:   binopstr = "xor";}
+    if(0){case AIR_SHL:   binopstr = "shl";}
+    if(0){case AIR_LSR:   binopstr = "lsr";}
+    if(0){case AIR_ASR:   binopstr = "asr";}
+    if(0){case AIR_TRUNC: binopstr = "trunc";}
+    if(0){case AIR_SEXT:  binopstr = "sext";}
+    if(0){case AIR_ZEXT:  binopstr = "zext";}
+        AIR_BinOp* binop = (AIR_BinOp*) ir;
         printf("%s #%zu, #%zu", binopstr, binop->lhs->number, binop->rhs->number);
         break;
     
-    case IR_PARAMVAL:
-        IR_ParamVal* paramval = (IR_ParamVal*) ir;
+    case AIR_PARAMVAL:
+        AIR_ParamVal* paramval = (AIR_ParamVal*) ir;
         printf("paramval <%zu>", paramval->param_idx);
         break;
 
-    case IR_RETURNVAL:
-        IR_ReturnVal* returnval = (IR_ReturnVal*) ir;
+    case AIR_RETURNVAL:
+        AIR_ReturnVal* returnval = (AIR_ReturnVal*) ir;
         printf("returnval <%zu> #%zu", returnval->return_idx, returnval->source->number);
         break;
 
-    case IR_RETURN:
+    case AIR_RETURN:
         printf("return");
         break;
 
-    case IR_STACKALLOC:
-        IR_StackAlloc* stackalloc = (IR_StackAlloc*) ir;
+    case AIR_STACKALLOC:
+        AIR_StackAlloc* stackalloc = (AIR_StackAlloc*) ir;
         string typestr = type_to_string(stackalloc->alloctype);
         printf("stackalloc <"str_fmt">", str_arg(typestr));
         break;
 
-    case IR_STORE:
-        IR_Store* store = (IR_Store*) ir;
+    case AIR_STORE:
+        AIR_Store* store = (AIR_Store*) ir;
         printf("store #%zu, #%zu", store->location->number, store->value->number);
         break;
     
-    case IR_LOAD:
-        IR_Load* load = (IR_Load*) ir;
+    case AIR_LOAD:
+        AIR_Load* load = (AIR_Load*) ir;
         printf("load #%zu", load->location->number);
         break;
 
-    case IR_MOV:
-        IR_Mov* mov = (IR_Mov*) ir;
+    case AIR_MOV:
+        AIR_Mov* mov = (AIR_Mov*) ir;
         printf("mov #%zu", mov->source->number);
         break;
 
-    case IR_CONST:
-        IR_Const* con = (IR_Const*) ir;
+    case AIR_CONST:
+        AIR_Const* con = (AIR_Const*) ir;
 
         string typestr_ = type_to_string(con->base.T);
         printf("const <"str_fmt", ", str_arg(typestr_));
@@ -539,9 +539,9 @@ void ir_print_ir(IR* ir) {
     }
 }
 
-void ir_print_module(IR_Module* mod) {
+void air_print_module(AIR_Module* mod) {
     for_urange(i, 0, mod->functions_len) {
-        ir_print_function(mod->functions[i]);
+        air_print_function(mod->functions[i]);
     }
 }
 

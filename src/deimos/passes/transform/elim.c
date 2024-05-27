@@ -2,17 +2,17 @@
 
 /* pass "elim" - remove instructions marked eliminated
 
-    move non-IR_ELIMINATED instructions to the top of the basic block
+    move non-AIR_ELIMINATED instructions to the top of the basic block
     and set the length of the basic block to exclude the extra instructions.
 
 */
 
-static void transcribe_w_no_elims(IR_BasicBlock* bb) {
+static void transcribe_w_no_elims(AIR_BasicBlock* bb) {
     
     u64 place = 0;
     for_urange(i, 0, bb->len) {
-        IR* ir = bb->at[i];
-        if (ir == NULL || ir->tag == IR_ELIMINATED) continue;
+        AIR* ir = bb->at[i];
+        if (ir == NULL || ir->tag == AIR_ELIMINATED) continue;
 
         if (place == i) {
             place++;
@@ -24,10 +24,10 @@ static void transcribe_w_no_elims(IR_BasicBlock* bb) {
     bb->len = place;
 }
 
-IR_Module* ir_pass_elim(IR_Module* mod) {
+AIR_Module* air_pass_elim(AIR_Module* mod) {
     for_urange(i, 0, mod->functions_len) {
         for_urange(j, 0, mod->functions[i]->blocks.len) {
-            IR_BasicBlock* bb = mod->functions[i]->blocks.at[j];
+            AIR_BasicBlock* bb = mod->functions[i]->blocks.at[j];
             transcribe_w_no_elims(bb);
         }
     }

@@ -1,16 +1,16 @@
 #include "deimos.h"
 #include "passes/passes.h"
 
-void deimos_run(mars_module* main_mod, IR_Module* passthrough) {
-	IR_Module* ir_mod;
+void deimos_run(mars_module* main_mod, AIR_Module* passthrough) {
+	AIR_Module* air_mod;
 	if (!mars_flags.use_lltd) {
- 		ir_mod = ir_generate(main_mod);
+ 		air_mod = air_generate(main_mod);
 	} else {
-		ir_mod = passthrough;
+		air_mod = passthrough;
 	}
 
     register_passes();
-    run_passes(ir_mod);
+    run_passes(air_mod);
 }
 
 char* random_string(int len) {

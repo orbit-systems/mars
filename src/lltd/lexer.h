@@ -3,7 +3,7 @@
 #include "deimos/ir.h"
 #include "term.h"
 
-IR_Module* lltd_parse_ir(string path);
+AIR_Module* lltd_parse_ir(string path);
 
 da_typedef(string);
 

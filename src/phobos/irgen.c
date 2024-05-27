@@ -4,15 +4,15 @@
 
 static mars_module* mars_mod;
 
-IR_Module* ir_generate(mars_module* mod) {
-    IR_Module* m = ir_new_module(mod->module_name);
+AIR_Module* air_generate(mars_module* mod) {
+    AIR_Module* m = air_new_module(mod->module_name);
     mars_mod = mod;
     
     /* do some codegen shit prolly */
 
     for_urange(i, 0, mod->program_tree.len) {
         if (mod->program_tree.at[i].type == AST_decl_stmt) {
-            ir_generate_global_from_stmt_decl(m, mod->program_tree.at[i]);
+            air_generate_global_from_stmt_decl(m, mod->program_tree.at[i]);
         } else {
             general_error("FIXME: unhandled AST root");
         }
@@ -21,32 +21,32 @@ IR_Module* ir_generate(mars_module* mod) {
     return m;
 }
 
-IR_Global* ir_generate_global_from_stmt_decl(IR_Module* mod, AST ast) { //FIXME: add sanity
+AIR_Global* air_generate_global_from_stmt_decl(AIR_Module* mod, AST ast) { //FIXME: add sanity
     ast_decl_stmt* decl_stmt = ast.as_decl_stmt; 
 
-    //note: CAE problem, we update the IR_Symbol name after IR_Global creation
+    //note: CAE problem, we update the AIR_Symbol name after AIR_Global creation
 
     //note: global decl_stmts are single entries on the lhs, so we can just assume that lhs[0] == ast_identifier_expr
 
-    IR_Global* ir_g = ir_new_global(mod, NULL, /*global=*/true, /*read_only=*/decl_stmt->is_mut);
-    ir_g->sym->name = decl_stmt->lhs.at[0].as_identifier_expr->tok->text; 
+    AIR_Global* air_g = air_new_global(mod, NULL, /*global=*/true, /*read_only=*/decl_stmt->is_mut);
+    air_g->sym->name = decl_stmt->lhs.at[0].as_identifier_expr->tok->text; 
 
     if (decl_stmt->rhs.type == AST_func_literal_expr) {
-        IR_Function* fn = ir_generate_function(mod, decl_stmt->rhs);
-        fn->sym->name = string_clone(string_concat(ir_g->sym->name, str(".code")));
-        ir_set_global_symref(ir_g, fn->sym);
+        AIR_Function* fn = air_generate_function(mod, decl_stmt->rhs);
+        fn->sym->name = string_clone(string_concat(air_g->sym->name, str(".code")));
+        air_set_global_symref(air_g, fn->sym);
     } else { //AST_literal
         general_error("FIXME: unhandled RHS of decl_stmt, it wasnt an AST_func_literal_expr");
     }
 
-    return ir_g;
+    return air_g;
 }
 
-//FIXME: add ir_generate_local_from_stmt_decl
+//FIXME: add air_generate_local_from_stmt_decl
 
-IR* ir_generate_expr_literal(IR_Function* f, IR_BasicBlock* bb, AST ast) {
+AIR* air_generate_expr_literal(AIR_Function* f, AIR_BasicBlock* bb, AST ast) {
     ast_literal_expr* literal = ast.as_literal_expr;
-    IR_Const* ir = (IR_Const*) ir_make_const(f);
+    AIR_Const* ir = (AIR_Const*) air_make_const(f);
     
     switch (literal->value.kind) {
     case EV_I64:
@@ -58,23 +58,23 @@ IR* ir_generate_expr_literal(IR_Function* f, IR_BasicBlock* bb, AST ast) {
         CRASH("unhandled EV type");
     }
 
-    ir_add(bb, (IR*) ir);
-    return (IR*) ir;
+    air_add(bb, (AIR*) ir);
+    return (AIR*) ir;
 }
 
-IR* ir_generate_expr_binop(IR_Function* f, IR_BasicBlock* bb, AST ast) {
+AIR* air_generate_expr_binop(AIR_Function* f, AIR_BasicBlock* bb, AST ast) {
     ast_binary_op_expr* binop = ast.as_binary_op_expr;
 
-    IR* lhs = ir_generate_expr_value(f, bb, binop->lhs);
-    IR* rhs = ir_generate_expr_value(f, bb, binop->rhs);
-    IR* ir  = ir_add(bb, ir_make_binop(f, IR_ADD, lhs, rhs));
+    AIR* lhs = air_generate_expr_value(f, bb, binop->lhs);
+    AIR* rhs = air_generate_expr_value(f, bb, binop->rhs);
+    AIR* ir  = air_add(bb, air_make_binop(f, AIR_ADD, lhs, rhs));
     ir->T = lhs->T;
 
     switch (binop->op->type) {
-    case TOK_ADD: ir->tag = IR_ADD; break;
-    case TOK_SUB: ir->tag = IR_SUB; break;
-    case TOK_MUL: ir->tag = IR_MUL; break;
-    case TOK_DIV: ir->tag = IR_DIV; break;
+    case TOK_ADD: ir->tag = AIR_ADD; break;
+    case TOK_SUB: ir->tag = AIR_SUB; break;
+    case TOK_MUL: ir->tag = AIR_MUL; break;
+    case TOK_DIV: ir->tag = AIR_DIV; break;
     default:
         warning_at_node(mars_mod, ast, "unhandled binop type");
         CRASH("unhandled binop type");
@@ -84,9 +84,9 @@ IR* ir_generate_expr_binop(IR_Function* f, IR_BasicBlock* bb, AST ast) {
     return ir;
 }
 
-IR* ir_generate_expr_ident_load(IR_Function* f, IR_BasicBlock* bb, AST ast) {
+AIR* air_generate_expr_ident_load(AIR_Function* f, AIR_BasicBlock* bb, AST ast) {
     ast_identifier_expr* ident = ast.as_identifier_expr;
-    if (ident->is_discard) return ir_add(bb, ir_make(f, IR_INVALID));
+    if (ident->is_discard) return air_add(bb, air_make(f, AIR_INVALID));
 
     // if a stackalloc and entityextra havent been generated, generate them
     if (!ident->entity->stackalloc) {
@@ -96,25 +96,25 @@ IR* ir_generate_expr_ident_load(IR_Function* f, IR_BasicBlock* bb, AST ast) {
             ident->entity->entity_type = make_type(TYPE_I64);
         }
 
-        IR* stackalloc = ir_add(bb, ir_make_stackalloc(f, ident->entity->entity_type));
+        AIR* stackalloc = air_add(bb, air_make_stackalloc(f, ident->entity->entity_type));
 
         ident->entity->stackalloc = stackalloc;
     }
-    IR* stackalloc = ident->entity->stackalloc;
+    AIR* stackalloc = ident->entity->stackalloc;
 
-    IR* load = ir_make_load(f, stackalloc, false);
+    AIR* load = air_make_load(f, stackalloc, false);
     load->T = ident->entity->entity_type;
 
-    return ir_add(bb, load);
+    return air_add(bb, load);
 }
 
-IR* ir_generate_expr_value(IR_Function* f, IR_BasicBlock* bb, AST ast) {
+AIR* air_generate_expr_value(AIR_Function* f, AIR_BasicBlock* bb, AST ast) {
 
     switch (ast.type) {
-    case AST_literal_expr:    return ir_generate_expr_literal(f, bb, ast);
-    case AST_binary_op_expr:  return ir_generate_expr_binop(f, bb, ast);
-    case AST_identifier_expr: return ir_generate_expr_ident_load(f, bb, ast);
-    case AST_paren_expr:      return ir_generate_expr_value(f, bb, ast.as_paren_expr->subexpr);
+    case AST_literal_expr:    return air_generate_expr_literal(f, bb, ast);
+    case AST_binary_op_expr:  return air_generate_expr_binop(f, bb, ast);
+    case AST_identifier_expr: return air_generate_expr_ident_load(f, bb, ast);
+    case AST_paren_expr:      return air_generate_expr_value(f, bb, ast.as_paren_expr->subexpr);
     default:
         warning_at_node(mars_mod, ast, "unhandled AST type");
         CRASH("unhandled AST type");
@@ -122,7 +122,7 @@ IR* ir_generate_expr_value(IR_Function* f, IR_BasicBlock* bb, AST ast) {
     }
 }
 
-IR* ir_generate_expr_address(IR_Function* f, IR_BasicBlock* bb, AST ast) {
+AIR* air_generate_expr_address(AIR_Function* f, AIR_BasicBlock* bb, AST ast) {
     switch (ast.type) {
     case AST_identifier_expr:
         if (ast.as_identifier_expr->entity->stackalloc != NULL) {
@@ -132,7 +132,7 @@ IR* ir_generate_expr_address(IR_Function* f, IR_BasicBlock* bb, AST ast) {
         if (!ident->entity->stackalloc) {
 
             // generate stackalloc
-            IR* stackalloc = ir_add(bb, ir_make_stackalloc(f, ident->entity->entity_type));
+            AIR* stackalloc = air_add(bb, air_make_stackalloc(f, ident->entity->entity_type));
             TODO("bruh");
         }
         break;
@@ -142,11 +142,11 @@ IR* ir_generate_expr_address(IR_Function* f, IR_BasicBlock* bb, AST ast) {
     }
 }
 
-void ir_generate_stmt_assign(IR_Function* f, IR_BasicBlock* bb, AST ast) {
+void air_generate_stmt_assign(AIR_Function* f, AIR_BasicBlock* bb, AST ast) {
     ast_assign_stmt* assign = ast.as_assign_stmt;
 
     if (assign->lhs.len == 1) {
-        IR* dest_address = ir_generate_expr_address(f, bb, assign->lhs.at[0]);
+        AIR* dest_address = air_generate_expr_address(f, bb, assign->lhs.at[0]);
 
         if (assign->rhs.type == AST_call_expr) {
             // function calls need special handling
@@ -157,8 +157,8 @@ void ir_generate_stmt_assign(IR_Function* f, IR_BasicBlock* bb, AST ast) {
         // this does not take into account struct assignments either, just regular ol values
 
         if (!(assign->rhs.type == AST_identifier_expr && assign->rhs.as_identifier_expr->is_discard)) {
-            IR* source_val = ir_generate_expr_value(f, bb, assign->rhs);
-            IR* store = ir_add(bb, ir_make_store(f, dest_address, source_val, false));
+            AIR* source_val = air_generate_expr_value(f, bb, assign->rhs);
+            AIR* store = air_add(bb, air_make_store(f, dest_address, source_val, false));
         }
     } else {
         warning_at_node(mars_mod, ast, "unhandled multi-assign");
@@ -166,7 +166,7 @@ void ir_generate_stmt_assign(IR_Function* f, IR_BasicBlock* bb, AST ast) {
     }
 }
 
-void ir_generate_stmt_return(IR_Function* f, IR_BasicBlock* bb, AST ast) {
+void air_generate_stmt_return(AIR_Function* f, AIR_BasicBlock* bb, AST ast) {
     ast_return_stmt* astret = ast.as_return_stmt;
     
     // if its a plain return, we need to get the 
@@ -174,45 +174,45 @@ void ir_generate_stmt_return(IR_Function* f, IR_BasicBlock* bb, AST ast) {
     if (astret->returns.len == 0) {
         for_urange(i, 0, astret->returns.len) {
             entity* e = f->returns[i]->e;
-            IR* stackalloc = e->stackalloc;
+            AIR* stackalloc = e->stackalloc;
 
-            IR* load = ir_add(bb, ir_make_load(f, stackalloc, false));
+            AIR* load = air_add(bb, air_make_load(f, stackalloc, false));
             load->T = get_target(stackalloc->T);
-            IR* retval = ir_add(bb, ir_make_returnval(f, i, load));
+            AIR* retval = air_add(bb, air_make_returnval(f, i, load));
         }
     } else {
         // this is NOT a plain return, which means that we can just get the values directly
         for_urange(i, 0, astret->returns.len) {
-            IR* value = ir_generate_expr_value(f, bb, astret->returns.at[i]);
-            IR* retval = ir_add(bb, ir_make_returnval(f, i, value));
+            AIR* value = air_generate_expr_value(f, bb, astret->returns.at[i]);
+            AIR* retval = air_add(bb, air_make_returnval(f, i, value));
             retval->T = make_type(TYPE_NONE);
         }
     }
     
-    IR* ret = ir_add(bb, ir_make_return(f));
+    AIR* ret = air_add(bb, air_make_return(f));
     ret->T = make_type(TYPE_NONE);
 }
 
-IR_Function* ir_generate_function(IR_Module* mod, AST ast) {
+AIR_Function* air_generate_function(AIR_Module* mod, AST ast) {
     if (ast.type != AST_func_literal_expr) CRASH("ast type is not func literal");
     ast_func_literal_expr* astfunc = ast.as_func_literal_expr;
 
     // assume all functions are global at the moment
-    IR_Function* f = ir_new_function(mod, NULL, true);
+    AIR_Function* f = air_new_function(mod, NULL, true);
 
-    ir_set_func_params(f, astfunc->paramlen, NULL); // passing NULL means that it will allocate list but not fill anything
+    air_set_func_params(f, astfunc->paramlen, NULL); // passing NULL means that it will allocate list but not fill anything
     for_urange(i, 0, f->params_len) {
         f->params[i]->e = astfunc->params[i];
         f->params[i]->T = f->params[i]->e->entity_type;
     }
 
-    ir_set_func_returns(f, astfunc->returnlen, NULL); // same here
+    air_set_func_returns(f, astfunc->returnlen, NULL); // same here
     for_urange(i, 0, f->returns_len) {
         f->returns[i]->e = astfunc->returns[i];
         f->returns[i]->T = f->returns[i]->e->entity_type;
     }
 
-    IR_BasicBlock* bb = ir_new_basic_block(f, str("begin"));
+    AIR_BasicBlock* bb = air_new_basic_block(f, str("begin"));
 
     // generate storage for param variables
     for_urange(i, 0, astfunc->paramlen) {
@@ -228,12 +228,12 @@ IR_Function* ir_generate_function(IR_Module* mod, AST ast) {
         */
 
 
-        IR* paramval = ir_add(bb, ir_make_paramval(f, i));
+        AIR* paramval = air_add(bb, air_make_paramval(f, i));
         paramval->T = f->params[i]->e->entity_type;
-        IR* stackalloc = ir_add(bb, ir_make_stackalloc(f, astfunc->params[i]->entity_type));
+        AIR* stackalloc = air_add(bb, air_make_stackalloc(f, astfunc->params[i]->entity_type));
         stackalloc->T = make_type(TYPE_POINTER);
         set_target(stackalloc->T, paramval->T);
-        IR* store = ir_add(bb, ir_make_store(f, stackalloc, paramval, false));
+        AIR* store = air_add(bb, air_make_store(f, stackalloc, paramval, false));
         store->T = make_type(TYPE_NONE);
 
 
@@ -255,15 +255,15 @@ IR_Function* ir_generate_function(IR_Module* mod, AST ast) {
             %3 = store %1, %2
         */
         
-        IR* stackalloc = ir_add(bb, ir_make_stackalloc(f, astfunc->returns[i]->entity_type));
+        AIR* stackalloc = air_add(bb, air_make_stackalloc(f, astfunc->returns[i]->entity_type));
         stackalloc->T = make_type(TYPE_POINTER);
         set_target(stackalloc->T, f->returns[i]->e->entity_type);
 
-        IR* con = ir_add(bb, ir_make_const(f));
+        AIR* con = air_add(bb, air_make_const(f));
         con->T = f->returns[i]->e->entity_type;
-        ((IR_Const*) con)->u64 = 0;
+        ((AIR_Const*) con)->u64 = 0;
         
-        IR* store = ir_add(bb, ir_make_store(f, stackalloc, con, false));
+        AIR* store = air_add(bb, air_make_store(f, stackalloc, con, false));
         store->T = make_type(TYPE_NONE);
 
         // store the entity's stackalloc
@@ -271,7 +271,7 @@ IR_Function* ir_generate_function(IR_Module* mod, AST ast) {
         e->stackalloc = stackalloc;
     }
 
-    ir_generate_stmt_return(f, bb, astfunc->code_block.as_block_stmt->stmts.at[0]);
+    air_generate_stmt_return(f, bb, astfunc->code_block.as_block_stmt->stmts.at[0]);
 
     return f;
 }

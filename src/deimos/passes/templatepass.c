@@ -6,6 +6,6 @@
 
 */
 
-IR_Module* ir_pass_template(IR_Module* mod) {
+AIR_Module* air_pass_template(AIR_Module* mod) {
     return mod;
 }
