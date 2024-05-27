@@ -1,7 +1,8 @@
 #pragma once
 #define ALLOC_H
 
-#include "orbit.h"
+#include <stdlib.h>
+#include <string.h>
 
 void* mars_alloc(size_t size);
 void  mars_free(void* ptr);

@@ -2,15 +2,16 @@ TARGETS = aphelion
 
 SRCPATHS = \
 	src/*.c \
-	src/phobos/*.c \
-	src/deimos/*.c \
-	src/deimos/passes/*.c \
-	src/deimos/passes/analysis/*.c \
-	src/deimos/passes/transform/*.c \
-	src/deimos/targets/*.c \
-	src/lltd/*.c \
+	src/mars/*.c \
+	src/mars/phobos/*.c \
+	src/atlas/*.c \
+	src/atlas/passes/*.c \
+	src/atlas/passes/analysis/*.c \
+	src/atlas/passes/transform/*.c \
+	src/atlas/targets/*.c \
+	src/llta/*.c \
 
-SRCPATHS += $(foreach target, $(TARGETS), src/deimos/targets/$(target)/*.c) 
+SRCPATHS += $(foreach target, $(TARGETS), src/atlas/targets/$(target)/*.c) 
 SRC = $(wildcard $(SRCPATHS))
 OBJECTS = $(SRC:src/%.c=build/%.o)
 
@@ -27,7 +28,7 @@ endif
 CC = gcc
 LD = gcc
 
-INCLUDEPATHS = -Isrc/ -Isrc/phobos/ -Isrc/deimos/ -Isrc/deimos/targets
+INCLUDEPATHS = -Isrc/ -Isrc/mars/ -Isrc/mars/phobos/ -Isrc/atlas/ -Isrc/atlas/targets
 DEBUGFLAGS = -lm -pg -g
 ASANFLAGS = -fsanitize=undefined -fsanitize=address
 CFLAGS = -Wincompatible-pointer-types -Wno-discarded-qualifiers -lm -Wno-deprecated-declarations

@@ -7,8 +7,8 @@ cachegrind*
 build/*
 build
 ols.json
-mars
-mars.*
+./mars
+./mars.*
 anvil
 anvil.exe
 *.out
