@@ -2,10 +2,10 @@
 #define ATLAS_TYPE_H
 
 #include "ir.h"
-
+#include "atlas.h"
 
 enum {
-    AIR_NONE,
+    AIR_VOID,
 
     AIR_BOOL,
 
@@ -51,3 +51,6 @@ typedef struct AIR_Type {
         AIR_Type* pointer;
     };
 } AIR_Type;
+
+void air_typegraph_init(AtlasModule* m);
+AIR_Type* air_new_type(AtlasModule* m, u8 kind, u64 len);

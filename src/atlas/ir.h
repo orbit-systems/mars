@@ -4,10 +4,11 @@
 #include "orbit.h"
 #include "type.h"
 #include "arena.h"
-#include "entity.h"
+// #include "entity.h"
 
 typedef struct AIR AIR;
 typedef AIR* AIR_PTR;
+
 typedef struct AIR_BasicBlock AIR_BasicBlock;
 typedef struct AIR_Module AIR_Module;
 typedef struct AIR_Symbol AIR_Symbol;
@@ -29,11 +30,19 @@ typedef struct AIR_Module {
         size_t cap;
     } symtab;
 
+    struct {
+        AIR_Type** at;
+        size_t len;
+        size_t cap;
+
+        arena alloca;
+    } typegraph;
+
 } AIR_Module;
 
 enum {
-    AIR_SYM_GLOBAL,
-    AIR_SYM_LOCAL,
+    AIR_VIS_GLOBAL,
+    AIR_VIS_LOCAL,
 };
 
 typedef struct AIR_Symbol {
@@ -68,6 +77,7 @@ typedef struct AIR_Global {
 #define AIR_FN_ALLOCA_BLOCK_SIZE 0x1000
 
 typedef struct AIR_Function {
+    AIR_Module* mod;
     AIR_Symbol* sym;
 
     struct {
@@ -89,9 +99,8 @@ typedef struct AIR_Function {
 } AIR_Function;
 
 typedef struct AIR_FuncItem {
-    entity* e; // FIXME: remove this
 
-    type* T;
+    AIR_Type* T;
 
     // if its an aggregate, this is exposed as a pointer marked "by_val" so that
     // calling conventions work without needing target-specific information.
@@ -135,9 +144,9 @@ enum {
     AIR_SHL,
     AIR_ASR,
     AIR_LSR,
-    AIR_TRUNC,
-    AIR_SEXT,
-    AIR_ZEXT,
+
+    // AIR_UnOp
+    AIR_NOT,
 
     // AIR_Cast
     AIR_CAST,
@@ -186,7 +195,7 @@ enum {
 
 // basic AIR structure
 typedef struct AIR {
-    type* T;
+    AIR_Type* T;
     AIR_BasicBlock* bb;
     u32 number;
     u16 use_count;
@@ -203,14 +212,14 @@ typedef struct AIR_BinOp {
 typedef struct AIR_Cast {
     AIR base;
 
-    type* to;
+    AIR_Type* to;
     AIR* source;
 } AIR_Cast;
 
 typedef struct AIR_StackAlloc {
     AIR base;
 
-    type* alloctype;
+    AIR_Type* alloctype;
 } AIR_StackAlloc;
 
 // used for struct accesses
@@ -270,7 +279,6 @@ typedef struct AIR_LoadSymbol {
     AIR base;
     
     AIR_Symbol* sym;
-    type* T;
 } AIR_LoadSymbol;
 
 typedef struct AIR_Mov {
@@ -342,7 +350,7 @@ typedef struct AIR_Return {
 extern const size_t air_sizes[];
 
 AIR_Module*     air_new_module();
-AIR_Function*   air_new_function(AIR_Module* mod, AIR_Symbol* sym, bool global);
+AIR_Function*   air_new_function(AIR_Module* mod, AIR_Symbol* sym, u8 visibility);
 AIR_BasicBlock* air_new_basic_block(AIR_Function* fn, string name);
 AIR_Global*     air_new_global(AIR_Module* mod, AIR_Symbol* sym, bool global, bool read_only);
 AIR_Symbol*     air_new_symbol(AIR_Module* mod, string name, u8 visibility, bool function, void* ref);
@@ -358,8 +366,8 @@ void air_set_global_symref(AIR_Global* global, AIR_Symbol* symref);
 AIR* air_add(AIR_BasicBlock* bb, AIR* ir);
 AIR* air_make(AIR_Function* f, u8 type);
 AIR* air_make_binop(AIR_Function* f, u8 type, AIR* lhs, AIR* rhs);
-AIR* air_make_cast(AIR_Function* f, AIR* source, type* to);
-AIR* air_make_stackalloc(AIR_Function* f, type* T);
+AIR* air_make_cast(AIR_Function* f, AIR* source, AIR_Type* to);
+AIR* air_make_stackalloc(AIR_Function* f, AIR_Type* T);
 AIR* air_make_getfieldptr(AIR_Function* f, u32 index, AIR* source);
 AIR* air_make_getindexptr(AIR_Function* f, AIR* index, AIR* source);
 AIR* air_make_load(AIR_Function* f, AIR* location, bool is_vol);
@@ -382,5 +390,3 @@ void air_print_module(AIR_Module* mod);
 void air_print_function(AIR_Function* f);
 void air_print_bb(AIR_BasicBlock* bb);
 void air_print_ir(AIR* ir);
-
-string type_to_string(type* t);

@@ -103,7 +103,7 @@ void run_pass_trme(AIR_Module* mod) {
     da_destroy(&store_elim_list);
 }
 
-AtlasPass ir_pass_trme = {
+AtlasPass air_pass_trme = {
     .name = "trme",
     .ir2ir_callback = run_pass_trme,
     .kind = PASS_IR_TO_IR,

@@ -46,22 +46,25 @@ int main(int argc, char** argv) {
             atlas_target = &aphelion_target_info; 
             break;
         default:
-            CRASH("");
+            CRASH("cannot select atlas target");
             break;
         }
 
         atlas_module = atlas_new_module(main_mod->module_name, atlas_target);
-        generate_atlas_from_mars(main_mod, atlas_module);
+        generate_ir_atlas_from_mars(main_mod, atlas_module);
     } else {
         atlas_module = llta_parse_ir(mars_flags.input_path);
     }
 
-    atlas_append_pass(atlas_module, &ir_pass_trme);
-    atlas_append_pass(atlas_module, &ir_pass_tdce);
-    atlas_append_pass(atlas_module, &ir_pass_movprop);
-    atlas_append_pass(atlas_module, &ir_pass_elim);
+    // atlas canonicalization pass is scheduled by default, dw :3
+    atlas_sched_pass(atlas_module, &air_pass_trme);
+    atlas_sched_pass(atlas_module, &air_pass_tdce);
+    atlas_sched_pass(atlas_module, &air_pass_movprop);
+    atlas_sched_pass(atlas_module, &air_pass_elim);
 
-    atlas_append_pass(atlas_module, &asm_pass_aphelion_cg);
+    atlas_run_all_passes(atlas_module);
+
+    atlas_sched_pass(atlas_module, &asm_pass_aphelion_cg);
 
     atlas_run_all_passes(atlas_module);
 

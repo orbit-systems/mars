@@ -3,28 +3,31 @@
 AIR_Module* air_new_module() {
     AIR_Module* mod = mars_alloc(sizeof(*mod));
 
-    da_init(&mod->symtab, 4);
+    da_init(&mod->symtab, 16);
+
+    air_typegraph_init(mod);
+
     return mod;
 }
 
 // if (sym == NULL), create new symbol with no name
-AIR_Function* air_new_function(AIR_Module* mod, AIR_Symbol* sym, bool global) {
+AIR_Function* air_new_function(AIR_Module* mod, AIR_Symbol* sym, u8 visibility) {
     AIR_Function* fn = mars_alloc(sizeof(AIR_Function));
 
-    fn->sym = sym ? sym : air_new_symbol(mod, NULL_STR, global, true, fn);
+    fn->sym = sym ? sym : air_new_symbol(mod, NULL_STR, visibility, true, fn);
     fn->alloca = arena_make(AIR_FN_ALLOCA_BLOCK_SIZE);
     da_init(&fn->blocks, 1);
     fn->entry_idx = 0;
-    // fn->exit_idx = 0;
     fn->params = NULL;
     fn->returns = NULL;
+    fn->mod = mod;
 
     mod->functions = mars_realloc(mod->functions, sizeof(*mod->functions) * (mod->functions_len+1));
     mod->functions[mod->functions_len++] = fn;
     return fn;
 }
 
-// takes multiple entity*
+// takes multiple AIR_Type*
 void air_set_func_params(AIR_Function* f, u16 count, ...) {
     f->params_len = count;
 
@@ -41,8 +44,8 @@ void air_set_func_params(AIR_Function* f, u16 count, ...) {
         if (!item) CRASH("item mars_alloc failed");
         
         if (!no_set) {
-            item->e = va_arg(args, entity*);
-            if (item->e == NULL) {
+            item->T = va_arg(args, AIR_Type*);
+            if (item->T == NULL) {
                 no_set = true;
             }
         }
@@ -69,8 +72,8 @@ void air_set_func_returns(AIR_Function* f, u16 count, ...) {
         if (!item) CRASH("item mars_alloc failed");
         
         if (!no_set) {
-            item->e = va_arg(args, entity*);
-            if (item->e == NULL) {
+            item->T = va_arg(args, AIR_Type*);
+            if (item->T == NULL) {
                 no_set = true;
             }
         }
@@ -165,7 +168,7 @@ AIR* air_make(AIR_Function* f, u8 type) {
     if (type > AIR_INSTR_COUNT) type = AIR_INVALID;
     AIR* ir = arena_alloc(&f->alloca, air_sizes[type], 8);
     ir->tag = type;
-    ir->T = NULL;
+    ir->T = air_new_type(f->mod, AIR_VOID, 0);
     ir->number = 0;
     return ir;
 }
@@ -186,9 +189,6 @@ const size_t air_sizes[] = {
     [AIR_SHL]   = sizeof(AIR_BinOp),
     [AIR_LSR]   = sizeof(AIR_BinOp),
     [AIR_ASR]   = sizeof(AIR_BinOp),
-    [AIR_TRUNC] = sizeof(AIR_BinOp),
-    [AIR_SEXT]  = sizeof(AIR_BinOp),
-    [AIR_ZEXT]  = sizeof(AIR_BinOp),
 
     [AIR_STACKALLOC]  = sizeof(AIR_StackAlloc),
     [AIR_GETFIELDPTR] = sizeof(AIR_GetFieldPtr),
@@ -223,14 +223,14 @@ AIR* air_make_binop(AIR_Function* f, u8 type, AIR* lhs, AIR* rhs) {
     return (AIR*) ir;
 }
 
-AIR* air_make_cast(AIR_Function* f, AIR* source, type* to) {
+AIR* air_make_cast(AIR_Function* f, AIR* source, AIR_Type* to) {
     AIR_Cast* ir = (AIR_Cast*) air_make(f, AIR_CAST);
     ir->source = source;
     ir->to = to;
     return (AIR*) ir;
 }
 
-AIR* air_make_stackalloc(AIR_Function* f, type* T) {
+AIR* air_make_stackalloc(AIR_Function* f, AIR_Type* T) {
     AIR_StackAlloc* ir = (AIR_StackAlloc*) air_make(f, AIR_STACKALLOC);
 
     ir->alloctype = T;
@@ -390,8 +390,8 @@ void air_print_function(AIR_Function* f) {
 
     printf("(");
     for_urange(i, 0, f->params_len) {
-        string typestr = type_to_string(f->params[i]->e->entity_type);
-        printf(str_fmt, str_arg(typestr));
+        // string typestr = type_to_string(f->params[i]->e->entity_type);
+        // printf(str_fmt, str_arg(typestr));
 
         if (i + 1 != f->params_len) {
             printf(", ");
@@ -400,8 +400,8 @@ void air_print_function(AIR_Function* f) {
 
     printf(") -> (");
     for_urange(i, 0, f->returns_len) {
-        string typestr = type_to_string(f->returns[i]->e->entity_type);
-        printf(str_fmt, str_arg(typestr));
+        // string typestr = type_to_string(f->returns[i]->e->entity_type);
+        // printf(str_fmt, str_arg(typestr));
         
         if (i + 1 != f->returns_len) {
             printf(", ");
@@ -412,7 +412,6 @@ void air_print_function(AIR_Function* f) {
     for_urange(i, 0, f->blocks.len) {
         printf("    ");
         if (f->entry_idx == i) printf("entry ");
-        if (f->entry_idx == i) printf("exit ");
         air_print_bb(f->blocks.at[i]);
     }
     printf("}\n");
@@ -437,7 +436,7 @@ void air_print_ir(AIR* ir) {
 
     char* binopstr; //hacky but w/e
 
-    string typestr = type_to_string(ir->T);
+    string typestr = constr("TODO TYPE2STR");//type_to_string(ir->T);
     printf("#%-3zu %-4.*s = ", ir->number, str_arg(typestr));
     switch (ir->tag) {
     case AIR_INVALID: 
@@ -459,9 +458,6 @@ void air_print_ir(AIR* ir) {
     if(0){case AIR_SHL:   binopstr = "shl";}
     if(0){case AIR_LSR:   binopstr = "lsr";}
     if(0){case AIR_ASR:   binopstr = "asr";}
-    if(0){case AIR_TRUNC: binopstr = "trunc";}
-    if(0){case AIR_SEXT:  binopstr = "sext";}
-    if(0){case AIR_ZEXT:  binopstr = "zext";}
         AIR_BinOp* binop = (AIR_BinOp*) ir;
         printf("%s #%zu, #%zu", binopstr, binop->lhs->number, binop->rhs->number);
         break;
@@ -482,7 +478,7 @@ void air_print_ir(AIR* ir) {
 
     case AIR_STACKALLOC:
         AIR_StackAlloc* stackalloc = (AIR_StackAlloc*) ir;
-        string typestr = type_to_string(stackalloc->alloctype);
+        // string typestr = type_to_string(stackalloc->alloctype);
         printf("stackalloc <"str_fmt">", str_arg(typestr));
         break;
 
@@ -504,21 +500,21 @@ void air_print_ir(AIR* ir) {
     case AIR_CONST:
         AIR_Const* con = (AIR_Const*) ir;
 
-        string typestr_ = type_to_string(con->base.T);
-        printf("const <"str_fmt", ", str_arg(typestr_));
+        // string typestr_ = type_to_string(con->base.T);
+        // printf("const <"str_fmt", ", str_arg(typestr_));
 
-        switch (con->base.T->tag) {
-        case TYPE_I8:  printf("%lld", (i64)con->i8);  break;
-        case TYPE_I16: printf("%lld", (i64)con->i16); break;
-        case TYPE_I32: printf("%lld", (i64)con->i32); break;
-        case TYPE_I64: printf("%lld", (i64)con->i64); break;
-        case TYPE_U8:  printf("%llu", (u64)con->u8);  break;
-        case TYPE_U16: printf("%llu", (u64)con->u16); break;
-        case TYPE_U32: printf("%llu", (u64)con->u32); break;
-        case TYPE_U64: printf("%llu", (u64)con->u64); break;
-        case TYPE_F16: printf("%f",   (f32)con->f16); break;
-        case TYPE_F32: printf("%f",   con->f32); break;
-        case TYPE_F64: printf("%lf",  con->f64); break;
+        switch (con->base.T->kind) {
+        case AIR_I8:  printf("%lld", (i64)con->i8);  break;
+        case AIR_I16: printf("%lld", (i64)con->i16); break;
+        case AIR_I32: printf("%lld", (i64)con->i32); break;
+        case AIR_I64: printf("%lld", (i64)con->i64); break;
+        case AIR_U8:  printf("%llu", (u64)con->u8);  break;
+        case AIR_U16: printf("%llu", (u64)con->u16); break;
+        case AIR_U32: printf("%llu", (u64)con->u32); break;
+        case AIR_U64: printf("%llu", (u64)con->u64); break;
+        case AIR_F16: printf("%f",   (f32)con->f16); break;
+        case AIR_F32: printf("%f",   con->f32); break;
+        case AIR_F64: printf("%lf",  con->f64); break;
         default:
             printf("???");
             break;
@@ -541,38 +537,4 @@ void air_print_module(AIR_Module* mod) {
 static char* write_str(char* buf, char* src) {
     memcpy(buf, src, strlen(src));
     return buf + strlen(src);
-}
-
-static char* type2str_internal(type* t, char* buf) {
-    if (t == NULL) {
-        buf = write_str(buf, "[null]"); 
-        return buf;
-    }
-
-    switch (t->tag) {
-    case TYPE_NONE: return buf;
-    case TYPE_BOOL: buf = write_str(buf, "bool"); return buf;
-    case TYPE_U8:   buf = write_str(buf, "u8");  return buf;
-    case TYPE_U16:  buf = write_str(buf, "u16"); return buf;
-    case TYPE_U32:  buf = write_str(buf, "u32"); return buf;
-    case TYPE_U64:  buf = write_str(buf, "u64"); return buf;
-    case TYPE_I8:   buf = write_str(buf, "i8");  return buf;
-    case TYPE_I16:  buf = write_str(buf, "i16"); return buf;
-    case TYPE_I32:  buf = write_str(buf, "i32"); return buf;
-    case TYPE_I64:  buf = write_str(buf, "i64"); return buf;
-    case TYPE_F16:  buf = write_str(buf, "f16"); return buf;
-    case TYPE_F32:  buf = write_str(buf, "f32"); return buf;
-    case TYPE_F64:  buf = write_str(buf, "f64"); return buf;  
-    case TYPE_POINTER:  buf = write_str(buf, "ptr"); return buf;  
-    default: buf = write_str(buf, "unimpl"); return buf;
-    }
-}
-
-string type_to_string(type* t) {
-    // get a backing buffer
-    char buf[500];
-    memset(buf, 0, sizeof(buf));
-    type2str_internal(t, buf);
-    // allocate new buffer with concrete backing
-    return string_clone(str(buf));
 }

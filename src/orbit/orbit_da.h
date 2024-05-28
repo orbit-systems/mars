@@ -65,6 +65,8 @@
 #define da_destroy(da_ptr) do { \
     if ((da_ptr)->at == NULL) break; \
     free((da_ptr)->at); \
+    (da_ptr)->len = 0;\
+    (da_ptr)->cap = 0;\
 } while (0)
 
 #define da_insert_at(da_ptr, element, index) do { \

@@ -1,7 +1,5 @@
 #include "type.h"
 
-#include <locale.h>
-
 // type engine
 
 type_graph typegraph;

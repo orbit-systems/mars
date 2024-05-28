@@ -1,35 +1,33 @@
 #include "irgen.h"
-
 #include "atlas.h"
-#include "target.h"
-
 #include "phobos/sema.h"
+#include "ptrmap.h"
 
 static mars_module* mars_mod;
 
-void generate_atlas_from_mars(mars_module* mod, AtlasModule* atmod) {
+void generate_ir_atlas_from_mars(mars_module* mod, AtlasModule* atmod) {
 
     for_urange(i, 0, mod->program_tree.len) {
         if (mod->program_tree.at[i].type == AST_decl_stmt) {
-            air_generate_global_from_stmt_decl(atmod->ir_module, mod->program_tree.at[i]);
+            generate_ir_global_from_stmt_decl(atmod, mod->program_tree.at[i]);
         } else {
             general_error("FIXME: unhandled AST root");
         }
     }
 }
 
-AIR_Global* air_generate_global_from_stmt_decl(AIR_Module* mod, AST ast) { //FIXME: add sanity
+AIR_Global* generate_ir_global_from_stmt_decl(AtlasModule* mod, AST ast) { //FIXME: add sanity
     ast_decl_stmt* decl_stmt = ast.as_decl_stmt; 
 
     //note: CAE problem, we update the AIR_Symbol name after AIR_Global creation
 
     //note: global decl_stmts are single entries on the lhs, so we can just assume that lhs[0] == ast_identifier_expr
 
-    AIR_Global* air_g = air_new_global(mod, NULL, /*global=*/true, /*read_only=*/decl_stmt->is_mut);
+    AIR_Global* air_g = air_new_global(mod->ir_module, NULL, /*global=*/true, /*read_only=*/decl_stmt->is_mut);
     air_g->sym->name = decl_stmt->lhs.at[0].as_identifier_expr->tok->text; 
 
     if (decl_stmt->rhs.type == AST_func_literal_expr) {
-        AIR_Function* fn = air_generate_function(mod, decl_stmt->rhs);
+        AIR_Function* fn = generate_ir_function(mod, decl_stmt->rhs);
         fn->sym->name = string_clone(string_concat(air_g->sym->name, str(".code")));
         air_set_global_symref(air_g, fn->sym);
     } else { //AST_literal
@@ -39,9 +37,9 @@ AIR_Global* air_generate_global_from_stmt_decl(AIR_Module* mod, AST ast) { //FIX
     return air_g;
 }
 
-//FIXME: add air_generate_local_from_stmt_decl
+//FIXME: add generate_ir_local_from_stmt_decl
 
-AIR* air_generate_expr_literal(AIR_Function* f, AIR_BasicBlock* bb, AST ast) {
+AIR* generate_ir_expr_literal(AIR_Function* f, AIR_BasicBlock* bb, AST ast) {
     ast_literal_expr* literal = ast.as_literal_expr;
     AIR_Const* ir = (AIR_Const*) air_make_const(f);
     
@@ -59,11 +57,11 @@ AIR* air_generate_expr_literal(AIR_Function* f, AIR_BasicBlock* bb, AST ast) {
     return (AIR*) ir;
 }
 
-AIR* air_generate_expr_binop(AIR_Function* f, AIR_BasicBlock* bb, AST ast) {
+AIR* generate_ir_expr_binop(AIR_Function* f, AIR_BasicBlock* bb, AST ast) {
     ast_binary_op_expr* binop = ast.as_binary_op_expr;
 
-    AIR* lhs = air_generate_expr_value(f, bb, binop->lhs);
-    AIR* rhs = air_generate_expr_value(f, bb, binop->rhs);
+    AIR* lhs = generate_ir_expr_value(f, bb, binop->lhs);
+    AIR* rhs = generate_ir_expr_value(f, bb, binop->rhs);
     AIR* ir  = air_add(bb, air_make_binop(f, AIR_ADD, lhs, rhs));
     ir->T = lhs->T;
 
@@ -81,7 +79,7 @@ AIR* air_generate_expr_binop(AIR_Function* f, AIR_BasicBlock* bb, AST ast) {
     return ir;
 }
 
-AIR* air_generate_expr_ident_load(AIR_Function* f, AIR_BasicBlock* bb, AST ast) {
+AIR* generate_ir_expr_ident_load(AIR_Function* f, AIR_BasicBlock* bb, AST ast) {
     ast_identifier_expr* ident = ast.as_identifier_expr;
     if (ident->is_discard) return air_add(bb, air_make(f, AIR_INVALID));
 
@@ -105,13 +103,13 @@ AIR* air_generate_expr_ident_load(AIR_Function* f, AIR_BasicBlock* bb, AST ast) 
     return air_add(bb, load);
 }
 
-AIR* air_generate_expr_value(AIR_Function* f, AIR_BasicBlock* bb, AST ast) {
+AIR* generate_ir_expr_value(AIR_Function* f, AIR_BasicBlock* bb, AST ast) {
 
     switch (ast.type) {
-    case AST_literal_expr:    return air_generate_expr_literal(f, bb, ast);
-    case AST_binary_op_expr:  return air_generate_expr_binop(f, bb, ast);
-    case AST_identifier_expr: return air_generate_expr_ident_load(f, bb, ast);
-    case AST_paren_expr:      return air_generate_expr_value(f, bb, ast.as_paren_expr->subexpr);
+    case AST_literal_expr:    return generate_ir_expr_literal(f, bb, ast);
+    case AST_binary_op_expr:  return generate_ir_expr_binop(f, bb, ast);
+    case AST_identifier_expr: return generate_ir_expr_ident_load(f, bb, ast);
+    case AST_paren_expr:      return generate_ir_expr_value(f, bb, ast.as_paren_expr->subexpr);
     default:
         warning_at_node(mars_mod, ast, "unhandled AST type");
         CRASH("unhandled AST type");
@@ -119,7 +117,7 @@ AIR* air_generate_expr_value(AIR_Function* f, AIR_BasicBlock* bb, AST ast) {
     }
 }
 
-AIR* air_generate_expr_address(AIR_Function* f, AIR_BasicBlock* bb, AST ast) {
+AIR* generate_ir_expr_address(AIR_Function* f, AIR_BasicBlock* bb, AST ast) {
     switch (ast.type) {
     case AST_identifier_expr:
         if (ast.as_identifier_expr->entity->stackalloc != NULL) {
@@ -139,11 +137,11 @@ AIR* air_generate_expr_address(AIR_Function* f, AIR_BasicBlock* bb, AST ast) {
     }
 }
 
-void air_generate_stmt_assign(AIR_Function* f, AIR_BasicBlock* bb, AST ast) {
+void generate_ir_stmt_assign(AIR_Function* f, AIR_BasicBlock* bb, AST ast) {
     ast_assign_stmt* assign = ast.as_assign_stmt;
 
     if (assign->lhs.len == 1) {
-        AIR* dest_address = air_generate_expr_address(f, bb, assign->lhs.at[0]);
+        AIR* dest_address = generate_ir_expr_address(f, bb, assign->lhs.at[0]);
 
         if (assign->rhs.type == AST_call_expr) {
             // function calls need special handling
@@ -154,7 +152,7 @@ void air_generate_stmt_assign(AIR_Function* f, AIR_BasicBlock* bb, AST ast) {
         // this does not take into account struct assignments either, just regular ol values
 
         if (!(assign->rhs.type == AST_identifier_expr && assign->rhs.as_identifier_expr->is_discard)) {
-            AIR* source_val = air_generate_expr_value(f, bb, assign->rhs);
+            AIR* source_val = generate_ir_expr_value(f, bb, assign->rhs);
             AIR* store = air_add(bb, air_make_store(f, dest_address, source_val, false));
         }
     } else {
@@ -163,7 +161,7 @@ void air_generate_stmt_assign(AIR_Function* f, AIR_BasicBlock* bb, AST ast) {
     }
 }
 
-void air_generate_stmt_return(AIR_Function* f, AIR_BasicBlock* bb, AST ast) {
+void generate_ir_stmt_return(AIR_Function* f, AIR_BasicBlock* bb, AST ast) {
     ast_return_stmt* astret = ast.as_return_stmt;
     
     // if its a plain return, we need to get the 
@@ -180,7 +178,7 @@ void air_generate_stmt_return(AIR_Function* f, AIR_BasicBlock* bb, AST ast) {
     } else {
         // this is NOT a plain return, which means that we can just get the values directly
         for_urange(i, 0, astret->returns.len) {
-            AIR* value = air_generate_expr_value(f, bb, astret->returns.at[i]);
+            AIR* value = generate_ir_expr_value(f, bb, astret->returns.at[i]);
             AIR* retval = air_add(bb, air_make_returnval(f, i, value));
             retval->T = make_type(TYPE_NONE);
         }
@@ -190,7 +188,7 @@ void air_generate_stmt_return(AIR_Function* f, AIR_BasicBlock* bb, AST ast) {
     ret->T = make_type(TYPE_NONE);
 }
 
-AIR_Function* air_generate_function(AIR_Module* mod, AST ast) {
+AIR_Function* generate_ir_function(AIR_Module* mod, AST ast) {
     if (ast.type != AST_func_literal_expr) CRASH("ast type is not func literal");
     ast_func_literal_expr* astfunc = ast.as_func_literal_expr;
 
@@ -268,7 +266,44 @@ AIR_Function* air_generate_function(AIR_Module* mod, AST ast) {
         e->stackalloc = stackalloc;
     }
 
-    air_generate_stmt_return(f, bb, astfunc->code_block.as_block_stmt->stmts.at[0]);
+    generate_ir_stmt_return(f, bb, astfunc->code_block.as_block_stmt->stmts.at[0]);
 
     return f;
+}
+
+AIR_Type* translate_type(AtlasModule* m, type* t) {
+
+    static PtrMap type2airtype = {0};
+    if (type2airtype.keys == NULL) {
+        ptrmap_init(&type2airtype, typegraph.len);
+    }
+
+    AIR_Type* rettype = ptrmap_get(&type2airtype, t);
+    if (rettype != PTRMAP_NOT_FOUND) {
+        return rettype;
+    }
+
+    switch (t->tag) {
+    case TYPE_ALIAS: 
+        rettype = translate_type(m, t->as_reference.subtype);
+    case TYPE_NONE: return air_new_type(m, AIR_VOID, 0);
+    case TYPE_BOOL: return air_new_type(m, AIR_BOOL, 0);
+    case TYPE_U8:   return air_new_type(m, AIR_U8, 0);
+    case TYPE_U16:  return air_new_type(m, AIR_U16, 0);
+    case TYPE_U32:  return air_new_type(m, AIR_U64, 0);
+    case TYPE_U64:  return air_new_type(m, AIR_U32, 0);
+    case TYPE_I8:   return air_new_type(m, AIR_I8, 0);
+    case TYPE_I16:  return air_new_type(m, AIR_I16, 0);
+    case TYPE_I32:  return air_new_type(m, AIR_I64, 0);
+    case TYPE_I64:  return air_new_type(m, AIR_I32, 0);
+    case TYPE_F16:  return air_new_type(m, AIR_F16, 0);
+    case TYPE_F32:  return air_new_type(m, AIR_F64, 0);
+    case TYPE_F64:  return air_new_type(m, AIR_F32, 0);
+
+    default:
+        
+        break;
+    }
+
+    return rettype;
 }

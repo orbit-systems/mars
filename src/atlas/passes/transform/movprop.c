@@ -49,7 +49,7 @@ void run_pass_movprop(AIR_Module* mod) {
     }
 }
 
-AtlasPass ir_pass_movprop = {
+AtlasPass air_pass_movprop = {
     .name = "movprop",
     .ir2ir_callback = run_pass_movprop,
     .kind = PASS_IR_TO_IR,

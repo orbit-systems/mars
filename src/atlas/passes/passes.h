@@ -8,13 +8,13 @@
     canon           general cleanup & canonicalization
 */
 
-extern AtlasPass ir_pass_canon;
+extern AtlasPass air_pass_canon;
 
 /* ANALYSIS PASSES
     cfg             populate and provide information about control flow graphs
 */
 
-extern AtlasPass ir_pass_cfg;
+extern AtlasPass air_pass_cfg;
 
 /* OPTIMIZATION PASSES
     movprop         mov propogation
@@ -30,7 +30,7 @@ extern AtlasPass ir_pass_cfg;
     sroa            scalar replacement of aggregates
 */
 
-extern AtlasPass ir_pass_movprop;
-extern AtlasPass ir_pass_elim;
-extern AtlasPass ir_pass_tdce;
-extern AtlasPass ir_pass_trme;
+extern AtlasPass air_pass_movprop;
+extern AtlasPass air_pass_elim;
+extern AtlasPass air_pass_tdce;
+extern AtlasPass air_pass_trme;

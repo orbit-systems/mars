@@ -33,7 +33,7 @@ void run_pass_elim(AIR_Module* mod) {
     }
 }
 
-AtlasPass ir_pass_elim = {
+AtlasPass air_pass_elim = {
     .name = "elim",
     .ir2ir_callback = run_pass_elim,
     .kind = PASS_IR_TO_IR,

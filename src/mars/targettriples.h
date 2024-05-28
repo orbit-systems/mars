@@ -1,5 +1,5 @@
 #pragma once
-#define ATLAS_TT_H
+#define MARS_TT_H
 
 #include "orbit.h"
 #include "mars.h"

@@ -2,20 +2,6 @@
 #include "passes/passes.h"
 
 
-/*
-void atlas_run(mars_module* main_mod, AIR_Module* passthrough) {
-	AIR_Module* air_mod;
-	if (!mars_flags.use_llta) {
- 		air_mod = air_generate(main_mod);
-	} else {
-		air_mod = passthrough;
-	}
-
-    register_passes();
-    run_passes(air_mod);
-}
-*/
-
 AtlasModule* atlas_new_module(string name, TargetInfo* target) {
     AtlasModule* mod = mars_alloc(sizeof(*mod));
 
@@ -25,7 +11,7 @@ AtlasModule* atlas_new_module(string name, TargetInfo* target) {
     mod->asm_module = asm_new_module(target);
     
     da_init(&mod->pass_queue, 8);
-    atlas_append_pass(mod, &ir_pass_canon);
+    atlas_sched_pass(mod, &air_pass_canon);
     
     return mod;
 }

@@ -153,7 +153,7 @@ void run_pass_tdce(AIR_Module* mod) {
     }
 }
 
-AtlasPass ir_pass_tdce = {
+AtlasPass air_pass_tdce = {
     .name = "tdce",
     .ir2ir_callback = run_pass_tdce,
     .kind = PASS_IR_TO_IR,

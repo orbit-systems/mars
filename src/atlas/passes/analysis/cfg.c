@@ -146,7 +146,7 @@ void run_pass_cfg(AIR_Module* mod) {
 
 }
 
-AtlasPass ir_pass_cfg = {
+AtlasPass air_pass_cfg = {
     .name = "cfg",
     .ir2ir_callback = run_pass_cfg,
     .kind = PASS_IR_TO_IR,

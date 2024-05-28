@@ -31,7 +31,7 @@ typedef struct AtlasPass {
     bool modifies_cfg;
 } AtlasPass;
 
-void atlas_append_pass(AtlasModule* m, AtlasPass* p);
-void atlas_sched_pass(AtlasModule* m, AtlasPass* p, int index);
+void atlas_sched_pass(AtlasModule* m, AtlasPass* p);
+void atlas_sched_pass_at(AtlasModule* m, AtlasPass* p, int index);
 void atlas_run_next_pass(AtlasModule* m);
 void atlas_run_all_passes(AtlasModule* m);

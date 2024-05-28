@@ -8,34 +8,14 @@
 
 */
 
-
-/*
-void add_pass(char* name, void* callback, pass_type type) {
-    if (atlas_passes.at == NULL) da_init(&atlas_passes, 1);
-    da_append(&atlas_passes, ((Pass){.name = name, .callback = callback, .type = type}));
-}
-
-
-void register_passes() {
-    add_pass("general cleanup & canonicalization", air_pass_canon, PASS_AIR_TO_IR);
-
-    bool opt = true;
-    if (opt) {
-        add_pass("trivial redundant memory elimination", air_pass_trme, PASS_AIR_TO_IR);
-        add_pass("trivial dead code elimination", air_pass_tdce, PASS_AIR_TO_IR);
-        add_pass("mov propogation", air_pass_movprop, PASS_AIR_TO_IR);
-        add_pass("remove eliminated instructions", air_pass_elim, PASS_AIR_TO_IR);
-    }
-}*/
-
 // add a pass so that it runs after all the current passes have ran
-void atlas_append_pass(AtlasModule* m, AtlasPass* p) {
+void atlas_sched_pass(AtlasModule* m, AtlasPass* p) {
     da_append(&m->pass_queue, p);
 }
 
 // if index is 0, it happens next.
 // if index >= number of passes scheduled, it runs after all current passes.
-void atlas_sched_pass(AtlasModule* m, AtlasPass* p, int index) {
+void atlas_sched_pass_at(AtlasModule* m, AtlasPass* p, int index) {
     if (index >= m->pass_queue.len) {
         da_append(&m->pass_queue, p);
     } else {
@@ -50,7 +30,7 @@ void atlas_run_next_pass(AtlasModule* m) {
     AtlasPass* next = m->pass_queue.at[0];
 
     if (next->requires_cfg && !m->pass_queue.cfg_up_to_date) {
-        atlas_sched_pass(m, &ir_pass_cfg, 0);
+        atlas_sched_pass_at(m, &air_pass_cfg, 0);
         atlas_run_next_pass(m);
         m->pass_queue.cfg_up_to_date = true;
     }
