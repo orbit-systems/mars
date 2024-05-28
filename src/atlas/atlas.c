@@ -23,7 +23,9 @@ AtlasModule* atlas_new_module(string name, TargetInfo* target) {
 
     mod->ir_module = air_new_module();
     mod->asm_module = asm_new_module(target);
+    
     da_init(&mod->pass_queue, 8);
+    atlas_append_pass(mod, &ir_pass_canon);
     
     return mod;
 }

@@ -12,6 +12,7 @@
 
 #include "atlas/atlas.h"
 #include "atlas/targettriples.h"
+
 #include "llta/lexer.h"
 
 flag_set mars_flags;
@@ -37,14 +38,32 @@ int main(int argc, char** argv) {
             dump_tree(main_mod->program_tree.at[i], 0);
         }
         
-        general_warning("TODO select target info from mars module build info");
-        atlas_module = atlas_new_module(main_mod->module_name, &aphelion_target_info);
 
-        // atlas_run(main_mod, NULL);
+        TargetInfo* atlas_target;
+
+        switch (mars_flags.target_arch){
+        case TARGET_ARCH_APHELION: 
+            atlas_target = &aphelion_target_info; 
+            break;
+        default:
+            CRASH("");
+            break;
+        }
+
+        atlas_module = atlas_new_module(main_mod->module_name, atlas_target);
+        generate_atlas_from_mars(main_mod, atlas_module);
     } else {
         atlas_module = llta_parse_ir(mars_flags.input_path);
-        // atlas_run(NULL, ir_mod);
     }
+
+    atlas_append_pass(atlas_module, &ir_pass_trme);
+    atlas_append_pass(atlas_module, &ir_pass_tdce);
+    atlas_append_pass(atlas_module, &ir_pass_movprop);
+    atlas_append_pass(atlas_module, &ir_pass_elim);
+
+    atlas_append_pass(atlas_module, &asm_pass_aphelion_cg);
+
+    atlas_run_all_passes(atlas_module);
 
     return 0;
 }

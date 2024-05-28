@@ -1,9 +1,9 @@
+#include "irgen.h"
+
 #include "atlas.h"
 #include "target.h"
-#include "targets/aphelion/aphelion.h"
 
 #include "phobos/sema.h"
-#include "irgen.h"
 
 static mars_module* mars_mod;
 

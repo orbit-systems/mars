@@ -1,6 +1,9 @@
 #pragma once
 #define ATLAS_PASS_H
 
+typedef struct AtlasPass AtlasPass;
+
+#include "atlas.h"
 #include "ir.h"
 #include "target.h"
 
@@ -28,4 +31,7 @@ typedef struct AtlasPass {
     bool modifies_cfg;
 } AtlasPass;
 
-da_typedef(AtlasPass);
+void atlas_append_pass(AtlasModule* m, AtlasPass* p);
+void atlas_sched_pass(AtlasModule* m, AtlasPass* p, int index);
+void atlas_run_next_pass(AtlasModule* m);
+void atlas_run_all_passes(AtlasModule* m);

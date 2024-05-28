@@ -29,7 +29,7 @@ void register_passes() {
 }*/
 
 // add a pass so that it runs after all the current passes have ran
-void atlas_sched_pass_last(AtlasModule* m, AtlasPass* p) {
+void atlas_append_pass(AtlasModule* m, AtlasPass* p) {
     da_append(&m->pass_queue, p);
 }
 
@@ -72,9 +72,8 @@ void atlas_run_next_pass(AtlasModule* m) {
 
 void atlas_run_all_passes(AtlasModule* m) {
 
-    air_print_module(m->ir_module);
-    while (m->pass_queue.len >= 0) {
-        atlas_run_next_pass(m);
+    while (m->pass_queue.len > 0) {
         air_print_module(m->ir_module);
+        atlas_run_next_pass(m);
     }
 }
