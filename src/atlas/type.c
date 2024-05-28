@@ -1,6 +1,9 @@
 #include "type.h"
 
 void air_typegraph_init(AtlasModule* m) {
+
+    printf("[[%p]]\n", m->ir_module);
+
     da_init(&m->ir_module->typegraph, 16);
     m->ir_module->typegraph.alloca = arena_make(0x400);
 

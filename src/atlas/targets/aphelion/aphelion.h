@@ -1,9 +1,10 @@
 #pragma once
 #define TARGET_APHELION_H
 
-#include "target.h"
+#include "atlas.h"
 #include "asmprinter.h"
 #include "pass.h"
+#include "target.h"
 
 void aphelion_translate_module(AIR_Module* ir_mod, AsmModule* asm_mod);
 

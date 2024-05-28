@@ -4,8 +4,13 @@
 #include "ptrmap.h"
 
 static mars_module* mars_mod;
+static AtlasModule* am;
+
+static PtrMap entity2stackalloc;
 
 void generate_ir_atlas_from_mars(mars_module* mod, AtlasModule* atmod) {
+    am = atmod;
+    ptrmap_init(&entity2stackalloc, 32);
 
     for_urange(i, 0, mod->program_tree.len) {
         if (mod->program_tree.at[i].type == AST_decl_stmt) {
@@ -45,7 +50,7 @@ AIR* generate_ir_expr_literal(AIR_Function* f, AIR_BasicBlock* bb, AST ast) {
     
     switch (literal->value.kind) {
     case EV_I64:
-        ir->base.T = make_type(TYPE_I64);
+        ir->base.T = air_new_type(am, AIR_I64, 0);
         ir->i64 = literal->value.as_i64;
         break;
     default:
@@ -84,21 +89,22 @@ AIR* generate_ir_expr_ident_load(AIR_Function* f, AIR_BasicBlock* bb, AST ast) {
     if (ident->is_discard) return air_add(bb, air_make(f, AIR_INVALID));
 
     // if a stackalloc and entityextra havent been generated, generate them
-    if (!ident->entity->stackalloc) {
+
+    if (ptrmap_get(&entity2stackalloc, ident->entity) == PTRMAP_NOT_FOUND) {
 
         if (!ident->entity->entity_type) {
             warning_at_node(mars_mod, ast, "bodge! assuming i64 type");
             ident->entity->entity_type = make_type(TYPE_I64);
         }
 
-        AIR* stackalloc = air_add(bb, air_make_stackalloc(f, ident->entity->entity_type));
+        AIR* stackalloc = air_add(bb, air_make_stackalloc(f, translate_type(am, ident->entity->entity_type)));
 
-        ident->entity->stackalloc = stackalloc;
+        ptrmap_put(&entity2stackalloc, ident->entity, stackalloc);
     }
-    AIR* stackalloc = ident->entity->stackalloc;
+    AIR* stackalloc = ptrmap_get(&entity2stackalloc, ident->entity);
 
     AIR* load = air_make_load(f, stackalloc, false);
-    load->T = ident->entity->entity_type;
+    load->T = translate_type(am, ident->entity->entity_type);
 
     return air_add(bb, load);
 }
@@ -120,14 +126,14 @@ AIR* generate_ir_expr_value(AIR_Function* f, AIR_BasicBlock* bb, AST ast) {
 AIR* generate_ir_expr_address(AIR_Function* f, AIR_BasicBlock* bb, AST ast) {
     switch (ast.type) {
     case AST_identifier_expr:
-        if (ast.as_identifier_expr->entity->stackalloc != NULL) {
-            return ast.as_identifier_expr->entity->stackalloc;
+        if (ptrmap_get(&entity2stackalloc, ast.as_identifier_expr->entity) != PTRMAP_NOT_FOUND) {
+            return ptrmap_get(&entity2stackalloc, ast.as_identifier_expr->entity);
         }
         ast_identifier_expr* ident = ast.as_identifier_expr;
-        if (!ident->entity->stackalloc) {
+        if (ptrmap_get(&entity2stackalloc, ident->entity) == PTRMAP_NOT_FOUND) {
 
             // generate stackalloc
-            AIR* stackalloc = air_add(bb, air_make_stackalloc(f, ident->entity->entity_type));
+            AIR* stackalloc = air_add(bb, air_make_stackalloc(f, translate_type(am, ident->entity->entity_type)));
             TODO("bruh");
         }
         break;
@@ -168,11 +174,11 @@ void generate_ir_stmt_return(AIR_Function* f, AIR_BasicBlock* bb, AST ast) {
     // return values from the return variables
     if (astret->returns.len == 0) {
         for_urange(i, 0, astret->returns.len) {
-            entity* e = f->returns[i]->e;
-            AIR* stackalloc = e->stackalloc;
+            // god we're gonna do this i guess
+            AIR* stackalloc = ptrmap_get(&entity2stackalloc, f->returns[i]);
 
             AIR* load = air_add(bb, air_make_load(f, stackalloc, false));
-            load->T = get_target(stackalloc->T);
+            load->T = stackalloc->T->pointer;
             AIR* retval = air_add(bb, air_make_returnval(f, i, load));
         }
     } else {
@@ -180,31 +186,27 @@ void generate_ir_stmt_return(AIR_Function* f, AIR_BasicBlock* bb, AST ast) {
         for_urange(i, 0, astret->returns.len) {
             AIR* value = generate_ir_expr_value(f, bb, astret->returns.at[i]);
             AIR* retval = air_add(bb, air_make_returnval(f, i, value));
-            retval->T = make_type(TYPE_NONE);
         }
     }
     
     AIR* ret = air_add(bb, air_make_return(f));
-    ret->T = make_type(TYPE_NONE);
 }
 
-AIR_Function* generate_ir_function(AIR_Module* mod, AST ast) {
+AIR_Function* generate_ir_function(AtlasModule* mod, AST ast) {
     if (ast.type != AST_func_literal_expr) CRASH("ast type is not func literal");
     ast_func_literal_expr* astfunc = ast.as_func_literal_expr;
 
     // assume all functions are global at the moment
-    AIR_Function* f = air_new_function(mod, NULL, true);
+    AIR_Function* f = air_new_function(mod->ir_module, NULL, true);
 
     air_set_func_params(f, astfunc->paramlen, NULL); // passing NULL means that it will allocate list but not fill anything
     for_urange(i, 0, f->params_len) {
-        f->params[i]->e = astfunc->params[i];
-        f->params[i]->T = f->params[i]->e->entity_type;
+        f->params[i]->T = translate_type(mod, astfunc->params[i]->entity_type);
     }
 
     air_set_func_returns(f, astfunc->returnlen, NULL); // same here
     for_urange(i, 0, f->returns_len) {
-        f->returns[i]->e = astfunc->returns[i];
-        f->returns[i]->T = f->returns[i]->e->entity_type;
+        f->returns[i]->T = translate_type(mod, astfunc->returns[i]->entity_type);
     }
 
     AIR_BasicBlock* bb = air_new_basic_block(f, str("begin"));
@@ -222,19 +224,18 @@ AIR_Function* generate_ir_function(AIR_Module* mod, AST ast) {
             %3 = store <type of i> %2, %1
         */
 
-
+        // this is utterly unreadable, sorry
+        // fixing this with the new frontend
         AIR* paramval = air_add(bb, air_make_paramval(f, i));
-        paramval->T = f->params[i]->e->entity_type;
-        AIR* stackalloc = air_add(bb, air_make_stackalloc(f, astfunc->params[i]->entity_type));
-        stackalloc->T = make_type(TYPE_POINTER);
-        set_target(stackalloc->T, paramval->T);
+        paramval->T = f->params[i]->T;
+        AIR* stackalloc = air_add(bb, air_make_stackalloc(f, translate_type(am, astfunc->params[i]->entity_type)));
+        stackalloc->T = air_new_type(mod, AIR_POINTER, 0);
+        stackalloc->T->pointer = paramval->T;
         AIR* store = air_add(bb, air_make_store(f, stackalloc, paramval, false));
-        store->T = make_type(TYPE_NONE);
-
 
         // store the entity's stackalloc
         entity* e = astfunc->params[i];
-        e->stackalloc = stackalloc;
+        ptrmap_put(&entity2stackalloc, e, stackalloc);
     }
 
     // generate storage for return variables
@@ -250,20 +251,19 @@ AIR_Function* generate_ir_function(AIR_Module* mod, AST ast) {
             %3 = store %1, %2
         */
         
-        AIR* stackalloc = air_add(bb, air_make_stackalloc(f, astfunc->returns[i]->entity_type));
-        stackalloc->T = make_type(TYPE_POINTER);
-        set_target(stackalloc->T, f->returns[i]->e->entity_type);
+        AIR* stackalloc = air_add(bb, air_make_stackalloc(f, translate_type(am, astfunc->returns[i]->entity_type)));
+        stackalloc->T = air_new_type(mod, AIR_POINTER, 0);
+        stackalloc->T->pointer = f->returns[i]->T;
 
         AIR* con = air_add(bb, air_make_const(f));
-        con->T = f->returns[i]->e->entity_type;
+        con->T = f->returns[i]->T;
         ((AIR_Const*) con)->u64 = 0;
         
         AIR* store = air_add(bb, air_make_store(f, stackalloc, con, false));
-        store->T = make_type(TYPE_NONE);
 
         // store the entity's stackalloc
         entity* e = astfunc->returns[i];
-        e->stackalloc = stackalloc;
+        ptrmap_put(&entity2stackalloc, e, stackalloc);
     }
 
     generate_ir_stmt_return(f, bb, astfunc->code_block.as_block_stmt->stmts.at[0]);
@@ -284,24 +284,27 @@ AIR_Type* translate_type(AtlasModule* m, type* t) {
     }
 
     switch (t->tag) {
-    case TYPE_ALIAS: 
-        rettype = translate_type(m, t->as_reference.subtype);
     case TYPE_NONE: return air_new_type(m, AIR_VOID, 0);
     case TYPE_BOOL: return air_new_type(m, AIR_BOOL, 0);
     case TYPE_U8:   return air_new_type(m, AIR_U8, 0);
     case TYPE_U16:  return air_new_type(m, AIR_U16, 0);
-    case TYPE_U32:  return air_new_type(m, AIR_U64, 0);
-    case TYPE_U64:  return air_new_type(m, AIR_U32, 0);
+    case TYPE_U32:  return air_new_type(m, AIR_U32, 0);
+    case TYPE_U64:  return air_new_type(m, AIR_U64, 0);
     case TYPE_I8:   return air_new_type(m, AIR_I8, 0);
     case TYPE_I16:  return air_new_type(m, AIR_I16, 0);
-    case TYPE_I32:  return air_new_type(m, AIR_I64, 0);
-    case TYPE_I64:  return air_new_type(m, AIR_I32, 0);
+    case TYPE_I32:  return air_new_type(m, AIR_I32, 0);
+    case TYPE_I64:  return air_new_type(m, AIR_I64, 0);
     case TYPE_F16:  return air_new_type(m, AIR_F16, 0);
-    case TYPE_F32:  return air_new_type(m, AIR_F64, 0);
-    case TYPE_F64:  return air_new_type(m, AIR_F32, 0);
+    case TYPE_F32:  return air_new_type(m, AIR_F32, 0);
+    case TYPE_F64:  return air_new_type(m, AIR_F64, 0);
 
+    case TYPE_ALIAS:
+        rettype = translate_type(m, t->as_reference.subtype);
+        ptrmap_put(&type2airtype, t->as_reference.subtype, rettype);
+        ptrmap_put(&type2airtype, t, rettype);
+        return rettype;
     default:
-        
+        TODO("finish this lol");
         break;
     }
 

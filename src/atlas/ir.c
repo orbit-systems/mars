@@ -1,11 +1,13 @@
 #include "ir.h"
 
-AIR_Module* air_new_module() {
+AIR_Module* air_new_module(AtlasModule* am) {
     AIR_Module* mod = mars_alloc(sizeof(*mod));
+
+    am->ir_module = mod;
 
     da_init(&mod->symtab, 16);
 
-    air_typegraph_init(mod);
+    air_typegraph_init(am);
 
     return mod;
 }
@@ -168,7 +170,7 @@ AIR* air_make(AIR_Function* f, u8 type) {
     if (type > AIR_INSTR_COUNT) type = AIR_INVALID;
     AIR* ir = arena_alloc(&f->alloca, air_sizes[type], 8);
     ir->tag = type;
-    ir->T = air_new_type(f->mod, AIR_VOID, 0);
+    ir->T = air_new_type(f->mod->am, AIR_VOID, 0);
     ir->number = 0;
     return ir;
 }

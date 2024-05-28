@@ -16,6 +16,6 @@ AIR* generate_ir_expr_value(AIR_Function* f, AIR_BasicBlock* bb, AST ast);
 AIR* generate_ir_expr_address(AIR_Function* f, AIR_BasicBlock* bb, AST ast);
 void generate_ir_stmt_assign(AIR_Function* f, AIR_BasicBlock* bb, AST ast);
 void generate_ir_stmt_return(AIR_Function* f, AIR_BasicBlock* bb, AST ast);
-AIR_Function* generate_ir_function(AIR_Module* mod, AST ast);
+AIR_Function* generate_ir_function(AtlasModule* mod, AST ast);
 
 AIR_Type* translate_type(AtlasModule* m, type* t);

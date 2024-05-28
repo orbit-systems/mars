@@ -1,6 +1,8 @@
 #pragma once
 #define ATLAS_TYPE_H
 
+typedef struct AIR_Type AIR_Type;
+
 #include "ir.h"
 #include "atlas.h"
 
@@ -27,8 +29,6 @@ enum {
     AIR_AGGREGATE,
     AIR_ARRAY,
 };
-
-typedef struct AIR_Type AIR_Type;
 
 typedef struct AIR_Type {
     u8 kind;

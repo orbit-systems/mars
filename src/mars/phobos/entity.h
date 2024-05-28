@@ -23,9 +23,6 @@ typedef struct entity {
     exact_value* const_val;
     entity_table* top; // scope in which it is declared
 
-    // filled out by checker
-    struct AIR* stackalloc;
-
     union {
         u16 param_idx;
         u16 return_idx;

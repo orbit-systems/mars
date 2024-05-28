@@ -1,4 +1,6 @@
 #include "aphelion.h"
+#include "atlas.h"
+#include "ir.h"
 
 const TargetRegisterInfo aphelion_regclass_zero_regs[] = {
     [APHEL_ZERO_RZ] = { .name = constr("rz")},

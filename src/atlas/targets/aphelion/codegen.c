@@ -51,7 +51,7 @@ AsmBlock* aphelion_translate_block(AsmModule* m, AsmFunction* f, AIR_Function* i
         case AIR_PARAMVAL: {
             AIR_ParamVal* ir = (AIR_ParamVal*) raw_ir;
 
-            assert(ir_f->params[ir->param_idx]->T->tag == TYPE_I64);
+            assert(ir_f->params[ir->param_idx]->T->kind == AIR_I64);
 
             // select calling convention register - TODO dont make this hardcoded
             VReg* src = asm_new_vreg(m, f, APHEL_REGCLASS_GPR);
@@ -80,7 +80,7 @@ AsmBlock* aphelion_translate_block(AsmModule* m, AsmFunction* f, AIR_Function* i
             AIR_BinOp* ir = (AIR_BinOp*) raw_ir;
             
             assert(ir->rhs->tag != AIR_CONST && ir->lhs->tag != AIR_CONST);
-            assert(ir->rhs->T->tag == TYPE_I64 && ir->lhs->T->tag == TYPE_I64);
+            assert(ir->rhs->T->kind == AIR_I64 && ir->lhs->T->kind == AIR_I64);
 
 
             VReg* lhs = ptrmap_get(&air_to_vreg, ir->lhs);
@@ -101,7 +101,7 @@ AsmBlock* aphelion_translate_block(AsmModule* m, AsmFunction* f, AIR_Function* i
             AIR_BinOp* ir = (AIR_BinOp*) raw_ir;
             
             assert(ir->rhs->tag != AIR_CONST && ir->lhs->tag != AIR_CONST);
-            assert(ir->rhs->T->tag == TYPE_I64 && ir->lhs->T->tag == TYPE_I64);
+            assert(ir->rhs->T->kind == AIR_I64 && ir->lhs->T->kind == AIR_I64);
 
 
             VReg* lhs = ptrmap_get(&air_to_vreg, ir->lhs);

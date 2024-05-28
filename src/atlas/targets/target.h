@@ -1,9 +1,6 @@
 #pragma once
 #define ATLAS_TARGET_H
 
-#include "orbit.h"
-#include "ir.h"
-
 typedef struct TargetInstInfo      TargetInstInfo;
 typedef struct TargetRegisterInfo  TargetRegisterInfo;
 typedef struct TargetRegisterClass TargetRegisterClass;
@@ -17,6 +14,9 @@ typedef struct AsmSymbol       AsmSymbol;
 typedef struct AsmGlobal       AsmGlobal;
 typedef struct AsmFunction     AsmFunction;
 typedef struct AsmModule       AsmModule;
+
+#include "orbit.h"
+#include "atlas.h"
 
 #define REAL_REG_UNASSIGNED (UINT32_MAX)
 
@@ -163,6 +163,8 @@ typedef struct AsmGlobal {
 } AsmGlobal;
 
 typedef struct AsmModule {
+    AtlasModule* am;
+
     TargetInfo* target;
 
     AsmGlobal** globals;

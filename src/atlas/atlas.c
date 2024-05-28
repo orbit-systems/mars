@@ -7,9 +7,13 @@ AtlasModule* atlas_new_module(string name, TargetInfo* target) {
 
     mod->name = name;
 
-    mod->ir_module = air_new_module();
+    mod->ir_module = air_new_module(mod);
+    mod->ir_module->am = mod;
+
     mod->asm_module = asm_new_module(target);
-    
+    mod->asm_module->am = mod;
+
+
     da_init(&mod->pass_queue, 8);
     atlas_sched_pass(mod, &air_pass_canon);
     

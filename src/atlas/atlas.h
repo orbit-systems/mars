@@ -1,16 +1,15 @@
 #pragma once
 #define ATLAS_H
 
+typedef struct AtlasModule AtlasModule;
+
 #include "orbit.h"
 #include "alloc.h"
 
-typedef struct AtlasModule AtlasModule;
-
-#include "ir.h"
-#include "pass.h"
-#include "target.h"
-
-#include "targets/aphelion/aphelion.h"
+#include "atlas/ir.h"
+#include "atlas/pass.h"
+#include "atlas/targets/target.h"
+#include "atlas/targets/aphelion/aphelion.h"
 
 typedef struct AtlasModule {
     string name;

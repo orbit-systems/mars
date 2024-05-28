@@ -1,22 +1,23 @@
 #pragma once
 #define ATLAS_AIR_H
 
-#include "orbit.h"
-#include "type.h"
-#include "arena.h"
-// #include "entity.h"
-
 typedef struct AIR AIR;
 typedef AIR* AIR_PTR;
 
-typedef struct AIR_BasicBlock AIR_BasicBlock;
 typedef struct AIR_Module AIR_Module;
-typedef struct AIR_Symbol AIR_Symbol;
-typedef struct AIR_Global AIR_Global;
 typedef struct AIR_Function AIR_Function;
 typedef struct AIR_FuncItem AIR_FuncItem;
+typedef struct AIR_Global AIR_Global;
+typedef struct AIR_Symbol AIR_Symbol;
+typedef struct AIR_BasicBlock AIR_BasicBlock;
+
+#include "orbit.h"
+#include "arena.h"
+#include "atlas.h"
+#include "type.h"
 
 typedef struct AIR_Module {
+    AtlasModule* am;
 
     AIR_Function** functions;
     AIR_Global** globals;
@@ -349,7 +350,7 @@ typedef struct AIR_Return {
 
 extern const size_t air_sizes[];
 
-AIR_Module*     air_new_module();
+AIR_Module*     air_new_module(AtlasModule* am);
 AIR_Function*   air_new_function(AIR_Module* mod, AIR_Symbol* sym, u8 visibility);
 AIR_BasicBlock* air_new_basic_block(AIR_Function* fn, string name);
 AIR_Global*     air_new_global(AIR_Module* mod, AIR_Symbol* sym, bool global, bool read_only);
