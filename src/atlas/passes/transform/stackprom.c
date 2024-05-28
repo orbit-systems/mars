@@ -61,7 +61,7 @@ static void stackprom_f(AIR_Function* f) {
     TODO("");
 }
 
-AIR_Module* air_pass_stackprom(AIR_Module* mod) {
+void run_pass_stackprom(AIR_Module* mod) {
     if (alloca_list.at == NULL) {
         da_init(&alloca_list, 4);
     }
@@ -72,5 +72,4 @@ AIR_Module* air_pass_stackprom(AIR_Module* mod) {
 
     da_destroy(&alloca_list);
     alloca_list = (da(AIR_PTR)){0};
-    return mod;
 }

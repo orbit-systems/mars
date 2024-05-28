@@ -1,10 +1,11 @@
 #pragma once
 #define TARGET_APHELION_H
 
-#include "../target.h"
-#include "../asmprinter.h"
+#include "target.h"
+#include "asmprinter.h"
+#include "pass.h"
 
-AsmModule* aphelion_translate_module(AIR_Module* irmod);
+void aphelion_translate_module(AIR_Module* ir_mod, AsmModule* asm_mod);
 
 enum {
     APHEL_REGCLASS_ZERO,
@@ -51,3 +52,5 @@ enum {
 };
 
 extern const TargetInfo aphelion_target_info;
+
+extern AtlasPass asm_pass_aphelion_cg;

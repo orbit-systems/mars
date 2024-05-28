@@ -33,7 +33,7 @@ static void set_uses_of(AIR_Function* f, AIR* source, AIR* dest) {
     }
 }
 
-AIR_Module* air_pass_movprop(AIR_Module* mod) {
+void run_pass_movprop(AIR_Module* mod) {
     for_urange(i, 0, mod->functions_len) {
         for_urange(j, 0, mod->functions[i]->blocks.len) {
             AIR_BasicBlock* bb = mod->functions[i]->blocks.at[j];
@@ -47,5 +47,10 @@ AIR_Module* air_pass_movprop(AIR_Module* mod) {
 
         }
     }
-    return mod;
 }
+
+AtlasPass ir_pass_movprop = {
+    .name = "movprop",
+    .ir2ir_callback = run_pass_movprop,
+    .kind = PASS_IR_TO_IR,
+};

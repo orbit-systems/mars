@@ -146,11 +146,15 @@ static void tdce_on_function(AIR_Function* f) {
     // if (elimd) tdce_on_function(f);
 }
 
-AIR_Module* air_pass_tdce(AIR_Module* mod) {
+void run_pass_tdce(AIR_Module* mod) {
 
     for_urange(i, 0, mod->functions_len) {
         tdce_on_function(mod->functions[i]);
     }
-
-    return mod;
 }
+
+AtlasPass ir_pass_tdce = {
+    .name = "tdce",
+    .ir2ir_callback = run_pass_tdce,
+    .kind = PASS_IR_TO_IR,
+};

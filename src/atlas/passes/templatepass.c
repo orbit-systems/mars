@@ -6,6 +6,12 @@
 
 */
 
-AIR_Module* air_pass_template(AIR_Module* mod) {
-    return mod;
+void run_pass_template(AIR_Module* mod) {
+    /* code here! */
 }
+
+AtlasPass ir_pass_template = {
+    .name = "template",
+    .ir2ir_callback = run_pass_template,
+    .kind = PASS_IR_TO_IR,
+};

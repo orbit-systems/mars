@@ -11,7 +11,8 @@ u8 str_to_type(string str);
 AtlasModule* llta_parse_ir(string path) {
     da(icarus_token) tokens = llta_lex(path);
 
-    AtlasModule* mod = atlas_new_module(str("test"));
+    AtlasModule* mod = atlas_new_module(str("test"),           NULL );
+    TODO("(sandwich):  replace NULL with a pointer to a target ^^^^ ");
 
     foreach (icarus_token token, tokens) {
         if (string_eq(token.tok, str("define"))) {

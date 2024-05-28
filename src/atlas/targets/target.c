@@ -11,7 +11,6 @@ AsmSymbol* air_sym_to_asm_sym(AsmModule* m, AIR_Symbol* sym) {
 
 AsmModule* asm_new_module(TargetInfo* target) {
     AsmModule* m = mars_alloc(sizeof(AsmModule));
-    *m = (AsmModule){0};
 
     m->target = target;
     m->alloca = arena_make(0x1000);

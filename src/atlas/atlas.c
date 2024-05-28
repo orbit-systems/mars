@@ -16,9 +16,15 @@ void atlas_run(mars_module* main_mod, AIR_Module* passthrough) {
 }
 */
 
-AtlasModule* atlas_new_module(string name) {
+AtlasModule* atlas_new_module(string name, TargetInfo* target) {
     AtlasModule* mod = mars_alloc(sizeof(*mod));
+
+    mod->name = name;
+
     mod->ir_module = air_new_module();
+    mod->asm_module = asm_new_module(target);
+    da_init(&mod->pass_queue, 8);
+    
     return mod;
 }
 

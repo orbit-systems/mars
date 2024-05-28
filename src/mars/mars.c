@@ -37,7 +37,8 @@ int main(int argc, char** argv) {
             dump_tree(main_mod->program_tree.at[i], 0);
         }
         
-        atlas_module = atlas_new_module(main_mod->module_name);
+        general_warning("TODO select target info from mars module build info");
+        atlas_module = atlas_new_module(main_mod->module_name, &aphelion_target_info);
 
         // atlas_run(main_mod, NULL);
     } else {

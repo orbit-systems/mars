@@ -9,6 +9,6 @@ static void reassoc_if_possible(AIR* ir) {
 
 }
 
-AIR_Module* air_pass_algsimp(AIR_Module* mod) {
-    return mod;
+void run_pass_algsimp(AIR_Module* mod) {
+
 }

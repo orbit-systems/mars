@@ -1,15 +1,9 @@
 #include "ir.h"
 
-AIR_Module air_new_module() {
-    AIR_Module mod = {0};
+AIR_Module* air_new_module() {
+    AIR_Module* mod = mars_alloc(sizeof(*mod));
 
-    mod.functions = NULL;
-    mod.globals   = NULL;
-    mod.functions_len = 0;
-    mod.globals_len   = 0;
-
-
-    da_init(&mod.symtab, 4);
+    da_init(&mod->symtab, 4);
     return mod;
 }
 

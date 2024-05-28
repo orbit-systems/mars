@@ -7,20 +7,19 @@
 PtrMap air_to_vreg = {0};
 
 AsmFunction* aphelion_translate_function(AsmModule* m, AIR_Function* f);
-AsmBlock* aphelion_translate_block(AsmModule* m, AsmFunction* f, AIR_Function* air_f, AIR_BasicBlock* air_bb);
+AsmBlock* aphelion_translate_block(AsmModule* m, AsmFunction* f, AIR_Function* ir_f, AIR_BasicBlock* ir_bb);
 
-AsmModule* aphelion_translate_module(AIR_Module* irmod) {
-    AsmModule* mod = asm_new_module(&aphelion_target_info);
+void aphelion_translate_module(AIR_Module* ir_mod, AsmModule* asm_mod) {
     general_warning("FIXME: add globals support");
-    for_urange(i, 0, irmod->functions_len) {
-        AsmFunction* f = aphelion_translate_function(mod, irmod->functions[i]);
+    for_urange(i, 0, ir_mod->functions_len) {
+        AsmFunction* f = aphelion_translate_function(asm_mod, ir_mod->functions[i]);
     }
 
-    asm_printer(mod, true);
-    for_urange(i, 0, mod->functions_len) {
-        shit_regalloc(mod, mod->functions[i]);
+    asm_printer(asm_mod, true);
+    for_urange(i, 0, asm_mod->functions_len) {
+        shit_regalloc(asm_mod, asm_mod->functions[i]);
     }
-    asm_printer(mod, true);
+    asm_printer(asm_mod, true);
 
 }
 
@@ -41,18 +40,18 @@ AsmFunction* aphelion_translate_function(AsmModule* m, AIR_Function* f) {
     return new_func;
 }
 
-AsmBlock* aphelion_translate_block(AsmModule* m, AsmFunction* f, AIR_Function* air_f, AIR_BasicBlock* air_bb) {
-    AsmBlock* b = asm_new_block(f, air_bb->name);
+AsmBlock* aphelion_translate_block(AsmModule* m, AsmFunction* f, AIR_Function* ir_f, AIR_BasicBlock* ir_bb) {
+    AsmBlock* b = asm_new_block(f, ir_bb->name);
 
-    for_urange(air_index, 0, air_bb->len) {
-        AIR* raw_ir = air_bb->at[air_index];
+    for_urange(air_index, 0, ir_bb->len) {
+        AIR* raw_ir = ir_bb->at[air_index];
 
         switch (raw_ir->tag) {
         
         case AIR_PARAMVAL: {
             AIR_ParamVal* ir = (AIR_ParamVal*) raw_ir;
 
-            assert(air_f->params[ir->param_idx]->T->tag == TYPE_I64);
+            assert(ir_f->params[ir->param_idx]->T->tag == TYPE_I64);
 
             // select calling convention register - TODO dont make this hardcoded
             VReg* src = asm_new_vreg(m, f, APHEL_REGCLASS_GPR);
@@ -155,3 +154,10 @@ AsmBlock* aphelion_translate_block(AsmModule* m, AsmFunction* f, AIR_Function* a
     }
     return b;
 }
+
+AtlasPass asm_pass_aphelion_cg = {
+    .name = "codegen_aphelion",
+    .ir2asm_callback = aphelion_translate_module,
+
+    .kind = PASS_IR_TO_ASM,
+};

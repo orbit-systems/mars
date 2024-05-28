@@ -37,7 +37,7 @@ static u64 air_get_usage(AIR_BasicBlock* bb, AIR* source, u64 start_index) {
 }
 
 // this is horrible code, but like i said, it will be replaced by stackpromote
-AIR_Module* air_pass_trme(AIR_Module* mod) {
+void run_pass_trme(AIR_Module* mod) {
 
     da(AIR_PTR) store_elim_list;
     da_init(&store_elim_list, 4);
@@ -101,6 +101,10 @@ AIR_Module* air_pass_trme(AIR_Module* mod) {
     }
 
     da_destroy(&store_elim_list);
-    return mod;
 }
 
+AtlasPass ir_pass_trme = {
+    .name = "trme",
+    .ir2ir_callback = run_pass_trme,
+    .kind = PASS_IR_TO_IR,
+};

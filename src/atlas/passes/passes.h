@@ -4,19 +4,19 @@
 #include "atlas.h"
 #include "ir.h"
 
-AIR_Module* air_generate(mars_module* mod);
-
-/* REQIRED PASSES
+/* REQUIRED PASSES
     canon           general cleanup & canonicalization
 */
 
-AIR_Module* air_pass_canon(AIR_Module* mod);
+extern AtlasPass ir_pass_canon;
 
-/* ANALYSIS PASSES - provides/populates information about the code
-
+/* ANALYSIS PASSES
+    cfg             populate and provide information about control flow graphs
 */
 
-/* OPTIMIZATION PASSES - optional
+extern AtlasPass ir_pass_cfg;
+
+/* OPTIMIZATION PASSES
     movprop         mov propogation
     elim            remove instructions marked eliminated
     tdce            trivial dead code elimination
@@ -30,7 +30,7 @@ AIR_Module* air_pass_canon(AIR_Module* mod);
     sroa            scalar replacement of aggregates
 */
 
-AIR_Module* air_pass_movprop(AIR_Module* mod);
-AIR_Module* air_pass_elim(AIR_Module* mod);
-AIR_Module* air_pass_tdce(AIR_Module* mod);
-AIR_Module* air_pass_trme(AIR_Module* mod);
+extern AtlasPass ir_pass_movprop;
+extern AtlasPass ir_pass_elim;
+extern AtlasPass ir_pass_tdce;
+extern AtlasPass ir_pass_trme;

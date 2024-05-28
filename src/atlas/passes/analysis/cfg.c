@@ -1,6 +1,6 @@
 #include "atlas.h"
 
-/* pass "cfg" - populate and provide information about control flow graphs.
+/* pass "cfg" - populate and provide information about control flow graphs
 
 */
 
@@ -137,12 +137,17 @@ static AIR_BasicBlock** compute_dominator_set(AIR_Function* f, AIR_BasicBlock* b
     return domset;
 }
 
-AIR_Module* air_pass_cfg(AIR_Module* mod) {
+void run_pass_cfg(AIR_Module* mod) {
 
     // TODO: only update the CFG for functions where it has been modified
     for_urange(i, 0, mod->functions_len) {
         pass_cfg_func(mod->functions[i]);
     }
 
-    return mod;
 }
+
+AtlasPass ir_pass_cfg = {
+    .name = "cfg",
+    .ir2ir_callback = run_pass_cfg,
+    .kind = PASS_IR_TO_IR,
+};

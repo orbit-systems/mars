@@ -4,6 +4,12 @@
 #include "targets/aphelion/aphelion.h"
 
 /*
+    passes act like a queue. when a pass is about to be run, it is taken off of the queue.
+
+*/
+
+
+/*
 void add_pass(char* name, void* callback, pass_type type) {
     if (atlas_passes.at == NULL) da_init(&atlas_passes, 1);
     da_append(&atlas_passes, ((Pass){.name = name, .callback = callback, .type = type}));
@@ -22,33 +28,53 @@ void register_passes() {
     }
 }*/
 
-void atlas_sched_pass_last(AtlasModule* m) {
-
+// add a pass so that it runs after all the current passes have ran
+void atlas_sched_pass_last(AtlasModule* m, AtlasPass* p) {
+    da_append(&m->pass_queue, p);
 }
 
-void atlas_sched_pass_front(AtlasModule* m) {
-
-}
-
-void atlas_sched_pass(AtlasModule* m, int index) {
-
-}
-
-/*
-void run_passes(AIR_Module* current_program) {
-    air_print_module(current_program);
-
-    for_urange(i, 0, atlas_passes.len) {
-        printf("Running pass: %s\n", atlas_passes.at[i].name);
-        if (atlas_passes.at[i].type == PASS_IR_TO_IR) {
-            current_program = atlas_passes.at[i].air_callback(current_program);
-        } else {
-            CRASH("Unexpected pass type!");
-        }
-        air_print_module(current_program);
+// if index is 0, it happens next.
+// if index >= number of passes scheduled, it runs after all current passes.
+void atlas_sched_pass(AtlasModule* m, AtlasPass* p, int index) {
+    if (index >= m->pass_queue.len) {
+        da_append(&m->pass_queue, p);
+    } else {
+        da_insert_at(&m->pass_queue, p, index);
     }
+}
+
+// run the next scheduled pass.
+void atlas_run_next_pass(AtlasModule* m) {
+    if (m->pass_queue.len == 0) return;
+
+    AtlasPass* next = m->pass_queue.at[0];
+
+    if (next->requires_cfg && !m->pass_queue.cfg_up_to_date) {
+        atlas_sched_pass(m, &ir_pass_cfg, 0);
+        atlas_run_next_pass(m);
+        m->pass_queue.cfg_up_to_date = true;
+    }
+
+    da_pop_front(&m->pass_queue);
     
-    //HACK
-    aphelion_translate_module(current_program);
-    printf("TODO: FIX THIS FUCKING HACK\n");
-}*/
+    switch (next->kind) {
+    case PASS_IR_TO_IR:   next->ir2ir_callback(m->ir_module); break;
+    case PASS_IR_TO_ASM:  next->ir2asm_callback(m->ir_module, m->asm_module); break;
+    case PASS_ASM_TO_ASM: next->asm2asm_callback(m->asm_module); break;
+    default:
+        CRASH("wat");
+    }
+
+    if (next->modifies_cfg) {
+        m->pass_queue.cfg_up_to_date = false;
+    }
+}
+
+void atlas_run_all_passes(AtlasModule* m) {
+
+    air_print_module(m->ir_module);
+    while (m->pass_queue.len >= 0) {
+        atlas_run_next_pass(m);
+        air_print_module(m->ir_module);
+    }
+}
