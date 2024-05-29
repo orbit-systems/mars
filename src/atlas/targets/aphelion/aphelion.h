@@ -3,8 +3,7 @@
 
 #include "atlas.h"
 #include "asmprinter.h"
-#include "pass.h"
-#include "target.h"
+#include "asm.h"
 
 void aphelion_translate_module(AIR_Module* ir_mod, AsmModule* asm_mod);
 

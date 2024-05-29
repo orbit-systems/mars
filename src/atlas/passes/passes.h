@@ -2,7 +2,6 @@
 #define ATLAS_PASSES_H
 
 #include "atlas.h"
-#include "ir.h"
 
 /* REQUIRED PASSES
     canon           general cleanup & canonicalization

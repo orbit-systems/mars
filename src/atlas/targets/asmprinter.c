@@ -99,7 +99,7 @@ void print_asm_inst(AsmModule* m, AsmInst* inst, bool debug_mode) {
 
                 VReg* in = inst->ins[in_index];
                 
-                if (in->real == REAL_REG_UNASSIGNED) {
+                if (in->real == ATLAS_PHYS_UNASSIGNED) {
                     // print a virtual register
 
                     uintptr_t vnum = (uintptr_t) ptrmap_get(&vreg2num, in);
@@ -130,7 +130,7 @@ void print_asm_inst(AsmModule* m, AsmInst* inst, bool debug_mode) {
 
                 VReg* out = inst->outs[out_index];
 
-                if (out->real == REAL_REG_UNASSIGNED) {
+                if (out->real == ATLAS_PHYS_UNASSIGNED) {
                     // print a virtual register
 
                     uintptr_t vnum = (uintptr_t) ptrmap_get(&vreg2num, out);

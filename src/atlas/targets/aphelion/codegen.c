@@ -1,6 +1,6 @@
+#include "atlas.h"
 #include "aphelion.h"
-#include "target.h"
-#include "ir.h"
+#include "asm.h"
 #include "ptrmap.h"
 #include "regalloc.h"
 

@@ -1,4 +1,4 @@
 #include "atlas.h"
-#include "target.h"
+#include "asm.h"
 
 void shit_regalloc(AsmModule* m, AsmFunction* f);

@@ -1,4 +1,4 @@
-#include "type.h"
+#include "atlas.h"
 
 void air_typegraph_init(AtlasModule* m) {
 

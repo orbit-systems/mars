@@ -1,24 +1,10 @@
 #pragma once
 #define ATLAS_TARGET_H
 
-typedef struct TargetInstInfo      TargetInstInfo;
-typedef struct TargetRegisterInfo  TargetRegisterInfo;
-typedef struct TargetRegisterClass TargetRegisterClass;
-typedef struct TargetFormatInfo    TargetFormatInfo;
-typedef struct TargetInfo          TargetInfo;
-
-typedef struct VReg VReg;
-typedef struct AsmInst         AsmInst;
-typedef struct AsmBlock        AsmBlock;
-typedef struct AsmSymbol       AsmSymbol;
-typedef struct AsmGlobal       AsmGlobal;
-typedef struct AsmFunction     AsmFunction;
-typedef struct AsmModule       AsmModule;
-
 #include "orbit.h"
 #include "atlas.h"
 
-#define REAL_REG_UNASSIGNED (UINT32_MAX)
+#define ATLAS_PHYS_UNASSIGNED (UINT32_MAX)
 
 enum {
     VSPEC_NONE,
@@ -30,7 +16,7 @@ enum {
 };
 
 typedef struct VReg {
-    // index of real register into regclass array (if REAL_REG_UNASSIGNED, it has not been assigned yet)
+    // index of real register into regclass array (if ATLAS_PHYS_UNASSIGNED, it has not been assigned yet)
     u32 real;
 
     u32 hint;

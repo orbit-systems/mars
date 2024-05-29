@@ -1,6 +1,6 @@
 #include "atlas.h"
 
-#include "target.h"
+#include "asm.h"
 
 AsmSymbol* air_sym_to_asm_sym(AsmModule* m, AIR_Symbol* sym) {
     AsmSymbol* new_sym = arena_alloc(&m->alloca, sizeof(*new_sym), alignof(*new_sym));
@@ -84,7 +84,7 @@ VReg* asm_new_vreg(AsmModule* m, AsmFunction* f, u32 regclass) {
     VReg* r = arena_alloc(&m->alloca, sizeof(*r), alignof(*r));
     
     r->required_regclass = regclass;
-    r->real = REAL_REG_UNASSIGNED;
+    r->real = ATLAS_PHYS_UNASSIGNED;
 
 
     da_append(&f->vregs, r);

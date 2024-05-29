@@ -3,7 +3,7 @@
 
 #include "term.h"
 #include "atlas.h"
-#include "atlas/targets/target.h"
+#include "atlas/asm.h"
 
 void debug_asm_printer(AsmModule* m);
 void asm_printer(AsmModule* m, bool debug_mode);
