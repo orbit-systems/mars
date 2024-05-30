@@ -1,5 +1,4 @@
 #include "atlas.h"
-#include "asm.h"
 #include "ptrmap.h"
 
 // bad regalloc for single-block programs

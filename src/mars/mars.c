@@ -12,6 +12,7 @@
 #include "phobos/sema.h"
 
 #include "atlas/atlas.h"
+#include "atlas/targets.h"
 
 #include "llta/lexer.h"
 

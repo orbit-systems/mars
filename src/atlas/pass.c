@@ -37,13 +37,8 @@ void atlas_run_next_pass(AtlasModule* m) {
 
     da_pop_front(&m->pass_queue);
     
-    switch (next->kind) {
-    case PASS_IR_TO_IR:   next->ir2ir_callback(m->ir_module); break;
-    case PASS_IR_TO_ASM:  next->ir2asm_callback(m->ir_module, m->asm_module); break;
-    case PASS_ASM_TO_ASM: next->asm2asm_callback(m->asm_module); break;
-    default:
-        CRASH("wat");
-    }
+    // call the pass lol
+    next->callback(m);
 
     if (next->modifies_cfg) {
         m->pass_queue.cfg_up_to_date = false;

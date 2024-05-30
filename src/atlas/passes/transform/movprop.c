@@ -33,15 +33,15 @@ static void set_uses_of(AIR_Function* f, AIR* source, AIR* dest) {
     }
 }
 
-void run_pass_movprop(AIR_Module* mod) {
-    for_urange(i, 0, mod->functions_len) {
-        for_urange(j, 0, mod->functions[i]->blocks.len) {
-            AIR_BasicBlock* bb = mod->functions[i]->blocks.at[j];
+void run_pass_movprop(AtlasModule* mod) {
+    for_urange(i, 0, mod->ir_module->functions_len) {
+        for_urange(j, 0, mod->ir_module->functions[i]->blocks.len) {
+            AIR_BasicBlock* bb = mod->ir_module->functions[i]->blocks.at[j];
 
             for_urange(k, 0, bb->len) {
                 if (bb->at[k]->tag != AIR_MOV) continue;
 
-                set_uses_of(mod->functions[i], bb->at[k], ((AIR_Mov*)bb->at[k])->source);
+                set_uses_of(mod->ir_module->functions[i], bb->at[k], ((AIR_Mov*)bb->at[k])->source);
                 bb->at[k]->tag = AIR_ELIMINATED;
             }
 
@@ -51,6 +51,5 @@ void run_pass_movprop(AIR_Module* mod) {
 
 AtlasPass air_pass_movprop = {
     .name = "movprop",
-    .ir2ir_callback = run_pass_movprop,
-    .kind = PASS_IR_TO_IR,
+    .callback = run_pass_movprop,
 };

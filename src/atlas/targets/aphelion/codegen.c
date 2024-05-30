@@ -1,6 +1,5 @@
 #include "atlas.h"
 #include "aphelion.h"
-#include "asm.h"
 #include "ptrmap.h"
 #include "regalloc.h"
 
@@ -9,7 +8,9 @@ PtrMap air_to_vreg = {0};
 AsmFunction* aphelion_translate_function(AsmModule* m, AIR_Function* f);
 AsmBlock* aphelion_translate_block(AsmModule* m, AsmFunction* f, AIR_Function* ir_f, AIR_BasicBlock* ir_bb);
 
-void aphelion_translate_module(AIR_Module* ir_mod, AsmModule* asm_mod) {
+void aphelion_translate_module(AtlasModule* mod) {
+    AIR_Module* ir_mod = mod->ir_module;
+    AsmModule* asm_mod = mod->asm_module;
     general_warning("FIXME: add globals support");
     for_urange(i, 0, ir_mod->functions_len) {
         AsmFunction* f = aphelion_translate_function(asm_mod, ir_mod->functions[i]);
@@ -157,7 +158,5 @@ AsmBlock* aphelion_translate_block(AsmModule* m, AsmFunction* f, AIR_Function* i
 
 AtlasPass asm_pass_aphelion_cg = {
     .name = "codegen_aphelion",
-    .ir2asm_callback = aphelion_translate_module,
-
-    .kind = PASS_IR_TO_ASM,
+    .callback = aphelion_translate_module,
 };
