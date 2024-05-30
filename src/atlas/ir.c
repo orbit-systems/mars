@@ -1,4 +1,4 @@
-#include "ir.h"
+#include "atlas.h"
 
 AIR_Module* air_new_module(AtlasModule* am) {
     AIR_Module* mod = mars_alloc(sizeof(*mod));

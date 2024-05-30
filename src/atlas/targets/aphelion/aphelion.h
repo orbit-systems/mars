@@ -3,10 +3,8 @@
 
 #include "atlas.h"
 #include "asmprinter.h"
-#include "pass.h"
-#include "target.h"
 
-void aphelion_translate_module(AIR_Module* ir_mod, AsmModule* asm_mod);
+void aphelion_translate_module(AtlasModule* mod);
 
 enum {
     APHEL_REGCLASS_ZERO,

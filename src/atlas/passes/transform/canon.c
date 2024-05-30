@@ -43,11 +43,11 @@ static void canonicalize(AIR* ir) {
     }
 }
 
-void run_pass_canon(AIR_Module* mod) {
+void run_pass_canon(AtlasModule* mod) {
     // reorg stackallocs and paramvals
-    for_urange(i, 0, mod->functions_len) {
-        for_urange(j, 0, mod->functions[i]->blocks.len) {
-            AIR_BasicBlock* bb = mod->functions[i]->blocks.at[j];
+    for_urange(i, 0, mod->ir_module->functions_len) {
+        for_urange(j, 0, mod->ir_module->functions[i]->blocks.len) {
+            AIR_BasicBlock* bb = mod->ir_module->functions[i]->blocks.at[j];
             sort_instructions(bb);
 
             for_urange(inst, 0, bb->len) {
@@ -59,6 +59,5 @@ void run_pass_canon(AIR_Module* mod) {
 
 AtlasPass air_pass_canon = {
     .name = "canon",
-    .ir2ir_callback = run_pass_canon,
-    .kind = PASS_IR_TO_IR,
+    .callback = run_pass_canon,
 };

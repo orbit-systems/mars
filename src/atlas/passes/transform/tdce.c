@@ -62,8 +62,7 @@ static void register_uses(AIR* ir) {
     case AIR_STACKALLOC:
         break;
     default:
-        general_warning("unhandled AIR type %d", ir->tag);
-        CRASH("unhandled AIR type");
+        CRASH("unhandled AIR type %d", ir->tag);
         break;
     }
 }
@@ -124,8 +123,7 @@ static void try_eliminate(AIR* ir) {
     case AIR_RETURN:
         break;
     default:
-        general_warning("unhandled AIR type %d", ir->tag);
-        CRASH("unhandled AIR type");
+        CRASH("unhandled AIR type %d", ir->tag);
         break;
     }
     ir->tag = AIR_ELIMINATED;
@@ -146,15 +144,14 @@ static void tdce_on_function(AIR_Function* f) {
     // if (elimd) tdce_on_function(f);
 }
 
-void run_pass_tdce(AIR_Module* mod) {
+void run_pass_tdce(AtlasModule* mod) {
 
-    for_urange(i, 0, mod->functions_len) {
-        tdce_on_function(mod->functions[i]);
+    for_urange(i, 0, mod->ir_module->functions_len) {
+        tdce_on_function(mod->ir_module->functions[i]);
     }
 }
 
 AtlasPass air_pass_tdce = {
     .name = "tdce",
-    .ir2ir_callback = run_pass_tdce,
-    .kind = PASS_IR_TO_IR,
+    .callback = run_pass_tdce,
 };

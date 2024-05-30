@@ -6,12 +6,11 @@
 
 */
 
-void run_pass_template(AIR_Module* mod) {
+void run_pass_template(AtlasModule* mod) {
     /* code here! */
 }
 
 AtlasPass air_pass_template = {
     .name = "template",
-    .ir2ir_callback = run_pass_template,
-    .kind = PASS_IR_TO_IR,
+    .callback = run_pass_template,
 };

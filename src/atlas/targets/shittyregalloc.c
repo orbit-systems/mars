@@ -1,5 +1,4 @@
 #include "atlas.h"
-#include "target.h"
 #include "ptrmap.h"
 
 // bad regalloc for single-block programs
@@ -100,7 +99,7 @@ static bool is_reg_occupied_at(AsmFunction* f, PtrMap* vreg2liverange, u32 regcl
 
 static void alloc(AsmFunction* f, PtrMap* vreg2liverange) {
     foreach(VReg* v, f->vregs) {
-        if (v->real != REAL_REG_UNASSIGNED) continue;
+        if (v->real != ATLAS_PHYS_UNASSIGNED) continue;
 
         LiveRange* range = ptrmap_get(vreg2liverange, v);
         assert(range != PTRMAP_NOT_FOUND);

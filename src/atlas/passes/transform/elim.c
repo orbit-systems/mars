@@ -24,10 +24,10 @@ static void transcribe_w_no_elims(AIR_BasicBlock* bb) {
     bb->len = place;
 }
 
-void run_pass_elim(AIR_Module* mod) {
-    for_urange(i, 0, mod->functions_len) {
-        for_urange(j, 0, mod->functions[i]->blocks.len) {
-            AIR_BasicBlock* bb = mod->functions[i]->blocks.at[j];
+void run_pass_elim(AtlasModule* mod) {
+    for_urange(i, 0, mod->ir_module->functions_len) {
+        for_urange(j, 0, mod->ir_module->functions[i]->blocks.len) {
+            AIR_BasicBlock* bb = mod->ir_module->functions[i]->blocks.at[j];
             transcribe_w_no_elims(bb);
         }
     }
@@ -35,6 +35,5 @@ void run_pass_elim(AIR_Module* mod) {
 
 AtlasPass air_pass_elim = {
     .name = "elim",
-    .ir2ir_callback = run_pass_elim,
-    .kind = PASS_IR_TO_IR,
+    .callback = run_pass_elim,
 };

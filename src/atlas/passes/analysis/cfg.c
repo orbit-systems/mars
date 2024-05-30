@@ -137,17 +137,16 @@ static AIR_BasicBlock** compute_dominator_set(AIR_Function* f, AIR_BasicBlock* b
     return domset;
 }
 
-void run_pass_cfg(AIR_Module* mod) {
+void run_pass_cfg(AtlasModule* mod) {
 
     // TODO: only update the CFG for functions where it has been modified
-    for_urange(i, 0, mod->functions_len) {
-        pass_cfg_func(mod->functions[i]);
+    for_urange(i, 0, mod->ir_module->functions_len) {
+        pass_cfg_func(mod->ir_module->functions[i]);
     }
 
 }
 
 AtlasPass air_pass_cfg = {
     .name = "cfg",
-    .ir2ir_callback = run_pass_cfg,
-    .kind = PASS_IR_TO_IR,
+    .callback = run_pass_cfg,
 };

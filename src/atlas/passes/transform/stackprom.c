@@ -61,13 +61,13 @@ static void stackprom_f(AIR_Function* f) {
     TODO("");
 }
 
-void run_pass_stackprom(AIR_Module* mod) {
+void run_pass_stackprom(AtlasModule* mod) {
     if (alloca_list.at == NULL) {
         da_init(&alloca_list, 4);
     }
 
-    for_urange(i, 0, mod->functions_len) {
-        stackprom_f(mod->functions[i]);
+    for_urange(i, 0, mod->ir_module->functions_len) {
+        stackprom_f(mod->ir_module->functions[i]);
     }
 
     da_destroy(&alloca_list);
