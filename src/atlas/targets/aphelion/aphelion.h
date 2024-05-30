@@ -2,7 +2,7 @@
 #define TARGET_APHELION_H
 
 #include "atlas.h"
-#include "asmprinter.h"
+#include "targets/asmprinter.h"
 
 void aphelion_translate_module(AtlasModule* mod);
 

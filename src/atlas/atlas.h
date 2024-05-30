@@ -91,7 +91,8 @@ enum {
     AIR_F32,
     AIR_F64,
 
-    AIR_POINTER,
+    AIR_PTR,
+
     AIR_AGGREGATE,
     AIR_ARRAY,
 };
@@ -100,8 +101,8 @@ typedef struct AIR_Type {
     u8 kind;
     u32 number;
 
-    u32 align;
-    u64 size;
+    // u32 align;
+    // u64 size;
 
     union {
     
