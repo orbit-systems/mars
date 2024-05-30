@@ -11,7 +11,7 @@
 // this needs to be rewritten because i dont actually think its sound
 // because of potential pointer aliasing problems
 
-da_typedef(AIR_PTR);
+da_typedef(AIR_Ptr);
 
 static AIR_Store* last_local_store_to_loc(AIR_BasicBlock* bb, AIR* location, u64 from) {
     if (location == NULL) return NULL;
@@ -39,7 +39,7 @@ static u64 air_get_usage(AIR_BasicBlock* bb, AIR* source, u64 start_index) {
 // this is horrible code, but like i said, it will be replaced by stackpromote
 void run_pass_trme(AtlasModule* mod) {
 
-    da(AIR_PTR) store_elim_list;
+    da(AIR_Ptr) store_elim_list;
     da_init(&store_elim_list, 4);
 
     for (u64 i = 0; i < mod->ir_module->functions_len; i++) {

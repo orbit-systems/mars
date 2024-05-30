@@ -10,7 +10,7 @@ typedef struct AtlasPass   AtlasPass;
 
 typedef struct AIR_Type AIR_Type;
 typedef struct AIR      AIR;
-typedef        AIR*     AIR_PTR;
+typedef        AIR*     AIR_Ptr;
 
 typedef struct AIR_Module     AIR_Module;
 typedef struct AIR_Function   AIR_Function;
@@ -98,6 +98,7 @@ enum {
 
 typedef struct AIR_Type {
     u8 kind;
+    u32 number;
 
     u32 align;
     u64 size;

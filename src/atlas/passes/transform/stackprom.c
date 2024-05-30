@@ -4,7 +4,7 @@
 
 */
 
-da_typedef(AIR_PTR);
+da_typedef(AIR_Ptr);
 
 static u64 get_usage(AIR_BasicBlock* bb, AIR* source, u64 start_index) {
     for (u64 i = start_index; i < bb->len; i++) {
@@ -21,7 +21,7 @@ static bool is_promotable(AIR_Function* f, AIR* stackalloc) {
     if (stackalloc->tag != AIR_STACKALLOC) return false;
 
     // collect uses
-    da(AIR_PTR) uses = {0};
+    da(AIR_Ptr) uses = {0};
     da_init(&uses, 5);
     // for every basic block, search the blocks for usages of the stackalloc.
     for_urange(block, 0, f->blocks.len) {
@@ -43,7 +43,7 @@ static bool is_promotable(AIR_Function* f, AIR* stackalloc) {
         return false;
 }
 
-da(AIR_PTR) alloca_list = {0};
+da(AIR_Ptr) alloca_list = {0};
 
 static void stackprom_f(AIR_Function* f) {
     da_clear(&alloca_list);
@@ -71,5 +71,5 @@ void run_pass_stackprom(AtlasModule* mod) {
     }
 
     da_destroy(&alloca_list);
-    alloca_list = (da(AIR_PTR)){0};
+    alloca_list = (da(AIR_Ptr)){0};
 }
