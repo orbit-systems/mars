@@ -1,0 +1,40 @@
+types are declared like so:
+
+    type (identifer) = (type-expr)
+
+a type expression is one of:
+
+    bool
+    u8
+    u16
+    u32
+    u64
+    i8
+    i16
+    i32
+    i64
+    f16
+    f32
+    f64
+    (struct-type)
+    (array-type)
+    (pointer-type)
+    (identifer)
+
+a struct-type is an aggregate type defined as:
+
+    {(type-expr)}
+    {(type-expr), (type-expr), ...}
+
+an array-type is an array type defined as:
+
+    [(uint)](type-expr)
+
+a pointer-type is a pointer type defined as:
+
+    ^(type-expr)
+
+type t1 = {i64, bool, bool}
+type t2 = [3]i64
+type t3 = ^i64
+type t4 = ^t3
