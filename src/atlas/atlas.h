@@ -61,10 +61,10 @@ typedef struct AtlasPass {
     };
 
     // make sure CFG info is up-to-date before this pass runs
-    bool requires_cfg;
+    bool requires_cfg : 1;
     
     // mark the CFG information as out-of-date
-    bool modifies_cfg;
+    bool modifies_cfg : 1;
 } AtlasPass;
 
 void atlas_sched_pass(AtlasModule* m, AtlasPass* p);
@@ -76,6 +76,8 @@ enum {
     AIR_VOID,
 
     AIR_BOOL,
+
+    AIR_PTR,
 
     AIR_U8,
     AIR_U16,
@@ -91,7 +93,6 @@ enum {
     AIR_F32,
     AIR_F64,
 
-    AIR_PTR,
 
     AIR_AGGREGATE,
     AIR_ARRAY,

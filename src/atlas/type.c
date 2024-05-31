@@ -15,6 +15,11 @@ void air_typegraph_init(AtlasModule* m) {
     // bool->size = bool->align = 1;
     da_append(&m->ir_module->typegraph, bool);
 
+    AIR_Type* ptr = arena_alloc(&m->ir_module->typegraph.alloca, sizeof(AIR_Type), alignof(AIR_Type));
+    ptr->kind = AIR_PTR;
+    // f64->size = f64->align = 8;
+    da_append(&m->ir_module->typegraph, ptr);
+
     AIR_Type* u8 = arena_alloc(&m->ir_module->typegraph.alloca, sizeof(AIR_Type), alignof(AIR_Type));
     u8->kind = AIR_U8;
     // u8->size = u8->align = 1;
@@ -70,11 +75,6 @@ void air_typegraph_init(AtlasModule* m) {
     // f64->size = f64->align = 8;
     da_append(&m->ir_module->typegraph, f64);
 
-    AIR_Type* ptr = arena_alloc(&m->ir_module->typegraph.alloca, sizeof(AIR_Type), alignof(AIR_Type));
-    f64->kind = AIR_PTR;
-    // f64->size = f64->align = 8;
-    da_append(&m->ir_module->typegraph, f64);
-
     return;
 }
 
@@ -84,6 +84,7 @@ AIR_Type* air_new_type(AtlasModule* m, u8 kind, u64 len) {
     switch (kind) {
     case AIR_VOID:
     case AIR_BOOL:
+    case AIR_PTR:
     case AIR_U8:
     case AIR_U16:
     case AIR_U32:
@@ -95,7 +96,6 @@ AIR_Type* air_new_type(AtlasModule* m, u8 kind, u64 len) {
     case AIR_F16:
     case AIR_F32:
     case AIR_F64:
-    case AIR_PTR:
         return m->ir_module->typegraph.at[kind];
     case AIR_ARRAY:
         size = sizeof(AIR_Type);

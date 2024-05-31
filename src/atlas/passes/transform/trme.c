@@ -36,6 +36,15 @@ static u64 air_get_usage(AIR_BasicBlock* bb, AIR* source, u64 start_index) {
     return UINT64_MAX;
 }
 
+static void remove_stack_slot(AIR_Function* f, AIR_StackObject* obj) {
+    for_urange(i, 0, f->stack.len) {
+        if (f->stack.at[i] == obj) {
+            da_remove_at(&f->stack, i);
+            return;
+        }
+    }
+}
+
 // this is horrible code, but like i said, it will be replaced by stackpromote
 void run_pass_trme(AtlasModule* mod) {
 
@@ -85,7 +94,8 @@ void run_pass_trme(AtlasModule* mod) {
                     }
                 }
 
-                // if you're still around, this stackalloc is useless and can be eliminated
+                // if you're still around, this stack slot is useless and can be eliminated
+                remove_stack_slot(f, ((AIR_StackOffset*)bb->at[inst])->object);
                 bb->at[inst]->tag = AIR_ELIMINATED;
 
                 // eliminate the stores as well

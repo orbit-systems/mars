@@ -102,6 +102,14 @@ static int sb_type_name(AIR_Type* t, StringBuilder* sb) {
     return strlen(buf);
 }
 
+static u64 stack_object_index(AIR_Function* f, AIR_StackObject* obj) {
+    for_urange(i, 0, f->stack.len) {
+        AIR_StackObject* so = f->stack.at[i];
+        if (so == obj) return i;
+    }
+    return UINT64_MAX;
+}
+
 static void emit_function(AIR_Function* f, StringBuilder* sb) {
     sb_append_c(sb, "func \"");
     sb_append(sb, f->sym->name);
@@ -130,6 +138,14 @@ static void emit_function(AIR_Function* f, StringBuilder* sb) {
     ptrmap_init(&ir2num, 128);
 
     size_t counter = 1;
+
+    for_urange(i, 0, f->stack.len) {
+        AIR_StackObject* so = f->stack.at[i];
+        sb_printf(sb, "    #%llu = stack.", i + 1);
+        sb_type_name(so->t, sb);
+        sb_append_c(sb, "\n");
+        counter++;
+    }
 
     for_urange(b, 0, f->blocks.len) {
         AIR_BasicBlock* bb = f->blocks.at[b];
@@ -176,6 +192,31 @@ static void emit_function(AIR_Function* f, StringBuilder* sb) {
                 sb_type_name(store->value->T, sb);
                 sb_printf(sb, " #%llu, #%llu", store->location->number, store->value->number);
             } break;
+            case AIR_MOV: {
+                AIR_Mov* mov = (AIR_Mov*) inst;
+                sb_printf(sb, "mov #%llu", mov->source->number);
+            } break;
+            case AIR_CONST: {
+                AIR_Const* con = (AIR_Const*) inst;
+                sb_append_c(sb, "const.");
+                sb_type_name(inst->T, sb);
+                switch (con->base.T->kind) {
+                case AIR_I8:  sb_printf(sb, " %lld", (i64)con->i8);  break;
+                case AIR_I16: sb_printf(sb, " %lld", (i64)con->i16); break;
+                case AIR_I32: sb_printf(sb, " %lld", (i64)con->i32); break;
+                case AIR_I64: sb_printf(sb, " %lld", (i64)con->i64); break;
+                case AIR_U8:  sb_printf(sb, " %llu", (u64)con->u8);  break;
+                case AIR_U16: sb_printf(sb, " %llu", (u64)con->u16); break;
+                case AIR_U32: sb_printf(sb, " %llu", (u64)con->u32); break;
+                case AIR_U64: sb_printf(sb, " %llu", (u64)con->u64); break;
+                case AIR_F16: sb_printf(sb, " %f",   (f32)con->f16); break;
+                case AIR_F32: sb_printf(sb, " %f",   con->f32); break;
+                case AIR_F64: sb_printf(sb, " %lf",  con->f64); break;
+                default:
+                    sb_append_c(sb, "???");
+                    break;
+                }
+            } break;
             case AIR_PARAMVAL: {
                 AIR_ParamVal* param = (AIR_ParamVal*) inst;
                 sb_printf(sb, "paramval %llu", param->param_idx);
@@ -186,7 +227,8 @@ static void emit_function(AIR_Function* f, StringBuilder* sb) {
             } break;
             case AIR_STACKOFFSET: {
                 AIR_StackOffset* so = (AIR_StackOffset*) inst;
-                // sb_printf(sb, "stackoffset %llu, #%llu", so->object->t);
+                u64 index = stack_object_index(f, so->object);
+                sb_printf(sb, "stackoffset #%llu", index + 1);
             } break;
             case AIR_RETURN:
                 sb_append_c(sb, "return");

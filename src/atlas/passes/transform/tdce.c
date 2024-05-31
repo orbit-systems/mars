@@ -59,6 +59,7 @@ static void register_uses(AIR* ir) {
     case AIR_ELIMINATED:
     case AIR_CONST:
     case AIR_PARAMVAL:
+    case AIR_STACKOFFSET:
     case AIR_RETURN:
         break;
     default:
