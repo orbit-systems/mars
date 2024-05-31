@@ -178,7 +178,7 @@ void generate_ir_stmt_return(AIR_Function* f, AIR_BasicBlock* bb, AST ast) {
             AIR* stackalloc = ptrmap_get(&entity2stackalloc, f->returns[i]);
 
             AIR* load = air_add(bb, air_make_load(f, stackalloc, false));
-            load->T = stackalloc->T->pointer;
+            load->T = ((AIR_StackAlloc*)stackalloc)->alloctype;
             AIR* retval = air_add(bb, air_make_returnval(f, i, load));
         }
     } else {
@@ -229,9 +229,9 @@ AIR_Function* generate_ir_function(AtlasModule* mod, AST ast) {
         AIR* paramval = air_add(bb, air_make_paramval(f, i));
         paramval->T = f->params[i]->T;
         AIR* stackalloc = air_add(bb, air_make_stackalloc(f, translate_type(am, astfunc->params[i]->entity_type)));
-        stackalloc->T = air_new_type(mod, AIR_POINTER, 0);
-        stackalloc->T->pointer = paramval->T;
+        stackalloc->T = air_new_type(mod, AIR_PTR, 0);
         AIR* store = air_add(bb, air_make_store(f, stackalloc, paramval, false));
+        
 
         // store the entity's stackalloc
         entity* e = astfunc->params[i];
@@ -252,8 +252,7 @@ AIR_Function* generate_ir_function(AtlasModule* mod, AST ast) {
         */
         
         AIR* stackalloc = air_add(bb, air_make_stackalloc(f, translate_type(am, astfunc->returns[i]->entity_type)));
-        stackalloc->T = air_new_type(mod, AIR_POINTER, 0);
-        stackalloc->T->pointer = f->returns[i]->T;
+        stackalloc->T = air_new_type(mod, AIR_PTR, 0);
 
         AIR* con = air_add(bb, air_make_const(f));
         con->T = f->returns[i]->T;

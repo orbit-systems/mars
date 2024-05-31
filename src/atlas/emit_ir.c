@@ -17,16 +17,17 @@ static string simple_type_2_str(AIR_Type* t) {
     case AIR_F16:  return constr("f16");
     case AIR_F32:  return constr("f32");
     case AIR_F64:  return constr("f64");
+    case AIR_PTR:  return constr("ptr");
     }
 
     return NULL_STR;
 }
 
-void air_emit_type_definitions(AtlasModule* am, StringBuilder* sb) {
+static void emit_type_definitions(AtlasModule* am, StringBuilder* sb) {
 
     // hopefully this works lmao
 
-    static char buffer[100];
+    static char buffer[500];
 
     u32 count = 0;
 
@@ -38,25 +39,35 @@ void air_emit_type_definitions(AtlasModule* am, StringBuilder* sb) {
     foreach(AIR_Type* t, am->ir_module->typegraph) {
         if (!is_null_str(simple_type_2_str(t))) continue;
 
-        memset(buffer, 0, 100);
+        memset(buffer, 0, sizeof(buffer));
         char* bufptr = buffer;
         
         bufptr += sprintf(bufptr, "type t%d = ", t->number);
         
         switch (t->kind) {
-        case AIR_POINTER:
-            if (is_null_str(simple_type_2_str(t->pointer))) {
-                bufptr += sprintf(bufptr, "^t%d", t->pointer->number);
-            } else {
-                bufptr += sprintf(bufptr, "^"str_fmt, simple_type_2_str(t->pointer));
-            }
-            break;
         case AIR_ARRAY:
             if (is_null_str(simple_type_2_str(t->array.sub))) {
                 bufptr += sprintf(bufptr, "[%lld]t%d", t->array.len, t->array.sub->number);
             } else {
                 bufptr += sprintf(bufptr, "[%lld]"str_fmt, t->array.len, simple_type_2_str(t->array.sub));
             }
+            break;
+        case AIR_AGGREGATE:
+
+            bufptr += sprintf(bufptr, "{");
+            for_urange(i, 0, t->aggregate.len) {
+                
+                if (is_null_str(simple_type_2_str(t->array.sub))) {
+                    bufptr += sprintf(bufptr, "t%d", t->aggregate.fields[i]->number);
+                } else {
+                    bufptr += sprintf(bufptr, str_fmt, simple_type_2_str(t->aggregate.fields[i]));
+                }
+
+                if (i + 1 != t->aggregate.len) {
+                    bufptr += sprintf(bufptr, ", ");
+                }
+            }
+            bufptr += sprintf(bufptr, "}");
             break;
         default:
             CRASH("");
@@ -65,6 +76,21 @@ void air_emit_type_definitions(AtlasModule* am, StringBuilder* sb) {
 
         bufptr += sprintf(bufptr, "\n");
 
-        sb_append_c(sb, bufptr); 
+        sb_append_c(sb, bufptr);
     }  
+}
+
+static void print_type_name(AIR_Type* t, char** bufptr) {
+    if (is_null_str(simple_type_2_str(t))) {
+        *bufptr += sprintf(*bufptr, "t%d", t->number);
+    } else {
+        *bufptr += sprintf(*bufptr, str_fmt, simple_type_2_str(t));
+    }
+}
+
+string emit_ir(AtlasModule* am) {
+    StringBuilder sb = {0};
+    sb_init(&sb);
+
+    emit_type_definitions(am, &sb);
 }

@@ -115,8 +115,6 @@ typedef struct AIR_Type {
             u64 len;
             AIR_Type* sub;
         } array;
-    
-        AIR_Type* pointer;
     };
 } AIR_Type;
 
