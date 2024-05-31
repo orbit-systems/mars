@@ -19,6 +19,7 @@ static bool has_side_effects(AIR* ir) {
     case AIR_MOV:
     case AIR_CONST:
     case AIR_PARAMVAL:
+    case AIR_STACKOFFSET:
         return false;
 
     default: // assume side effects until proven otherwise
@@ -59,7 +60,6 @@ static void register_uses(AIR* ir) {
     case AIR_CONST:
     case AIR_PARAMVAL:
     case AIR_RETURN:
-    case AIR_STACKALLOC:
         break;
     default:
         CRASH("unhandled AIR type %d", ir->tag);

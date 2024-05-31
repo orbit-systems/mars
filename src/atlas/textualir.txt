@@ -36,5 +36,5 @@ type t2 = [3]i64
 
 an instruction that adds two `i32`s (#1 and #2) would look like this:
 
-    #3 i32 = add #1, #2
-    
+    #3 = add.i32 #1, #2
+

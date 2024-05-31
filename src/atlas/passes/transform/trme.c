@@ -71,7 +71,7 @@ void run_pass_trme(AtlasModule* mod) {
             AIR_BasicBlock* bb = f->blocks.at[j];
 
             for (u64 inst = 0; inst < bb->len; inst++) {
-                if (bb->at[inst]->tag != AIR_STACKALLOC) continue;
+                if (bb->at[inst]->tag != AIR_STACKOFFSET) continue;
 
                 for (u64 search_bb = 0; search_bb < f->blocks.len; search_bb++) {
                     u64 next_usage = air_get_usage(f->blocks.at[search_bb], bb->at[inst], 0);

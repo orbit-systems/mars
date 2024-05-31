@@ -18,7 +18,7 @@ static u64 get_usage(AIR_BasicBlock* bb, AIR* source, u64 start_index) {
 }
 
 static bool is_promotable(AIR_Function* f, AIR* stackalloc) {
-    if (stackalloc->tag != AIR_STACKALLOC) return false;
+    if (stackalloc->tag != AIR_STACKOFFSET) return false;
 
     // collect uses
     da(AIR_Ptr) uses = {0};
@@ -52,7 +52,7 @@ static void stackprom_f(AIR_Function* f) {
     for_urange(b, 0, f->blocks.len) {
         for_urange(i, 0, f->blocks.at[b]->len) {
             AIR* inst = f->blocks.at[b]->at[i];
-            if (inst->tag == AIR_STACKALLOC) {
+            if (inst->tag == AIR_STACKOFFSET) {
                 da_append(&alloca_list, inst);
             }
         }

@@ -10,19 +10,13 @@
 */
 
 static void sort_instructions(AIR_BasicBlock* bb) {
-    u64 last_stackalloc = 0;
     u64 last_paramval = 0;
 
     for (u64 i = 0; i < bb->len; i++) {
         if (last_paramval >= bb->len) break;
-        if (last_stackalloc >= bb->len) break;
         if (bb->at[i]->tag == AIR_PARAMVAL) {
             air_move_element(bb, last_paramval, i);
             last_paramval++;
-            last_stackalloc++;
-        } else if (bb->at[i]->tag == AIR_STACKALLOC) {
-            air_move_element(bb, last_stackalloc, i);
-            last_stackalloc++;
         }
     }
 }

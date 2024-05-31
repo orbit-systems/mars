@@ -1,16 +1,17 @@
-#include "irgen.h"
 #include "atlas.h"
+#include "irgen.h"
+
 #include "phobos/sema.h"
 #include "ptrmap.h"
 
 static mars_module* mars_mod;
 static AtlasModule* am;
 
-static PtrMap entity2stackalloc;
+static PtrMap entity2stackoffset;
 
 void generate_ir_atlas_from_mars(mars_module* mod, AtlasModule* atmod) {
     am = atmod;
-    ptrmap_init(&entity2stackalloc, 32);
+    ptrmap_init(&entity2stackoffset, 32);
 
     for_urange(i, 0, mod->program_tree.len) {
         if (mod->program_tree.at[i].type == AST_decl_stmt) {
@@ -90,20 +91,22 @@ AIR* generate_ir_expr_ident_load(AIR_Function* f, AIR_BasicBlock* bb, AST ast) {
 
     // if a stackalloc and entityextra havent been generated, generate them
 
-    if (ptrmap_get(&entity2stackalloc, ident->entity) == PTRMAP_NOT_FOUND) {
+    if (ptrmap_get(&entity2stackoffset, ident->entity) == PTRMAP_NOT_FOUND) {
 
         if (!ident->entity->entity_type) {
             warning_at_node(mars_mod, ast, "bodge! assuming i64 type");
             ident->entity->entity_type = make_type(TYPE_I64);
         }
 
-        AIR* stackalloc = air_add(bb, air_make_stackalloc(f, translate_type(am, ident->entity->entity_type)));
+        // AIR* stackalloc = air_add(bb, air_make_stackalloc(f, translate_type(am, ident->entity->entity_type)));
+        AIR_StackObject* stackobj = air_new_stackobject(f,  translate_type(am, ident->entity->entity_type));
+        AIR* stackoffset = air_add(bb, air_make_stackoffset(f, stackobj));
 
-        ptrmap_put(&entity2stackalloc, ident->entity, stackalloc);
+        ptrmap_put(&entity2stackoffset, ident->entity, stackoffset);
     }
-    AIR* stackalloc = ptrmap_get(&entity2stackalloc, ident->entity);
+    AIR* stackoffset = ptrmap_get(&entity2stackoffset, ident->entity);
 
-    AIR* load = air_make_load(f, stackalloc, false);
+    AIR* load = air_make_load(f, stackoffset, false);
     load->T = translate_type(am, ident->entity->entity_type);
 
     return air_add(bb, load);
@@ -126,14 +129,13 @@ AIR* generate_ir_expr_value(AIR_Function* f, AIR_BasicBlock* bb, AST ast) {
 AIR* generate_ir_expr_address(AIR_Function* f, AIR_BasicBlock* bb, AST ast) {
     switch (ast.type) {
     case AST_identifier_expr:
-        if (ptrmap_get(&entity2stackalloc, ast.as_identifier_expr->entity) != PTRMAP_NOT_FOUND) {
-            return ptrmap_get(&entity2stackalloc, ast.as_identifier_expr->entity);
+        if (ptrmap_get(&entity2stackoffset, ast.as_identifier_expr->entity) != PTRMAP_NOT_FOUND) {
+            return ptrmap_get(&entity2stackoffset, ast.as_identifier_expr->entity);
         }
         ast_identifier_expr* ident = ast.as_identifier_expr;
-        if (ptrmap_get(&entity2stackalloc, ident->entity) == PTRMAP_NOT_FOUND) {
+        if (ptrmap_get(&entity2stackoffset, ident->entity) == PTRMAP_NOT_FOUND) {
 
             // generate stackalloc
-            AIR* stackalloc = air_add(bb, air_make_stackalloc(f, translate_type(am, ident->entity->entity_type)));
             TODO("bruh");
         }
         break;
@@ -175,10 +177,11 @@ void generate_ir_stmt_return(AIR_Function* f, AIR_BasicBlock* bb, AST ast) {
     if (astret->returns.len == 0) {
         for_urange(i, 0, astret->returns.len) {
             // god we're gonna do this i guess
-            AIR* stackalloc = ptrmap_get(&entity2stackalloc, f->returns[i]);
 
-            AIR* load = air_add(bb, air_make_load(f, stackalloc, false));
-            load->T = ((AIR_StackAlloc*)stackalloc)->alloctype;
+            AIR* stackoffset = ptrmap_get(&entity2stackoffset, f->returns[i]);
+
+            AIR* load = air_add(bb, air_make_load(f, stackoffset, false));
+            load->T = ((AIR_StackOffset*)stackoffset)->object->t;
             AIR* retval = air_add(bb, air_make_returnval(f, i, load));
         }
     } else {
@@ -220,22 +223,23 @@ AIR_Function* generate_ir_function(AtlasModule* mod, AST ast) {
         
         /* the sequence we want to generate is:
             %1 = paramval <i>
-            %2 = stackalloc <type of i>
+            %2 = stackoffset <object of i>
             %3 = store <type of i> %2, %1
         */
 
         // this is utterly unreadable, sorry
-        // fixing this with the new frontend
         AIR* paramval = air_add(bb, air_make_paramval(f, i));
         paramval->T = f->params[i]->T;
-        AIR* stackalloc = air_add(bb, air_make_stackalloc(f, translate_type(am, astfunc->params[i]->entity_type)));
-        stackalloc->T = air_new_type(mod, AIR_PTR, 0);
-        AIR* store = air_add(bb, air_make_store(f, stackalloc, paramval, false));
+
+        AIR_StackObject* stackobj = air_new_stackobject(f, translate_type(am, astfunc->params[i]->entity_type));
+        AIR* stackoffset = air_add(bb, air_make_stackoffset(f, stackobj));
+        stackoffset->T = air_new_type(mod, AIR_PTR, 0);
+        AIR* store = air_add(bb, air_make_store(f, stackoffset, paramval, false));
         
 
-        // store the entity's stackalloc
+        // store the entity's stackoffset
         entity* e = astfunc->params[i];
-        ptrmap_put(&entity2stackalloc, e, stackalloc);
+        ptrmap_put(&entity2stackoffset, e, stackoffset);
     }
 
     // generate storage for return variables
@@ -251,18 +255,19 @@ AIR_Function* generate_ir_function(AtlasModule* mod, AST ast) {
             %3 = store %1, %2
         */
         
-        AIR* stackalloc = air_add(bb, air_make_stackalloc(f, translate_type(am, astfunc->returns[i]->entity_type)));
-        stackalloc->T = air_new_type(mod, AIR_PTR, 0);
+        AIR_StackObject* stackobj = air_new_stackobject(f, translate_type(am, astfunc->returns[i]->entity_type));
+        AIR* stackoffset = air_add(bb, air_make_stackoffset(f, stackobj));
+        stackoffset->T = air_new_type(mod, AIR_PTR, 0);
 
         AIR* con = air_add(bb, air_make_const(f));
         con->T = f->returns[i]->T;
         ((AIR_Const*) con)->u64 = 0;
         
-        AIR* store = air_add(bb, air_make_store(f, stackalloc, con, false));
+        AIR* store = air_add(bb, air_make_store(f, stackoffset, con, false));
 
         // store the entity's stackalloc
         entity* e = astfunc->returns[i];
-        ptrmap_put(&entity2stackalloc, e, stackalloc);
+        ptrmap_put(&entity2stackoffset, e, stackoffset);
     }
 
     generate_ir_stmt_return(f, bb, astfunc->code_block.as_block_stmt->stmts.at[0]);

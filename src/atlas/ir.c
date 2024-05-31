@@ -29,6 +29,13 @@ AIR_Function* air_new_function(AIR_Module* mod, AIR_Symbol* sym, u8 visibility) 
     return fn;
 }
 
+AIR_StackObject* air_new_stackobject(AIR_Function* f, AIR_Type* t) {
+    AIR_StackObject* obj = arena_alloc(&f->alloca, sizeof(*obj), alignof(*obj));
+    obj->t = t;
+    da_append(&f->stack, obj);
+    return obj;
+}
+
 // takes multiple AIR_Type*
 void air_set_func_params(AIR_Function* f, u16 count, ...) {
     f->params_len = count;
@@ -192,7 +199,7 @@ const size_t air_sizes[] = {
     [AIR_LSR]   = sizeof(AIR_BinOp),
     [AIR_ASR]   = sizeof(AIR_BinOp),
 
-    [AIR_STACKALLOC]  = sizeof(AIR_StackAlloc),
+    [AIR_STACKOFFSET]  = sizeof(AIR_StackOffset),
     [AIR_GETFIELDPTR] = sizeof(AIR_GetFieldPtr),
     [AIR_GETINDEXPTR] = sizeof(AIR_GetIndexPtr),
 
@@ -232,10 +239,10 @@ AIR* air_make_cast(AIR_Function* f, AIR* source, AIR_Type* to) {
     return (AIR*) ir;
 }
 
-AIR* air_make_stackalloc(AIR_Function* f, AIR_Type* T) {
-    AIR_StackAlloc* ir = (AIR_StackAlloc*) air_make(f, AIR_STACKALLOC);
+AIR* air_make_stackoffset(AIR_Function* f, AIR_StackObject* obj) {
+    AIR_StackOffset* ir = (AIR_StackOffset*) air_make(f, AIR_STACKOFFSET);
 
-    ir->alloctype = T;
+    ir->object = obj;
     return (AIR*) ir;
 }
 
@@ -478,10 +485,12 @@ void air_print_ir(AIR* ir) {
         printf("return");
         break;
 
-    case AIR_STACKALLOC:
-        AIR_StackAlloc* stackalloc = (AIR_StackAlloc*) ir;
+    case AIR_STACKOFFSET:
+        AIR_StackOffset* stackoffset = (AIR_StackOffset*) ir;
         // string typestr = type_to_string(stackalloc->alloctype);
-        printf("stackalloc <"str_fmt">", str_arg(typestr));
+        // CRASH("");
+        string typestr = str("TODO");
+        printf("stackoffset <"str_fmt">", str_arg(typestr));
         break;
 
     case AIR_STORE:

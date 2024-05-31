@@ -48,7 +48,7 @@ void atlas_run_next_pass(AtlasModule* m) {
 void atlas_run_all_passes(AtlasModule* m) {
 
     while (m->pass_queue.len > 0) {
-        air_print_module(m->ir_module);
+        printstr(air_textual_emit(m));
         atlas_run_next_pass(m);
     }
 }

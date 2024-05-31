@@ -49,7 +49,7 @@ static void emit_type_definitions(AtlasModule* am, StringBuilder* sb) {
             if (is_null_str(simple_type_2_str(t->array.sub))) {
                 bufptr += sprintf(bufptr, "[%lld]t%d", t->array.len, t->array.sub->number);
             } else {
-                bufptr += sprintf(bufptr, "[%lld]"str_fmt, t->array.len, simple_type_2_str(t->array.sub));
+                bufptr += sprintf(bufptr, "[%lld]"str_fmt, t->array.len, str_arg(simple_type_2_str(t->array.sub)));
             }
             break;
         case AIR_AGGREGATE:
@@ -60,7 +60,7 @@ static void emit_type_definitions(AtlasModule* am, StringBuilder* sb) {
                 if (is_null_str(simple_type_2_str(t->array.sub))) {
                     bufptr += sprintf(bufptr, "t%d", t->aggregate.fields[i]->number);
                 } else {
-                    bufptr += sprintf(bufptr, str_fmt, simple_type_2_str(t->aggregate.fields[i]));
+                    bufptr += sprintf(bufptr, str_fmt, str_arg(simple_type_2_str(t->aggregate.fields[i])));
                 }
 
                 if (i + 1 != t->aggregate.len) {
@@ -80,17 +80,140 @@ static void emit_type_definitions(AtlasModule* am, StringBuilder* sb) {
     }  
 }
 
-static void print_type_name(AIR_Type* t, char** bufptr) {
+static int print_type_name(AIR_Type* t, char** bufptr) {
+    char* og = *bufptr;
     if (is_null_str(simple_type_2_str(t))) {
         *bufptr += sprintf(*bufptr, "t%d", t->number);
     } else {
-        *bufptr += sprintf(*bufptr, str_fmt, simple_type_2_str(t));
+        *bufptr += sprintf(*bufptr, str_fmt, str_arg(simple_type_2_str(t)));
     }
+    return *bufptr - og;
 }
 
-string emit_ir(AtlasModule* am) {
+static int sb_type_name(AIR_Type* t, StringBuilder* sb) {
+    char buf[16] = {0};
+
+    if (is_null_str(simple_type_2_str(t))) {
+        sprintf(buf, "t%d", t->number);
+    } else {
+        sprintf(buf, str_fmt, str_arg(simple_type_2_str(t)));
+    }
+    sb_append_c(sb, buf);
+    return strlen(buf);
+}
+
+static void emit_function(AIR_Function* f, StringBuilder* sb) {
+    sb_append_c(sb, "func \"");
+    sb_append(sb, f->sym->name);
+    sb_append_c(sb, "\" (");
+
+    for_range(i, 0, f->params_len) {
+        sb_type_name(f->params[i]->T, sb);
+        if (i + 1 != f->params_len) {
+            sb_append_c(sb, ", ");
+        }
+    }
+
+    sb_append_c(sb, ") -> (");
+
+    for_range(i, 0, f->returns_len) {
+        sb_type_name(f->returns[i]->T, sb);
+        if (i + 1 != f->returns_len) {
+            sb_append_c(sb, ", ");
+        }
+    }
+
+    sb_append_c(sb, ") {\n");
+
+
+    PtrMap ir2num = {0};
+    ptrmap_init(&ir2num, 128);
+
+    size_t counter = 1;
+
+    for_urange(b, 0, f->blocks.len) {
+        AIR_BasicBlock* bb = f->blocks.at[b];
+        for_urange(i, 0, bb->len) {
+            AIR* inst = bb->at[i];
+            if (inst->tag == AIR_ELIMINATED) continue;
+            inst->number = counter++; // assign a number to every IR
+        }
+    }
+
+    for_urange(b, 0, f->blocks.len) {
+        AIR_BasicBlock* bb = f->blocks.at[b];
+        sb_append_c(sb, "  ");
+        
+        if (b == f->entry_idx) {
+            sb_append_c(sb, "@entry ");
+        }
+
+        sb_append(sb, bb->name);
+        sb_append_c(sb, ":\n");
+
+        for_urange(i, 0, bb->len) {
+            AIR* inst = bb->at[i];
+
+            if (inst->tag == AIR_ELIMINATED) continue;
+
+            sb_printf(sb, "    #%llu = ", inst->number);
+            switch (inst->tag) {
+            case AIR_ADD: {
+                AIR_BinOp* binop = (AIR_BinOp*) inst;
+                sb_append_c(sb, "add.");
+                sb_type_name(binop->base.T, sb);
+                sb_printf(sb, " #%llu, #%llu", binop->lhs->number, binop->rhs->number);
+            } break;
+            case AIR_LOAD: {
+                AIR_Load* load = (AIR_Load*) inst;
+                sb_append_c(sb, "load.");
+                sb_type_name(load->base.T, sb);
+                sb_printf(sb, " #%llu", load->location->number);
+            } break;
+            case AIR_STORE: {
+                AIR_Store* store = (AIR_Store*) inst;
+                sb_append_c(sb, "store.");
+                sb_type_name(store->value->T, sb);
+                sb_printf(sb, " #%llu, #%llu", store->location->number, store->value->number);
+            } break;
+            case AIR_PARAMVAL: {
+                AIR_ParamVal* param = (AIR_ParamVal*) inst;
+                sb_printf(sb, "paramval %llu", param->param_idx);
+            } break;
+            case AIR_RETURNVAL: {
+                AIR_ReturnVal* ret = (AIR_ReturnVal*) inst;
+                sb_printf(sb, "returnval %llu, #%llu", ret->return_idx, ret->source->number);
+            } break;
+            case AIR_STACKOFFSET: {
+                AIR_StackOffset* so = (AIR_StackOffset*) inst;
+                // sb_printf(sb, "stackoffset %llu, #%llu", so->object->t);
+            } break;
+            case AIR_RETURN:
+                sb_append_c(sb, "return");
+                break;
+            default:
+                sb_printf(sb, "UNKNOWN %llu", inst->tag);
+                break;
+            }
+
+            sb_append_c(sb, "\n");
+        }
+
+    }
+
+    sb_append_c(sb, "}\n");
+}
+
+string air_textual_emit(AtlasModule* am) {
     StringBuilder sb = {0};
     sb_init(&sb);
 
     emit_type_definitions(am, &sb);
+    for_range(i, 0, am->ir_module->functions_len) {
+        emit_function(am->ir_module->functions[i], &sb);
+    }
+
+    string out = string_alloc(sb_len(&sb));
+    sb_write(&sb, out.raw);
+    return out;
 }

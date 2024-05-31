@@ -182,6 +182,10 @@ typedef struct AIR_Global {
 
 #define AIR_FN_ALLOCA_BLOCK_SIZE 0x1000
 
+typedef struct AIR_StackObject {
+    AIR_Type* t;
+} AIR_StackObject;
+
 typedef struct AIR_Function {
     AIR_Module* mod;
     AIR_Symbol* sym;
@@ -191,6 +195,12 @@ typedef struct AIR_Function {
         u32 len;
         u32 cap;
     } blocks;
+
+    struct {
+        AIR_StackObject** at;
+        u32 len;
+        u32 cap;
+    } stack;
 
     AIR_FuncItem** params;
     AIR_FuncItem** returns;
@@ -257,8 +267,8 @@ enum {
     // AIR_Cast
     AIR_CAST,
 
-    // AIR_StackAlloc
-    AIR_STACKALLOC,
+    // AIR_StackOffset
+    AIR_STACKOFFSET,
 
     // AIR_GetFieldPtr
     AIR_GETFIELDPTR,
@@ -322,28 +332,26 @@ typedef struct AIR_Cast {
     AIR* source;
 } AIR_Cast;
 
-typedef struct AIR_StackAlloc {
+typedef struct AIR_StackOffset {
     AIR base;
 
-    AIR_Type* alloctype;
-} AIR_StackAlloc;
+    AIR_StackObject* object;
+} AIR_StackOffset;
 
 // used for struct accesses
 typedef struct AIR_GetFieldPtr {
     AIR base;
 
-    u32 index;
-
     AIR* source;
+    u32 index;
 } AIR_GetFieldPtr;
 
 // used for array accesses
 typedef struct AIR_GetIndexPtr {
     AIR base;
 
-    AIR* index;
-
     AIR* source;
+    AIR* index;
 } AIR_GetIndexPtr;
 
 typedef struct AIR_Load {
@@ -463,6 +471,7 @@ AIR_Symbol*     air_new_symbol(AIR_Module* mod, string name, u8 visibility, bool
 AIR_Symbol*     air_find_symbol(AIR_Module* mod, string name);
 AIR_Symbol*     air_find_or_new_symbol(AIR_Module* mod, string name, u8 visibility, bool function, void* ref);
 
+AIR_StackObject* air_new_stackobject(AIR_Function* f, AIR_Type* t);
 void air_set_func_params(AIR_Function* f, u16 count, ...);
 void air_set_func_returns(AIR_Function* f, u16 count, ...);
 u32  air_bb_index(AIR_Function* fn, AIR_BasicBlock* bb);
@@ -473,7 +482,7 @@ AIR* air_add(AIR_BasicBlock* bb, AIR* ir);
 AIR* air_make(AIR_Function* f, u8 type);
 AIR* air_make_binop(AIR_Function* f, u8 type, AIR* lhs, AIR* rhs);
 AIR* air_make_cast(AIR_Function* f, AIR* source, AIR_Type* to);
-AIR* air_make_stackalloc(AIR_Function* f, AIR_Type* T);
+AIR* air_make_stackoffset(AIR_Function* f, AIR_StackObject* obj);
 AIR* air_make_getfieldptr(AIR_Function* f, u32 index, AIR* source);
 AIR* air_make_getindexptr(AIR_Function* f, AIR* index, AIR* source);
 AIR* air_make_load(AIR_Function* f, AIR* location, bool is_vol);
@@ -497,6 +506,7 @@ void air_print_function(AIR_Function* f);
 void air_print_bb(AIR_BasicBlock* bb);
 void air_print_ir(AIR* ir);
 
+string air_textual_emit(AtlasModule* am);
 
 #define ATLAS_PHYS_UNASSIGNED (UINT32_MAX)
 

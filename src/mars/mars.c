@@ -53,8 +53,6 @@ int main(int argc, char** argv) {
 
         atlas_module = atlas_new_module(main_mod->module_name, atlas_target);
 
-        printf("hellope!");
-
         generate_ir_atlas_from_mars(main_mod, atlas_module);
     } else {
         atlas_module = llta_parse_ir(mars_flags.input_path);
