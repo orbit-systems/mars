@@ -128,7 +128,7 @@ string string_clone(string str) {
 
 void printn(char* text, size_t len) {
     size_t c = 0;
-    while (text[c] != '\0' && c < len)
+    while (c < len && text[c] != '\0')
         putchar(text[c++]);
 }
 

@@ -19,6 +19,7 @@ AIR_Function* air_new_function(AIR_Module* mod, AIR_Symbol* sym, u8 visibility) 
     fn->sym = sym ? sym : air_new_symbol(mod, NULL_STR, visibility, true, fn);
     fn->alloca = arena_make(AIR_FN_ALLOCA_BLOCK_SIZE);
     da_init(&fn->blocks, 1);
+    da_init(&fn->stack, 1);
     fn->entry_idx = 0;
     fn->params = NULL;
     fn->returns = NULL;
