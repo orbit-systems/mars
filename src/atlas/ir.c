@@ -151,7 +151,7 @@ AIR_BasicBlock* air_new_basic_block(AIR_Function* fn, string name) {
     if (!bb) CRASH("mars_alloc failed");
 
     bb->name = name;
-    da_init(bb, 1);
+    da_init(bb, 4);
 
     da_append(&fn->blocks, bb);
     return bb;
@@ -169,7 +169,18 @@ u32 air_bb_index(AIR_Function* fn, AIR_BasicBlock* bb) {
 
 AIR* air_add(AIR_BasicBlock* bb, AIR* ir) {
     ir->bb = bb;
-    da_append(bb, ir);
+    // da_append(bb, ir);
+    if ((bb)->len == (bb)->cap) {
+        (bb)->cap *= 2;
+        printf("--wuh-- %d %d\n", bb->len, bb->cap);
+        (bb)->at = realloc((bb)->at, sizeof((bb)->at[0]) * (bb)->cap);
+        if ((bb)->at == NULL) {
+            printf("(%s:%d) da_append realloc failed for capacity %zu", (__FILE__), (__LINE__), (bb)->cap);
+            exit(1);
+        }
+        printf("--wuhaa-- %d %d\n", bb->len, bb->cap);
+    }
+    (bb)->at[(bb)->len++] = (ir);
     return ir;
 }
 
@@ -199,7 +210,7 @@ const size_t air_sizes[] = {
     [AIR_LSR]   = sizeof(AIR_BinOp),
     [AIR_ASR]   = sizeof(AIR_BinOp),
 
-    [AIR_STACKOFFSET]  = sizeof(AIR_StackOffset),
+    [AIR_STACKOFFSET] = sizeof(AIR_StackOffset),
     [AIR_GETFIELDPTR] = sizeof(AIR_GetFieldPtr),
     [AIR_GETINDEXPTR] = sizeof(AIR_GetIndexPtr),
 

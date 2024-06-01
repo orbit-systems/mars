@@ -191,8 +191,15 @@ void generate_ir_stmt_return(AIR_Function* f, AIR_BasicBlock* bb, AST ast) {
             AIR* retval = air_add(bb, air_make_returnval(f, i, value));
         }
     }
+
+    // printf("HEREEEEE\n");
+
+    AIR* ret = air_make_return(f);
+    // printf("[%p\n %p\n %p]\n", bb->len, bb->cap, bb->at);
+    air_add(bb, ret);
     
-    AIR* ret = air_add(bb, air_make_return(f));
+    // printf("HEREEEEE\n");
+
 }
 
 AIR_Function* generate_ir_function(AtlasModule* mod, AST ast) {
