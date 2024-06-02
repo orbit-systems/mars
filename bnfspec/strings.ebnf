@@ -8,4 +8,4 @@
 <digit> ::= [0-9]
 <unicode> ::= "unicode"
 <identifier_chars> ::= [A-Z] | [a-z] | [0-9] | "_"
-<identifier> ::= ([A-Z] | [a-z]) <identifier_chars>+
+<identifier> ::= ([A-Z] | [a-z]) <identifier_chars>*

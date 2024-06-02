@@ -1,32 +1,51 @@
-<program> ::= <module_stmt> <stmts>
-<module_stmt> ::= <ws> "module" <fws> <identifier> <ws> <stmt_terminator>
-<stmts> ::= <stmts> <stmt> | <stmt> | E
+<program> ::= <module_stmt> <import_stmt>* <stmts>
+<module_stmt> ::= <ws> "module" <fws> <identifier> <ws> ";" <ws>
+<import_stmt> ::= <ws> "import" (<fws> <identifier> | E) <ws> <string> <ws> ";" <ws>
 
-<stmt> ::= <decl>
+<stmts> ::= <stmts> <ws> <stmt> <ws> | <ws> <stmt> <ws> | E
+
+<stmt> ::= <decl> | <return> | <if> | <while> | <assignment> | 
+           <aggregate> | <enum> | <for_type_one> | <for_type_two> | <asm> | <stmt_block> |
+           <switch> | <break> | <fallthrough>
 
 <decl> ::= ("let" | "mut") <fws> <identifier> <ws> (":" <ws> <type> <ws> | E) "=" <ws> <r_value> <ws> ";"
+<return> ::= "return" <fws> (<identifier> | <expression> | <literal>) <ws> ";"
+<if> ::= ("if"|"when") <fws> ("(" <ws> <expression> <ws> ")" | <ws> <expression> <ws>) <stmt_block>
+
+<while> ::= "while" <fws> ("(" <ws> <expression> <ws> ")" | <ws> <expression> <ws> | E) <stmt_block>
+<assignment> ::= <identifier> <ws> <assign_op> <ws> <expression> <ws> ";" <ws>
+
+<else> ::= "else" <fws> (<if> | <stmt_block>)
+
+/* TODO: for_type_one is hacky. this does not force double-sided paren. FIX */
+
+<for_type_one> ::= "for" <fws> ("(" | E) (<assignment> | <decl> | E) <ws> ";" <ws>
+          <expression> <ws> ";" <ws> 
+          ((<ws> <assignment> <ws> "," <ws>)* <ws> <assignment> <ws> | E) (")" | E) <stmt_block>
+/* TODO: for_type_two should support (x in y..(<|=)z) correctly. */
+<for_type_two> ::= "for" <fws> <identifier> (<ws> ":" <ws> <type> <ws> | E) <ws> "in" <ws> 
+                <expression> <ws> ("..<" | "..=") <ws> <expression> <stmt_block>
+<stmt_block> ::= <ws> "{" <ws> <stmts> <ws> "}" <ws>
+
+<switch> ::= ("switch"|"which") <ws> "(" <ws> <expression> <ws> ")" <ws> "{" <ws>
+            (<ws> "case" <ws> (<ws> <expression> <ws> "," <ws>)* <expression> <ws> ":" <ws> <stmts> <ws>)*
+            (<ws> "default" <ws> ":" <ws> <stmts> <ws>)*
+
+<break> ::= "break" <ws> ";" <ws>
+<fallthrough> ::= "fallthrough" <ws> ";" <ws>
+
+<asm> ::= "asm" <ws> "(" <ws>
+    (<asm_param> "," <ws>)* <asm_param>
+    <ws> ")" <ws> "{" <ws> 
+    (<ws> <string> <ws> "," <ws>)+ <ws> "}" <ws>
+
+<asm_param> ::= <identifier> <ws> ("->" | "<-" | "<->") <ws> <string> <ws>
+
+<assign_op> ::= "+=" | "-=" | "*="  | "/=" | "%="  | "%%=" | 
+                "&=" | "|=" | "~|=" | "~=" | "<<=" | ">>=" | "="
+
+
 <r_value> ::= <fn> | <literal> | <expression> | "---"
 
-<stmt_terminator> ::= ";" <ws>
 <ws> ::= <fws> | E
 <fws> ::= ("\n" | "\r" | " " | "\t")+
-
-<fn> ::= "fn" <ws> "(" <param_list> ")" 
-        <ws> "->" (<ws> <type> <ws> | <ws> "(" <param_list> ")" <ws>) 
-        ("{" <ws> <stmts> "}" | E)
-<param> ::= <identifier> <ws> ":" <ws> <type> <ws>
-<multi_param> ::= (<ws> <identifier> <ws> ",")+ <ws> <identifier> <ws> ":" <ws> <type> <ws>
-<param_list> ::= <param_list> <ws> "," <ws> <param> | <param_list> <ws> "," <ws> <multi_param> | <param> | <multi_param>
-
-<type> ::= "i8" | "i16" | "i32" | "i64" | "int" |
-           "u8" | "u16" | "u32" | "u64" | "uint" |
-           "f16" | "f32" | "f64" | "float" | "bool" | <identifier>
-
-
-
-
-module add_test;
-
-let add = fn(a, b, c: int) -> int {
-    return a + b;
-};
