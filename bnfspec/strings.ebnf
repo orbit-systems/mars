@@ -1,0 +1,11 @@
+<char_lit> ::= "'" <char> "'"
+<string> ::= "\"" <char_list> "\"" | <string> <string>
+<char_list> ::= <char_list> <char> | <char>
+<char> ::= <unicode> | "\\n" | "\\r" | "\\\"" | "\\'" | "\\\\" | <unicode_form> | <hex_form>
+<unicode_form> ::= "\\u" <hex_digit> <hex_digit> <hex_digit> <hex_digit> | "\\U" <hex_digit> <hex_digit> <hex_digit> <hex_digit> <hex_digit> <hex_digit> <hex_digit> <hex_digit>
+<hex_form> ::= "\\x" <hex_digit> <hex_digit>
+<hex_digit> ::= [0-9] | [A-F] | [a-f]
+<digit> ::= [0-9]
+<unicode> ::= "unicode"
+<identifier_chars> ::= [A-Z] | [a-z] | [0-9] | "_"
+<identifier> ::= ([A-Z] | [a-z]) <identifier_chars>+

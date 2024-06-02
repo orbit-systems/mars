@@ -1,0 +1,32 @@
+<program> ::= <module_stmt> <stmts>
+<module_stmt> ::= <ws> "module" <fws> <identifier> <ws> <stmt_terminator>
+<stmts> ::= <stmts> <stmt> | <stmt> | E
+
+<stmt> ::= <decl>
+
+<decl> ::= ("let" | "mut") <fws> <identifier> <ws> (":" <ws> <type> <ws> | E) "=" <ws> <r_value> <ws> ";"
+<r_value> ::= <fn> | <literal> | <expression> | "---"
+
+<stmt_terminator> ::= ";" <ws>
+<ws> ::= <fws> | E
+<fws> ::= ("\n" | "\r" | " " | "\t")+
+
+<fn> ::= "fn" <ws> "(" <param_list> ")" 
+        <ws> "->" (<ws> <type> <ws> | <ws> "(" <param_list> ")" <ws>) 
+        ("{" <ws> <stmts> "}" | E)
+<param> ::= <identifier> <ws> ":" <ws> <type> <ws>
+<multi_param> ::= (<ws> <identifier> <ws> ",")+ <ws> <identifier> <ws> ":" <ws> <type> <ws>
+<param_list> ::= <param_list> <ws> "," <ws> <param> | <param_list> <ws> "," <ws> <multi_param> | <param> | <multi_param>
+
+<type> ::= "i8" | "i16" | "i32" | "i64" | "int" |
+           "u8" | "u16" | "u32" | "u64" | "uint" |
+           "f16" | "f32" | "f64" | "float" | "bool" | <identifier>
+
+
+
+
+module add_test;
+
+let add = fn(a, b, c: int) -> int {
+    return a + b;
+};

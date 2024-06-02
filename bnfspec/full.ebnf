@@ -1,0 +1,54 @@
+/*strings.ebnf*/
+<char_lit> ::= "'" <char> "'"
+<string> ::= "\"" <char_list> "\"" | <string> <string>
+<char_list> ::= <char_list> <char> | <char>
+<char> ::= <unicode> | "\\n" | "\\r" | "\\\"" | "\\'" | "\\\\" | <unicode_form> | <hex_form>
+<unicode_form> ::= "\\u" <hex_digit> <hex_digit> <hex_digit> <hex_digit> | "\\U" <hex_digit> <hex_digit> <hex_digit> <hex_digit> <hex_digit> <hex_digit> <hex_digit> <hex_digit>
+<hex_form> ::= "\\x" <hex_digit> <hex_digit>
+<hex_digit> ::= [0-9] | [A-F] | [a-f]
+<digit> ::= [0-9]
+<unicode> ::= "unicode"
+<identifier_chars> ::= [A-Z] | [a-z] | [0-9] | "_"
+<identifier> ::= ([A-Z] | [a-z]) <identifier_chars>+
+/*literals.ebnf*/
+<literal> ::= <char_lit> |
+              <string> |
+              <numeric_literal>
+
+<numeric_literal> ::= <digit>+ |
+                      "0x" <hex_digit>+ |
+                      "0X" <hex_digit>+ |
+                      <float_literal>
+                      
+<float_literal> ::= <digit>+ ("." | "e") <digit>+
+/*program.ebnf*/
+<program> ::= <module_stmt> <stmts>
+<module_stmt> ::= <ws> "module" <fws> <identifier> <stmt_terminator>
+<stmts> ::= <stmts> <stmt> | <stmt> | E
+
+<stmt> ::= <decl>
+
+<decl> ::= ("let" | "mut") <fws> <identifier> <fws> "=" <fws> <r_value> <fws> ";"
+<r_value> ::= <fn> | <literal>
+
+<stmt_terminator> ::= ";" <ws>
+<ws> ::= ("\n" | "\r" | " " | "\t")* | E
+<fws> ::= (" " | "\t")+
+
+<fn> ::= "fn" <ws> "(" <param_list> ")" <ws> "->" <ws> <type> <ws> ("{" <ws> <stmts> "}" | E)
+<param> ::= <identifier> <ws> ":" <ws> <type> <ws>
+<multi_param> ::= (<ws> <identifier> <ws> ",")+ <ws> <identifier> <ws> ":" <ws> <type> <ws>
+<param_list> ::= <param_list> <ws> "," <ws> <param> | <param_list> <ws> "," <ws> <multi_param> | <param> | <multi_param>
+
+<type> ::= "i8" | "i16" | "i32" | "i64" | "int" |
+           "u8" | "u16" | "u32" | "u64" | "uint" |
+           "f16" | "f32" | "f64" | "float" | "bool" | <identifier>
+
+module st;
+mut BI = fn(nr, FS2j: i64) -> bool {
+    let x5 = fn(I1F: float) -> u16 {
+        let A7 = "\\";
+    };
+    let bo = "\xAA";
+    let Yw = 87.388;
+};

@@ -1,0 +1,10 @@
+<literal> ::= <char_lit> |
+              <string> |
+              <numeric_literal>
+
+<numeric_literal> ::= <digit>+ |
+                      "0x" <hex_digit>+ |
+                      "0X" <hex_digit>+ |
+                      <float_literal>
+                      
+<float_literal> ::= <digit>+ ("." | "e") <digit>+
