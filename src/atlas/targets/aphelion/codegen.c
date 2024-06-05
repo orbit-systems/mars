@@ -5,10 +5,10 @@
 
 PtrMap air_to_vreg = {0};
 
-AsmFunction* aphelion_translate_function(AsmModule* m, AIR_Function* f);
-AsmBlock* aphelion_translate_block(AsmModule* m, AsmFunction* f, AIR_Function* ir_f, AIR_BasicBlock* ir_bb);
+static AsmFunction* aphelion_translate_function(AsmModule* m, AIR_Function* f);
+static AsmBlock* aphelion_translate_block(AsmModule* m, AsmFunction* f, AIR_Function* ir_f, AIR_BasicBlock* ir_bb);
 
-void aphelion_translate_module(AtlasModule* mod) {
+static void aphelion_translate_module(AtlasModule* mod) {
     AIR_Module* ir_mod = mod->ir_module;
     AsmModule* asm_mod = mod->asm_module;
     general_warning("FIXME: add globals support");
@@ -24,7 +24,7 @@ void aphelion_translate_module(AtlasModule* mod) {
 
 }
 
-AsmFunction* aphelion_translate_function(AsmModule* m, AIR_Function* f) {
+static AsmFunction* aphelion_translate_function(AsmModule* m, AIR_Function* f) {
     if (air_to_vreg.keys == NULL) {
         ptrmap_init(&air_to_vreg, 100);
     }
@@ -41,7 +41,7 @@ AsmFunction* aphelion_translate_function(AsmModule* m, AIR_Function* f) {
     return new_func;
 }
 
-AsmBlock* aphelion_translate_block(AsmModule* m, AsmFunction* f, AIR_Function* ir_f, AIR_BasicBlock* ir_bb) {
+static AsmBlock* aphelion_translate_block(AsmModule* m, AsmFunction* f, AIR_Function* ir_f, AIR_BasicBlock* ir_bb) {
     AsmBlock* b = asm_new_block(f, ir_bb->name);
 
     for_urange(air_index, 0, ir_bb->len) {
@@ -156,7 +156,7 @@ AsmBlock* aphelion_translate_block(AsmModule* m, AsmFunction* f, AIR_Function* i
     return b;
 }
 
-AtlasPass asm_pass_aphelion_cg = {
-    .name = "codegen_aphelion",
+AtlasPass pass_aphelion_codegen = {
+    .name = "aphelion::codegen",
     .callback = aphelion_translate_module,
 };

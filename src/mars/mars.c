@@ -68,11 +68,14 @@ int main(int argc, char** argv) {
     atlas_sched_pass(atlas_module, &air_pass_movprop);
     atlas_sched_pass(atlas_module, &air_pass_elim);
 
-    atlas_run_all_passes(atlas_module);
+    atlas_run_all_passes(atlas_module, true);
 
-    atlas_sched_pass(atlas_module, &asm_pass_aphelion_cg);
+    atlas_sched_pass(atlas_module, &pass_aphelion_codegen);
+    atlas_sched_pass(atlas_module, &pass_aphelion_movopt);
 
-    atlas_run_all_passes(atlas_module);
+    atlas_run_all_passes(atlas_module, false);
+
+    asm_printer(atlas_module->asm_module, false);
 
     return 0;
 }

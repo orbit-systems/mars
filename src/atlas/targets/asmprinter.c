@@ -39,6 +39,7 @@ void asm_printer(AsmModule* m, bool debug_mode) {
             for_urange(k, 0, b->len) {
 
                 AsmInst* inst = b->at[k];
+                if (inst->template == NULL) continue;
 
                 printf("    ");
                 print_asm_inst(m, inst, debug_mode);

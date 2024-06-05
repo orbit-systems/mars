@@ -170,23 +170,12 @@ u32 air_bb_index(AIR_Function* fn, AIR_BasicBlock* bb) {
 
 AIR* air_add(AIR_BasicBlock* bb, AIR* ir) {
     ir->bb = bb;
-    // da_append(bb, ir);
-    if ((bb)->len == (bb)->cap) {
-        (bb)->cap *= 2;
-        printf("--wuh-- %d %d\n", bb->len, bb->cap);
-        (bb)->at = realloc((bb)->at, sizeof((bb)->at[0]) * (bb)->cap);
-        if ((bb)->at == NULL) {
-            printf("(%s:%d) da_append realloc failed for capacity %zu", (__FILE__), (__LINE__), (bb)->cap);
-            exit(1);
-        }
-        printf("--wuhaa-- %d %d\n", bb->len, bb->cap);
-    }
-    (bb)->at[(bb)->len++] = (ir);
+    da_append(bb, ir);
     return ir;
 }
 
 AIR* air_make(AIR_Function* f, u8 type) {
-    if (type > AIR_INSTR_COUNT) type = AIR_INVALID;
+    if (type >= AIR_INSTR_COUNT) type = AIR_INVALID;
     AIR* ir = arena_alloc(&f->alloca, air_sizes[type], 8);
     ir->tag = type;
     ir->T = air_new_type(f->mod->am, AIR_VOID, 0);

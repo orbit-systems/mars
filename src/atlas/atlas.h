@@ -54,7 +54,7 @@ AtlasModule* atlas_new_module(string name, TargetInfo* target);
 char* random_string(int len);
 
 typedef struct AtlasPass {
-    string name;
+    char* name;
     union {
         void* raw_callback;
         void (*callback)(AtlasModule*);
@@ -69,8 +69,8 @@ typedef struct AtlasPass {
 
 void atlas_sched_pass(AtlasModule* m, AtlasPass* p);
 void atlas_sched_pass_at(AtlasModule* m, AtlasPass* p, int index);
-void atlas_run_next_pass(AtlasModule* m);
-void atlas_run_all_passes(AtlasModule* m);
+void atlas_run_next_pass(AtlasModule* m, bool printout);
+void atlas_run_all_passes(AtlasModule* m, bool printout);
 
 enum {
     AIR_VOID,

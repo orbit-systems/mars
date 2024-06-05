@@ -24,20 +24,23 @@ void atlas_sched_pass_at(AtlasModule* m, AtlasPass* p, int index) {
 }
 
 // run the next scheduled pass.
-void atlas_run_next_pass(AtlasModule* m) {
+void atlas_run_next_pass(AtlasModule* m, bool printout) {
     if (m->pass_queue.len == 0) return;
 
     AtlasPass* next = m->pass_queue.at[0];
 
     if (next->requires_cfg && !m->pass_queue.cfg_up_to_date) {
         atlas_sched_pass_at(m, &air_pass_cfg, 0);
-        atlas_run_next_pass(m);
+        atlas_run_next_pass(m, printout);
         m->pass_queue.cfg_up_to_date = true;
     }
 
     da_pop_front(&m->pass_queue);
     
     // call the pass lol
+    if (printout) {
+        printf("running pass '%s'\n", next->name);
+    }
     next->callback(m);
 
     if (next->modifies_cfg) {
@@ -45,10 +48,11 @@ void atlas_run_next_pass(AtlasModule* m) {
     }
 }
 
-void atlas_run_all_passes(AtlasModule* m) {
+void atlas_run_all_passes(AtlasModule* m, bool printout) {
 
     while (m->pass_queue.len > 0) {
-        printstr(air_textual_emit(m));
-        atlas_run_next_pass(m);
+        if (printout) printstr(air_textual_emit(m));
+        atlas_run_next_pass(m, printout);
     }
+    if (printout) printstr(air_textual_emit(m));
 }
