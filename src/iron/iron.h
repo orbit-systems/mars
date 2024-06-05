@@ -27,11 +27,13 @@ typedef struct FeArchInfo          FeArchInfo;
 
 typedef struct FeVReg           FeVReg;
 typedef struct FeAsm            FeAsm;
+typedef struct FeAsmSection     FeAsmSection;
 typedef struct FeAsmInst        FeAsmInst;
+typedef struct FeAsmInline      FeAsmInline;
 typedef struct FeAsmLocalLabel  FeAsmLocalLabel;
 typedef struct FeAsmGlobalLabel FeAsmGlobalLabel;
 typedef struct FeAsmFuncBegin   FeAsmFuncBegin;
-typedef struct FeAsmDataBegin   FeAsmDataBegin;
+typedef struct FeAsmData        FeAsmData;
 
 typedef struct FeModule {
     string name;
