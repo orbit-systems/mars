@@ -8,10 +8,10 @@
 da(icarus_token) llta_lex(string path);
 u8 str_to_type(string str);
 
-AtlasModule* llta_parse_ir(string path) {
+FeModule* llta_parse_ir(string path) {
     da(icarus_token) tokens = llta_lex(path);
 
-    AtlasModule* mod = atlas_new_module(str("test"),           NULL );
+    FeModule* mod = atlas_new_module(str("test"),           NULL );
     TODO("(sandwich):  replace NULL with a pointer to a target ^^^^ ");
 
     foreach (icarus_token token, tokens) {

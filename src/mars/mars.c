@@ -22,7 +22,7 @@ int main(int argc, char** argv) {
     load_arguments(argc, argv, &mars_flags);
 
 
-    AtlasModule* atlas_module;
+    FeModule* atlas_module;
 
     if (!mars_flags.use_llta) {
 
@@ -40,7 +40,7 @@ int main(int argc, char** argv) {
         }
         
 
-        TargetInfo* atlas_target;
+        FeArchInfo* atlas_target;
 
         switch (mars_flags.target_arch){
         case TARGET_ARCH_APHELION: 

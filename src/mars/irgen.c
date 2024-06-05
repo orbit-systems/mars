@@ -5,11 +5,11 @@
 #include "ptrmap.h"
 
 static mars_module* mars_mod;
-static AtlasModule* am;
+static FeModule* am;
 
 static PtrMap entity2stackoffset;
 
-void generate_ir_atlas_from_mars(mars_module* mod, AtlasModule* atmod) {
+void generate_ir_atlas_from_mars(mars_module* mod, FeModule* atmod) {
     am = atmod;
     ptrmap_init(&entity2stackoffset, 32);
 
@@ -22,18 +22,18 @@ void generate_ir_atlas_from_mars(mars_module* mod, AtlasModule* atmod) {
     }
 }
 
-AIR_Global* generate_ir_global_from_stmt_decl(AtlasModule* mod, AST ast) { //FIXME: add sanity
+FeGlobal* generate_ir_global_from_stmt_decl(FeModule* mod, AST ast) { //FIXME: add sanity
     ast_decl_stmt* decl_stmt = ast.as_decl_stmt; 
 
     //note: CAE problem, we update the AIR_Symbol name after AIR_Global creation
 
     //note: global decl_stmts are single entries on the lhs, so we can just assume that lhs[0] == ast_identifier_expr
 
-    AIR_Global* air_g = air_new_global(mod->ir_module, NULL, /*global=*/true, /*read_only=*/decl_stmt->is_mut);
+    FeGlobal* air_g = air_new_global(mod->ir_module, NULL, /*global=*/true, /*read_only=*/decl_stmt->is_mut);
     air_g->sym->name = decl_stmt->lhs.at[0].as_identifier_expr->tok->text; 
 
     if (decl_stmt->rhs.type == AST_func_literal_expr) {
-        AIR_Function* fn = generate_ir_function(mod, decl_stmt->rhs);
+        FeFunction* fn = generate_ir_function(mod, decl_stmt->rhs);
         fn->sym->name = string_clone(string_concat(air_g->sym->name, str(".code")));
         air_set_global_symref(air_g, fn->sym);
     } else { //AST_literal
@@ -45,7 +45,7 @@ AIR_Global* generate_ir_global_from_stmt_decl(AtlasModule* mod, AST ast) { //FIX
 
 //FIXME: add generate_ir_local_from_stmt_decl
 
-AIR* generate_ir_expr_literal(AIR_Function* f, AIR_BasicBlock* bb, AST ast) {
+FeInst* generate_ir_expr_literal(FeFunction* f, FeBasicBlock* bb, AST ast) {
     ast_literal_expr* literal = ast.as_literal_expr;
     AIR_Const* ir = (AIR_Const*) air_make_const(f);
     
@@ -59,16 +59,16 @@ AIR* generate_ir_expr_literal(AIR_Function* f, AIR_BasicBlock* bb, AST ast) {
         CRASH("unhandled EV type");
     }
 
-    air_add(bb, (AIR*) ir);
-    return (AIR*) ir;
+    air_add(bb, (FeInst*) ir);
+    return (FeInst*) ir;
 }
 
-AIR* generate_ir_expr_binop(AIR_Function* f, AIR_BasicBlock* bb, AST ast) {
+FeInst* generate_ir_expr_binop(FeFunction* f, FeBasicBlock* bb, AST ast) {
     ast_binary_op_expr* binop = ast.as_binary_op_expr;
 
-    AIR* lhs = generate_ir_expr_value(f, bb, binop->lhs);
-    AIR* rhs = generate_ir_expr_value(f, bb, binop->rhs);
-    AIR* ir  = air_add(bb, air_make_binop(f, AIR_ADD, lhs, rhs));
+    FeInst* lhs = generate_ir_expr_value(f, bb, binop->lhs);
+    FeInst* rhs = generate_ir_expr_value(f, bb, binop->rhs);
+    FeInst* ir  = air_add(bb, air_make_binop(f, AIR_ADD, lhs, rhs));
     ir->T = lhs->T;
 
     switch (binop->op->type) {
@@ -85,9 +85,9 @@ AIR* generate_ir_expr_binop(AIR_Function* f, AIR_BasicBlock* bb, AST ast) {
     return ir;
 }
 
-AIR* generate_ir_expr_ident_load(AIR_Function* f, AIR_BasicBlock* bb, AST ast) {
+FeInst* generate_ir_expr_ident_load(FeFunction* f, FeBasicBlock* bb, AST ast) {
     ast_identifier_expr* ident = ast.as_identifier_expr;
-    if (ident->is_discard) return air_add(bb, air_make(f, AIR_INVALID));
+    if (ident->is_discard) return air_add(bb, air_make(f, FE_INVALID));
 
     // if a stackalloc and entityextra havent been generated, generate them
 
@@ -99,20 +99,20 @@ AIR* generate_ir_expr_ident_load(AIR_Function* f, AIR_BasicBlock* bb, AST ast) {
         }
 
         // AIR* stackalloc = air_add(bb, air_make_stackalloc(f, translate_type(am, ident->entity->entity_type)));
-        AIR_StackObject* stackobj = air_new_stackobject(f,  translate_type(am, ident->entity->entity_type));
-        AIR* stackoffset = air_add(bb, air_make_stackoffset(f, stackobj));
+        FeStackObject* stackobj = air_new_stackobject(f,  translate_type(am, ident->entity->entity_type));
+        FeInst* stackoffset = air_add(bb, air_make_stackoffset(f, stackobj));
 
         ptrmap_put(&entity2stackoffset, ident->entity, stackoffset);
     }
-    AIR* stackoffset = ptrmap_get(&entity2stackoffset, ident->entity);
+    FeInst* stackoffset = ptrmap_get(&entity2stackoffset, ident->entity);
 
-    AIR* load = air_make_load(f, stackoffset, false);
+    FeInst* load = air_make_load(f, stackoffset, false);
     load->T = translate_type(am, ident->entity->entity_type);
 
     return air_add(bb, load);
 }
 
-AIR* generate_ir_expr_value(AIR_Function* f, AIR_BasicBlock* bb, AST ast) {
+FeInst* generate_ir_expr_value(FeFunction* f, FeBasicBlock* bb, AST ast) {
 
     switch (ast.type) {
     case AST_literal_expr:    return generate_ir_expr_literal(f, bb, ast);
@@ -126,7 +126,7 @@ AIR* generate_ir_expr_value(AIR_Function* f, AIR_BasicBlock* bb, AST ast) {
     }
 }
 
-AIR* generate_ir_expr_address(AIR_Function* f, AIR_BasicBlock* bb, AST ast) {
+FeInst* generate_ir_expr_address(FeFunction* f, FeBasicBlock* bb, AST ast) {
     switch (ast.type) {
     case AST_identifier_expr:
         if (ptrmap_get(&entity2stackoffset, ast.as_identifier_expr->entity) != PTRMAP_NOT_FOUND) {
@@ -145,11 +145,11 @@ AIR* generate_ir_expr_address(AIR_Function* f, AIR_BasicBlock* bb, AST ast) {
     }
 }
 
-void generate_ir_stmt_assign(AIR_Function* f, AIR_BasicBlock* bb, AST ast) {
+void generate_ir_stmt_assign(FeFunction* f, FeBasicBlock* bb, AST ast) {
     ast_assign_stmt* assign = ast.as_assign_stmt;
 
     if (assign->lhs.len == 1) {
-        AIR* dest_address = generate_ir_expr_address(f, bb, assign->lhs.at[0]);
+        FeInst* dest_address = generate_ir_expr_address(f, bb, assign->lhs.at[0]);
 
         if (assign->rhs.type == AST_call_expr) {
             // function calls need special handling
@@ -160,8 +160,8 @@ void generate_ir_stmt_assign(AIR_Function* f, AIR_BasicBlock* bb, AST ast) {
         // this does not take into account struct assignments either, just regular ol values
 
         if (!(assign->rhs.type == AST_identifier_expr && assign->rhs.as_identifier_expr->is_discard)) {
-            AIR* source_val = generate_ir_expr_value(f, bb, assign->rhs);
-            AIR* store = air_add(bb, air_make_store(f, dest_address, source_val, false));
+            FeInst* source_val = generate_ir_expr_value(f, bb, assign->rhs);
+            FeInst* store = air_add(bb, air_make_store(f, dest_address, source_val, false));
         }
     } else {
         warning_at_node(mars_mod, ast, "unhandled multi-assign");
@@ -169,7 +169,7 @@ void generate_ir_stmt_assign(AIR_Function* f, AIR_BasicBlock* bb, AST ast) {
     }
 }
 
-void generate_ir_stmt_return(AIR_Function* f, AIR_BasicBlock* bb, AST ast) {
+void generate_ir_stmt_return(FeFunction* f, FeBasicBlock* bb, AST ast) {
     ast_return_stmt* astret = ast.as_return_stmt;
     
     // if its a plain return, we need to get the 
@@ -178,23 +178,23 @@ void generate_ir_stmt_return(AIR_Function* f, AIR_BasicBlock* bb, AST ast) {
         for_urange(i, 0, astret->returns.len) {
             // god we're gonna do this i guess
 
-            AIR* stackoffset = ptrmap_get(&entity2stackoffset, f->returns[i]);
+            FeInst* stackoffset = ptrmap_get(&entity2stackoffset, f->returns[i]);
 
-            AIR* load = air_add(bb, air_make_load(f, stackoffset, false));
+            FeInst* load = air_add(bb, air_make_load(f, stackoffset, false));
             load->T = ((AIR_StackOffset*)stackoffset)->object->t;
-            AIR* retval = air_add(bb, air_make_returnval(f, i, load));
+            FeInst* retval = air_add(bb, air_make_returnval(f, i, load));
         }
     } else {
         // this is NOT a plain return, which means that we can just get the values directly
         for_urange(i, 0, astret->returns.len) {
-            AIR* value = generate_ir_expr_value(f, bb, astret->returns.at[i]);
-            AIR* retval = air_add(bb, air_make_returnval(f, i, value));
+            FeInst* value = generate_ir_expr_value(f, bb, astret->returns.at[i]);
+            FeInst* retval = air_add(bb, air_make_returnval(f, i, value));
         }
     }
 
     // printf("HEREEEEE\n");
 
-    AIR* ret = air_make_return(f);
+    FeInst* ret = air_make_return(f);
     // printf("[%p\n %p\n %p]\n", bb->len, bb->cap, bb->at);
     air_add(bb, ret);
     
@@ -202,12 +202,12 @@ void generate_ir_stmt_return(AIR_Function* f, AIR_BasicBlock* bb, AST ast) {
 
 }
 
-AIR_Function* generate_ir_function(AtlasModule* mod, AST ast) {
+FeFunction* generate_ir_function(FeModule* mod, AST ast) {
     if (ast.type != AST_func_literal_expr) CRASH("ast type is not func literal");
     ast_func_literal_expr* astfunc = ast.as_func_literal_expr;
 
     // assume all functions are global at the moment
-    AIR_Function* f = air_new_function(mod->ir_module, NULL, true);
+    FeFunction* f = air_new_function(mod->ir_module, NULL, true);
 
     air_set_func_params(f, astfunc->paramlen, NULL); // passing NULL means that it will allocate list but not fill anything
     for_urange(i, 0, f->params_len) {
@@ -219,7 +219,7 @@ AIR_Function* generate_ir_function(AtlasModule* mod, AST ast) {
         f->returns[i]->T = translate_type(mod, astfunc->returns[i]->entity_type);
     }
 
-    AIR_BasicBlock* bb = air_new_basic_block(f, str("begin"));
+    FeBasicBlock* bb = air_new_basic_block(f, str("begin"));
 
     // generate storage for param variables
     for_urange(i, 0, astfunc->paramlen) {
@@ -235,13 +235,13 @@ AIR_Function* generate_ir_function(AtlasModule* mod, AST ast) {
         */
 
         // this is utterly unreadable, sorry
-        AIR* paramval = air_add(bb, air_make_paramval(f, i));
+        FeInst* paramval = air_add(bb, air_make_paramval(f, i));
         paramval->T = f->params[i]->T;
 
         AIR_StackObject* stackobj = air_new_stackobject(f, translate_type(am, astfunc->params[i]->entity_type));
-        AIR* stackoffset = air_add(bb, air_make_stackoffset(f, stackobj));
+        FeInst* stackoffset = air_add(bb, air_make_stackoffset(f, stackobj));
         stackoffset->T = air_new_type(mod, AIR_PTR, 0);
-        AIR* store = air_add(bb, air_make_store(f, stackoffset, paramval, false));
+        FeInst* store = air_add(bb, air_make_store(f, stackoffset, paramval, false));
         
 
         // store the entity's stackoffset
@@ -263,14 +263,14 @@ AIR_Function* generate_ir_function(AtlasModule* mod, AST ast) {
         */
         
         AIR_StackObject* stackobj = air_new_stackobject(f, translate_type(am, astfunc->returns[i]->entity_type));
-        AIR* stackoffset = air_add(bb, air_make_stackoffset(f, stackobj));
+        FeInst* stackoffset = air_add(bb, air_make_stackoffset(f, stackobj));
         stackoffset->T = air_new_type(mod, AIR_PTR, 0);
 
-        AIR* con = air_add(bb, air_make_const(f));
+        FeInst* con = air_add(bb, air_make_const(f));
         con->T = f->returns[i]->T;
         ((AIR_Const*) con)->u64 = 0;
         
-        AIR* store = air_add(bb, air_make_store(f, stackoffset, con, false));
+        FeInst* store = air_add(bb, air_make_store(f, stackoffset, con, false));
 
         // store the entity's stackalloc
         entity* e = astfunc->returns[i];
@@ -282,20 +282,20 @@ AIR_Function* generate_ir_function(AtlasModule* mod, AST ast) {
     return f;
 }
 
-AIR_Type* translate_type(AtlasModule* m, type* t) {
+FeType* translate_type(FeModule* m, type* t) {
 
     static PtrMap type2airtype = {0};
     if (type2airtype.keys == NULL) {
         ptrmap_init(&type2airtype, typegraph.len);
     }
 
-    AIR_Type* rettype = ptrmap_get(&type2airtype, t);
+    FeType* rettype = ptrmap_get(&type2airtype, t);
     if (rettype != PTRMAP_NOT_FOUND) {
         return rettype;
     }
 
     switch (t->tag) {
-    case TYPE_NONE: return air_new_type(m, AIR_VOID, 0);
+    case TYPE_NONE: return air_new_type(m, FE_VOID, 0);
     case TYPE_BOOL: return air_new_type(m, AIR_BOOL, 0);
     case TYPE_U8:   return air_new_type(m, AIR_U8, 0);
     case TYPE_U16:  return air_new_type(m, AIR_U16, 0);
