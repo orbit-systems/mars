@@ -1,6 +1,6 @@
 #include "iron.h"
 
-void air_typegraph_init(FeModule* m) {
+void fe_typegraph_init(FeModule* m) {
 
     da_init(&m->ir_module->typegraph, 16);
     m->ir_module->typegraph.alloca = arena_make(0x400);
@@ -78,7 +78,7 @@ void air_typegraph_init(FeModule* m) {
     return;
 }
 
-FeType* air_new_type(FeModule* m, u8 kind, u64 len) {
+FeType* fe_type(FeModule* m, u8 kind, u64 len) {
 
     u64 size = 0;
     switch (kind) {

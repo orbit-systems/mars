@@ -51,8 +51,8 @@ void atlas_run_next_pass(FeModule* m, bool printout) {
 void atlas_run_all_passes(FeModule* m, bool printout) {
 
     while (m->pass_queue.len > 0) {
-        if (printout) printstr(air_textual_emit(m));
+        if (printout) printstr(fe_emit_textual_ir(m));
         atlas_run_next_pass(m, printout);
     }
-    if (printout) printstr(air_textual_emit(m));
+    if (printout) printstr(fe_emit_textual_ir(m));
 }

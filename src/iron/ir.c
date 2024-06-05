@@ -2,26 +2,28 @@
 
 #include "iron/passes/passes.h"
 
-FeModule* air_new_module(string name) {
+static void fe_typegraph_init(FeModule* m);
+
+FeModule* fe_new_module(string name) {
     FeModule* mod = mars_alloc(sizeof(*mod));
 
     da_init(&mod->symtab, 32);
 
     da_init(&mod->assembly, 32);
 
-    air_typegraph_init(&mod->typegraph);
+    fe_typegraph_init(&mod->typegraph);
 
     da_init(&mod->pass_queue, 4);
-    atlas_sched_pass(mod, &air_pass_canon);
+    fe_sched_pass(mod, &air_pass_canon);
 
     return mod;
 }
 
 // if (sym == NULL), create new symbol with no name
-FeFunction* air_new_function(FeModule* mod, FeSymbol* sym, u8 visibility) {
+FeFunction* fe_new_function(FeModule* mod, FeSymbol* sym, u8 visibility) {
     FeFunction* fn = mars_alloc(sizeof(FeFunction));
 
-    fn->sym = sym ? sym : air_new_symbol(mod, NULL_STR, visibility, true, fn);
+    fn->sym = sym ? sym : fe_new_symbol(mod, NULL_STR, visibility, true, fn);
     fn->alloca = arena_make(FE_FN_ALLOCA_BLOCK_SIZE);
     da_init(&fn->blocks, 1);
     da_init(&fn->stack, 1);
@@ -35,7 +37,7 @@ FeFunction* air_new_function(FeModule* mod, FeSymbol* sym, u8 visibility) {
     return fn;
 }
 
-FeStackObject* air_new_stackobject(FeFunction* f, FeType* t) {
+FeStackObject* fe_new_stackobject(FeFunction* f, FeType* t) {
     FeStackObject* obj = arena_alloc(&f->alloca, sizeof(*obj), alignof(*obj));
     obj->t = t;
     da_append(&f->stack, obj);
@@ -43,7 +45,7 @@ FeStackObject* air_new_stackobject(FeFunction* f, FeType* t) {
 }
 
 // takes multiple FE_Type*
-void air_set_func_params(FeFunction* f, u16 count, ...) {
+void fe_set_func_params(FeFunction* f, u16 count, ...) {
     f->params_len = count;
 
     if (f->params) mars_free(f->params);
@@ -71,7 +73,7 @@ void air_set_func_params(FeFunction* f, u16 count, ...) {
 }
 
 // takes multiple entity*
-void air_set_func_returns(FeFunction* f, u16 count, ...) {
+void fe_set_func_returns(FeFunction* f, u16 count, ...) {
     f->returns_len = count;
 
     if (f->returns) mars_free(f->returns);
@@ -99,10 +101,10 @@ void air_set_func_returns(FeFunction* f, u16 count, ...) {
 }
 
 // if (sym == NULL), create new symbol with default name
-FeGlobal* air_new_global(FeModule* mod, FeSymbol* sym, bool global, bool read_only) {
+FeGlobal* fe_new_global(FeModule* mod, FeSymbol* sym, bool global, bool read_only) {
     FeGlobal* gl = mars_alloc(sizeof(FeGlobal));
 
-    gl->sym = sym ? sym : air_new_symbol(mod, strprintf("symbol%zu", sym), global, false, gl);
+    gl->sym = sym ? sym : fe_new_symbol(mod, strprintf("symbol%zu", sym), global, false, gl);
     gl->read_only = read_only;
     gl->data = NULL;
     gl->data_len = 0;
@@ -112,21 +114,21 @@ FeGlobal* air_new_global(FeModule* mod, FeSymbol* sym, bool global, bool read_on
     return gl;
 }
 
-void air_set_global_data(FeGlobal* global, u8* data, u32 data_len, bool zeroed) {
+void fe_set_global_data(FeGlobal* global, u8* data, u32 data_len, bool zeroed) {
     global->is_symbol_ref = false;
     global->data = data;
     global->data_len = data_len;
     global->zeroed = zeroed;
 }
 
-void air_set_global_symref(FeGlobal* global, FeSymbol* symref) {
+void fe_set_global_symref(FeGlobal* global, FeSymbol* symref) {
     global->is_symbol_ref = true;
     global->symref = symref;
 }
 
 // WARNING: does NOT check if a symbol already exists
 // in most cases, use air_find_or_create_symbol
-FeSymbol* air_new_symbol(FeModule* mod, string name, u8 visibility, bool function, void* ref) {
+FeSymbol* fe_new_symbol(FeModule* mod, string name, u8 visibility, bool function, void* ref) {
     FeSymbol* sym = mars_alloc(sizeof(FeSymbol));
     sym->name = name;
     sym->ref = ref;
@@ -137,13 +139,13 @@ FeSymbol* air_new_symbol(FeModule* mod, string name, u8 visibility, bool functio
     return sym;
 }
 
-// use this instead of air_new_symbol
-FeSymbol* air_find_or_new_symbol(FeModule* mod, string name, u8 visibility, bool function, void* ref) {
-    FeSymbol* sym = air_find_symbol(mod, name);
-    return sym ? sym : air_new_symbol(mod, name, visibility, function, ref);
+// use this instead of fe_new_symbol
+FeSymbol* fe_find_or_new_symbol(FeModule* mod, string name, u8 visibility, bool function, void* ref) {
+    FeSymbol* sym = fe_find_symbol(mod, name);
+    return sym ? sym : fe_new_symbol(mod, name, visibility, function, ref);
 }
 
-FeSymbol* air_find_symbol(FeModule* mod, string name) {
+FeSymbol* fe_find_symbol(FeModule* mod, string name) {
     for_urange(i, 0, mod->symtab.len) {
         if (string_eq(mod->symtab.at[i]->name, name)) {
             return mod->symtab.at[i];
@@ -152,7 +154,7 @@ FeSymbol* air_find_symbol(FeModule* mod, string name) {
     return NULL;
 }
 
-FeBasicBlock* air_new_basic_block(FeFunction* fn, string name) {
+FeBasicBlock* fe_new_basic_block(FeFunction* fn, string name) {
     FeBasicBlock* bb = mars_alloc(sizeof(FeBasicBlock));
     if (!bb) CRASH("mars_alloc failed");
 
@@ -163,7 +165,7 @@ FeBasicBlock* air_new_basic_block(FeFunction* fn, string name) {
     return bb;
 }
 
-u32 air_bb_index(FeFunction* fn, FeBasicBlock* bb) {
+u32 fe_bb_index(FeFunction* fn, FeBasicBlock* bb) {
     for_urange(i, 0, fn->blocks.len) {
         if (fn->blocks.at[i] != bb) continue;
 
@@ -173,17 +175,17 @@ u32 air_bb_index(FeFunction* fn, FeBasicBlock* bb) {
     return UINT32_MAX;
 }
 
-FeInst* air_add(FeBasicBlock* bb, FeInst* ir) {
+FeInst* fe_append(FeBasicBlock* bb, FeInst* ir) {
     ir->bb = bb;
     da_append(bb, ir);
     return ir;
 }
 
-FeInst* air_make(FeFunction* f, u8 type) {
+FeInst* fe_inst(FeFunction* f, u8 type) {
     if (type >= FE_INSTR_COUNT) type = FE_INVALID;
     FeInst* ir = arena_alloc(&f->alloca, air_sizes[type], 8);
     ir->tag = type;
-    ir->T = air_new_type(f->mod->am, FE_VOID, 0);
+    ir->T = fe_type(f->mod, FE_VOID, 0);
     ir->number = 0;
     return ir;
 }
@@ -230,52 +232,52 @@ const size_t air_sizes[] = {
     [FE_RETURN] = sizeof(FeReturn),
 };
 
-FeInst* air_make_binop(FeFunction* f, u8 type, FeInst* lhs, FeInst* rhs) {
-    FeBinop* ir = (FeBinop*) air_make(f, type);
+FeInst* fe_binop(FeFunction* f, u8 type, FeInst* lhs, FeInst* rhs) {
+    FeBinop* ir = (FeBinop*) fe_inst(f, type);
     
     ir->lhs = lhs;
     ir->rhs = rhs;
     return (FeInst*) ir;
 }
 
-FeInst* air_make_cast(FeFunction* f, FeInst* source, FeType* to) {
-    FeCast* ir = (FeCast*) air_make(f, FE_CAST);
+FeInst* fe_cast(FeFunction* f, FeInst* source, FeType* to) {
+    FeCast* ir = (FeCast*) fe_inst(f, FE_CAST);
     ir->source = source;
     ir->to = to;
     return (FeInst*) ir;
 }
 
-FeInst* air_make_stackoffset(FeFunction* f, FeStackObject* obj) {
-    FeStackOffset* ir = (FeStackOffset*) air_make(f, FE_STACKOFFSET);
+FeInst* fe_stackoffset(FeFunction* f, FeStackObject* obj) {
+    FeStackOffset* ir = (FeStackOffset*) fe_inst(f, FE_STACKOFFSET);
 
     ir->object = obj;
     return (FeInst*) ir;
 }
 
-FeInst* air_make_getfieldptr(FeFunction* f, u32 index, FeInst* source) {
-    FeGetFieldPtr* ir = (FeGetFieldPtr*) air_make(f, FE_GETFIELDPTR);
+FeInst* fe_getfieldptr(FeFunction* f, u32 index, FeInst* source) {
+    FeGetFieldPtr* ir = (FeGetFieldPtr*) fe_inst(f, FE_GETFIELDPTR);
     ir->index = index;
     ir->source = source;
     return (FeInst*) ir;
 }
 
-FeInst* air_make_getindexptr(FeFunction* f, FeInst* index, FeInst* source) {
-    FeGetIndexPtr* ir = (FeGetIndexPtr*) air_make(f, FE_GETINDEXPTR);
+FeInst* fe_getindexptr(FeFunction* f, FeInst* index, FeInst* source) {
+    FeGetIndexPtr* ir = (FeGetIndexPtr*) fe_inst(f, FE_GETINDEXPTR);
     ir->index = index;
     ir->source = source;
     return (FeInst*) ir;
 }
 
-FeInst* air_make_load(FeFunction* f, FeInst* location, bool is_vol) {
-    FeLoad* ir = (FeLoad*) air_make(f, FE_LOAD);
+FeInst* fe_load(FeFunction* f, FeInst* location, bool is_vol) {
+    FeLoad* ir = (FeLoad*) fe_inst(f, FE_LOAD);
 
     if (is_vol) ir->base.tag = FE_VOL_LOAD;
     ir->location = location;
     return (FeInst*) ir;
 }
 
-FeInst* air_make_store(FeFunction* f, FeInst* location, FeInst* value, bool is_vol) {
-    FeStore* ir = (FeStore*) air_make(f, FE_STORE);
+FeInst* fe_store(FeFunction* f, FeInst* location, FeInst* value, bool is_vol) {
+    FeStore* ir = (FeStore*) fe_inst(f, FE_STORE);
     
     if (is_vol) ir->base.tag = FE_VOL_STORE;
     ir->location = location;
@@ -283,26 +285,26 @@ FeInst* air_make_store(FeFunction* f, FeInst* location, FeInst* value, bool is_v
     return (FeInst*) ir;
 }
 
-FeInst* air_make_const(FeFunction* f) {
-    FeConst* ir = (FeConst*) air_make(f, FE_CONST);
+FeInst* fe_const(FeFunction* f) {
+    FeConst* ir = (FeConst*) fe_inst(f, FE_CONST);
     return (FeInst*) ir;
 }
 
-FeInst* air_make_loadsymbol(FeFunction* f, FeSymbol* symbol) {
-    FeLoadSymbol* ir = (FeLoadSymbol*) air_make(f, FE_LOADSYMBOL);
+FeInst* fe_loadsymbol(FeFunction* f, FeSymbol* symbol) {
+    FeLoadSymbol* ir = (FeLoadSymbol*) fe_inst(f, FE_LOADSYMBOL);
     ir->sym = symbol;
     return (FeInst*) ir;
 }
 
-FeInst* air_make_mov(FeFunction* f, FeInst* source) {
-    FeMov* ir = (FeMov*) air_make(f, FE_MOV);
+FeInst* fe_mov(FeFunction* f, FeInst* source) {
+    FeMov* ir = (FeMov*) fe_inst(f, FE_MOV);
     ir->source = source;
     return (FeInst*) ir;
 }
 
 // use in the format (f, source_count, source_1, source_BB_1, source_2, source_BB_2, ...)
-FeInst* air_make_phi(FeFunction* f, u32 count, ...) {
-    FePhi* ir = (FePhi*) air_make(f, FE_PHI);
+FeInst* fe_phi(FeFunction* f, u32 count, ...) {
+    FePhi* ir = (FePhi*) fe_inst(f, FE_PHI);
     ir->len = count;
 
     ir->sources    = mars_alloc(sizeof(*ir->sources) * count);
@@ -319,7 +321,7 @@ FeInst* air_make_phi(FeFunction* f, u32 count, ...) {
     return (FeInst*) ir;
 }
 
-void air_add_phi_source(FePhi* phi, FeInst* source, FeBasicBlock* source_block) {
+void fe_add_phi_source(FePhi* phi, FeInst* source, FeBasicBlock* source_block) {
     // wrote this and then remembered mars_realloc exists. too late :3
     FeInst** new_sources    = mars_alloc(sizeof(*phi->sources) * (phi->len + 1));
     FeBasicBlock** new_source_BBs = mars_alloc(sizeof(*phi->source_BBs) * (phi->len + 1));
@@ -342,14 +344,14 @@ void air_add_phi_source(FePhi* phi, FeInst* source, FeBasicBlock* source_block) 
     phi->len++;
 }
 
-FeInst* air_make_jump(FeFunction* f, FeBasicBlock* dest) {
-    FeJump* ir = (FeJump*) air_make(f, FE_JUMP);
+FeInst* fe_jump(FeFunction* f, FeBasicBlock* dest) {
+    FeJump* ir = (FeJump*) fe_inst(f, FE_JUMP);
     ir->dest = dest;
     return (FeInst*) ir;
 }
 
-FeInst* air_make_branch(FeFunction* f, u8 cond, FeInst* lhs, FeInst* rhs, FeBasicBlock* if_true, FeBasicBlock* if_false) {
-    FeBranch* ir = (FeBranch*) air_make(f, FE_BRANCH);
+FeInst* fe_branch(FeFunction* f, u8 cond, FeInst* lhs, FeInst* rhs, FeBasicBlock* if_true, FeBasicBlock* if_false) {
+    FeBranch* ir = (FeBranch*) fe_inst(f, FE_BRANCH);
     ir->cond = cond;
     ir->lhs = lhs;
     ir->rhs = rhs;
@@ -358,24 +360,24 @@ FeInst* air_make_branch(FeFunction* f, u8 cond, FeInst* lhs, FeInst* rhs, FeBasi
     return (FeInst*) ir;
 }
 
-FeInst* air_make_paramval(FeFunction* f, u32 param) {
-    FeParamVal* ir = (FeParamVal*) air_make(f, FE_PARAMVAL);
+FeInst* fe_paramval(FeFunction* f, u32 param) {
+    FeParamVal* ir = (FeParamVal*) fe_inst(f, FE_PARAMVAL);
     ir->param_idx = param;
     return (FeInst*) ir;
 }
 
-FeInst* air_make_returnval(FeFunction* f, u32 param, FeInst* source) {
-    FeReturnVal* ir = (FeReturnVal*) air_make(f, FE_RETURNVAL);
+FeInst* fe_returnval(FeFunction* f, u32 param, FeInst* source) {
+    FeReturnVal* ir = (FeReturnVal*) fe_inst(f, FE_RETURNVAL);
     ir->return_idx = param;
     ir->source = source;
     return (FeInst*) ir;
 }
 
-FeInst* air_make_return(FeFunction* f) {
-    return air_make(f, FE_RETURN);
+FeInst* fe_return(FeFunction* f) {
+    return fe_inst(f, FE_RETURN);
 }
 
-void air_move_element(FeBasicBlock* bb, u64 to, u64 from) {
+void fe_move_inst(FeBasicBlock* bb, u64 to, u64 from) {
     if (to == from) return;
 
     FeInst* from_elem = bb->at[from];

@@ -1,5 +1,4 @@
 #include "entity.h"
-#include "../atlas/atlas.h" //bodge
 
 entity_table_list entity_tables;
 

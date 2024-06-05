@@ -15,7 +15,7 @@ static void sort_instructions(FeBasicBlock* bb) {
     for (u64 i = 0; i < bb->len; i++) {
         if (last_paramval >= bb->len) break;
         if (bb->at[i]->tag == FE_PARAMVAL) {
-            air_move_element(bb, last_paramval, i);
+            fe_move_inst(bb, last_paramval, i);
             last_paramval++;
         }
     }

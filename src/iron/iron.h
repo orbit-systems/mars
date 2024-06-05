@@ -4,6 +4,8 @@
 #include "alloc.h"
 #include "arena.h"
 
+#define AS(ptr, type) ((type*)(ptr))
+
 typedef struct FeModule FeModule;
 typedef struct FePass   FePass;
 
@@ -90,10 +92,10 @@ typedef struct FePass {
     bool modifies_cfg;
 } FePass;
 
-void atlas_sched_pass(FeModule* m, FePass* p);
-void atlas_sched_pass_at(FeModule* m, FePass* p, int index);
-void atlas_run_next_pass(FeModule* m, bool printout);
-void atlas_run_all_passes(FeModule* m, bool printout);
+void fe_sched_pass(FeModule* m, FePass* p);
+void fe_sched_pass_at(FeModule* m, FePass* p, int index);
+void fe_run_next_pass(FeModule* m, bool printout);
+void fe_run_all_passes(FeModule* m, bool printout);
 
 enum {
     FE_VOID,
@@ -142,12 +144,10 @@ typedef struct FeType {
     };
 } FeType;
 
-void air_typegraph_init(FeModule* m);
-FeType* air_new_type(FeModule* m, u8 kind, u64 len);
-
 enum {
     FE_VIS_GLOBAL,
     FE_VIS_LOCAL,
+    FE_VIS_WEAK,
 };
 
 typedef struct FeSymbol {
@@ -462,50 +462,46 @@ typedef struct FeReturn {
 
 extern const size_t air_sizes[];
 
-FeModule*     fe_new_module(FeModule* mod);
-FeFunction*   air_new_function(FeModule* mod, FeSymbol* sym, u8 visibility);
-FeBasicBlock* air_new_basic_block(FeFunction* fn, string name);
-FeGlobal*     air_new_global(FeModule* mod, FeSymbol* sym, bool global, bool read_only);
-FeSymbol*     air_new_symbol(FeModule* mod, string name, u8 visibility, bool function, void* ref);
-FeSymbol*     air_find_symbol(FeModule* mod, string name);
-FeSymbol*     air_find_or_new_symbol(FeModule* mod, string name, u8 visibility, bool function, void* ref);
+FeModule*     fe_new_module(string name);
+FeType*       fe_type(FeModule* m, u8 kind, u64 len);
+FeFunction*   fe_new_function(FeModule* mod, FeSymbol* sym, u8 visibility);
+FeBasicBlock* fe_new_basic_block(FeFunction* fn, string name);
+FeGlobal*     fe_new_global(FeModule* mod, FeSymbol* sym, bool global, bool read_only);
+FeSymbol*     fe_new_symbol(FeModule* mod, string name, u8 visibility, bool function, void* ref);
+FeSymbol*     fe_find_symbol(FeModule* mod, string name);
+FeSymbol*     fe_find_or_new_symbol(FeModule* mod, string name, u8 visibility, bool function, void* ref);
 
-FeStackObject* air_new_stackobject(FeFunction* f, FeType* t);
-void air_set_func_params(FeFunction* f, u16 count, ...);
-void air_set_func_returns(FeFunction* f, u16 count, ...);
-u32  air_bb_index(FeFunction* fn, FeBasicBlock* bb);
-void air_set_global_data(FeGlobal* global, u8* data, u32 data_len, bool zeroed);
-void air_set_global_symref(FeGlobal* global, FeSymbol* symref);
+FeStackObject* fe_new_stackobject(FeFunction* f, FeType* t);
+void fe_set_func_params(FeFunction* f, u16 count, ...);
+void fe_set_func_returns(FeFunction* f, u16 count, ...);
+u32  fe_bb_index(FeFunction* fn, FeBasicBlock* bb);
+void fe_set_global_data(FeGlobal* global, u8* data, u32 data_len, bool zeroed);
+void fe_set_global_symref(FeGlobal* global, FeSymbol* symref);
 
-FeInst* air_add(FeBasicBlock* bb, FeInst* ir);
-FeInst* air_make(FeFunction* f, u8 type);
-FeInst* air_make_binop(FeFunction* f, u8 type, FeInst* lhs, FeInst* rhs);
-FeInst* air_make_cast(FeFunction* f, FeInst* source, FeType* to);
-FeInst* air_make_stackoffset(FeFunction* f, FeStackObject* obj);
-FeInst* air_make_getfieldptr(FeFunction* f, u32 index, FeInst* source);
-FeInst* air_make_getindexptr(FeFunction* f, FeInst* index, FeInst* source);
-FeInst* air_make_load(FeFunction* f, FeInst* location, bool is_vol);
-FeInst* air_make_store(FeFunction* f, FeInst* location, FeInst* value, bool is_vol);
-FeInst* air_make_const(FeFunction* f);
-FeInst* air_make_loadsymbol(FeFunction* f, FeSymbol* symbol);
-FeInst* air_make_mov(FeFunction* f, FeInst* source);
-FeInst* air_make_phi(FeFunction* f, u32 count, ...);
-FeInst* air_make_jump(FeFunction* f, FeBasicBlock* dest);
-FeInst* air_make_branch(FeFunction* f, u8 cond, FeInst* lhs, FeInst* rhs, FeBasicBlock* if_true, FeBasicBlock* if_false);
-FeInst* air_make_paramval(FeFunction* f, u32 param);
-FeInst* air_make_returnval(FeFunction* f, u32 param, FeInst* source);
-FeInst* air_make_return(FeFunction* f);
+FeInst* fe_append(FeBasicBlock* bb, FeInst* ir);
+FeInst* fe_inst(FeFunction* f, u8 type);
+FeInst* fe_binop(FeFunction* f, u8 type, FeInst* lhs, FeInst* rhs);
+FeInst* fe_cast(FeFunction* f, FeInst* source, FeType* to);
+FeInst* fe_stackoffset(FeFunction* f, FeStackObject* obj);
+FeInst* fe_getfieldptr(FeFunction* f, u32 index, FeInst* source);
+FeInst* fe_getindexptr(FeFunction* f, FeInst* index, FeInst* source);
+FeInst* fe_load(FeFunction* f, FeInst* location, bool is_vol);
+FeInst* fe_store(FeFunction* f, FeInst* location, FeInst* value, bool is_vol);
+FeInst* fe_const(FeFunction* f);
+FeInst* fe_loadsymbol(FeFunction* f, FeSymbol* symbol);
+FeInst* fe_mov(FeFunction* f, FeInst* source);
+FeInst* fe_phi(FeFunction* f, u32 count, ...);
+FeInst* fe_jump(FeFunction* f, FeBasicBlock* dest);
+FeInst* fe_branch(FeFunction* f, u8 cond, FeInst* lhs, FeInst* rhs, FeBasicBlock* if_true, FeBasicBlock* if_false);
+FeInst* fe_paramval(FeFunction* f, u32 param);
+FeInst* fe_returnval(FeFunction* f, u32 param, FeInst* source);
+FeInst* fe_return(FeFunction* f);
 
-void air_move_element(FeBasicBlock* bb, u64 to, u64 from);
+void fe_move_inst(FeBasicBlock* bb, u64 to, u64 from);
 
-void air_add_phi_source(FePhi* phi, FeInst* source, FeBasicBlock* source_block);
+void fe_add_phi_source(FePhi* phi, FeInst* source, FeBasicBlock* source_block);
 
-void air_print_module(FeModule* mod);
-void air_print_function(FeFunction* f);
-void air_print_bb(FeBasicBlock* bb);
-void air_print_ir(FeInst* ir);
-
-string air_textual_emit(FeModule* am);
+string fe_emit_textual_ir(FeModule* am);
 
 #define FE_PHYS_UNASSIGNED (UINT32_MAX)
 

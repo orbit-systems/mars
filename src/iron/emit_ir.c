@@ -246,7 +246,7 @@ static void emit_function(FeFunction* f, StringBuilder* sb) {
     sb_append_c(sb, "}\n");
 }
 
-string air_textual_emit(FeModule* am) {
+string fe_emit_textual_ir(FeModule* am) {
     StringBuilder sb = {0};
     sb_init(&sb);
 

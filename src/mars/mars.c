@@ -11,8 +11,9 @@
 #include "phobos/parse.h"
 #include "phobos/sema.h"
 
-#include "atlas/atlas.h"
-#include "atlas/targets.h"
+#include "iron.h"
+#include "iron/targets.h"
+#include "iron/passes/passes.h"
 
 #include "llta/lexer.h"
 
@@ -63,19 +64,19 @@ int main(int argc, char** argv) {
     }
 
     // atlas canonicalization pass is scheduled by default, dw :3
-    atlas_sched_pass(atlas_module, &air_pass_trme);
-    atlas_sched_pass(atlas_module, &air_pass_tdce);
-    atlas_sched_pass(atlas_module, &air_pass_movprop);
-    atlas_sched_pass(atlas_module, &air_pass_elim);
+    fe_sched_pass(atlas_module, &air_pass_trme);
+    fe_sched_pass(atlas_module, &air_pass_tdce);
+    fe_sched_pass(atlas_module, &air_pass_movprop);
+    fe_sched_pass(atlas_module, &air_pass_elim);
 
-    atlas_run_all_passes(atlas_module, true);
+    fe_run_all_passes(atlas_module, true);
 
-    atlas_sched_pass(atlas_module, &pass_aphelion_codegen);
-    atlas_sched_pass(atlas_module, &pass_aphelion_movopt);
+    fe_sched_pass(atlas_module, &pass_aphelion_codegen);
+    fe_sched_pass(atlas_module, &pass_aphelion_movopt);
 
-    atlas_run_all_passes(atlas_module, false);
+    fe_run_all_passes(atlas_module, false);
 
-    asm_printer(atlas_module->asm_module, false);
+    asm_printer(atlas_module, false);
 
     return 0;
 }
