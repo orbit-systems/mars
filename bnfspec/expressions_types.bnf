@@ -1,35 +1,39 @@
-<fn> ::= <fn_type> <ws> "{" <ws> <stmts> <ws> "}"
+<fn> ::= <fn_type> <stmt_block>
 
-<fn_type> ::= "fn" <ws> "(" <ws> (<param_list> | E) <ws> ")" (<ws> "->" (<ws> <type> <ws> | <ws> "(" <param_list> ")" <ws>) | E)
+<fn_type> ::= "fn" "(" (<param_list> ("," | E) | E) ")" ("->" (<type> | "(" <param_list> ")") | E)
 
-<param> ::= <identifier> <ws> ":" <ws> <type> <ws>
-<multi_param> ::= (<ws> <identifier> <ws> ",")+ <ws> <identifier> <ws> ":" <ws> <type> <ws>
-<param_list> ::= <param_list> <ws> "," <ws> <param> | 
-                 <param_list> <ws> "," <ws> <multi_param> | 
+<param> ::= <identifier> ":" <type> 
+<multi_param> ::= (<identifier>  ",")+ <identifier>  ":" <type> 
+<param_list> ::= <param_list> "," <param> | 
+                 <param_list> "," <multi_param> | 
                  <param> | <multi_param>
 
 <type> ::= "i8" | "i16" | "i32" | "i64" | "int" |
            "u8" | "u16" | "u32" | "u64" | "uint" |
-           "f16" | "f32" | "f64" | "float" | "bool" | <identifier> | ("^" | "[]") <ws> ("mut" | "let") (<fws> <type> | E) |
-           "[" <ws> (<digit>+ | E) <ws> "]" <type> 
+           "f16" | "f32" | "f64" | "float" | "bool" | <identifier> | ("^" | "[]") ("mut" | "let") ( <type> | E) |
+           "["  (<digit>+ | E)  "]" <type> | <fn_type> | <aggregate>
 
-<expression> ::= "(" <ws> <expression> <ws> ")" | <expression> <binop> <expression> | <ws> <identifier> <ws> |
-                 <unop> <ws> <expression> | <expression> <ws> "^" |
-                 <expression> <ws> "[" <ws> (<digit>+ | <identifier>) <ws> ":" <ws> (<digit>+ | <identifier>) <ws> "]" |
-                 ("cast" | "bitcast") <ws> "(" <ws> <type> <ws> ")" <ws> <expression> | <ws> <numeric_literal> <ws> |
-                 <identifier> <ws> ("::" | "." | "->") <ws> <expression>
+<expression> ::= <expression> <binop> <expression> | 
+                 <unop> <expression> | <fn> |
+                 ("cast" | "bitcast") "(" <type> ")" <expression> | <atomic_expression>
+
+<atomic_expression> ::= <atomic_expression> ("::" | "." | "->") <identifier> |
+                        <atomic_expression> "[" <expression> "]" |
+                        <atomic_expression> "[" (<expression> | E) ":"  (<expression> | E) "]" |
+                        <atomic_expression> "(" ((<expression> ",")* <expression> ("," | E) | E) ")" |
+                        <literal> | <identifier> | "(" <expression> ")" |
+                        <atomic_expression> "^" |
+                        "." <identifier>
 
 <binop> ::= "*" | "/" | "%" | "%%" | "&" | "<<" | ">>" | "~|" |
                "+" | "-" | "|" | "~" |
                "==" | "!=" | "<" | ">" | "<=" | ">=" |
-               "&&" | "||" |
-               "[" <ws> (<digit>+ | <identifier>) <ws> "]"
+               "&&" | "||" 
 
 <unop> ::= "&" | "-" | "~" | "!"
 
-<aggregate> ::= ("struct" | "union") <fws> <identifier> <ws> "{" 
-                (<ws> <identifier> <ws> ":" <ws> <type> <ws> "," <ws>)+ 
-                "}" <ws> ";" <ws>
-<enum> ::= "enum" <fws> ("i8" | "i16" | "i32" | "i64" | "int" |
-           "u8" | "u16" | "u32" | "u64" | "uint" | E) <ws> "{" <ws>
-           (<ws> <identifier> <ws> "," <ws>)+ <ws> "}" <ws> ";" <ws>
+<aggregate> ::= ("struct" | "union")  "{" 
+                ( <identifier> ":" <type> ",")+ 
+                "}" ";" 
+<enum> ::= "enum" <type> "{" 
+           (<identifier> ",")+ "}" ";" 

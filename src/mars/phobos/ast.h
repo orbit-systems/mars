@@ -7,6 +7,8 @@
 #include "exactval.h"
 #include "type.h"
 
+typedef struct parser parser;
+
 typedef struct {
     token* start;
     token* end;
@@ -15,7 +17,7 @@ typedef struct {
 
 // define all the AST node macros
 #define AST_NODES \
-    AST_TYPE(identifier_expr, "identifier", { \
+    AST_TYPE(identifier, "identifier", { \
         union { \
         ast_base base; \
         token* tok; \
@@ -25,6 +27,7 @@ typedef struct {
     }) \
     AST_TYPE(literal_expr, "literal", { \
         ast_base base; \
+        token* tok; \
         exact_value value; \
     }) \
     AST_TYPE(comp_literal_expr, "compound literal", { \
@@ -64,25 +67,12 @@ typedef struct {
         AST lhs; \
         AST rhs; \
     }) \
-    AST_TYPE(entity_selector_expr, "entity selector", { \
-        ast_base base; \
-        AST lhs; \
-        AST rhs; \
-    }) \
     AST_TYPE(selector_expr, "selector", { \
         ast_base base; \
         AST lhs; \
         AST rhs; \
+        token* op; \
         u32 field_index; /* filled out by checker */ \
-    }) \
-    AST_TYPE(return_selector_expr, "return selector", { \
-        ast_base base; \
-        AST lhs; \
-        AST rhs; \
-    }) \
-    AST_TYPE(impl_selector_expr, "implicit selector", { \
-        ast_base base; \
-        AST rhs; \
     }) \
     AST_TYPE(index_expr, "array index", { \
         ast_base base; \
@@ -99,7 +89,6 @@ typedef struct {
         ast_base base; \
         AST lhs; \
         da(AST) params; \
-        bool force_inline; \
     }) \
     \
     \
@@ -122,11 +111,9 @@ typedef struct {
         ast_base base; \
         da(AST) lhs; \
         AST rhs; \
+        token* type_presema; \
         AST type; \
-        bool has_expl_type : 1; /*FIXME: REMOVE THIS*/\ 
         bool is_mut        : 1; \
-        bool is_static     : 1; \
-        bool is_volatile   : 1; \
         bool is_uninit     : 1; \
     }) \
     AST_TYPE(type_decl_stmt, "type declaration", { \
@@ -137,11 +124,6 @@ typedef struct {
     AST_TYPE(assign_stmt, "assignment", { \
         ast_base base; \
         da(AST) lhs; \
-        AST rhs; \
-    }) \
-    AST_TYPE(comp_assign_stmt, "compound assignment", { \
-        ast_base base; \
-        AST lhs; \
         AST rhs; \
         token* op; \
     }) \
@@ -171,7 +153,7 @@ typedef struct {
         ast_base base; \
         AST prelude; \
         AST condition; \
-        AST update; \
+        da(AST) update; \
         AST block; \
     }) \
     AST_TYPE(for_in_stmt, "for-in loop", { \
@@ -234,7 +216,6 @@ typedef struct {
     AST_TYPE(struct_type_expr, "struct type", { \
             ast_base base; \
             da(AST_typed_field) fields; \
-            bool smart_pack : 1;\
     }) \
     AST_TYPE(union_type_expr, "union type", { \
             ast_base base; \
@@ -244,9 +225,7 @@ typedef struct {
             ast_base base; \
             da(AST_typed_field) parameters; \
             da(AST_typed_field) returns; \
-            AST block_symbol_override; /*this will be a string literal or NULL_STR if not set*/ \
-            bool always_inline : 1;\
-            bool simple_return : 1; \
+            bool simple_return : 1;\
     }) \
     AST_TYPE(enum_type_expr, "enum type", { \
             ast_base base; \
@@ -321,5 +300,5 @@ da_typedef(AST_typed_field);
 extern char* ast_type_str[];
 extern const size_t ast_type_size[];
 
-AST new_ast_node(arena* alloca, ast_type type);
+AST new_ast_node(parser* p, ast_type type);
 void dump_tree(AST node, int n);

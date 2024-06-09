@@ -94,6 +94,7 @@
     TOKEN(TOK_KEYWORD_CONTINUE,  "continue") \
     TOKEN(TOK_KEYWORD_DEFER,     "defer") \
     TOKEN(TOK_KEYWORD_DISTINCT,  "distinct") \
+    TOKEN(TOK_KEYWORD_DO,        "do") \
     TOKEN(TOK_KEYWORD_ENUM,      "enum") \
     TOKEN(TOK_KEYWORD_ELIF,      "elif") \
     TOKEN(TOK_KEYWORD_ELSE,      "else") \

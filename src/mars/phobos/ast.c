@@ -22,11 +22,11 @@ char* ast_type_str[] = {
 };
 
 // allocate and zero a new AST node with an arena
-AST new_ast_node(arena* alloca, ast_type type) {
+AST new_ast_node(parser* p, ast_type type) {
     AST node;
-    void* node_ptr = arena_alloc(alloca, ast_type_size[type], 8);
+    void* node_ptr = arena_alloc(p->alloca, ast_type_size[type], 8);
     if (node_ptr == NULL) {
-        general_error("internal: new_ast_node_p() could not allocate AST node of type '%s' with size %d", ast_type_str[type], ast_type_size[type]);
+        general_error("internal: new_ast_node() could not allocate AST node of type '%s' with size %d", ast_type_str[type], ast_type_size[type]);
     }
     memset(node_ptr, 0, ast_type_size[type]);
     node.rawptr = node_ptr;
@@ -39,6 +39,7 @@ void print_indent(int n) {
 }
 
 // FOR DEBUGGING PURPOSES!! THIS IS NOT GOING TO BE MEMORY SAFE LMFAO
+/*
 void dump_tree(AST node, int n) {
 
     print_indent(n);
@@ -52,8 +53,8 @@ void dump_tree(AST node, int n) {
     case AST_invalid:
         printf("[invalid]\n");
         break;
-    case AST_identifier_expr:
-        printf("ident '%s'\n", clone_to_cstring(node.as_identifier_expr->tok->text));
+    case AST_identifier:
+        printf("ident '%s'\n", clone_to_cstring(node.as_identifier->tok->text));
         break;
     case AST_literal_expr:
         switch (node.as_literal_expr->value.kind) {
@@ -207,4 +208,4 @@ void dump_tree(AST node, int n) {
         printf("unimplemented %d '%s'\n", node.type, ast_type_str[node.type]);
         break;
     }
-}
+}*/
