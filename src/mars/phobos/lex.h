@@ -30,6 +30,7 @@
     TOKEN(TOK_RANGE_EQ,  "..=") \
     TOKEN(TOK_COMMA,     ",") \
     TOKEN(TOK_EXCLAM,    "!") \
+    TOKEN(TOK_QUESTION,  "?") \
     TOKEN(TOK_CARET,     "^") \
     TOKEN(TOK_AT,        "@") \
     TOKEN(TOK_ADD,       "+") \

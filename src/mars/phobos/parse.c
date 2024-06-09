@@ -43,6 +43,21 @@ AST parse_stmt(parser* p) {
     }
 }
 
+    /*switch (current_token(p).type) {
+        //<unop> <expression>
+        case TOK_AMPERSAND:
+        case TOK_SUB:
+        case TOK_TILDE:
+        case TOK_EXCLAM:
+        case TOK_QUESTION:
+            n = new_ast_node(p, AST_UNARY_OP);
+            n.as_unary_op_expr->op = &current_token(p);
+            n.as_unary_op_expr->inside = parse_expr(p);
+            advance_token(p);
+            break;
+        //<atomic_expression>
+    }*/
+
 AST parse_type(parser* p) {
     TODO("AGUHGHFJKKKL");
 }
@@ -51,35 +66,90 @@ AST parse_expr(parser* p) {
     //this is gonna be painful
     //we first need to detect WHICH expr branch we're on.
     //
-    /*<expression> ::= <expression> <binop> <expression> | 
-                 <unop> <expression> | <fn> |
-                 ("cast" | "bitcast") "(" <type> ")" <expression> | <atomic_expression>*/
+    /*<expression> ::= <expression> <binop> <expression> | <unary_expression>*/
 
-    //we detect TERMINALS, and currently thats either <unop>, "fn" from <fn>, the unop cast/bitcast or an atomic expr.
-    //we SHOULD drill first, but there is no way to do this without breaking things, so we need to first evaluate this
-    //this entire expression, and then detect a <binop> terminal.
-    //the bnf ordering is WRONG, but we grind :pray:
-    
+    //<unary_expression>
     AST n;
 
-    switch (current_token(p).type) {
-        //<unop> <expression>
-        case TOK_AMPERSAND:
-        case TOK_SUB:
-        case TOK_TILDE:
-        case TOK_EXCLAM:
-            n = new_ast_node(p, AST_UNARY_OP);
-            n.as_unary_op_expr->op = &current_token(p);
-            n.as_unary_op_expr->inside = parse_expr(p);
-            break;
-        //<fn>
+    n = parse_unary_expr(p);
+    advance_token(p);
+
+    //<expression> <binop> <expression>
+    if (current_token(p).type == TOK_SEMICOLON) return n;
+    return parse_binop_expr(p, n, verify_binop(p, current_token(p)));
+}
+
+AST parse_expr_wp(parser* p, int precedence) {
+    AST n;
+    n = parse_unary_expr(p);
+    advance_token(p);
+
+    if (current_token(p).type == TOK_SEMICOLON) return n;
+    return parse_binop_expr(p, n, precedence); 
+}
+
+AST parse_binop_expr(parser* p, AST lhs, int precedence) {
+    //pratt parsing!
+    //explanation: we keep track of a precedence p when we start.
+    //we then parse, and if this precedence has changed, we break out of this loop 
+    while (precedence < verify_binop(p, current_token(p))) {
+        lhs = parse_binop_recurse(p, lhs, precedence);
     }
 
+    return lhs;
+}
 
+AST parse_binop_recurse(parser* p, AST lhs, int precedence) {
+    AST n = new_ast_node(p, AST_binary_op_expr);
+    n.as_binary_op_expr->base.start = lhs.base->start;
+    n.as_binary_op_expr->op = &current_token(p);
+    n.as_binary_op_expr->lhs = lhs;
+    //current_token is a binop here
+    advance_token(p);
 
+    n.as_binary_op_expr->rhs = parse_expr_wp(p, verify_binop(p, *n.as_binary_op_expr->op));
+    n.as_binary_op_expr->base.end = n.as_binary_op_expr->rhs.base->end;
+    return n;
+}
 
-    printf("curr tok: %*.s, type: %s\n", str_arg(current_token(p).text), token_type_str[current_token(p).type]);
-    TODO("this fucking shit, god damnit exprs");
+AST parse_unary_expr(parser* p) {
+    TODO("unary expr");
+}
+
+int verify_binop(parser* p, token tok) {
+    /*<binop> ::= "*" | "/" | "%" | "%%" | "&" | "<<" | ">>" | "~|" |
+               "+" | "-" | "|" | "~" |
+               "==" | "!=" | "<" | ">" | "<=" | ">=" |
+               "&&" | "||" */
+    switch (tok.type) {
+        case TOK_MUL:       
+        case TOK_DIV:       
+        case TOK_MOD:       
+        case TOK_MOD_MOD:       
+        case TOK_AND: 
+        case TOK_LSHIFT:    
+        case TOK_RSHIFT:
+        case TOK_NOR: 
+            return 6;
+        case TOK_ADD:
+        case TOK_SUB:
+        case TOK_OR:
+        case TOK_TILDE:
+            return 5;   
+        case TOK_EQUAL_EQUAL:
+        case TOK_NOT_EQUAL:
+        case TOK_GREATER_THAN:
+        case TOK_GREATER_EQUAL:
+        case TOK_LESS_THAN:
+        case TOK_LESS_EQUAL:
+            return 4;
+        case TOK_AND_AND:
+            return 3;
+        case TOK_OR_OR:
+            return 2;
+        default:
+            error_at_parser(p, "expected binary operator");
+    }
 }
 
 AST parse_decl_stmt(parser* p) {

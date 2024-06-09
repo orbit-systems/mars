@@ -146,7 +146,7 @@ token_type scan_ident_or_keyword(lexer* lex) {
     if (string_eq(word, constr("true")))         return TOK_LITERAL_BOOL;
     if (string_eq(word, constr("false")))        return TOK_LITERAL_BOOL;
     if (string_eq(word, constr("null")))         return TOK_LITERAL_NULL;
-    
+
     if (string_eq(word, constr("let")))          return TOK_KEYWORD_LET;
     if (string_eq(word, constr("mut")))          return TOK_KEYWORD_MUT;
     if (string_eq(word, constr("def")))          return TOK_KEYWORD_DEF;
@@ -396,6 +396,7 @@ token_type scan_operator(lexer* lex) {
     case ',': advance_char(lex); return TOK_COMMA;
     case '^': advance_char(lex); return TOK_CARET;
     case '@': advance_char(lex); return TOK_AT;
+    case '?': advance_char(lex); return TOK_QUESTION;
 
     case '(': advance_char(lex); return TOK_OPEN_PAREN;
     case ')': advance_char(lex); return TOK_CLOSE_PAREN;

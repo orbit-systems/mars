@@ -8,6 +8,8 @@
            <aggregate> | <enum> | <for_type_one> | <for_type_two> | <asm> | <stmt_block> |
            <switch> | <break> | <fallthrough> | <expression> ";" | <extern> | <defer> | <continue> | ";"
 
+<type_decl> ::= "type" <identifier> "=" <unary_expression> ";"
+
 <simple_stmt> ::= <decl> | <assign> | <expression>
 
 <extern> ::= "extern" <stmt>
@@ -23,6 +25,8 @@
 <stmt_block> ::=  "{" <stmts> "}" 
 
 <control_flow_block> ::= <stmt_block> | "do" <stmt>
+
+<fn> ::= <fn_type> <stmt_block>
 
 <decl> ::= ("let" | "mut") (<identifier> ",")* <identifier> ("," | E)  (":" <type> | E) ("=" (<expression> | "---") | E) ";"
 <return> ::= "return"  (<identifier> | <expression> | <literal>) ";"
