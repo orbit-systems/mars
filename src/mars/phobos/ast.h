@@ -208,10 +208,8 @@ typedef struct {
     \
     \
     AST_TYPE(basic_type_expr, "basic type literal", { \
-        union { \
-            ast_base base; \
-            token* lit; \
-        }; \
+        ast_base base; \
+        token* lit; \
     }) \
     AST_TYPE(struct_type_expr, "struct type", { \
             ast_base base; \
@@ -234,8 +232,8 @@ typedef struct {
     }) \
     AST_TYPE(array_type_expr, "array type", { \
             ast_base base; \
-            AST subexpr; \
             AST length; \
+            AST type; \
     }) \
     AST_TYPE(slice_type_expr, "slice type", { \
             ast_base base; \
@@ -276,9 +274,8 @@ typedef struct AST {
 
 typedef struct {
     AST field;
-    AST type; // may be NULL_AST if the type is the same as the next field
+    AST type;
 } AST_typed_field;
-
 
 typedef struct {
     AST ident;

@@ -47,7 +47,7 @@ build: $(OBJECTS)
 	@echo Successfully built: $(EXECUTABLE_NAME)
 
 debug: CFLAGS += $(DEBUGFLAGS)
-debug: OPT = -O0
+debug: OPT = -O2
 debug: build
 
 clean:

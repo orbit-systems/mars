@@ -13,7 +13,7 @@
 #define valid_0b(ch) (ch == '0' || ch == '1' || ch == '_')
 
 #define current_char(lex) (lex->current_char)
-#define advance_char(lex) (lex->cursor < lex->src.len ? (lex->current_char = lex->src.raw[++lex->cursor]) : '\0')
+#define advance_char(lex) ((lex->cursor) < lex->src.len ? (lex->current_char = lex->src.raw[++lex->cursor]) : '\0')
 #define advance_char_n(lex, n) (lex->cursor + (n) < lex->src.len ? (lex->current_char = lex->src.raw[lex->cursor += (n)]) : '\0')
 #define peek_char(lex, n) ((lex->cursor + (n)) < lex->src.len ? lex->src.raw[lex->cursor + (n)] : '\0')
 
@@ -94,7 +94,7 @@ void append_next_token(lexer* lex) {
     if (lex->cursor >= lex->src.len) {
         da_append(
             &lex->buffer, 
-            ((token){substring_len(lex->src, lex->cursor, 1), TOK_EOF})
+            ((token){string_clone(substring_len(lex->src, lex->cursor, 1)), TOK_EOF})
         );
         return;
     }
@@ -112,7 +112,7 @@ void append_next_token(lexer* lex) {
     }
 
     da_append(&lex->buffer, ((token){
-        .text = substring(lex->src, beginning_cursor, lex->cursor), 
+        .text = string_clone(substring(lex->src, beginning_cursor, lex->cursor)), 
         .type = this_type,
     }));
 }

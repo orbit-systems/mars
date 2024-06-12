@@ -1,33 +1,31 @@
 <fn_type> ::= "fn" "(" (<param_list> ("," | E) | E) ")" ("->" (<unary_expression> | "(" <param_list> ")") | E)
 
 <param> ::= <identifier> ":" <unary_expression> 
-<multi_param> ::= (<identifier>  ",")+ <identifier>  ":" <unary_expression> 
+<multi_param> ::= (<identifier>  ",")+ <identifier> ":" <unary_expression> 
 <param_list> ::= <param_list> "," <param> | 
                  <param_list> "," <multi_param> | 
                  <param> | <multi_param>
 
+<expression> ::= <expression> <binop> <expression> | <unary_expression>
 
-<expression> ::= <expression> <binop> <expression> | <unary_expr>
-
-<atomic_expression> ::= <atomic_expression> ("::" | "." | "->") <identifier> |
+<atomic_expression> ::= <literal> | <identifier> | "." <identifier> | <fn> | 
+                        "i8" | "i16" | "i32" | "i64" | "int" |
+                        "u8" | "u16" | "u32" | "u64" | "uint" |
+                        "f16" | "f32" | "f64" | "float" | "bool" |
+                        <fn_type> | <aggregate> | <enum> |
+                        "(" <expression> ")" |
+                        <atomic_expression> ("::" | "." | "->") <identifier> |
                         <atomic_expression> "[" <expression> "]" |
                         <atomic_expression> "[" (<expression> | E) ":" (<expression> | E) "]" |
                         <atomic_expression> "(" ((<expression> ",")* <expression> ("," | E) | E) ")" |
                         <atomic_expression> "^" |
-                        <literal> | <identifier> | "(" <expression> ")" |
-                        "." <identifier> | <fn> | 
-                        "i8" | "i16" | "i32" | "i64" | "int" |
-                        "u8" | "u16" | "u32" | "u64" | "uint" |
-                        "f16" | "f32" | "f64" | "float" | "bool" |
-                        <fn_type> | <aggregate> | <enum>
                         <atomic_expression> "{" ((<expression> ",")* <expression> ("," | E) | E) "}"
 
 <unary_expression> ::= <unop> <unary_expression> |
-                       ("cast" | "bitcast") "(" <unary_expression> ")" <expression> |
-                       ("sizeof" | "alignof") "(" <unary_expression> ")" |
+                       ("cast" | "bitcast") "(" <unary_expression> ")" <unary_expression> |
                        ("^" | "[]") ("mut" | "let") ( <unary_expression> | E) |
-                       "["  <expression>  "]" <unary_expression> | 
-                       "distinct" <atomic_expression> |
+                       "[" <expression> "]" <unary_expression> | 
+                       "distinct" <unary_expression> |
                        <atomic_expression>
 
 <binop> ::= "*" | "/" | "%" | "%%" | "&" | "<<" | ">>" | "~|" |
@@ -35,7 +33,7 @@
                "==" | "!=" | "<" | ">" | "<=" | ">=" |
                "&&" | "||" 
 
-<unop> ::= "&" | "-" | "~" | "!" | "?"
+<unop> ::= "&" | "-" | "~" | "!" | "?" | "sizeof" | "alignof"
 
 
 <aggregate> ::= ("struct" | "union")  "{" 

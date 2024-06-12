@@ -27,8 +27,11 @@ AST parse_decl_stmt(parser* p);
 AST parse_type(parser* p);
 AST parse_unary_expr(parser* p);
 AST parse_binop_expr(parser* p, AST lhs, int precedence);
-int verify_binop(parser* p, token tok);
+int verify_binop(parser* p, token tok, bool error);
 AST parse_binop_recurse(parser* p, AST lhs, int precedence);
+AST parse_atomic_expr(parser* p);
+AST parse_atomic_expr_term(parser* p);
+AST parse_fn_type(parser* p);
 
 parser make_parser(lexer* l, arena* alloca);
 void parse_file(parser* p);
