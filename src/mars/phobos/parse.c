@@ -139,6 +139,8 @@ AST parse_atomic_expr_term(parser* p) {
     return NULL_AST;
 }
 
+
+
 AST parse_fn_type(parser* p) {
     /*<fn_type> ::= "fn" "(" (<param_list> ("," | E) | E) ")" 
      ("->" (<unary_expression> | "(" <param_list> ")") | E)
@@ -169,13 +171,13 @@ AST parse_fn_type(parser* p) {
                 if (peek_token(p, 1).type == TOK_COLON) {
                     //<param> ::= <identifier> ":" <unary_expression> 
                     AST_typed_field curr_field = {0};
-                    //printf("current tok: "str_fmt", type: %s\n", str_arg(current_token(p).text), token_type_str[current_token(p).type]);
+                    printf("current tok: "str_fmt", type: %s\n", str_arg(current_token(p).text), token_type_str[current_token(p).type]);
                     curr_field.field = new_ast_node(p, AST_identifier);
                     curr_field.field.as_identifier->base.start = &current_token(p);
                     curr_field.field.as_identifier->tok = &current_token(p);
                     curr_field.field.as_identifier->base.end = &current_token(p);
                     advance_token(p); advance_token(p);
-                   // printf("current tok: "str_fmt", type: %s\n\n", str_arg(current_token(p).text), token_type_str[current_token(p).type]);
+                    printf("current tok: "str_fmt", type: %s\n\n", str_arg(current_token(p).text), token_type_str[current_token(p).type]);
                     curr_field.type = parse_unary_expr(p);
                     da_append(&n.as_fn_type_expr->parameters, curr_field);
                     continue;

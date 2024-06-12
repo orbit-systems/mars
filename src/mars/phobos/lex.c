@@ -94,7 +94,7 @@ void append_next_token(lexer* lex) {
     if (lex->cursor >= lex->src.len) {
         da_append(
             &lex->buffer, 
-            ((token){string_clone(substring_len(lex->src, lex->cursor, 1)), TOK_EOF})
+            ((token){substring_len(lex->src, lex->cursor, 1), TOK_EOF})
         );
         return;
     }
@@ -112,7 +112,7 @@ void append_next_token(lexer* lex) {
     }
 
     da_append(&lex->buffer, ((token){
-        .text = string_clone(substring(lex->src, beginning_cursor, lex->cursor)), 
+        .text = substring(lex->src, beginning_cursor, lex->cursor), 
         .type = this_type,
     }));
 }
