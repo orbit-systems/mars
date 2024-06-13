@@ -1,4 +1,4 @@
-<fn> ::= <fn_type> <ws> "{" <ws> <stmts> <ws> "}"
+<fn> ::= <fn_type> <ws> (<stmt_block> | "---")
 
 <fn_type> ::= "fn" <ws> "(" <ws> (<param_list> | E) <ws> ")" (<ws> "->" (<ws> <type> <ws> | <ws> "(" <param_list> ")" <ws>) | E)
 
@@ -11,13 +11,13 @@
 <type> ::= "i8" | "i16" | "i32" | "i64" | "int" |
            "u8" | "u16" | "u32" | "u64" | "uint" |
            "f16" | "f32" | "f64" | "float" | "bool" | <identifier> | ("^" | "[]") <ws> ("mut" | "let") (<fws> <type> | E) |
-           "[" <ws> (<digit>+ | E) <ws> "]" <type> 
+           "[" <ws> (<digit>+ | E) <ws> "]" <type> | "distinct" <fws> <type>
 
 <expression> ::= "(" <ws> <expression> <ws> ")" | <expression> <binop> <expression> | <ws> <identifier> <ws> |
                  <unop> <ws> <expression> | <expression> <ws> "^" |
                  <expression> <ws> "[" <ws> (<digit>+ | <identifier>) <ws> ":" <ws> (<digit>+ | <identifier>) <ws> "]" |
                  ("cast" | "bitcast") <ws> "(" <ws> <type> <ws> ")" <ws> <expression> | <ws> <numeric_literal> <ws> |
-                 <identifier> <ws> ("::" | "." | "->") <ws> <expression>
+                 <expression> <ws> ("::" | "." | "->") <ws> <expression> | <stmt_block>
 
 <binop> ::= "*" | "/" | "%" | "%%" | "&" | "<<" | ">>" | "~|" |
                "+" | "-" | "|" | "~" |
@@ -27,9 +27,9 @@
 
 <unop> ::= "&" | "-" | "~" | "!"
 
-<aggregate> ::= ("struct" | "union") <fws> <identifier> <ws> "{" 
+<aggregate> ::= ("struct" | "union") <ws> "{" 
                 (<ws> <identifier> <ws> ":" <ws> <type> <ws> "," <ws>)+ 
                 "}" <ws> ";" <ws>
-<enum> ::= "enum" <fws> ("i8" | "i16" | "i32" | "i64" | "int" |
-           "u8" | "u16" | "u32" | "u64" | "uint" | E) <ws> "{" <ws>
+
+<enum> ::= "enum" <fws> <type> <ws> "{" <ws>
            (<ws> <identifier> <ws> "," <ws>)+ <ws> "}" <ws> ";" <ws>

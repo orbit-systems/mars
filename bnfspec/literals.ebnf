@@ -2,9 +2,9 @@
               <string> |
               <numeric_literal>
 
-<numeric_literal> ::= <digit>+ |
+<numeric_literal> ::= ("-" | E) (<digit>+ |
                       "0x" <hex_digit>+ |
                       "0X" <hex_digit>+ |
-                      <float_literal>
+                      <float_literal>)
                       
-<float_literal> ::= <digit>+ ("." | "e") <digit>+
+<float_literal> ::= ("-" | E) <digit>+ "." <digit>* (("e" | "E") ("-" | E) <digit>+ | E) 
