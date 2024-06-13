@@ -47,6 +47,10 @@ void parse_file(parser* p);
 
 #define str_from_tokens(start, end) ((string){(start).text.raw, (end).text.raw - (start).text.raw + (end).text.len})
 
+#define warn_at_parser(p, message, ...) \
+    warning_at_string((p)->path, (p)->src, current_token(p).text, \
+    message __VA_OPT__(,) __VA_ARGS__)
+
 #define error_at_parser(p, message, ...) \
     error_at_string((p)->path, (p)->src, current_token(p).text, \
     message __VA_OPT__(,) __VA_ARGS__)

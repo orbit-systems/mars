@@ -66,230 +66,170 @@ AST parse_stmt(parser* p) {
     return NULL_AST;
 }
 
-AST parse_atomic_expr(parser* p) {
-    //this function handles explicitly atomic_expr that require left-assoc stuff.
+// kayla what? a statement block is only { <stmt?* }
+// AST parse_stmt_block(parser* p) {
+//     //<stmt_block> ::=  "{" <stmt>* "}" | <stmt>
+//     AST n = new_ast_node(p, AST_stmt_block); 
+//     da_init(&n.as_stmt_block->stmts, 1);
 
-/*<atomic_expression> ::= <atomic_expression> ("::" | "." | "->") <identifier> |
-                        <atomic_expression> "[" <expression> "]" |
-                        <atomic_expression> "[" (<expression> | E) ":" (<expression> | E) "]" |
-                        <atomic_expression> "(" ((<expression> ",")* <expression> ("," | E) | E) ")" |
-                        <atomic_expression> "^" |
-                        <atomic_expression> "{" ((<expression> ",")* <expression> ("," | E) | E) "}"*/
+//     if (current_token(p).type != TOK_OPEN_BRACE) {
+//         AST stmt = parse_stmt(p);
+//         if (is_null_AST(stmt)) error_at_parser(p, "expected statement");
+//         da_append(&n.as_stmt_block->stmts, stmt);
+//         return n;
+//     }
 
-    AST n = parse_atomic_expr_term(p);
-
-    if (current_token(p).type == TOK_COLON_COLON || current_token(p).type == TOK_PERIOD || current_token(p).type == TOK_ARROW_RIGHT) {
-        //<atomic_expression> ("::" | "." | "->") <identifier>
-        AST sexpr = new_ast_node(p, AST_selector_expr);
-        sexpr.as_selector_expr->base.start = &current_token(p);
-        sexpr.as_selector_expr->lhs = n;
-        sexpr.as_selector_expr->op = &current_token(p);
-        advance_token(p);
-        sexpr.as_selector_expr->rhs = parse_unary_expr(p);
-        sexpr.as_selector_expr->base.end = &current_token(p);
-        advance_token(p);
-        return sexpr;
-    }
-    //<atomic_expression> "[" <expression> "]" |
-    //<atomic_expression> "[" (<expression> | E) ":" (<expression> | E) "]" |
-    if (current_token(p).type == TOK_OPEN_BRACKET) {
-        token* start = &current_token(p);
-        AST expr = parse_expr(p);
-        if (is_null_AST(expr) && current_token(p).type == TOK_CLOSE_BRACKET) error_at_parser(p, "expected : or ]");
-        //<atomic_expression> "[" <expression> "]"
-        if (current_token(p).type == TOK_CLOSE_BRACKET) {
-            AST arr_idx = new_ast_node(p, AST_index_expr);
-            arr_idx.as_index_expr->base.start = start;
-            arr_idx.as_index_expr->lhs = n;
-            arr_idx.as_index_expr->inside = expr;
-            arr_idx.as_index_expr->base.end = &current_token(p);
-            advance_token(p);
-            return n;
-        }
-        //<atomic_expression> "[" (<expression> | E) ":" (<expression> | E) "]"
-        AST slice = new_ast_node(p, AST_slice_expr);
-        slice.as_slice_expr->base.start = start;
-        slice.as_slice_expr->lhs = n;
-        slice.as_slice_expr->inside_left = expr;
-        if (current_token(p).type != TOK_COLON) error_at_parser(p, "expected :");
-        advance_token(p);
-        slice.as_slice_expr->inside_right = parse_expr(p);
-        if (current_token(p).type != TOK_CLOSE_BRACE) error_at_parser(p, "expected ]");
-        advance_token(p);
-        return slice;
-    }
-    //<atomic_expression> "(" ((<expression> ",")* <expression> | E) ")"
-    if (current_token(p).type == TOK_OPEN_PAREN) {
-        AST call = new_ast_node(p, AST_call_expr);
-        call.as_call_expr->lhs = n;
-        call.as_call_expr->base.start = &current_token(p);
-        da_init(&call.as_call_expr->params, 1);
-        advance_token(p);
-        if (current_token(p).type == TOK_CLOSE_PAREN) {
-            call.as_call_expr->base.end = &current_token(p);
-            return call;
-        }
-        while (current_token(p).type != TOK_CLOSE_PAREN) {
-            da_append(&call.as_call_expr->params, parse_expr(p));
-            advance_token(p);
-            if (current_token(p).type == TOK_COMMA) advance_token(p);
-        }
-        call.as_call_expr->base.end = &current_token(p);
-        advance_token(p);
-        return call;
-    }
-    //<atomic_expression> "^"
-    if (current_token(p).type == TOK_CARET) {
-        AST unop = new_ast_node(p, AST_unary_op_expr);
-        unop.as_unary_op_expr->op = &current_token(p);
-        unop.as_unary_op_expr->inside = n;
-        unop.as_unary_op_expr->base.start = &current_token(p);
-        unop.as_unary_op_expr->base.end = &current_token(p);
-        advance_token(p);
-        return unop;
-    } 
-    //<atomic_expression> "{" ((<expression> ",")* <expression> | E) "}"
-    if (current_token(p).type == TOK_OPEN_BRACKET) {
-        AST comp = new_ast_node(p, AST_comp_literal_expr);
-        comp.as_comp_literal_expr->type = n;
-        comp.as_comp_literal_expr->base.start = &current_token(p);
-        da_init(&comp.as_comp_literal_expr->elems, 1);
-        advance_token(p);
-        if (current_token(p).type == TOK_CLOSE_BRACKET) {
-            comp.as_comp_literal_expr->base.end = &current_token(p);
-            return comp;
-        }
-        while (current_token(p).type != TOK_CLOSE_BRACKET) {
-            da_append(&comp.as_comp_literal_expr->elems, parse_expr(p));
-            advance_token(p);
-            if (current_token(p).type == TOK_COMMA) advance_token(p);
-        }
-        comp.as_comp_literal_expr->base.end = &current_token(p);
-        advance_token(p);
-        return comp;
-    }
-    return n;
-}
+//     advance_token(p);
+//     while (current_token(p).type != TOK_CLOSE_BRACE) {
+//         AST stmt = parse_stmt(p);
+//         if (is_null_AST(stmt)) error_at_parser(p, "expected statement");
+//         da_append(&n.as_stmt_block->stmts, stmt);
+//     }
+//     advance_token(p);
+//     return n;
+// }
 
 AST parse_stmt_block(parser* p) {
     //<stmt_block> ::=  "{" <stmt>* "}" | <stmt>
     AST n = new_ast_node(p, AST_stmt_block); 
-    da_init(&n.as_stmt_block->stmts, 1);
+    da_init(&n.as_stmt_block->stmts, 2);
 
     if (current_token(p).type != TOK_OPEN_BRACE) {
-        AST stmt = parse_stmt(p);
-        if (is_null_AST(stmt)) error_at_parser(p, "expected statement");
-        da_append(&n.as_stmt_block->stmts, stmt);
-        return n;
+        error_at_parser(p, "expected {");
     }
-
     advance_token(p);
+
     while (current_token(p).type != TOK_CLOSE_BRACE) {
         AST stmt = parse_stmt(p);
-        if (is_null_AST(stmt)) error_at_parser(p, "expected statement");
+        if (is_null_AST(stmt)) break;
         da_append(&n.as_stmt_block->stmts, stmt);
     }
     advance_token(p);
     return n;
 }
 
-AST parse_atomic_expr_term(parser* p) {
-    //this function is for <atomic_expression> bnf leafs with terminals explicitly in them
-    //not left-assoc, basically
-    /*<atomic_expression_terminals> ::= <literal> | <identifier> | "." <identifier> | <fn> | 
-                        "i8" | "i16" | "i32" | "i64" | "int" |
-                        "u8" | "u16" | "u32" | "u64" | "uint" |
-                        "f16" | "f32" | "f64" | "float" | "bool" |
-                        <fn_type> | <aggregate> | <enum> |
-                        "(" <expression> ")"*/
-
-    AST n;
-
-    switch (current_token(p).type) {
-        //<literal>
-        case TOK_LITERAL_INT:
-        case TOK_LITERAL_FLOAT:
-        case TOK_LITERAL_BOOL:
-        case TOK_LITERAL_STRING:
-        case TOK_LITERAL_CHAR:
-        case TOK_LITERAL_NULL:
-            n = new_ast_node(p, AST_literal_expr);
-            n.as_literal_expr->base.start = &current_token(p);
-            n.as_literal_expr->tok = &current_token(p);
-            n.as_literal_expr->base.end = &current_token(p);
-            advance_token(p);
-            return n;
-        //<identifier>
-        case TOK_IDENTIFIER:
-            n = new_ast_node(p, AST_identifier);
-            n.as_identifier->base.start = &current_token(p);
-            n.as_identifier->tok = &current_token(p);
-            n.as_identifier->base.end = &current_token(p);
-            advance_token(p);
-            return n; 
-        // "." <identifier> enum selector! this is for the semanal
-        case TOK_PERIOD:
-            n = new_ast_node(p, AST_selector_expr);
-            n.as_selector_expr->base.start = &current_token(p);
-            n.as_selector_expr->op = &current_token(p);
-            advance_token(p);
-            n.as_selector_expr->lhs = NULL_AST;
-            n.as_selector_expr->rhs = new_ast_node(p, AST_identifier);
-                n.as_selector_expr->rhs.as_identifier->base.start = &current_token(p);
-                n.as_selector_expr->rhs.as_identifier->tok = &current_token(p);
-                n.as_selector_expr->rhs.as_identifier->base.end = &current_token(p);
-            n.as_identifier->base.end = &current_token(p);
-            advance_token(p);
-            return n;            
-        //<fn> ::= <fn_type> <stmt_block>
-        case TOK_KEYWORD_FN:
-            n = new_ast_node(p, AST_func_literal_expr);
-            n.as_func_literal_expr->base.start = &current_token(p);
-
-            n.as_func_literal_expr->type = parse_fn_type(p);
-            n.as_func_literal_expr->code_block = parse_stmt_block(p);
-            n.as_func_literal_expr->base.end = &current_token(p);
-            advance_token(p);
-            return n;
-        //"i8" | "i16" | "i32" | "i64" | "int" |
-        //"u8" | "u16" | "u32" | "u64" | "uint" |
-        //"f16" | "f32" | "f64" | "float" | "bool" |
-        case TOK_TYPE_KEYWORD_INT:
-        case TOK_TYPE_KEYWORD_I8:
-        case TOK_TYPE_KEYWORD_I16:
-        case TOK_TYPE_KEYWORD_I32:
-        case TOK_TYPE_KEYWORD_I64:
-        case TOK_TYPE_KEYWORD_UINT:
-        case TOK_TYPE_KEYWORD_U8:
-        case TOK_TYPE_KEYWORD_U16:
-        case TOK_TYPE_KEYWORD_U32:
-        case TOK_TYPE_KEYWORD_U64:
-        case TOK_TYPE_KEYWORD_FLOAT:
-        case TOK_TYPE_KEYWORD_F16:
-        case TOK_TYPE_KEYWORD_F32:
-        case TOK_TYPE_KEYWORD_F64:
-        case TOK_TYPE_KEYWORD_BOOL:
-            n = new_ast_node(p, AST_basic_type_expr);
-            n.as_basic_type_expr->base.start = &current_token(p);
-            n.as_basic_type_expr->lit = &current_token(p);
-            printf("curr_tok: %s, 0x%08x\n", token_type_str[current_token(p).type], &current_token(p));
-            n.as_basic_type_expr->base.end = &current_token(p);
-            advance_token(p);
-            return n;
-        case TOK_KEYWORD_STRUCT:
-        case TOK_KEYWORD_UNION:
-            return parse_aggregate(p);
-        case TOK_KEYWORD_ENUM:
-            return parse_enum(p);
-        case TOK_OPEN_PAREN:
-            advance_token(p);
-            n = parse_expr(p);
-            if (current_token(p).type != TOK_CLOSE_PAREN) error_at_parser(p, "expected )");
-            advance_token(p);
-            return n;
-    }
-    return NULL_AST;
+static AST parse_identifier(parser* p) {
+    AST i = new_ast_node(p, AST_identifier);
+    i.as_identifier->tok = i.base->start = i.base->end = &current_token(p);
+    advance_token(p);
+    return i;
 }
+
+AST parse_atomic_expr(parser* p) {
+    AST left = NULL_AST;
+    AST old_left = NULL_AST;
+
+    while (true) switch (current_token(p).type) {
+    case TOK_OPEN_PAREN:
+        if (is_null_AST(left)) {
+            // <paren_expr> ::= "(" <expr> ")"
+            advance_token(p);
+            left = parse_expr(p);
+            if (current_token(p).type != TOK_CLOSE_PAREN) {
+                error_at_parser(p, "expected ')'");
+            }
+        } else {
+            TODO("call expressions");
+        }
+
+        continue;
+    case TOK_IDENTIFIER:
+    case TOK_UNDERSCORE:
+        if (!is_null_AST(left)) return left; // if we've already parsed smth, let it be
+
+        left = parse_identifier(p);
+        left.as_identifier->is_discard = left.base->start->type == TOK_UNDERSCORE;
+        continue;
+
+    case TOK_PERIOD:
+        // atomic.field | .field
+
+        old_left = left;
+        left = new_ast_node(p, AST_selector_expr);
+        left.as_selector_expr->lhs = left;
+        left.as_selector_expr->op = &current_token(p);
+        left.base->start = old_left.base->start;
+
+        advance_token(p);
+
+        if (current_token(p).type != TOK_IDENTIFIER) {
+            error_at_parser(p, "expected identifier after selector");
+        }
+        left.base->end = &current_token(p);
+        left.as_selector_expr->rhs = parse_identifier(p);
+        continue;
+    
+    case TOK_ARROW_RIGHT:
+        if (!is_null_AST(left)) error_at_parser(p, "left side of -> must not be empty");
+    case TOK_COLON_COLON:
+        if (!is_null_AST(left)) error_at_parser(p, "left side of :: must not be empty");
+
+        old_left = left;
+        left = new_ast_node(p, AST_selector_expr);
+        left.as_selector_expr->lhs = left;
+        left.as_selector_expr->op = &current_token(p);
+        left.base->start = old_left.base->start;
+
+        advance_token(p);
+
+        if (current_token(p).type != TOK_IDENTIFIER) {
+            error_at_parser(p, "expected identifier after selector");
+        }
+        left.base->end = &current_token(p);
+        left.as_selector_expr->rhs = parse_identifier(p);
+        continue;
+
+    case TOK_OPEN_BRACE:
+        if (!is_null_AST(left) && left.type == AST_fn_type_expr) {
+            // we're in a function literal!
+            old_left = left;
+            left = new_ast_node(p, AST_func_literal_expr);
+            left.base->start = old_left.base->start;
+            left.as_func_literal_expr->type = old_left;
+            left.as_func_literal_expr->code_block = parse_stmt_block(p);
+            left.base->end = &peek_token(p, -1);
+        } else {
+            error_at_AST(p, left, "bruh");
+            //compound literal!
+            printf("\n!! %d \n", left.type);
+            TODO("compound literal");
+        }
+
+        continue;
+    case TOK_KEYWORD_FN:
+        if (!is_null_AST(left)) return left;
+        left = parse_fn_type(p);
+        continue;
+
+    case TOK_TYPE_KEYWORD_BOOL:
+    case TOK_TYPE_KEYWORD_INT:
+    case TOK_TYPE_KEYWORD_I8:
+    case TOK_TYPE_KEYWORD_I16:
+    case TOK_TYPE_KEYWORD_I32:
+    case TOK_TYPE_KEYWORD_I64:
+    case TOK_TYPE_KEYWORD_UINT:
+    case TOK_TYPE_KEYWORD_U8:
+    case TOK_TYPE_KEYWORD_U16:
+    case TOK_TYPE_KEYWORD_U32:
+    case TOK_TYPE_KEYWORD_U64:
+    case TOK_TYPE_KEYWORD_FLOAT:
+    case TOK_TYPE_KEYWORD_F16:
+    case TOK_TYPE_KEYWORD_F32:
+    case TOK_TYPE_KEYWORD_F64:
+        if (!is_null_AST(left)) return left;
+
+        left = new_ast_node(p, AST_basic_type_expr);
+        left.as_basic_type_expr->lit = left.base->start = left.base->end = &current_token(p);
+        advance_token(p);
+        continue;
+    default:
+        return left;
+    }
+
+    return left;
+}
+
+
 
 AST parse_aggregate(parser* p) {
     //<aggregate> ::= ("struct" | "union")  "{" <param_list> "}" ";" 
@@ -436,7 +376,7 @@ AST parse_fn_type(parser* p) {
             error_at_parser(p, "unexpected");
         }
     }
-    if (current_token(p).type != TOK_CLOSE_PAREN) error_at_parser(p, "expected )");
+    if (current_token(p).type != TOK_CLOSE_PAREN) error_at_parser(p, "expected! )");
     advance_token(p);
 
     da_init(&n.as_fn_type_expr->returns, 1);

@@ -9,7 +9,7 @@
     TOKEN(TOK_EOF,     "EOF") \
 \
     TOKEN(TOK_IDENTIFIER, "identifier") \
-    TOKEN(TOK_IDENTIFIER_DISCARD, "_") \
+    TOKEN(TOK_UNDERSCORE, "_") \
 \
     TOKEN(TOK_LITERAL_INT, "integer literal") \
     TOKEN(TOK_LITERAL_FLOAT, "float literal") \
