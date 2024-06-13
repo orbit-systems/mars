@@ -119,6 +119,8 @@ AST parse_atomic_expr(parser* p) {
     AST left = NULL_AST;
     AST old_left = NULL_AST;
 
+    warn_at_parser(p, "bruh");
+
     while (true) switch (current_token(p).type) {
     case TOK_OPEN_PAREN:
         if (is_null_AST(left)) {
@@ -376,7 +378,7 @@ AST parse_fn_type(parser* p) {
             error_at_parser(p, "unexpected");
         }
     }
-    if (current_token(p).type != TOK_CLOSE_PAREN) error_at_parser(p, "expected! )");
+    if (current_token(p).type != TOK_CLOSE_PAREN) error_at_parser(p, "expected )");
     advance_token(p);
 
     da_init(&n.as_fn_type_expr->returns, 1);
@@ -523,29 +525,18 @@ AST parse_expr(parser* p) {
     /*<expression> ::= <expression> <binop> <expression> | <unary_expression>*/
 
     //<unary_expression>
-    AST n;
-
-    n = parse_unary_expr(p);
-
-    //<expression> <binop> <expression>
-    if (verify_binop(p, current_token(p), false) == -1) return n;
-    return parse_binop_expr(p, n, verify_binop(p, current_token(p), true));
+    return parse_binop_expr(p, -1);
 }
 
-AST parse_expr_wp(parser* p, int precedence) {
-    AST n;
-    n = parse_unary_expr(p);
-
-    if (current_token(p).type == TOK_SEMICOLON) return n;
-    return parse_binop_expr(p, n, precedence); 
-}
-
-AST parse_binop_expr(parser* p, AST lhs, int precedence) {
+AST parse_binop_expr(parser* p, int precedence) {
     //pratt parsing!
     //explanation: we keep tr
     //ack of a precedence p when we start.
     //we then parse, and if this precedence has changed, we break out of this loop 
-    while (precedence < verify_binop(p, current_token(p), true)) {
+    AST lhs = parse_unary_expr(p);
+    if (is_null_AST(lhs)) return lhs;
+    
+    while (precedence < verify_binop(p, current_token(p), false)) {
         lhs = parse_binop_recurse(p, lhs, precedence);
     }
 
@@ -560,7 +551,8 @@ AST parse_binop_recurse(parser* p, AST lhs, int precedence) {
     //current_token is a binop here
     advance_token(p);
 
-    n.as_binary_op_expr->rhs = parse_expr_wp(p, verify_binop(p, *n.as_binary_op_expr->op, true));
+    n.as_binary_op_expr->rhs = parse_binop_expr(p, verify_binop(p, *n.as_binary_op_expr->op, true));
+    if (is_null_AST(n.as_binary_op_expr->rhs)) error_at_parser(p, "expected operand");
     n.as_binary_op_expr->base.end = n.as_binary_op_expr->rhs.base->end;
     return n;
 }
