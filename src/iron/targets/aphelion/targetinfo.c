@@ -55,7 +55,7 @@ const FeArchInstInfo aphelion_instructions[] = {
     },
 };
 
-const FeArchFormatInfo aphelion_format_info = {
+const FeArchAsmSyntaxInfo aphelion_format_info = {
     .i64 = constr("d64 {}"),
     .i32 = constr("d32 {}"),
     .i16 = constr("d16 {}"),
@@ -73,19 +73,14 @@ const FeArchFormatInfo aphelion_format_info = {
     .align = constr("align {}"),
 
     .label = constr("{}:"),
-    .block_label = constr(".{}:"),
+    .local_label = constr(".{}:"),
 
     .bind_symbol_global = constr("global {}"),
     .bind_symbol_local  = constr("local {}"),
-
-    .begin_code_section = constr(""), // nothing for now
-    .begin_data_section = constr(""), // nothing for now
-    .begin_rodata_section = constr(""), // nothing for now
-    .begin_bss_section = constr(""), // nothing for now
 };
 
 // all the information that makes up the aphelion target.
-const FeArchInfo aphelion_target_info = {
+const FeArchInfo aphelion_arch_info = {
 
     // name displayed
     .name = "aphelion",
@@ -108,5 +103,5 @@ const FeArchInfo aphelion_target_info = {
     .insts_len = APHEL_INST_LEN,
     .inst_align = 4,
 
-    .format_info = &aphelion_format_info,
+    .syntax_info = &aphelion_format_info,
 };

@@ -47,7 +47,7 @@ enum {
     APHEL_INST_LEN,
 };
 
-extern const FeArchInfo aphelion_target_info;
+extern const FeArchInfo aphelion_arch_info;
 
 extern FePass pass_aphelion_codegen;
 extern FePass pass_aphelion_movopt;

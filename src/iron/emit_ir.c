@@ -23,7 +23,7 @@ static string simple_type_2_str(FeType* t) {
     return NULL_STR;
 }
 
-static void emit_type_definitions(FeModule* am, StringBuilder* sb) {
+static void emit_type_definitions(FeModule* m, StringBuilder* sb) {
 
     // hopefully this works lmao
 
@@ -31,12 +31,12 @@ static void emit_type_definitions(FeModule* am, StringBuilder* sb) {
 
     u32 count = 0;
 
-    foreach(FeType* t, am->ir_module->typegraph) {
+    foreach(FeType* t, m->typegraph) {
         if (!is_null_str(simple_type_2_str(t))) continue;
         t->number = ++count;
     }
 
-    foreach(FeType* t, am->ir_module->typegraph) {
+    foreach(FeType* t, m->typegraph) {
         if (!is_null_str(simple_type_2_str(t))) continue;
 
         memset(buffer, 0, sizeof(buffer));
@@ -80,7 +80,7 @@ static void emit_type_definitions(FeModule* am, StringBuilder* sb) {
     }  
 }
 
-static int print_type_name(FeType* t, char** bufptr) {
+static int print_type_nme(FeType* t, char** bufptr) {
     char* og = *bufptr;
     if (is_null_str(simple_type_2_str(t))) {
         *bufptr += sprintf(*bufptr, "t%d", t->number);
@@ -90,7 +90,7 @@ static int print_type_name(FeType* t, char** bufptr) {
     return *bufptr - og;
 }
 
-static int sb_type_name(FeType* t, StringBuilder* sb) {
+static int sb_type_nme(FeType* t, StringBuilder* sb) {
     char buf[16] = {0};
 
     if (is_null_str(simple_type_2_str(t))) {
@@ -116,7 +116,7 @@ static void emit_function(FeFunction* f, StringBuilder* sb) {
     sb_append_c(sb, "\" (");
 
     for_range(i, 0, f->params_len) {
-        sb_type_name(f->params[i]->T, sb);
+        sb_type_nme(f->params[i]->T, sb);
         if (i + 1 != f->params_len) {
             sb_append_c(sb, ", ");
         }
@@ -125,7 +125,7 @@ static void emit_function(FeFunction* f, StringBuilder* sb) {
     sb_append_c(sb, ") -> (");
 
     for_range(i, 0, f->returns_len) {
-        sb_type_name(f->returns[i]->T, sb);
+        sb_type_nme(f->returns[i]->T, sb);
         if (i + 1 != f->returns_len) {
             sb_append_c(sb, ", ");
         }
@@ -142,7 +142,7 @@ static void emit_function(FeFunction* f, StringBuilder* sb) {
     for_urange(i, 0, f->stack.len) {
         FeStackObject* so = f->stack.at[i];
         sb_printf(sb, "    #%llu = stack.", i + 1);
-        sb_type_name(so->t, sb);
+        sb_type_nme(so->t, sb);
         sb_append_c(sb, "\n");
         counter++;
     }
@@ -177,19 +177,19 @@ static void emit_function(FeFunction* f, StringBuilder* sb) {
             case FE_ADD: {
                 FeBinop* binop = (FeBinop*) inst;
                 sb_append_c(sb, "add.");
-                sb_type_name(binop->base.T, sb);
+                sb_type_nme(binop->base.T, sb);
                 sb_printf(sb, " #%llu, #%llu", binop->lhs->number, binop->rhs->number);
             } break;
             case FE_LOAD: {
                 FeLoad* load = (FeLoad*) inst;
                 sb_append_c(sb, "load.");
-                sb_type_name(load->base.T, sb);
+                sb_type_nme(load->base.T, sb);
                 sb_printf(sb, " #%llu", load->location->number);
             } break;
             case FE_STORE: {
                 FeStore* store = (FeStore*) inst;
                 sb_append_c(sb, "store.");
-                sb_type_name(store->value->T, sb);
+                sb_type_nme(store->value->T, sb);
                 sb_printf(sb, " #%llu, #%llu", store->location->number, store->value->number);
             } break;
             case FE_MOV: {
@@ -199,7 +199,7 @@ static void emit_function(FeFunction* f, StringBuilder* sb) {
             case FE_CONST: {
                 FeConst* con = (FeConst*) inst;
                 sb_append_c(sb, "const.");
-                sb_type_name(inst->T, sb);
+                sb_type_nme(inst->T, sb);
                 switch (con->base.T->kind) {
                 case FE_I8:  sb_printf(sb, " %lld", (i64)con->i8);  break;
                 case FE_I16: sb_printf(sb, " %lld", (i64)con->i16); break;
@@ -219,7 +219,7 @@ static void emit_function(FeFunction* f, StringBuilder* sb) {
             } break;
             case FE_PARAMVAL: {
                 FeParamVal* param = (FeParamVal*) inst;
-                sb_printf(sb, "paramval %llu", param->param_idx);
+                sb_printf(sb, "parmval %llu", param->param_idx);
             } break;
             case FE_RETURNVAL: {
                 FeReturnVal* ret = (FeReturnVal*) inst;
@@ -246,13 +246,13 @@ static void emit_function(FeFunction* f, StringBuilder* sb) {
     sb_append_c(sb, "}\n");
 }
 
-string fe_emit_textual_ir(FeModule* am) {
+string fe_emit_textual_ir(FeModule* m) {
     StringBuilder sb = {0};
     sb_init(&sb);
 
-    emit_type_definitions(am, &sb);
-    for_range(i, 0, am->ir_module->functions_len) {
-        emit_function(am->ir_module->functions[i], &sb);
+    emit_type_definitions(m, &sb);
+    for_range(i, 0, m->functions_len) {
+        emit_function(m->functions[i], &sb);
     }
 
     string out = string_alloc(sb_len(&sb));

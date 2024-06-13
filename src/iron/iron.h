@@ -4,8 +4,6 @@
 #include "alloc.h"
 #include "arena.h"
 
-#define AS(ptr, type) ((type*)(ptr))
-
 typedef struct FeModule FeModule;
 typedef struct FePass   FePass;
 
@@ -22,10 +20,11 @@ typedef struct FeBasicBlock   FeBasicBlock;
 typedef struct FeArchInstInfo      FeArchInstInfo;
 typedef struct FeArchRegisterInfo  FeArchRegisterInfo;
 typedef struct FeArchRegisterClass FeArchRegisterClass;
-typedef struct FeArchFormatInfo    FeArchFormatInfo;
+typedef struct FeArchAsmSyntaxInfo FeArchAsmSyntaxInfo;
 typedef struct FeArchInfo          FeArchInfo;
 
 typedef struct FeVReg           FeVReg;
+typedef struct FeAsmBuffer      FeAsmBuffer;
 typedef struct FeAsm            FeAsm;
 typedef struct FeAsmSection     FeAsmSection;
 typedef struct FeAsmInst        FeAsmInst;
@@ -34,6 +33,8 @@ typedef struct FeAsmLocalLabel  FeAsmLocalLabel;
 typedef struct FeAsmGlobalLabel FeAsmGlobalLabel;
 typedef struct FeAsmFuncBegin   FeAsmFuncBegin;
 typedef struct FeAsmData        FeAsmData;
+
+#define AS(ptr, type) ((type*)(ptr))
 
 typedef struct FeModule {
     string name;
@@ -49,7 +50,7 @@ typedef struct FeModule {
         size_t len;
         size_t cap;
 
-        arena alloca;
+        Arena alloca;
     } symtab;
 
     struct {
@@ -57,7 +58,7 @@ typedef struct FeModule {
         size_t len;
         size_t cap;
 
-        arena alloca;
+        Arena alloca;
     } typegraph;
 
     struct {
@@ -68,13 +69,7 @@ typedef struct FeModule {
         bool cfg_up_to_date;
     } pass_queue;
 
-    struct {
-        FeAsm** at;
-        size_t len;
-        size_t cap;
-
-        arena alloca;
-    } assembly;
+    FeAsmBuffer* assembly;
 
 } FeModule;
 
@@ -119,7 +114,6 @@ enum {
     FE_F16,
     FE_F32,
     FE_F64,
-
 
     FE_AGGREGATE,
     FE_ARRAY,
@@ -167,8 +161,6 @@ typedef struct FeSymbol {
 typedef struct FeGlobal {
     FeSymbol* sym;
 
-    bool is_symbol_ref;
-
     union {
         struct {
             u8* data;
@@ -178,7 +170,8 @@ typedef struct FeGlobal {
         FeSymbol* symref;
     };
 
-    bool read_only;
+    bool is_symbol_ref : 1;
+    bool read_only : 1;
 } FeGlobal;
 
 #define FE_FN_ALLOCA_BLOCK_SIZE 0x1000
@@ -212,7 +205,7 @@ typedef struct FeFunction {
     u32 entry_idx; // 0 most of the time, but not guaranteed
     // u32 exit_idx;
 
-    arena alloca;
+    Arena alloca;
 } FeFunction;
 
 typedef struct FeFunctionItem {
@@ -466,12 +459,12 @@ extern const size_t air_sizes[];
 
 FeModule*     fe_new_module(string name);
 FeType*       fe_type(FeModule* m, u8 kind, u64 len);
-FeFunction*   fe_new_function(FeModule* mod, FeSymbol* sym, u8 visibility);
+FeFunction*   fe_new_function(FeModule* mod, FeSymbol* sym);
 FeBasicBlock* fe_new_basic_block(FeFunction* fn, string name);
-FeGlobal*     fe_new_global(FeModule* mod, FeSymbol* sym, bool global, bool read_only);
-FeSymbol*     fe_new_symbol(FeModule* mod, string name, u8 visibility, bool function, void* ref);
+FeGlobal*     fe_new_global(FeModule* mod, FeSymbol* sym, bool read_only);
+FeSymbol*     fe_new_symbol(FeModule* mod, string name, u8 visibility);
 FeSymbol*     fe_find_symbol(FeModule* mod, string name);
-FeSymbol*     fe_find_or_new_symbol(FeModule* mod, string name, u8 visibility, bool function, void* ref);
+FeSymbol*     fe_find_or_new_symbol(FeModule* mod, string name, u8 visibility);
 
 FeStackObject* fe_new_stackobject(FeFunction* f, FeType* t);
 void fe_set_func_params(FeFunction* f, u16 count, ...);
@@ -482,6 +475,7 @@ void fe_set_global_symref(FeGlobal* global, FeSymbol* symref);
 
 FeInst* fe_append(FeBasicBlock* bb, FeInst* ir);
 FeInst* fe_inst(FeFunction* f, u8 type);
+
 FeInst* fe_binop(FeFunction* f, u8 type, FeInst* lhs, FeInst* rhs);
 FeInst* fe_cast(FeFunction* f, FeInst* source, FeType* to);
 FeInst* fe_stackoffset(FeFunction* f, FeStackObject* obj);
@@ -499,21 +493,21 @@ FeInst* fe_paramval(FeFunction* f, u32 param);
 FeInst* fe_returnval(FeFunction* f, u32 param, FeInst* source);
 FeInst* fe_return(FeFunction* f);
 
-void fe_move_inst(FeBasicBlock* bb, u64 to, u64 from);
-
-void fe_add_phi_source(FePhi* phi, FeInst* source, FeBasicBlock* source_block);
-
+void   fe_add_phi_source(FePhi* phi, FeInst* source, FeBasicBlock* source_block);
+void   fe_move_inst(FeBasicBlock* bb, u64 to, u64 from);
 string fe_emit_textual_ir(FeModule* am);
+
+// ASSEMBLY SHIT
 
 #define FE_PHYS_UNASSIGNED (UINT32_MAX)
 
 enum {
-    VSPEC_NONE,
-    VSPEC_PARAMVAL, // extend this register's liveness to the beginning of the program
-    VSPEC_RETURNVAL, // extend this register's liveness to the end of the program
+    FE_VSPEC_NONE,
+    FE_VSPEC_PARAMVAL, // extend this register's liveness to the beginning of the program
+    FE_VSPEC_RETURNVAL, // extend this register's liveness to the end of the program
 
-    VSPEC_CALLPARAMVAL, // extend this register's liveness to the next call-classified instruction
-    VSPEC_CALLRETURNVAL, // extend this register's liveness to the nearest previous call-classified instruction
+    FE_VSPEC_CALLPARAMVAL, // extend this register's liveness to the next call-classified instruction
+    FE_VSPEC_CALLRETURNVAL, // extend this register's liveness to the nearest previous call-classified instruction
 };
 
 typedef struct FeVReg {
@@ -530,13 +524,14 @@ typedef struct FeVReg {
 } FeVReg;
 
 enum {
-    IMM_I64,
-    IMM_U64,
+    FE_IMM_I64,
+    FE_IMM_U64,
 
-    IMM_F64,
-    IMM_F32,
-    IMM_F16,
-    IMM_SYM,
+    FE_IMM_F64,
+    FE_IMM_F32,
+    FE_IMM_F16,
+    FE_IMM_SYM_ABSOLUTE,
+    FE_IMM_SYM_RELATIVE,
 };
 
 typedef struct FeImmediate {
@@ -547,32 +542,86 @@ typedef struct FeImmediate {
         f64 f64; // the float stuff isnt really useful i think
         f32 f32;
         f16 f16;
-        FeArchFormatInfo* sym;
+        FeArchAsmSyntaxInfo* sym;
     };
     u8 kind;
 } FeImmediate;
 
+#define __FE_ASM_BASE__ \
+    u8 kind;
+
+enum {
+    FE_ASM_INST = 1,
+    FE_ASM_INLINE,
+    FE_ASM_LOCAL_LABEL,
+    FE_ASM_GLOBAL_LABEL,
+    FE_ASM_FUNC_BEGIN,
+    FE_ASM_FUNC_END,
+    FE_ASM_DATA,
+};
+
+typedef struct FeAsm {
+    _FE_ASM_BASE_
+} FeAsm;
+
 typedef struct FeAsmInst {
 
-    // input virtual registers, length dictated by its FeArchInstInfo
+    // input virtual registers, length dictated by its template
     FeVReg** ins;
 
-    // output virtual registers, length dictated by its FeArchInstInfo
+    // output virtual registers, length dictated by its template
     FeVReg** outs;
 
-    // immediate values, length dictated by its FeArchInstInfo
+    // immediate values, length dictated by its template
     FeImmediate* imms;
 
     // instruction kind information
     FeArchInstInfo* template;
 } FeAsmInst;
 
+#undef __FE_ASM_BASE__
+
+typedef struct FeAsmJumpPattern {
+    FeAsm* src; // where is the jump instruction?
+    FeAsm* dst; // where is it jumping?
+    bool cond; // is it conditional (could control flow pass through this) ?
+} FeAsmJumpPattern;
+
+da_typedef(FeAsmJumpPattern);
+
+typedef struct FeAsmBuffer {
+    FeAsm** at;
+    size_t len;
+    size_t cap;
+
+    Arena alloca;
+
+    FeArchInfo* target_arch;
+
+    da(FeAsmJumpPattern) jumps;
+} FeAsmBuffer;
+
+FeAsm*     fe_asm_append(FeModule* m, FeAsm* a);
+FeAsm*     fe_asm(FeModule* m, u8 kind);
+FeAsm*     fe_asm_inst(FeModule* m, FeArchInstInfo template);
+
+FeVReg*    fe_new_vreg(FeModule* m, u32 regclass);
+
+// fails if no target is provided
+void       fe_codegen(FeModule* m);
+
+string fe_export_assembly(FeModule* m);
+
+
 /* TARGET DEFINITIONS AND INFORMATION */
 
 // info about a register
 typedef struct FeArchRegisterInfo {
     // thing to print in the asm
-    string name;
+    string name; // if no alias index is provided, use this
+
+    string* aliases; // if an alias index is provided, index into this
+    u16 aliases_len;
 } FeArchRegisterInfo;
 
 typedef struct FeArchRegisterClass {
@@ -582,18 +631,10 @@ typedef struct FeArchRegisterClass {
 
 } FeArchRegisterClass;
 
-typedef struct TargetCallingConv {
-    FeArchRegisterInfo** param_regs;
-    u16 param_regs_len;
-
-    FeArchRegisterInfo** return_regs;
-    u16 return_regs_len;
-} TargetCallingConv;
-
 enum {
-    ISPEC_NONE = 0, // no special handling
-    ISPEC_MOVE, // register allocator should try to copy-elide this
-    ISPEC_CALL, // register allocator needs to be careful about lifetimes over this
+    FE_ISPEC_NONE = 0, // no special handling
+    FE_ISPEC_MOVE, // register allocator should try to copy-elide this
+    FE_ISPEC_CALL, // register allocator needs to be careful about lifetimes over this
 };
 
 // instruction template, each MInst follows one.
@@ -605,6 +646,8 @@ typedef struct FeArchInstInfo {
     u16 num_outs;
 
     // instruction specific stuffs
+
+    u8 bytesize;
 
     u8 special; // any special information/classification?
 } FeArchInstInfo;
@@ -620,7 +663,7 @@ typedef struct FeArchInstInfo {
         addr {out 0}, {in 0}, {imm 0}
 */
 
-typedef struct FeArchFormatInfo {
+typedef struct FeArchAsmSyntaxInfo {
     string file_begin; // arbitrary text to put at the beginning
     string file_end; // arbitrary text to put at the end
 
@@ -644,17 +687,12 @@ typedef struct FeArchFormatInfo {
     string align;
 
     string label;
-    string block_label; // for things like basic block labels.
+    string local_label; // for things like basic block labels.
 
     string bind_symbol_global;
     string bind_symbol_local;
 
-    string begin_code_section;
-    string begin_data_section;
-    string begin_rodata_section;
-    string begin_bss_section;
-
-} FeArchFormatInfo;
+} FeArchAsmSyntaxInfo;
 
 // codegen target definition
 typedef struct FeArchInfo {
@@ -667,11 +705,6 @@ typedef struct FeArchInfo {
     u32 insts_len;
     u8 inst_align;
 
-    FeArchFormatInfo* format_info;
+    FeArchAsmSyntaxInfo* syntax_info;
 
 } FeArchInfo;
-
-FeAsm*     fe_asm_add(FeModule* m, FeAsm* inst);
-FeAsm*     fe_asm_inst(FeModule* m, FeArchInstInfo template);
-
-FeVReg*    fe_new_vreg(FeModule* m, u32 regclass);

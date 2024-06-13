@@ -1,6 +1,25 @@
 #include "iron.h"
 #include "passes/passes.h"
 
+static void fe_typegraph_init(FeModule* m);
+
+FeModule* fe_new_module(string name) {
+    FeModule* mod = mars_alloc(sizeof(*mod));
+
+    da_init(&mod->symtab, 32);
+
+    mod->assembly = mars_alloc(sizeof(*mod->assembly));
+
+    da_init(mod->assembly, 32);
+
+    fe_typegraph_init(&mod->typegraph);
+
+    da_init(&mod->pass_queue, 4);
+    fe_sched_pass(mod, &air_pass_canon);
+
+    return mod;
+}
+
 char* random_string(int len) {
     if (len < 3) {
         CRASH("random_string() needs to be called with len >= 3");

@@ -51,7 +51,7 @@ typedef struct entity_table_list {
 
 typedef struct entity_table {
     entity_table* parent;
-    arena alloca;
+    Arena alloca;
 
     entity** at;
     size_t len;

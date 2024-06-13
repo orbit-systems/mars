@@ -17,13 +17,13 @@ void* arena_block_alloc(arena_block* a, size_t size, size_t align);
 
 da_typedef(arena_block);
 
-typedef struct arena {
+typedef struct Arena {
     da(arena_block) list;
     u32 arena_size;
-} arena;
+} Arena;
 
-arena arena_make(size_t size);
-void  arena_delete(arena* al);
-void* arena_alloc(arena* al, size_t size, size_t align);
+Arena arena_make(size_t size);
+void  arena_delete(Arena* al);
+void* arena_alloc(Arena* al, size_t size, size_t align);
 
 size_t align_forward(size_t ptr, size_t align);

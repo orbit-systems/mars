@@ -8,7 +8,7 @@ typedef struct StringBuilder {
     size_t len;
     size_t cap;
 
-    arena alloca; // copies strings to permanent allocator
+    Arena alloca; // copies strings to permanent allocator
 } StringBuilder;
 
 #define SB_ARENA_BLOCK_SIZE 0x1000

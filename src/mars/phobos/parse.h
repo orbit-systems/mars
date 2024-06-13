@@ -7,7 +7,7 @@
 #include "arena.h"
 
 typedef struct parser {
-    arena* alloca;
+    Arena* alloca;
     da(token) tokens;
     string path;
     string src;
@@ -20,7 +20,7 @@ typedef struct parser {
 
 } parser;
 
-parser make_parser(lexer* l, arena* alloca);
+parser make_parser(lexer* l, Arena* alloca);
 void parse_file(parser* p);
 
 #define new_ast_node_p(p, type) ((p)->num_nodes++, new_ast_node((p)->alloca, (type)))

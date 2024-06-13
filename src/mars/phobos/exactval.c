@@ -5,7 +5,7 @@
 // TODO rework exactvals to use a type* instead of a kind tag.
 // it sucks to keep the 'exact_value's and the 'checked_expr's synced up
 
-exact_value* alloc_exact_value(int aggregate_len, arena* alloca) {
+exact_value* alloc_exact_value(int aggregate_len, Arena* alloca) {
     exact_value* ev;
     if (alloca == NULL) return NULL;
     if (alloca == USE_MALLOC) {

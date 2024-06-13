@@ -74,6 +74,6 @@ typedef struct exact_value {
 #define NO_AGGREGATE (-1)
 #define USE_MALLOC ((void*)1)
 
-exact_value* alloc_exact_value(int aggregate_len, arena* alloca);
+exact_value* alloc_exact_value(int aggregate_len, Arena* alloca);
 void destroy_exact_value(exact_value* ev);
 exact_value* copy_ev_to_permanent(exact_value* ev);

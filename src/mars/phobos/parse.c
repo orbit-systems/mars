@@ -7,7 +7,7 @@
 // sandwichman's BLAZINGLY 🔥🔥 FAST 🚀🚀 parser in RUST 🦀🦀 + AI POWERED with ChatGPT 5.0 🤖🧠 and BLOCKCHAIN NFT ETHEREUM WEB3 TECHNOLOGY
 
 // construct a parser struct from a lexer and an arena allocator
-parser make_parser(lexer* l, arena* alloca) {
+parser make_parser(lexer* l, Arena* alloca) {
     parser p = {0};
     p.alloca = alloca;
     p.tokens = l->buffer;
