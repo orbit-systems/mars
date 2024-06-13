@@ -104,6 +104,12 @@ noreturn void error_at_string(string path, string text, string pos, char* messag
 
 void warning_at_string(string path, string text, string pos, char* message, ...) {
     
+    printf("---\n");
+
+    printf("["str_fmt"]", str_arg(pos));
+
+    printf("---\n");
+
     char ERROR_MSG_BUFFER[500] = {0};
     va_list args;
     va_start(args, message);

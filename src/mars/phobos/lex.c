@@ -125,7 +125,7 @@ token_type scan_ident_or_keyword(lexer* lex) {
 
     string word = substring(lex->src, beginning, lex->cursor);
 
-    if (string_eq(word, constr("_")))            return TOK_UNDERSCORE;
+    if (string_eq(word, constr("_")))            return TOK_IDENTIFIER_DISCARD;
 
     if (string_eq(word, constr("int")))          return TOK_TYPE_KEYWORD_INT;
     if (string_eq(word, constr("i8")))           return TOK_TYPE_KEYWORD_I8;
