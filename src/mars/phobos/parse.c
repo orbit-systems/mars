@@ -28,19 +28,43 @@ void parse_file(parser* p) {
     while (current_token(p).type != TOK_EOF) {
         da_append(&p->stmts, parse_stmt(p));
         
-        general_error("Encountered unexpected token type %s", token_type_str[current_token(p).type]);
+        //general_error("Encountered unexpected token type %s", token_type_str[current_token(p).type]);
     }
 }
 
 AST parse_stmt(parser* p) {
+    /*<stmt> ::= <decl> | <return> | <if> | <while> | <assignment> | 
+           <aggregate> | <enum> | <for_type_one> | <for_type_two> | <asm> | <stmt_block> |
+           <switch> | <break> | <fallthrough> | <expression> ";" | <extern> | <defer> | <continue> | ";"*/
+    AST n;
     switch (current_token(p).type) {
+        //<decl>
         case TOK_KEYWORD_LET:
         case TOK_KEYWORD_MUT:
             parse_decl_stmt(p);
             break;
-        default:
-            error_at_parser(p, "found unexpected token during statement parsing");
+        //<return> ::= "return" (<expression>* ",") <expression> ";"
+        case TOK_KEYWORD_RETURN:
+            n = new_ast_node(p, AST_return_stmt);
+            n.as_return_stmt->base.start = &current_token(p);
+            advance_token(p);
+            da_init(&n.as_return_stmt->returns, 1);
+            while (current_token(p).type != TOK_SEMICOLON) {
+                da_append(&n.as_return_stmt->returns, parse_expr(p));
+                advance_token(p);
+            }
+            n.as_return_stmt->base.end = &current_token(p);
+            return n;
+        /**/
+        case TOK_SEMICOLON:
+            n = new_ast_node(p, AST_empty_stmt);
+            n.as_empty_stmt->tok = &current_token(p);
+            n.as_empty_stmt->base.start = &current_token(p);
+            n.as_empty_stmt->base.end = &current_token(p);
+            advance_token(p);
+            return n;
     }
+    return NULL_AST;
 }
 
 AST parse_atomic_expr(parser* p) {
@@ -54,7 +78,115 @@ AST parse_atomic_expr(parser* p) {
                         <atomic_expression> "{" ((<expression> ",")* <expression> ("," | E) | E) "}"*/
 
     AST n = parse_atomic_expr_term(p);
-    //TODO("non-term atomic_expr");
+
+    if (current_token(p).type == TOK_COLON_COLON || current_token(p).type == TOK_PERIOD || current_token(p).type == TOK_ARROW_RIGHT) {
+        //<atomic_expression> ("::" | "." | "->") <identifier>
+        AST sexpr = new_ast_node(p, AST_selector_expr);
+        sexpr.as_selector_expr->base.start = &current_token(p);
+        sexpr.as_selector_expr->lhs = n;
+        sexpr.as_selector_expr->op = &current_token(p);
+        advance_token(p);
+        sexpr.as_selector_expr->rhs = parse_unary_expr(p);
+        sexpr.as_selector_expr->base.end = &current_token(p);
+        return sexpr;
+    }
+    //<atomic_expression> "[" <expression> "]" |
+    //<atomic_expression> "[" (<expression> | E) ":" (<expression> | E) "]" |
+    if (current_token(p).type == TOK_OPEN_BRACKET) {
+        token* start = &current_token(p);
+        AST expr = parse_expr(p);
+        if (is_null_AST(expr) && current_token(p).type == TOK_CLOSE_BRACKET) error_at_parser(p, "expected : or ]");
+        //<atomic_expression> "[" <expression> "]"
+        if (current_token(p).type == TOK_CLOSE_BRACKET) {
+            AST arr_idx = new_ast_node(p, AST_index_expr);
+            arr_idx.as_index_expr->base.start = start;
+            arr_idx.as_index_expr->lhs = n;
+            arr_idx.as_index_expr->inside = expr;
+            arr_idx.as_index_expr->base.end = &current_token(p);
+            return n;
+        }
+        //<atomic_expression> "[" (<expression> | E) ":" (<expression> | E) "]"
+        AST slice = new_ast_node(p, AST_slice_expr);
+        slice.as_slice_expr->base.start = start;
+        slice.as_slice_expr->lhs = n;
+        slice.as_slice_expr->inside_left = expr;
+        if (current_token(p).type != TOK_COLON) error_at_parser(p, "expected :");
+        advance_token(p);
+        slice.as_slice_expr->inside_right = parse_expr(p);
+        if (current_token(p).type != TOK_CLOSE_BRACE) error_at_parser(p, "expected ]");
+        advance_token(p);
+        return slice;
+    }
+    //<atomic_expression> "(" ((<expression> ",")* <expression> | E) ")"
+    if (current_token(p).type == TOK_OPEN_PAREN) {
+        AST call = new_ast_node(p, AST_call_expr);
+        call.as_call_expr->lhs = n;
+        call.as_call_expr->base.start = &current_token(p);
+        da_init(&call.as_call_expr->params, 1);
+        advance_token(p);
+        if (current_token(p).type == TOK_CLOSE_PAREN) {
+            call.as_call_expr->base.end = &current_token(p);
+            return call;
+        }
+        while (current_token(p).type != TOK_CLOSE_PAREN) {
+            da_append(&call.as_call_expr->params, parse_expr(p));
+            advance_token(p);
+            if (current_token(p).type == TOK_COMMA) advance_token(p);
+        }
+        call.as_call_expr->base.end = &current_token(p);
+        return call;
+    }
+    //<atomic_expression> "^"
+    if (current_token(p).type == TOK_CARET) {
+        AST unop = new_ast_node(p, AST_unary_op_expr);
+        unop.as_unary_op_expr->op = &current_token(p);
+        unop.as_unary_op_expr->inside = n;
+        unop.as_unary_op_expr->base.start = &current_token(p);
+        unop.as_unary_op_expr->base.end = &current_token(p);
+        return unop;
+    } 
+    //<atomic_expression> "{" ((<expression> ",")* <expression> | E) "}"
+    if (current_token(p).type == TOK_OPEN_BRACKET) {
+        AST comp = new_ast_node(p, AST_comp_literal_expr);
+        comp.as_comp_literal_expr->type = n;
+        comp.as_comp_literal_expr->base.start = &current_token(p);
+        da_init(&comp.as_comp_literal_expr->elems, 1);
+        advance_token(p);
+        if (current_token(p).type == TOK_CLOSE_BRACKET) {
+            comp.as_comp_literal_expr->base.end = &current_token(p);
+            return comp;
+        }
+        while (current_token(p).type != TOK_CLOSE_BRACKET) {
+            da_append(&comp.as_comp_literal_expr->elems, parse_expr(p));
+            advance_token(p);
+            if (current_token(p).type == TOK_COMMA) advance_token(p);
+        }
+        comp.as_comp_literal_expr->base.end = &current_token(p);
+        return comp;
+    }
+    return n;
+}
+
+AST parse_stmt_block(parser* p) {
+    //<stmt_block> ::=  "{" <stmt>* "}" | <stmt>
+    AST n = new_ast_node(p, AST_stmt_block); 
+    da_init(&n.as_stmt_block->stmts, 1);
+
+    if (current_token(p).type != TOK_OPEN_BRACE) {
+        AST stmt = parse_stmt(p);
+        if (is_null_AST(stmt)) error_at_parser(p, "expected statement");
+        da_append(&n.as_stmt_block->stmts, stmt);
+        return n;
+    }
+
+    advance_token(p);
+    while (current_token(p).type != TOK_CLOSE_BRACE) {
+        AST stmt = parse_stmt(p);
+        if (is_null_AST(stmt)) error_at_parser(p, "expected statement");
+        da_append(&n.as_stmt_block->stmts, stmt);
+    }
+    advance_token(p);
+    return n;
 }
 
 AST parse_atomic_expr_term(parser* p) {
@@ -105,9 +237,15 @@ AST parse_atomic_expr_term(parser* p) {
             n.as_identifier->base.end = &current_token(p);
             advance_token(p);
             return n;            
-        //<fn>
+        //<fn> ::= <fn_type> <stmt_block>
         case TOK_KEYWORD_FN:
-            return parse_fn_type(p);
+            n = new_ast_node(p, AST_func_literal_expr);
+            n.as_func_literal_expr->base.start = &current_token(p);
+
+            n.as_func_literal_expr->type = parse_fn_type(p);
+            n.as_func_literal_expr->code_block = parse_stmt_block(p);
+            n.as_func_literal_expr->base.end = &current_token(p);
+            return n;
         //"i8" | "i16" | "i32" | "i64" | "int" |
         //"u8" | "u16" | "u32" | "u64" | "uint" |
         //"f16" | "f32" | "f64" | "float" | "bool" |
@@ -133,23 +271,112 @@ AST parse_atomic_expr_term(parser* p) {
             n.as_basic_type_expr->base.end = &current_token(p);
             advance_token(p);
             return n;
-        default:
-            error_at_parser(p, "unknown token type %s", token_type_str[current_token(p).type]);
+        case TOK_KEYWORD_STRUCT:
+        case TOK_KEYWORD_UNION:
+            return parse_aggregate(p);
+        case TOK_KEYWORD_ENUM:
+            return parse_enum(p);
     }
     return NULL_AST;
 }
 
+AST parse_aggregate(parser* p) {
+    //<aggregate> ::= ("struct" | "union")  "{" <param_list> "}" ";" 
+    AST n = new_ast_node(p, AST_struct_type_expr);
+    n.as_struct_type_expr->base.start = &current_token(p);
+    n.as_struct_type_expr->is_union = current_token(p).type == TOK_KEYWORD_UNION;
+    da_init(&n.as_struct_type_expr->fields, 1);
+    advance_token(p);
+    if (current_token(p).type != TOK_OPEN_BRACE) error_at_parser(p, "expected {");
+    advance_token(p);
+    if (current_token(p).type != TOK_CLOSE_PAREN) { 
+        /*        <param_list> ::= <param_list> "," <param> | 
+                         <param_list> "," <multi_param> | 
+                         <param> | <multi_param>
 
+        */
+        for (int i = p->current_tok; i < p->tokens.len; i++) {
+            if (current_token(p).type == TOK_COLON) error_at_parser(p, "unexpected :");
+            if (current_token(p).type == TOK_COMMA) advance_token(p);
+            if (current_token(p).type == TOK_CLOSE_PAREN) break;
+            if (current_token(p).type == TOK_IDENTIFIER) {
+                if (peek_token(p, 1).type == TOK_COLON) {
+                    //<param> ::= <unary_expression> ":" <unary_expression>
+                    AST_typed_field curr_field = {0};
+                    AST field = parse_unary_expr(p);
+                    advance_token(p);
+                    da_append(&n.as_struct_type_expr->fields, ((AST_typed_field){.field = field, .type = parse_unary_expr(p)}));
+                    continue;
+                }
+                if (peek_token(p, 1).type == TOK_COMMA) { 
+                    //<multi_param> ::= (<unary_expression>  ",")+ <unary_expression> ":" <unary_expression> 
+                    AST_typed_field curr_field;
+                    curr_field.field = parse_unary_expr(p);
+                    curr_field.type.type = 0;
+                    da_append(&n.as_struct_type_expr->fields, curr_field);
+                    advance_token(p);
+                    continue;
+                }
+            }
+            error_at_parser(p, "unexpected");
+        }
+    }
+    n.as_struct_type_expr->base.end = &current_token(p);
+    return n;
+}
+
+AST parse_enum(parser* p) {
+    //enum's param_list separator is =, not :
+    //<enum> ::= "enum" (<unary_expression> | E) "{" <param_list> "}" ";" 
+    AST n = new_ast_node(p, AST_enum_type_expr);
+    n.as_enum_type_expr->backing_type = parse_unary_expr(p);
+    da_init(&n.as_enum_type_expr->variants, 1);
+    advance_token(p);
+    if (current_token(p).type != TOK_OPEN_BRACE) error_at_parser(p, "expected {");
+    advance_token(p);
+    if (current_token(p).type != TOK_CLOSE_PAREN) { 
+        /*        <param_list> ::= <param_list> "," <param> | 
+                         <param_list> "," <multi_param> | 
+                         <param> | <multi_param>    */
+        for (int i = p->current_tok; i < p->tokens.len; i++) {
+            if (current_token(p).type == TOK_EQUAL) error_at_parser(p, "unexpected :");
+            if (current_token(p).type == TOK_COMMA) advance_token(p);
+            if (current_token(p).type == TOK_CLOSE_PAREN) break;
+            if (current_token(p).type == TOK_IDENTIFIER) {
+                if (peek_token(p, 1).type == TOK_EQUAL) {
+                    //<param> ::= <unary_expression> "=" <unary_expression>
+                    AST_enum_variant var = {0};
+                    var.ident = parse_unary_expr(p);
+                    advance_token(p); advance_token(p);
+                    var.tok = &current_token(p);
+                    da_append(&n.as_enum_type_expr->variants, var);
+                    continue;
+                }
+                if (peek_token(p, 1).type == TOK_COMMA) { 
+                    //<multi_param> ::= (<unary_expression>  ",")+ <unary_expression> "=" <unary_expression> 
+                    AST_enum_variant var = {0};
+                    var.ident = parse_unary_expr(p);
+                    advance_token(p); advance_token(p);
+                    var.tok = NULL;
+                    da_append(&n.as_enum_type_expr->variants, var);
+                    continue;
+                }
+            }
+            error_at_parser(p, "unexpected");
+        }
+    }
+    return n;
+}
 
 AST parse_fn_type(parser* p) {
-    /*<fn_type> ::= "fn" "(" (<param_list> ("," | E) | E) ")" 
-     ("->" (<unary_expression> | "(" <param_list> ")") | E)
+    /*<fn_type> ::= "fn" "(" (<param_list> | E) ")" ("->" (<unary_expression> | "(" <param_list> ")") | E)
 
-    <param> ::= <identifier> ":" <unary_expression> 
-    <multi_param> ::= (<identifier>  ",")+ <identifier> ":" <unary_expression> 
-    <param_list> ::= <param_list> "," <param> | 
-                     <param_list> "," <multi_param> | 
-                     <param> | <multi_param>*/
+        <param> ::= <unary_expression> ":" <unary_expression> 
+        <multi_param> ::= (<unary_expression>  ",")+ <unary_expression> ":" <unary_expression> 
+        <param_list> ::= <param_list> "," <param> | 
+                         <param_list> "," <multi_param> | 
+                         <param> | <multi_param>
+        */
 
     AST n = new_ast_node(p, AST_fn_type_expr);
     n.as_fn_type_expr->base.start = &current_token(p);
@@ -158,61 +385,91 @@ AST parse_fn_type(parser* p) {
     if (current_token(p).type != TOK_OPEN_PAREN) error_at_parser(p, "expected (");
     advance_token(p);
 
-    //fn(a, b, c: int, d: i32)
-
     if (current_token(p).type != TOK_CLOSE_PAREN) { 
-        //param parsing
+        /*        <param_list> ::= <param_list> "," <param> | 
+                         <param_list> "," <multi_param> | 
+                         <param> | <multi_param>
+
+        */
         for (int i = p->current_tok; i < p->tokens.len; i++) {
-            //printf("current tok: "str_fmt", type: %s\n", str_arg(current_token(p).text), token_type_str[current_token(p).type]);
             if (current_token(p).type == TOK_COLON) error_at_parser(p, "unexpected :");
             if (current_token(p).type == TOK_COMMA) advance_token(p);
             if (current_token(p).type == TOK_CLOSE_PAREN) break;
             if (current_token(p).type == TOK_IDENTIFIER) {
                 if (peek_token(p, 1).type == TOK_COLON) {
-                    //<param> ::= <identifier> ":" <unary_expression> 
+                    //<param> ::= <unary_expression> ":" <unary_expression>
                     AST_typed_field curr_field = {0};
-                    printf("current tok: "str_fmt", type: %s\n", str_arg(current_token(p).text), token_type_str[current_token(p).type]);
-                    curr_field.field = new_ast_node(p, AST_identifier);
-                    curr_field.field.as_identifier->base.start = &current_token(p);
-                    curr_field.field.as_identifier->tok = &current_token(p);
-                    curr_field.field.as_identifier->base.end = &current_token(p);
-                    advance_token(p); advance_token(p);
-                    printf("current tok: "str_fmt", type: %s\n\n", str_arg(current_token(p).text), token_type_str[current_token(p).type]);
-                    curr_field.type = parse_unary_expr(p);
-                    da_append(&n.as_fn_type_expr->parameters, curr_field);
+                    AST field = parse_unary_expr(p);
+                    advance_token(p);
+                    da_append(&n.as_fn_type_expr->parameters, ((AST_typed_field){.field = field, .type = parse_unary_expr(p)}));
                     continue;
                 }
                 if (peek_token(p, 1).type == TOK_COMMA) { 
-                    //<multi_param> ::= (<identifier>  ",")+ <identifier> ":" <unary_expression>
+                    //<multi_param> ::= (<unary_expression>  ",")+ <unary_expression> ":" <unary_expression> 
                     AST_typed_field curr_field;
-                    curr_field.field = new_ast_node(p, AST_identifier);
-                    curr_field.field.as_identifier->base.start = &current_token(p);
-                    curr_field.field.as_identifier->tok = &current_token(p);
-                    curr_field.field.as_identifier->base.end = &current_token(p);
+                    curr_field.field = parse_unary_expr(p);
                     curr_field.type.type = 0;
                     da_append(&n.as_fn_type_expr->parameters, curr_field);
-                    advance_token(p); advance_token(p);
+                    advance_token(p);
                     continue;
                 }
             }
-            //advance_token(p);
             error_at_parser(p, "unexpected");
         }
-    } else {
-        n.as_fn_type_expr->parameters.at = NULL;
     }
     if (current_token(p).type != TOK_CLOSE_PAREN) error_at_parser(p, "expected )");
-    for (int i = 0; i < n.as_fn_type_expr->parameters.len; i++) {
-        AST_typed_field tf = n.as_fn_type_expr->parameters.at[i];
-        printf("field: "str_fmt", type: "str_fmt", addr: 0x%08x\n", 
-            str_arg(tf.field.as_identifier->tok->text), 
-            str_arg(tf.type.as_basic_type_expr->lit->text), 
-            &tf.type.as_basic_type_expr->lit->text);
-    }
     advance_token(p);
+
+    da_init(&n.as_fn_type_expr->returns, 1);
     if (current_token(p).type == TOK_ARROW_RIGHT) {
         //returns time!
+        advance_token(p);
+        if (current_token(p).type == TOK_OPEN_PAREN) {
+            advance_token(p);
+            //param parsing
+            /*        <param_list> ::= <param_list> "," <param> | 
+                             <param_list> "," <multi_param> | 
+                             <param> | <multi_param>
+
+            */
+            for (int i = p->current_tok; i < p->tokens.len; i++) {
+                if (current_token(p).type == TOK_COLON) error_at_parser(p, "unexpected :");
+                if (current_token(p).type == TOK_COMMA) advance_token(p);
+                if (current_token(p).type == TOK_CLOSE_PAREN) break;
+                if (current_token(p).type == TOK_IDENTIFIER) {
+                    if (peek_token(p, 1).type == TOK_COLON) {
+                        //<param> ::= <unary_expression> ":" <unary_expression>
+                        AST_typed_field curr_field = {0};
+                        AST field = parse_unary_expr(p);
+                        advance_token(p);
+                        da_append(&n.as_fn_type_expr->returns, ((AST_typed_field){.field = field, .type = parse_unary_expr(p)}));
+                        continue;
+                    }
+                    if (peek_token(p, 1).type == TOK_COMMA) { 
+                        //<multi_param> ::= (<unary_expression>  ",")+ <unary_expression> ":" <unary_expression> 
+                        AST_typed_field curr_field;
+                        curr_field.field = parse_unary_expr(p);
+                        curr_field.type.type = 0;
+                        da_append(&n.as_fn_type_expr->returns, curr_field);
+                        advance_token(p);
+                        continue;
+                    }
+                }
+                error_at_parser(p, "unexpected");
+            }
+            advance_token(p);
+        } else {
+            AST uexpr = parse_unary_expr(p);
+            if (is_null_AST(uexpr)) error_at_parser(p, "expected type or identifier");
+            AST_typed_field curr_field = {0};
+            curr_field.type = uexpr;
+            da_append(&n.as_fn_type_expr->returns, curr_field);
+        }
+
     }
+    n.as_fn_type_expr->base.end = &current_token(p);
+    advance_token(p);
+    return n;
 }
 
 AST parse_unary_expr(parser* p) {
@@ -463,4 +720,5 @@ AST parse_import_decl(parser* p) {
     if (current_token(p).type != TOK_SEMICOLON) error_at_parser(p, "expected semicolon");
     n.as_import_stmt->base.end = &current_token(p);
     advance_token(p);
+    return n;
 }

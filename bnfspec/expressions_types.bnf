@@ -1,7 +1,7 @@
 <fn_type> ::= "fn" "(" (<param_list> ("," | E) | E) ")" ("->" (<unary_expression> | "(" <param_list> ")") | E)
 
-<param> ::= <identifier> ":" <unary_expression> 
-<multi_param> ::= (<identifier>  ",")+ <identifier> ":" <unary_expression> 
+<param> ::= <unary_expression> ":" <unary_expression> 
+<multi_param> ::= (<unary_expression> ",")+ <unary_expression> ":" <unary_expression> 
 <param_list> ::= <param_list> "," <param> | 
                  <param_list> "," <multi_param> | 
                  <param> | <multi_param>
@@ -36,8 +36,6 @@
 <unop> ::= "&" | "-" | "~" | "!" | "?" | "sizeof" | "alignof"
 
 
-<aggregate> ::= ("struct" | "union")  "{" 
-                ( <identifier> ":" <unary_expression> ",")+ 
-                "}" ";" 
-<enum> ::= "enum" <unary_expression> "{" 
-           (<identifier> ",")+ "}" ";" 
+<aggregate> ::= ("struct" | "union")  "{" <param_list> "}" ";" 
+//enum param_list uses = as a separator, not a :
+<enum> ::= "enum" <unary_expression> "{" <param_list> "}" ";" 

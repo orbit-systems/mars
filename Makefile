@@ -31,7 +31,7 @@ LD = gcc
 INCLUDEPATHS = -Isrc/ -Isrc/mars/ -Isrc/mars/phobos/ -Isrc/atlas/ -Isrc/atlas/targets
 DEBUGFLAGS = -lm -pg -g
 ASANFLAGS = -fsanitize=undefined -fsanitize=address
-CFLAGS = -MD -Wincompatible-pointer-types -Wno-discarded-qualifiers -lm -Wno-deprecated-declarations
+CFLAGS = -MD -Wincompatible-pointer-types -Wno-discarded-qualifiers -lm -Wno-deprecated-declarations -Wreturn-type
 OPT = -O2
 
 FILE_NUM = 0
@@ -47,7 +47,7 @@ build: $(OBJECTS)
 	@echo Successfully built: $(EXECUTABLE_NAME)
 
 debug: CFLAGS += $(DEBUGFLAGS)
-debug: OPT = -O2
+debug: OPT = -O0
 debug: build
 
 clean:

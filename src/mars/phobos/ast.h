@@ -46,10 +46,6 @@ typedef struct {
         u16 paramlen;\
         u16 returnlen;\
     }) \
-    AST_TYPE(paren_expr, "parenthesis", { \
-        ast_base base; \
-        AST subexpr; \
-    }) \
     AST_TYPE(cast_expr, "cast", { \
         ast_base base; \
         AST type; \
@@ -103,7 +99,7 @@ typedef struct {
         \
         string realpath; \
     }) \
-    AST_TYPE(block_stmt, "statement block", { \
+    AST_TYPE(stmt_block, "statement block", { \
         ast_base base; \
         da(AST) stmts; \
     }) \
@@ -214,10 +210,7 @@ typedef struct {
     AST_TYPE(struct_type_expr, "struct type", { \
             ast_base base; \
             da(AST_typed_field) fields; \
-    }) \
-    AST_TYPE(union_type_expr, "union type", { \
-            ast_base base; \
-            da(AST_typed_field) fields; \
+            bool is_union; \
     }) \
     AST_TYPE(fn_type_expr, "fn type", { \
             ast_base base; \
@@ -279,6 +272,7 @@ typedef struct {
 
 typedef struct {
     AST ident;
+    token* tok;
     i64 value;
 } AST_enum_variant;
 

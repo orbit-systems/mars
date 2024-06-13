@@ -32,6 +32,9 @@ AST parse_binop_recurse(parser* p, AST lhs, int precedence);
 AST parse_atomic_expr(parser* p);
 AST parse_atomic_expr_term(parser* p);
 AST parse_fn_type(parser* p);
+AST parse_stmt_block(parser* p);
+AST parse_aggregate(parser* p);
+AST parse_enum(parser* p);
 
 parser make_parser(lexer* l, arena* alloca);
 void parse_file(parser* p);
