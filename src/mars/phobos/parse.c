@@ -538,7 +538,7 @@ AST parse_unary_expr(parser* p) {
         case TOK_CARET:
             if (is_null_AST(n)) n = new_ast_node(p, AST_pointer_type_expr);
             advance_token(p);
-            if (current_token(p).type != TOK_KEYWORD_MUT || current_token(p).type != TOK_KEYWORD_LET) error_at_parser(p, "expected mut or let");
+            if (current_token(p).type != TOK_KEYWORD_MUT && current_token(p).type != TOK_KEYWORD_LET) error_at_parser(p, "expected mut or let");
             n.as_pointer_type_expr->mutable = current_token(p).type == TOK_KEYWORD_MUT;
             advance_token(p);
             n.as_pointer_type_expr->subexpr = parse_unary_expr(p);
