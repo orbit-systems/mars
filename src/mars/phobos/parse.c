@@ -41,8 +41,7 @@ AST parse_stmt(parser* p) {
         //<decl>
         case TOK_KEYWORD_LET:
         case TOK_KEYWORD_MUT:
-            parse_decl_stmt(p);
-            break;
+            return parse_decl_stmt(p);
         //<return> ::= "return" (<expression>* ",") <expression> ";"
         case TOK_KEYWORD_RETURN:
             n = new_ast_node(p, AST_return_stmt);
@@ -88,6 +87,7 @@ AST parse_atomic_expr(parser* p) {
         advance_token(p);
         sexpr.as_selector_expr->rhs = parse_unary_expr(p);
         sexpr.as_selector_expr->base.end = &current_token(p);
+        advance_token(p);
         return sexpr;
     }
     //<atomic_expression> "[" <expression> "]" |
@@ -103,6 +103,7 @@ AST parse_atomic_expr(parser* p) {
             arr_idx.as_index_expr->lhs = n;
             arr_idx.as_index_expr->inside = expr;
             arr_idx.as_index_expr->base.end = &current_token(p);
+            advance_token(p);
             return n;
         }
         //<atomic_expression> "[" (<expression> | E) ":" (<expression> | E) "]"
@@ -134,6 +135,7 @@ AST parse_atomic_expr(parser* p) {
             if (current_token(p).type == TOK_COMMA) advance_token(p);
         }
         call.as_call_expr->base.end = &current_token(p);
+        advance_token(p);
         return call;
     }
     //<atomic_expression> "^"
@@ -143,6 +145,7 @@ AST parse_atomic_expr(parser* p) {
         unop.as_unary_op_expr->inside = n;
         unop.as_unary_op_expr->base.start = &current_token(p);
         unop.as_unary_op_expr->base.end = &current_token(p);
+        advance_token(p);
         return unop;
     } 
     //<atomic_expression> "{" ((<expression> ",")* <expression> | E) "}"
@@ -162,6 +165,7 @@ AST parse_atomic_expr(parser* p) {
             if (current_token(p).type == TOK_COMMA) advance_token(p);
         }
         comp.as_comp_literal_expr->base.end = &current_token(p);
+        advance_token(p);
         return comp;
     }
     return n;
@@ -245,6 +249,7 @@ AST parse_atomic_expr_term(parser* p) {
             n.as_func_literal_expr->type = parse_fn_type(p);
             n.as_func_literal_expr->code_block = parse_stmt_block(p);
             n.as_func_literal_expr->base.end = &current_token(p);
+            advance_token(p);
             return n;
         //"i8" | "i16" | "i32" | "i64" | "int" |
         //"u8" | "u16" | "u32" | "u64" | "uint" |
@@ -276,6 +281,12 @@ AST parse_atomic_expr_term(parser* p) {
             return parse_aggregate(p);
         case TOK_KEYWORD_ENUM:
             return parse_enum(p);
+        case TOK_OPEN_PAREN:
+            advance_token(p);
+            n = parse_expr(p);
+            if (current_token(p).type != TOK_CLOSE_PAREN) error_at_parser(p, "expected )");
+            advance_token(p);
+            return n;
     }
     return NULL_AST;
 }
@@ -321,7 +332,10 @@ AST parse_aggregate(parser* p) {
             error_at_parser(p, "unexpected");
         }
     }
+    advance_token(p);
+    if (current_token(p).type == TOK_SEMICOLON) error_at_parser(p, "expected ;");
     n.as_struct_type_expr->base.end = &current_token(p);
+    advance_token(p);
     return n;
 }
 
@@ -329,6 +343,7 @@ AST parse_enum(parser* p) {
     //enum's param_list separator is =, not :
     //<enum> ::= "enum" (<unary_expression> | E) "{" <param_list> "}" ";" 
     AST n = new_ast_node(p, AST_enum_type_expr);
+    n.as_enum_type_expr->base.start = &current_token(p);
     n.as_enum_type_expr->backing_type = parse_unary_expr(p);
     da_init(&n.as_enum_type_expr->variants, 1);
     advance_token(p);
@@ -365,6 +380,10 @@ AST parse_enum(parser* p) {
             error_at_parser(p, "unexpected");
         }
     }
+    advance_token(p);
+    if (current_token(p).type == TOK_SEMICOLON) error_at_parser(p, "expected ;");
+    n.as_enum_type_expr->base.end = &current_token(p);
+    advance_token(p);
     return n;
 }
 
@@ -676,6 +695,7 @@ AST parse_decl_stmt(parser* p) {
     if (current_token(p).type == TOK_UNINIT) n.as_decl_stmt->rhs = NULL_AST;
     else n.as_decl_stmt->rhs = parse_expr(p);
     n.as_decl_stmt->base.end = &current_token(p);
+    advance_token(p);
     return n;
 }
 

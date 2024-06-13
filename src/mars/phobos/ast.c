@@ -29,6 +29,7 @@ AST new_ast_node(parser* p, ast_type type) {
         general_error("internal: new_ast_node() could not allocate AST node of type '%s' with size %d", ast_type_str[type], ast_type_size[type]);
     }
     memset(node_ptr, 0, ast_type_size[type]);
+    p->num_nodes++;
     node.rawptr = node_ptr;
     node.type = type;
     return node;
