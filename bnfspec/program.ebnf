@@ -32,7 +32,7 @@
 <if> ::= "if" <expression> <control_flow_block>
 
 <while> ::= "while" (<expression>  | E) <control_flow_block>
-<assignment> ::= (<identifier> ",")* <identifier> <assign_op> (<expression> | "---")
+<assignment> ::= (<unary_expression> ",")* <unary_expression> <assign_op> (<expression> | "---")
 
 <else> ::= "else" (<if> | <stmt_block>)
 
@@ -40,8 +40,7 @@
 
 <for_type_one> ::= "for" <simple_stmt> ";" <expression>  ";" (( <assignment> "," )* <assignment> ("," | E) | E) <control_flow_block>
 /* TODO: for_type_two should support (x in y..(<|=)z) correctly. */
-<for_type_two> ::= "for" <identifier> (":" <type> | E)  "in"  
-                <expression>  ("..<" | "..=")  <expression> <control_flow_block>
+<for_type_two> ::= "for" <identifier> (":" <type> | E) "in" <expression>  ("..<" | "..=")  <expression> <control_flow_block>
 
 <switch> ::= ("switch"|"which") "(" <expression> ")" "{" 
              ("case" (<expression> ",")* <expression> ("," | E) ":" <stmts>)*

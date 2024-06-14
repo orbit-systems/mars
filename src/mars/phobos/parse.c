@@ -52,14 +52,16 @@ AST parse_stmt(parser* p) {
             da_init(&n.as_return_stmt->returns, 1);
             while (current_token(p).type != TOK_SEMICOLON) {
                 da_append(&n.as_return_stmt->returns, parse_expr(p));
-                advance_token(p);
+                if (current_token(p).type == TOK_COMMA) advance_token(p);
             }
             n.as_return_stmt->base.end = &current_token(p);
+            advance_token(p);
             return n;
         //<if> ::= "if" <expression> <control_flow_block>
         case TOK_KEYWORD_IF:
             n = new_ast_node(p, AST_if_stmt);
             n.as_if_stmt->base.start = &current_token(p);
+            advance_token(p);
             n.as_if_stmt->condition = parse_expr(p);
 
             n.as_if_stmt->if_branch = new_ast_node(p, AST_stmt_block);
@@ -102,7 +104,6 @@ AST parse_stmt(parser* p) {
             n.as_while_stmt->condition = parse_expr(p);
             if (current_token(p).type == TOK_KEYWORD_DO) {
                 advance_token(p);
-                n.as_while_stmt->condition = NULL_AST;
                 n.as_while_stmt->block = parse_stmt(p);
                 return n;
             }
@@ -115,7 +116,8 @@ AST parse_stmt(parser* p) {
         //<for_type_one> ::= "for" <simple_stmt> ";" <expression>  ";" (( <assignment> "," )* <assignment> ("," | E) | E) <control_flow_block>
         //<for_type_two> ::= "for" <identifier> (":" <type> | E) "in" <expression>  ("..<" | "..=")  <expression> <control_flow_block>
             
-
+        case TOK_IDENTIFIER:
+            error_at_parser(p, "TODO: assignments");
         //;
         case TOK_SEMICOLON:
             n = new_ast_node(p, AST_empty_stmt);
@@ -129,11 +131,9 @@ AST parse_stmt(parser* p) {
 }
 
 AST parse_simple_stmt(parser* p) {
-
 }
 
 AST parse_assign_stmt(parser* p) {
-    
 }
 
 int verify_assign_op(parser* p) {
@@ -286,7 +286,7 @@ AST parse_stmt_block(parser* p) {
     advance_token(p);
     while (current_token(p).type != TOK_CLOSE_BRACE) {
         AST stmt = parse_stmt(p);
-        if (is_null_AST(stmt)) error_at_parser(p, "expected statement");
+        if (is_null_AST(stmt)) break;
         da_append(&n.as_stmt_block->stmts, stmt);
     }
     advance_token(p);
@@ -349,7 +349,6 @@ AST parse_atomic_expr_term(parser* p) {
             n.as_func_literal_expr->type = parse_fn_type(p);
             n.as_func_literal_expr->code_block = parse_stmt_block(p);
             n.as_func_literal_expr->base.end = &current_token(p);
-            advance_token(p);
             return n;
         //"i8" | "i16" | "i32" | "i64" | "int" |
         //"u8" | "u16" | "u32" | "u64" | "uint" |
@@ -372,7 +371,6 @@ AST parse_atomic_expr_term(parser* p) {
             n = new_ast_node(p, AST_basic_type_expr);
             n.as_basic_type_expr->base.start = &current_token(p);
             n.as_basic_type_expr->lit = &current_token(p);
-            printf("curr_tok: %s, 0x%08x\n", token_type_str[current_token(p).type], &current_token(p));
             n.as_basic_type_expr->base.end = &current_token(p);
             advance_token(p);
             return n;
@@ -584,10 +582,8 @@ AST parse_fn_type(parser* p) {
             curr_field.type = uexpr;
             da_append(&n.as_fn_type_expr->returns, curr_field);
         }
-
     }
     n.as_fn_type_expr->base.end = &current_token(p);
-    advance_token(p);
     return n;
 }
 
@@ -768,15 +764,14 @@ AST parse_decl_stmt(parser* p) {
         da_append(&n.as_decl_stmt->lhs, ident);
 
         ident.as_identifier->base.end = &current_token(p);
-        advance_token(p);
         if (current_token(p).type == TOK_COMMA) advance_token(p);
+        advance_token(p);
     } 
 
     if (current_token(p).type == TOK_COLON) {
         advance_token(p);
         if (current_token(p).type == TOK_EQUAL) error_at_parser(p, "expected type");
         n.as_decl_stmt->type = parse_unary_expr(p);
-        advance_token(p);
     }
     if (current_token(p).type != TOK_EQUAL && current_token(p).type != TOK_SEMICOLON) error_at_parser(p, "expected either = or ;");
     advance_token(p);

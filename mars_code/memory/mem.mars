@@ -15,7 +15,7 @@ let copy = fn(to: ^mut, from: ^let, len: uint) {
         to_byte += 1;
     }
 };
-
+/*
 let equal = fn(block1, block2: ^let, len: uint) -> bool {
     mut block1_byte = cast(^mut u8) block1;
     mut block2_byte = cast(^mut u8) block2;
@@ -46,4 +46,4 @@ let set = fn(dest: ^mut, len: uint, val: u8) -> bool {
         cursor^ = val;
         cursor += 1;
     }
-};
+};*/

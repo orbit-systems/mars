@@ -536,12 +536,6 @@ void recurse_dot(AST node, fs_file* file, int n, int uid) {
 	        fs_write(file, buffer, strlen(buffer)); 
 	        for (int i = 0; i < n; i++) fs_write(file, "\t", 1);
 
-	       	sprintf(buffer, "\"%s_%d\" -> \"%s_%d\"\n", 
-	        		ast_type_str[node.type], uid, 
-	        		ast_type_str[node.as_if_stmt->else_branch.type], int_uid + 2);
-	        fs_write(file, buffer, strlen(buffer)); 
-	        for (int i = 0; i < n; i++) fs_write(file, "\t", 1);
-
 	        sprintf(buffer, "subgraph cluster%d {\n", dot_uID());
 	        fs_write(file, buffer, strlen(buffer)); 
 	        for (int i = 0; i < n; i++) fs_write(file, "\t", 1);
@@ -584,8 +578,6 @@ void recurse_dot(AST node, fs_file* file, int n, int uid) {
 
 	        sprintf(buffer, "color=red\n");
 	        fs_write(file, buffer, strlen(buffer));         	
-
-	        recurse_dot(node.as_if_stmt->else_branch, file, n+1, int_uid + 2);
 
 	        for (int i = 0; i < n; i++) fs_write(file, "\t", 1);
 	        fs_write(file, "}\n", 2);
