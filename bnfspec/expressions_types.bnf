@@ -35,7 +35,6 @@
 
 <unop> ::= "&" | "-" | "~" | "!" | "?" | "sizeof" | "alignof"
 
-
 <aggregate> ::= ("struct" | "union")  "{" <param_list> "}" ";" 
 //enum param_list uses = as a separator, not a :
 <enum> ::= "enum" <unary_expression> "{" <param_list> "}" ";" 

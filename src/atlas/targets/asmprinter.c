@@ -15,7 +15,6 @@ void debug_asm_printer(AsmModule* am) {
 }
 
 
-
 void print_asm_inst(AsmModule* m, AsmInst* inst, bool debug_mode);
 
 PtrMap vreg2num = {0};

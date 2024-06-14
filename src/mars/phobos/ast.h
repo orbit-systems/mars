@@ -127,8 +127,10 @@ typedef struct {
         ast_base base; \
         AST condition; \
         AST if_branch; \
-        AST else_branch; \
-        bool is_elif : 1; \
+    }) \
+    AST_TYPE(else_stmt, "else statement", { \
+        ast_base base;
+        AST inside;
     }) \
     AST_TYPE(switch_stmt, "switch statement", { \
         ast_base base; \

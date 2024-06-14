@@ -2,13 +2,14 @@
 <module_stmt> ::=  "module"  <identifier>  ";" 
 <import_stmt> ::=  "import" (<identifier> | E) <string> ";" 
 
-<stmt> ::= <decl> | <return> | <if> | <while> | <assignment> | 
+<stmt> ::= <decl> | <return> | <if> | <else> | <while> | 
            <aggregate> | <enum> | <for_type_one> | <for_type_two> | <asm> | <stmt_block> |
-           <switch> | <break> | <fallthrough> | <expression> ";" | <extern> | <defer> | <continue> | ";"
+           <switch> | <break> | <fallthrough> | <expression> ";" | <extern> | <defer> | <continue> | ";" |
+           <assignment> ";"
 
 <type_decl> ::= "type" <identifier> "=" <unary_expression> ";"
 
-<simple_stmt> ::= <decl> | <assign> | <expression>
+<simple_stmt> ::= <decl> | <assignment> | <expression>
 
 <extern> ::= "extern" <stmt>
 
@@ -20,7 +21,7 @@
 <break> ::= "break" (<identifier> | E) ";" 
 <fallthrough> ::= "fallthrough" ";" 
 
-<stmt_block> ::=  "{" <stmt>* "}" | <stmt>
+<stmt_block> ::=  "{" <stmt>* "}"
 
 <control_flow_block> ::= <stmt_block> | "do" <stmt>
 
@@ -28,12 +29,12 @@
 
 <decl> ::= ("let" | "mut") (<identifier> ",")* <identifier> ("," | E)  (":" <type> | E) ("=" (<expression> | "---") | E) ";"
 <return> ::= "return" <expression> ";"
-<if> ::= ("if"|"when")  ("("  <expression>  ")" |  <expression> ) <control_flow_block>
+<if> ::= "if" <expression> <control_flow_block>
 
-<while> ::= "while"  ("("  <expression>  ")" |  <expression>  | E) <control_flow_block>
-<assignment> ::= <identifier> <assign_op> (<expression> | "---") ";" 
+<while> ::= "while" (<expression>  | E) <control_flow_block>
+<assignment> ::= (<identifier> ",")* <identifier> <assign_op> (<expression> | "---")
 
-<else> ::= "else" (<if> | <control_flow_block>)
+<else> ::= "else" (<if> | <stmt_block>)
 
 /* TODO: for_type_one is hacky. this does not force double-sided paren. FIX */
 
