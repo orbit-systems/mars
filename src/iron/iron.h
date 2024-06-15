@@ -17,22 +17,23 @@ typedef struct FeGlobal       FeGlobal;
 typedef struct FeSymbol       FeSymbol;
 typedef struct FeBasicBlock   FeBasicBlock;
 
-typedef struct FeArchInstInfo      FeArchInstInfo;
-typedef struct FeArchRegisterInfo  FeArchRegisterInfo;
-typedef struct FeArchRegisterClass FeArchRegisterClass;
-typedef struct FeArchAsmSyntaxInfo FeArchAsmSyntaxInfo;
-typedef struct FeArchInfo          FeArchInfo;
-
 typedef struct FeVReg           FeVReg;
 typedef struct FeAsmBuffer      FeAsmBuffer;
+
 typedef struct FeAsm            FeAsm;
-typedef struct FeAsmSection     FeAsmSection;
 typedef struct FeAsmInst        FeAsmInst;
 typedef struct FeAsmInline      FeAsmInline;
 typedef struct FeAsmLocalLabel  FeAsmLocalLabel;
 typedef struct FeAsmGlobalLabel FeAsmGlobalLabel;
 typedef struct FeAsmFuncBegin   FeAsmFuncBegin;
+typedef struct FeAsmFuncEnd     FeAsmFuncEnd;
 typedef struct FeAsmData        FeAsmData;
+
+typedef struct FeArchInstInfo      FeArchInstInfo;
+typedef struct FeArchRegisterInfo  FeArchRegisterInfo;
+typedef struct FeArchRegisterClass FeArchRegisterClass;
+typedef struct FeArchAsmSyntaxInfo FeArchAsmSyntaxInfo;
+typedef struct FeArchInfo          FeArchInfo;
 
 #define AS(ptr, type) ((type*)(ptr))
 
@@ -547,7 +548,7 @@ typedef struct FeImmediate {
     u8 kind;
 } FeImmediate;
 
-#define __FE_ASM_BASE__ \
+#define _FE_ASM_BASE \
     u8 kind;
 
 enum {
@@ -561,10 +562,11 @@ enum {
 };
 
 typedef struct FeAsm {
-    _FE_ASM_BASE_
+    _FE_ASM_BASE
 } FeAsm;
 
 typedef struct FeAsmInst {
+    _FE_ASM_BASE
 
     // input virtual registers, length dictated by its template
     FeVReg** ins;
@@ -579,12 +581,59 @@ typedef struct FeAsmInst {
     FeArchInstInfo* template;
 } FeAsmInst;
 
-#undef __FE_ASM_BASE__
+// textual inline assembly.
+typedef struct FeAsmInline {
+    _FE_ASM_BASE
+
+    u16 ins_len;
+    u16 outs_len;
+    u16 interns_len;
+
+    // input virtual registers
+    FeVReg** ins;
+
+    // output virtual registers
+    FeVReg** outs;
+
+    // internal virtual registers, used inside the asm block
+    FeVReg** interns;
+
+    string text;
+
+} FeAsmInline;
+
+typedef struct FeAsmLocalLabel {
+    _FE_ASM_BASE
+    
+    string text;
+} FeAsmLocalLabel;
+
+typedef struct FeAsmGlobalLabel {
+    _FE_ASM_BASE
+    
+    FeSymbol* sym; // defines this symbol in the final assembly
+} FeAsmGlobalLabel;
+
+// tell the register allocator to start
+typedef struct FeAsmFuncBegin {
+    _FE_ASM_BASE
+
+    FeFunction* func;
+} FeAsmFuncBegin;
+
+// tell the register allocator to stop
+typedef struct FeAsmFuncEnd {
+    _FE_ASM_BASE
+
+    FeAsmFuncBegin* open;
+} FeAsmFuncEnd;
+
+#undef _FE_ASM_BASE
 
 typedef struct FeAsmJumpPattern {
     FeAsm* src; // where is the jump instruction?
     FeAsm* dst; // where is it jumping?
-    bool cond; // is it conditional (could control flow pass through this) ?
+    bool is_cond; // is it conditional (could control flow pass through this) ?
 } FeAsmJumpPattern;
 
 da_typedef(FeAsmJumpPattern);
