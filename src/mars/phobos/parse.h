@@ -36,6 +36,8 @@ AST parse_stmt_block(parser* p);
 AST parse_aggregate(parser* p);
 AST parse_enum(parser* p);
 int verify_assign_op(parser* p);
+AST parse_identifier(parser* p);
+AST parse_cfs(parser* p);
 
 parser make_parser(lexer* l, arena* alloca);
 void parse_file(parser* p);

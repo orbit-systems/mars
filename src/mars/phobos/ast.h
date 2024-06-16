@@ -123,6 +123,17 @@ typedef struct {
         AST rhs; \
         token* op; \
     }) \
+    AST_TYPE(asm_stmt, "asm statement", { \
+        ast_base base; \
+        da(AST) params; \
+        da(AST) strs; \
+    }) \
+    AST_TYPE(asm_param, "asm param", { \
+        ast_base base; \
+        AST ident; \
+        token* op; \
+        AST reg; \
+    }) \
     AST_TYPE(if_stmt, "if statement", { \
         ast_base base; \
         AST condition; \
@@ -158,15 +169,14 @@ typedef struct {
         ast_base base; \
         AST indexvar; \
         AST type; \
-        AST to; \
         AST from; \
+        AST to; \
         AST block; \
         bool is_inclusive; \
-        bool is_reverse; \
     }) \
     AST_TYPE(extern_stmt, "extern statement", { \
         ast_base base; \
-        AST decl; \
+        AST stmt; \
     }) \
     AST_TYPE(defer_stmt, "defer statement", { \
         ast_base base; \

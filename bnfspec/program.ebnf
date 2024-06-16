@@ -4,8 +4,8 @@
 
 <stmt> ::= <decl> | <return> | <if> | <else> | <while> | 
            <aggregate> | <enum> | <for_type_one> | <for_type_two> | <asm> | <stmt_block> |
-           <switch> | <break> | <fallthrough> | <expression> ";" | <extern> | <defer> | <continue> | ";" |
-           <assignment> ";"
+           <switch> | <break> | <fallthrough> | <extern> | <defer> | <continue> | ";" |
+           <assignment> ";" | <expression> ";"
 
 <type_decl> ::= "type" <identifier> "=" <unary_expression> ";"
 
@@ -13,7 +13,7 @@
 
 <extern> ::= "extern" <stmt>
 
-<defer> ::= "defer" <stmt>
+<defer> ::= "defer" <stmt> 
 
 <label> ::= <identifier> ":" <stmt>
 
@@ -42,9 +42,9 @@
 /* TODO: for_type_two should support (x in y..(<|=)z) correctly. */
 <for_type_two> ::= "for" <identifier> (":" <type> | E) "in" <expression>  ("..<" | "..=")  <expression> <control_flow_block>
 
-<switch> ::= ("switch"|"which") "(" <expression> ")" "{" 
-             ("case" (<expression> ",")* <expression> ("," | E) ":" <stmts>)*
-             ("case" ":" <stmts> )*
+<switch> ::= "switch" <expression> "{" 
+             ("case" (<expression> ",")* <expression> ("," | E))* ":" <stmt>+
+             ("case" ":" <stmt>+ )* "}"
 
 
 <asm> ::= "asm" "(" (<asm_param> ",")* <asm_param> ("," | E) ")" 
