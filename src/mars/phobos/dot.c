@@ -646,7 +646,7 @@ void recurse_dot(AST node, fs_file* file, int n, int uid) {
 		}
 
 		case AST_for_stmt: {
-			TODO("FIXME");
+			general_warning("fuck! shit arse");
 			/*
 			sprintf(buffer, "\"%s_%d\" [shape=box,style=filled,color=lightblue, label=\"%s\"]\n", 
 	        		ast_type_str[node.type], uid, 

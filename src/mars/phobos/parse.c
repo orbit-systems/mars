@@ -431,7 +431,7 @@ AST parse_atomic_expr(parser* p) {
             if (current_token(p).type != TOK_COLON) error_at_parser(p, "expected :");
             advance_token(p);
             left.as_slice_expr->inside_right = parse_expr(p);
-            if (current_token(p).type != TOK_CLOSE_BRACE) error_at_parser(p, "expected ]");
+            if (current_token(p).type != TOK_CLOSE_BRACKET) error_at_parser(p, "expected ]");
             advance_token(p);
             continue;
         }
@@ -1009,12 +1009,14 @@ AST parse_module_decl(parser* p) {
 }
 
 AST parse_import_decl(parser* p) {
+    //<import_stmt> ::= "import" (<identifier> | E) <string> ";" 
     AST n = new_ast_node(p, AST_import_stmt);
     n.as_import_stmt->base.start = &current_token(p);
+    advance_token(p);
     if (current_token(p).type == TOK_IDENTIFIER) {
         n.as_import_stmt->name = parse_identifier(p);
+
     }
-    advance_token(p);
 
     if (current_token(p).type != TOK_LITERAL_STRING) error_at_parser(p, "expected string literal");
     n.as_import_stmt->path = new_ast_node(p, AST_literal_expr);

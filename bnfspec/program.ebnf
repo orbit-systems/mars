@@ -1,6 +1,6 @@
 <program> ::= <module_stmt> <import_stmt>* <stmts>
-<module_stmt> ::=  "module"  <identifier>  ";" 
-<import_stmt> ::=  "import" (<identifier> | E) <string> ";" 
+<module_stmt> ::= "module"  <identifier>  ";" 
+<import_stmt> ::= "import" (<identifier> | E) <string> ";" 
 
 <stmt> ::= <decl> | <return> | <if> | <else> | <while> | 
            <aggregate> | <enum> | <for_type_one> | <for_type_two> | <asm> | <stmt_block> |

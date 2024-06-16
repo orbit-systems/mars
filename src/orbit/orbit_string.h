@@ -111,7 +111,11 @@ bool string_eq(string a, string b) {
 }
 
 char* clone_to_cstring(string str) {
-    if (is_null_str(str)) return "";
+    if (is_null_str(str)) {
+        char* cstr = malloc(1);
+        cstr[0] = '\0';
+        return cstr;
+    } 
 
     char* cstr = malloc(str.len + 1);
     if (cstr == NULL) return NULL;
