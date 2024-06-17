@@ -4,6 +4,15 @@
 #include "parse.h"
 
 // kayla's FREEZINGLY 🧊🧊 SLOW 🐌🐌 parser in ALGOL69 👴👴 + KITTY POWERED with KIBBLE 5.0 🐈🐈 and DOGECOIN WEB4 TECHNOLOGY
+// predictive LL(1) parser using the ebnf spec
+
+/*
+    README FOR THOSE WANTING TO MODIFY THIS:
+    functions of the form parse_***(parser* p) will advance the token stream for you
+    if you have any questions, please contact kaylatheegg on discord or leave a github
+    issue and i'll give you alternative contact info if you do not have discord.
+ */
+
 
 // construct a parser struct from a lexer and an arena allocator
 parser make_parser(lexer* l, arena* alloca) {
