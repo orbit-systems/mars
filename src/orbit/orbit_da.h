@@ -30,7 +30,7 @@
 #define da_append(da_ptr, element) do { \
     if ((da_ptr)->len == (da_ptr)->cap) { \
         (da_ptr)->cap *= 2; \
-        (da_ptr)->at = realloc((da_ptr)->at, sizeof((da_ptr)->at[0]) * (da_ptr)->cap); \
+        (da_ptr)->at = realloc((da_ptr)->at, sizeof(*(da_ptr)->at) * (da_ptr)->cap); \
         if ((da_ptr)->at == NULL) { \
             printf("(%s:%d) da_append realloc failed for capacity %zu", (__FILE__), (__LINE__), (da_ptr)->cap); \
             exit(1); \

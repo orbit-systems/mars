@@ -1,53 +1,56 @@
 <program> ::= <module_stmt> <import_stmt>* <stmts>
-<module_stmt> ::= <ws> "module" <fws> <identifier> <ws> ";" <ws>
-<import_stmt> ::= <ws> "import" (<fws> <identifier> | E) <ws> <string> <ws> ";" <ws>
+<module_stmt> ::= "module"  <identifier>  ";" 
+<import_stmt> ::= "import" (<identifier> | E) <string> ";" 
 
-<stmts> ::= <stmts> <ws> <stmt> <ws> | <ws> <stmt> <ws> | E
-
-<stmt> ::= <decl> | <return> | <if> | <while> | <assignment> ";" <ws> | 
+<stmt> ::= <decl> | <return> | <if> | <else> | <while> | 
            <aggregate> | <enum> | <for_type_one> | <for_type_two> | <asm> | <stmt_block> |
-           <switch> | <break> | <fallthrough> | <type_stmt>
+           <switch> | <break> | <fallthrough> | <extern> | <defer> | <continue> | ";" |
+           <assignment> ";" | <expression> ";"
 
-<decl> ::= ("let" | "mut") <fws> <identifier> <ws> (":" <ws> <type> <ws> | E) "=" <ws> <r_value> <ws> ";"
-<return> ::= "return" <fws> (<identifier> | <expression> | <literal>) <ws> ";"
-<if> ::= ("if"|"when") <fws> <ws> <expression> <ws> <stmt_block>
+<type_decl> ::= "type" <identifier> "=" <unary_expression> ";"
 
-<while> ::= "while" <fws> (<ws> <expression> <ws> | E) <stmt_block>
-<assignment> ::= <expression> <ws> <assign_op> <ws> <expression> <ws>
+<simple_stmt> ::= <decl> | <assignment> | <expression>
 
-<else> ::= "else" <fws> (<if> | <stmt_block>)
+<extern> ::= "extern" <stmt>
+
+<defer> ::= "defer" <stmt> 
+
+<label> ::= <identifier> ":" <stmt>
+
+<continue> ::= "continue" (<identifier> | E) ";"
+<break> ::= "break" (<identifier> | E) ";" 
+<fallthrough> ::= "fallthrough" ";" 
+
+<stmt_block> ::=  "{" <stmt>* "}"
+
+<control_flow_block> ::= <stmt_block> | "do" <stmt>
+
+<fn> ::= <fn_type> <stmt_block>
+
+<decl> ::= ("let" | "mut") (<identifier> ",")* <identifier> ("," | E)  (":" <type> | E) ("=" (<expression> | "---") | E) ";"
+<return> ::= "return" <expression> ";"
+<if> ::= "if" <expression> <control_flow_block>
+
+<while> ::= "while" (<expression>  | E) <control_flow_block>
+<assignment> ::= (<unary_expression> ",")* <unary_expression> <assign_op> (<expression> | "---")
+
+<else> ::= "else" (<if> | <stmt_block>)
 
 /* TODO: for_type_one is hacky. this does not force double-sided paren. FIX */
 
-<for_type_one> ::= "for" <fws> ("(" | E) (<assignment> | <decl> | E) <ws> ";" <ws>
-          <expression> <ws> ";" <ws> 
-          ((<ws> <assignment> <ws> "," <ws>)* <ws> <assignment> <ws> | E) (";" | E) (")" | E) <stmt_block>
+<for_type_one> ::= "for" <simple_stmt> ";" <expression>  ";" (( <assignment> "," )* <assignment> ("," | E) | E) <control_flow_block>
 /* TODO: for_type_two should support (x in y..(<|=)z) correctly. */
-<for_type_two> ::= "for" <fws> <identifier> (<ws> ":" <ws> <type> <ws> | E) <ws> "in" <ws> 
-                <expression> <ws> ("..<" | "..=") <ws> <expression> <stmt_block>
+<for_type_two> ::= "for" <identifier> (":" <type> | E) "in" <expression>  ("..<" | "..=")  <expression> <control_flow_block>
 
-<type_stmt> ::= "type" <fws> <identifier> <ws> "=" <ws> <type> <ws> ";" <ws>
+<switch> ::= "switch" <expression> "{" 
+             ("case" (<expression> ",")* <expression> ("," | E))* ":" <stmt>+
+             ("case" ":" <stmt>+ )* "}"
 
-<stmt_block> ::= <ws> "{" <ws> <stmts> <ws> "}" <ws>
 
-<switch> ::= ("switch"|"which") <fws> <expression> <ws> "{" <ws>
-            (<ws> "case" <fws> (<ws> <expression> <ws> "," <ws>)* <expression> ("," | E) <ws> ":" <ws> <stmts> <ws>)*
-            (<ws> "case" <ws> ":" <ws> <stmts> <ws>)*
+<asm> ::= "asm" "(" (<asm_param> ",")* <asm_param> ("," | E) ")" 
+    "{" (<string> ",")* <string> ("," | E) "}" 
 
-<break> ::= "break" <ws> ";" <ws>
-<fallthrough> ::= "fallthrough" <ws> ";" <ws>
-
-<asm> ::= "asm" <ws> "(" <ws>
-    (<asm_param> "," <ws>)* <asm_param>
-    <ws> ")" <ws> "{" <ws> 
-    (<ws> <string> <ws> "," <ws>)+ <ws> "}" <ws>
-
-<asm_param> ::= <expression> <ws> ("->" | "<-" | "<->") <ws> <string> <ws>
+<asm_param> ::= <identifier> ("->" | "<-" | "<->") <string> 
 
 <assign_op> ::= "+=" | "-=" | "*="  | "/=" | "%="  | "%%=" | 
                 "&=" | "|=" | "~|=" | "~=" | "<<=" | ">>=" | "="
-
-<r_value> ::= <fn> | <literal> | <expression> | "---"
-
-<ws> ::= <fws> | E
-<fws> ::= ("\n" | "\r" | " " | "\t")+

@@ -33,10 +33,10 @@ int main(int argc, char** argv) {
         }   
     
         // recursive check
-        check_module_and_dependencies(main_mod);
+        //check_module_and_dependencies(main_mod);
 
         if (mars_flags.dump_AST) for_urange(i, 0, main_mod->program_tree.len) {
-            dump_tree(main_mod->program_tree.at[i], 0);
+            //dump_tree(main_mod->program_tree.at[i], 0);
         }
         
 
@@ -55,7 +55,7 @@ int main(int argc, char** argv) {
 
         printf("attempt IR generation\n");
 
-        generate_ir_atlas_from_mars(main_mod, atlas_module);
+        //generate_ir_atlas_from_mars(main_mod, atlas_module);
     
         printf("IR generated\n");
     } else {

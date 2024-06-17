@@ -30,6 +30,7 @@
     TOKEN(TOK_RANGE_EQ,  "..=") \
     TOKEN(TOK_COMMA,     ",") \
     TOKEN(TOK_EXCLAM,    "!") \
+    TOKEN(TOK_QUESTION,  "?") \
     TOKEN(TOK_CARET,     "^") \
     TOKEN(TOK_AT,        "@") \
     TOKEN(TOK_ADD,       "+") \
@@ -94,6 +95,7 @@
     TOKEN(TOK_KEYWORD_CONTINUE,  "continue") \
     TOKEN(TOK_KEYWORD_DEFER,     "defer") \
     TOKEN(TOK_KEYWORD_DISTINCT,  "distinct") \
+    TOKEN(TOK_KEYWORD_DO,        "do") \
     TOKEN(TOK_KEYWORD_ENUM,      "enum") \
     TOKEN(TOK_KEYWORD_ELIF,      "elif") \
     TOKEN(TOK_KEYWORD_ELSE,      "else") \

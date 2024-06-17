@@ -1,35 +1,39 @@
-<fn> ::= <fn_type> <ws> (<stmt_block> | "---")
-
-<fn_type> ::= "fn" <ws> "(" <ws> (<param_list> | E) <ws> ")" (<ws> "->" (<ws> <type> <ws> | <ws> "(" <param_list> ")" <ws>) | E)
-
-<param> ::= <identifier> <ws> ":" <ws> <type> <ws>
-<multi_param> ::= (<ws> <identifier> <ws> ",")+ <ws> <identifier> <ws> ":" <ws> <type> <ws>
-<param_list> ::= <param_list> <ws> "," <ws> <param> | 
-                 <param_list> <ws> "," <ws> <multi_param> | 
+<fn_type> ::= "fn" "(" (<param_list> ("," | E) | E) ")" ("->" (<unary_expression> | "(" <param_list> ")") | E)
+<param> ::= <unary_expression> ":" <unary_expression> 
+<multi_param> ::= (<unary_expression> ",")+ <unary_expression> ":" <unary_expression> 
+<param_list> ::= <param_list> "," <param> | 
+                 <param_list> "," <multi_param> | 
                  <param> | <multi_param>
 
-<type> ::= "i8" | "i16" | "i32" | "i64" | "int" |
-           "u8" | "u16" | "u32" | "u64" | "uint" |
-           "f16" | "f32" | "f64" | "float" | "bool" | <identifier> | ("^" | "[]") <ws> ("mut" | "let") (<fws> <type> | E) |
-           "[" <ws> (<digit>+ | E) <ws> "]" <type> | "distinct" <fws> <type>
+<expression> ::= <expression> <binop> <expression> | <unary_expression>
 
-<expression> ::= "(" <ws> <expression> <ws> ")" | <expression> <binop> <expression> | <ws> <identifier> <ws> |
-                 <unop> <ws> <expression> | <expression> <ws> "^" |
-                 <expression> <ws> "[" <ws> (<digit>+ | <identifier>) <ws> ":" <ws> (<digit>+ | <identifier>) <ws> "]" |
-                 ("cast" | "bitcast") <ws> "(" <ws> <type> <ws> ")" <ws> <expression> | <ws> <numeric_literal> <ws> |
-                 <expression> <ws> ("::" | "." | "->") <ws> <expression> | <stmt_block>
+<atomic_expression> ::= <literal> | <identifier> | "." <identifier> | <fn> | 
+                        "i8" | "i16" | "i32" | "i64" | "int" |
+                        "u8" | "u16" | "u32" | "u64" | "uint" |
+                        "f16" | "f32" | "f64" | "float" | "bool" |
+                        <fn_type> | <aggregate> | <enum> |
+                        "(" <expression> ")" |
+                        <atomic_expression> ("::" | "." | "->") <identifier> |
+                        <atomic_expression> "[" <expression> "]" |
+                        <atomic_expression> "[" (<expression> | E) ":" (<expression> | E) "]" |
+                        <atomic_expression> "(" ((<expression> ",")* <expression> ("," | E) | E) ")" |
+                        <atomic_expression> "^" |
+                        <atomic_expression> "{" ((<expression> ",")* <expression> ("," | E) | E) "}"
+
+<unary_expression> ::= <unop> <unary_expression> |
+                       ("cast" | "bitcast") "(" <unary_expression> ")" <unary_expression> |
+                       ("^" | "[]") ("mut" | "let") ( <unary_expression> | E) |
+                       "[" <expression> "]" <unary_expression> | 
+                       "distinct" <unary_expression> |
+                       <atomic_expression>
 
 <binop> ::= "*" | "/" | "%" | "%%" | "&" | "<<" | ">>" | "~|" |
                "+" | "-" | "|" | "~" |
                "==" | "!=" | "<" | ">" | "<=" | ">=" |
-               "&&" | "||" |
-               "[" <ws> (<digit>+ | <identifier>) <ws> "]"
+               "&&" | "||" 
 
-<unop> ::= "&" | "-" | "~" | "!"
+<unop> ::= "&" | "-" | "~" | "!" | "?" | "sizeof" | "alignof"
 
-<aggregate> ::= ("struct" | "union") <ws> "{" 
-                (<ws> <identifier> <ws> ":" <ws> <type> <ws> "," <ws>)+ 
-                "}" <ws> ";" <ws>
-
-<enum> ::= "enum" <fws> <type> <ws> "{" <ws>
-           (<ws> <identifier> <ws> "," <ws>)+ <ws> "}" <ws> ";" <ws>
+<aggregate> ::= ("struct" | "union")  "{" <param_list> "}" ";" 
+//enum param_list uses = as a separator, not a :
+<enum> ::= "enum" <unary_expression> "{" <param_list> "}" ";" 

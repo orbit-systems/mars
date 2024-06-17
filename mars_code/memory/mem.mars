@@ -34,6 +34,7 @@ let equal = fn(block1, block2: ^let, len: uint) -> bool {
     return true;
 };
 
+
 let str_equal = fn(a, b: []let u8) -> bool {
     if a.len != b.len { return false; }
     return equal(a.raw, b.raw, a.len);

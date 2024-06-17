@@ -59,18 +59,17 @@ void recurse_dot(AST node, fs_file* file, int n, int uid) {
 		return;
 	}
 
-	
 	switch (node.type) {
 		case AST_invalid:
 			return;
-		case AST_identifier_expr: {
+		case AST_identifier: {
 
 			int int_uid = dot_uID();
 
 	        sprintf(buffer, "\"%s_%d\" [shape=box,style=filled,color=\".7 .3 1.0\", label=\"%s\"]\n", 
-	        		clone_to_cstring(node.as_identifier_expr->tok->text), 
+	        		clone_to_cstring(node.as_identifier->tok->text), 
 	        		int_uid, 
-	        		clone_to_cstring(node.as_identifier_expr->tok->text)); //write out identifier_expr with sugared name
+	        		clone_to_cstring(node.as_identifier->tok->text)); //write out identifier_expr with sugared name
 	        fs_write(file, buffer, strlen(buffer));
 	        for (int i = 0; i < n; i++) fs_write(file, "\t", 1); //fix tabs
 
@@ -82,7 +81,7 @@ void recurse_dot(AST node, fs_file* file, int n, int uid) {
 
 	        sprintf(buffer, "\"%s_%d\" -> \"%s_%d\"", 
 	        		ast_type_str[node.type], uid, 
-	        		clone_to_cstring(node.as_identifier_expr->tok->text), int_uid); //print node link
+	        		clone_to_cstring(node.as_identifier->tok->text), int_uid); //print node link
 	        fs_write(file, buffer, strlen(buffer));
 	        break;
 		}
@@ -219,21 +218,21 @@ void recurse_dot(AST node, fs_file* file, int n, int uid) {
 	    	break;
 		}
 
-		case AST_block_stmt: {
+		case AST_stmt_block: {
 			sprintf(buffer, "\"%s_%d\" [shape=box,style=filled,color=lightblue, label=\"%s\"]\n", 
 	        		ast_type_str[node.type], uid, 
 	        		ast_type_str[node.type]); //write out identifier_expr with sugared name
 	        fs_write(file, buffer, strlen(buffer));
 	        //for (int i = 0; i < n; i++) fs_write(file, "\t", 1); //fix tabs	
 
-	        for_urange(i, 0, node.as_block_stmt->stmts.len) {
+	        for_urange(i, 0, node.as_stmt_block->stmts.len) {
 	        	int int_uid = dot_uID();
 	        	for (int i = 0; i < (n); i++) fs_write(file, "\t", 1);
 	        	sprintf(buffer, "\"%s_%d\" -> \"%s_%d\"\n", 
 	        			ast_type_str[node.type], uid, 
-	        			ast_type_str[node.as_block_stmt->stmts.at[i].type], int_uid);
+	        			ast_type_str[node.as_stmt_block->stmts.at[i].type], int_uid);
 	            fs_write(file, buffer, strlen(buffer)); 
-	        	recurse_dot(node.as_block_stmt->stmts.at[i], file, n+1, int_uid);
+	        	recurse_dot(node.as_stmt_block->stmts.at[i], file, n+1, int_uid);
 	        }
 	        break;
 		}
@@ -364,7 +363,7 @@ void recurse_dot(AST node, fs_file* file, int n, int uid) {
 	        fs_write(file, buffer, strlen(buffer));
 	        for (int i = 0; i < n; i++) fs_write(file, "\t", 1); //fix tabs	
 
-	        for_urange(i, 0, node.as_block_stmt->stmts.len) {
+	        for_urange(i, 0, node.as_assign_stmt->lhs.len) {
 	        	int int_uid = dot_uID();
 	        	for (int i = 0; i < (n); i++) fs_write(file, "\t", 1);
 	        	sprintf(buffer, "\"%s_%d\" -> \"%s_%d\"\n", 
@@ -384,33 +383,6 @@ void recurse_dot(AST node, fs_file* file, int n, int uid) {
 	        recurse_dot(node.as_assign_stmt->rhs, file, n+1, int_uid);
 
 	        break;
-		}
-
-		case AST_comp_assign_stmt: {
-			sprintf(buffer, "\"%s_%d\" [shape=box,style=filled,color=lightblue, label=\"assignment op %s\"]\n", 
-	        		ast_type_str[node.type], uid, 
-	        		clone_to_cstring(node.as_comp_assign_stmt->op->text)); //write out identifier_expr with sugared name
-	        fs_write(file, buffer, strlen(buffer));
-	        for (int i = 0; i < n; i++) fs_write(file, "\t", 1); //fix tabs	
-
-	        int int_uid = dot_uID();
-	        
-	        sprintf(buffer, "\"%s_%d\" -> \"%s_%d\"\n", 
-	        		ast_type_str[node.type], uid, 
-	        		ast_type_str[node.as_comp_assign_stmt->lhs.type], int_uid);
-	        fs_write(file, buffer, strlen(buffer)); 
-	        for (int i = 0; i < n; i++) fs_write(file, "\t", 1);
-
-	       	sprintf(buffer, "\"%s_%d\" -> \"%s_%d\"\n", 
-	        		ast_type_str[node.type], uid, 
-	        		ast_type_str[node.as_comp_assign_stmt->rhs.type], int_uid + 1);
-	        fs_write(file, buffer, strlen(buffer)); 
-	        //for (int i = 0; i < n; i++) fs_write(file, "\t", 1);
-
-	        recurse_dot(node.as_comp_assign_stmt->lhs, file, n+1, int_uid);
-	    	recurse_dot(node.as_comp_assign_stmt->rhs, file, n+1, int_uid + 1);
-
-	    	break;
 		}
 
 		case AST_unary_op_expr: {
@@ -489,7 +461,7 @@ void recurse_dot(AST node, fs_file* file, int n, int uid) {
 	       	break;
 		}
 
-		case AST_entity_selector_expr: {
+		case AST_selector_expr: {
 			sprintf(buffer, "\"%s_%d\" [shape=box,style=filled,color=lightblue, label=\"%s\"]\n", 
 	        		ast_type_str[node.type], uid, 
 	        		ast_type_str[node.type]); //write out identifier_expr with sugared name
@@ -500,18 +472,18 @@ void recurse_dot(AST node, fs_file* file, int n, int uid) {
 	        
 	        sprintf(buffer, "\"%s_%d\" -> \"%s_%d\"\n", 
 	        		ast_type_str[node.type], uid, 
-	        		ast_type_str[node.as_entity_selector_expr->lhs.type], int_uid);
+	        		ast_type_str[node.as_selector_expr->lhs.type], int_uid);
 	        fs_write(file, buffer, strlen(buffer)); 
 	        for (int i = 0; i < n; i++) fs_write(file, "\t", 1);
 
 	       	sprintf(buffer, "\"%s_%d\" -> \"%s_%d\"\n", 
 	        		ast_type_str[node.type], uid, 
-	        		ast_type_str[node.as_entity_selector_expr->rhs.type], int_uid + 1);
+	        		ast_type_str[node.as_selector_expr->rhs.type], int_uid + 1);
 	        fs_write(file, buffer, strlen(buffer)); 
 	        //for (int i = 0; i < n; i++) fs_write(file, "\t", 1);
 
-	        recurse_dot(node.as_entity_selector_expr->lhs, file, n+1, int_uid);
-	    	recurse_dot(node.as_entity_selector_expr->rhs, file, n+1, int_uid + 1);
+	        recurse_dot(node.as_selector_expr->lhs, file, n+1, int_uid);
+	    	recurse_dot(node.as_selector_expr->rhs, file, n+1, int_uid + 1);
 	    	break;
 		}
 
@@ -564,12 +536,6 @@ void recurse_dot(AST node, fs_file* file, int n, int uid) {
 	        fs_write(file, buffer, strlen(buffer)); 
 	        for (int i = 0; i < n; i++) fs_write(file, "\t", 1);
 
-	       	sprintf(buffer, "\"%s_%d\" -> \"%s_%d\"\n", 
-	        		ast_type_str[node.type], uid, 
-	        		ast_type_str[node.as_if_stmt->else_branch.type], int_uid + 2);
-	        fs_write(file, buffer, strlen(buffer)); 
-	        for (int i = 0; i < n; i++) fs_write(file, "\t", 1);
-
 	        sprintf(buffer, "subgraph cluster%d {\n", dot_uID());
 	        fs_write(file, buffer, strlen(buffer)); 
 	        for (int i = 0; i < n; i++) fs_write(file, "\t", 1);
@@ -612,8 +578,6 @@ void recurse_dot(AST node, fs_file* file, int n, int uid) {
 
 	        sprintf(buffer, "color=red\n");
 	        fs_write(file, buffer, strlen(buffer));         	
-
-	        recurse_dot(node.as_if_stmt->else_branch, file, n+1, int_uid + 2);
 
 	        for (int i = 0; i < n; i++) fs_write(file, "\t", 1);
 	        fs_write(file, "}\n", 2);
@@ -682,6 +646,8 @@ void recurse_dot(AST node, fs_file* file, int n, int uid) {
 		}
 
 		case AST_for_stmt: {
+			general_warning("fuck! shit arse");
+			/*
 			sprintf(buffer, "\"%s_%d\" [shape=box,style=filled,color=lightblue, label=\"%s\"]\n", 
 	        		ast_type_str[node.type], uid, 
 	        		ast_type_str[node.type]); //write out identifier_expr with sugared name
@@ -719,7 +685,7 @@ void recurse_dot(AST node, fs_file* file, int n, int uid) {
 	    	recurse_dot(node.as_for_stmt->condition, file, n+1, int_uid + 1);
 			recurse_dot(node.as_for_stmt->update, file, n+1, int_uid + 2);
 	    	recurse_dot(node.as_for_stmt->block, file, n+1, int_uid + 3);
-
+			*/
 	    	break;
 		}
 
