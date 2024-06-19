@@ -35,11 +35,7 @@ void parse_file(parser* p) {
     general_warning("      escape safely. please report any you find!\n");
     
     general_warning("CURRENTLY KNOWN INFINITE LOOPS:");
-    general_warning("- Breaks if a while loop of the form \"while <expr> <op> <identifier> {}\"");
-    general_warning("  This is due to the parser being unable to escape expr parsing.");
-    general_warning("  This is a subset of the \"expr infinite loop of unable to match\" issue");
-    general_warning("  WORKAROUND: wrap your damn loops!");
-    
+    general_warning("please expand this list");
 
     da_init(&p->stmts, 1);
 
@@ -590,7 +586,6 @@ AST parse_atomic_expr_term(parser* p) {
             }
             while (current_token(p).type != TOK_CLOSE_BRACKET) {
                 da_append(&lit.as_comp_literal_expr->elems, parse_expr(p));
-                advance_token(p);
                 if (current_token(p).type == TOK_COMMA) advance_token(p);
             }
             lit.as_comp_literal_expr->base.end = &current_token(p);
