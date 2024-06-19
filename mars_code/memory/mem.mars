@@ -9,7 +9,7 @@ let copy = fn(to: ^mut, from: ^let, len: uint) {
     mut from_byte: ^let u8 = from;
     let to_stop = to_byte + cast(^mut u8) len;
 
-    while to_byte != to_stop {
+    while (to_byte != to_stop) {
         to_byte^ = from_byte^;
         from_byte += 1;
         to_byte += 1;
@@ -21,9 +21,9 @@ let equal = fn(block1, block2: ^let, len: uint) -> bool {
     mut block2_byte = cast(^mut u8) block2;
     let block1_stop = block1_byte + cast(^mut u8) len;
 
-    while block1_byte != block1_stop {
+    while (block1_byte != block1_stop) {
 
-        if block1_byte^ != block2_byte^ {
+        if (block1_byte^ != block2_byte^) {
             return false;
         }
 
@@ -36,14 +36,14 @@ let equal = fn(block1, block2: ^let, len: uint) -> bool {
 
 
 let str_equal = fn(a, b: []let u8) -> bool {
-    if a.len != b.len { return false; }
+    if (a.len != b.len) { return false; }
     return equal(a.raw, b.raw, a.len);
 };
 
 let set = fn(dest: ^mut, len: uint, val: u8) -> bool {
     mut cursor = cast(^mut u8) dest;
     let stop = cursor + cast(^mut u8) len;
-    while cursor != stop {
+    while (cursor != stop) {
         cursor^ = val;
         cursor += 1;
     }

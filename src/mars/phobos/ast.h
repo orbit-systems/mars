@@ -228,6 +228,7 @@ typedef struct {
             ast_base base; \
             da(AST_typed_field) parameters; \
             da(AST_typed_field) returns; \
+            bool is_literal : 1; \
             bool simple_return : 1;\
     }) \
     AST_TYPE(enum_type_expr, "enum type", { \
@@ -285,6 +286,7 @@ typedef struct {
 typedef struct {
     AST ident;
     token* tok;
+    AST expr;
     i64 value;
 } AST_enum_variant;
 

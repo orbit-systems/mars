@@ -7,7 +7,7 @@
            <switch> | <break> | <fallthrough> | <extern> | <defer> | <continue> | ";" |
            <assignment> ";" | <expression> ";"
 
-<type_decl> ::= "type" <identifier> "=" <unary_expression> ";"
+<type_decl> ::= "type" <identifier> "=" <type> ";"
 
 <simple_stmt> ::= <decl> | <assignment> | <expression>
 
@@ -24,8 +24,6 @@
 <stmt_block> ::=  "{" <stmt>* "}"
 
 <control_flow_block> ::= <stmt_block> | "do" <stmt>
-
-<fn> ::= <fn_type> <stmt_block>
 
 <decl> ::= ("let" | "mut") (<identifier> ",")* <identifier> ("," | E)  (":" <type> | E) ("=" (<expression> | "---") | E) ";"
 <return> ::= "return" <expression> ";"

@@ -11,7 +11,6 @@
     functions of the form parse_***(parser* p) will advance the token stream for you
     if you have any questions, please contact kaylatheegg on discord or leave a github
     issue and i'll give you alternative contact info if you do not have discord.
-    
  */
 
 
@@ -30,6 +29,17 @@ parser make_parser(lexer* l, arena* alloca) {
 void parse_file(parser* p) {
     //<program> ::= <module_stmt> <import_stmt>* <stmts>
     p->module_decl = parse_module_decl(p);
+
+    general_warning("NOTE: this compiler is susceptible to just. falling into infinite loops");
+    general_warning("      this is because it fails to match, and cannot figure out how to  ");
+    general_warning("      escape safely. please report any you find!\n");
+    
+    general_warning("CURRENTLY KNOWN INFINITE LOOPS:");
+    general_warning("- Breaks if a while loop of the form \"while <expr> <op> <identifier> {}\"");
+    general_warning("  This is due to the parser being unable to escape expr parsing.");
+    general_warning("  This is a subset of the \"expr infinite loop of unable to match\" issue");
+    general_warning("  WORKAROUND: wrap your damn loops!");
+    
 
     da_init(&p->stmts, 1);
 
@@ -386,15 +396,73 @@ AST parse_identifier(parser* p) {
     return n;
 }
 
+AST parse_type(parser* p) {
+    AST n = NULL_AST;
+    switch (current_token(p).type) {
+        //<identifier>
+        case TOK_IDENTIFIER:
+            return parse_identifier(p); 
+        //"i8" | "i16" | "i32" | "i64" | "int" |
+        //"u8" | "u16" | "u32" | "u64" | "uint" |
+        //"f16" | "f32" | "f64" | "float" | "bool" |
+        case TOK_TYPE_KEYWORD_INT:
+        case TOK_TYPE_KEYWORD_I8:
+        case TOK_TYPE_KEYWORD_I16:
+        case TOK_TYPE_KEYWORD_I32:
+        case TOK_TYPE_KEYWORD_I64:
+        case TOK_TYPE_KEYWORD_UINT:
+        case TOK_TYPE_KEYWORD_U8:
+        case TOK_TYPE_KEYWORD_U16:
+        case TOK_TYPE_KEYWORD_U32:
+        case TOK_TYPE_KEYWORD_U64:
+        case TOK_TYPE_KEYWORD_FLOAT:
+        case TOK_TYPE_KEYWORD_F16:
+        case TOK_TYPE_KEYWORD_F32:
+        case TOK_TYPE_KEYWORD_F64:
+        case TOK_TYPE_KEYWORD_BOOL:
+            n = new_ast_node(p, AST_basic_type_expr);
+            n.as_basic_type_expr->base.start = &current_token(p);
+            n.as_basic_type_expr->lit = &current_token(p);
+            n.as_basic_type_expr->base.end = &current_token(p);
+            advance_token(p);
+            return n;
+        case TOK_KEYWORD_STRUCT:
+        case TOK_KEYWORD_UNION:
+            return parse_aggregate(p);
+        case TOK_KEYWORD_ENUM:
+            return parse_enum(p);
+        case TOK_KEYWORD_FN:
+            return parse_fn(p);
+        case TOK_OPEN_BRACKET:
+            //("^" | "[]") ("mut" | "let") ( <type> | E)
+            advance_token(p);
+            if (current_token(p).type != TOK_CLOSE_BRACKET) error_at_parser(p, "expected ]");
+            n = new_ast_node(p, AST_slice_type_expr);
+            n.as_slice_type_expr->base.start = &current_token(p);
+        case TOK_CARET:
+            if (is_null_AST(n)) n = new_ast_node(p, AST_pointer_type_expr);
+            advance_token(p);
+            if (current_token(p).type != TOK_KEYWORD_MUT && current_token(p).type != TOK_KEYWORD_LET) error_at_parser(p, "expected mut or let");
+            n.as_pointer_type_expr->mutable = current_token(p).type == TOK_KEYWORD_MUT;
+            advance_token(p);
+            n.as_pointer_type_expr->subexpr = parse_type(p);
+            n.as_pointer_type_expr->base.end = &current_token(p);
+            return n;
+    }
+    return NULL_AST;
+}
+
 AST parse_atomic_expr(parser* p) {
     //this function handles explicitly atomic_expr that require left-assoc stuff.
 
-/*<atomic_expression> ::= <atomic_expression> ("::" | "." | "->") <identifier> |
+/*<atomic_expression> ::= <literal> |  "." <identifier> | 
+                        "(" <expression> ")" | <fn_literal> | <type> |
+                        <type> "{" ((<expression> ",")* <expression> ("," | E) | E) "}" |
+                        <atomic_expression> ("::" | "." | "->") <identifier> |
                         <atomic_expression> "[" <expression> "]" |
                         <atomic_expression> "[" (<expression> | E) ":" (<expression> | E) "]" |
                         <atomic_expression> "(" ((<expression> ",")* <expression> ("," | E) | E) ")" |
-                        <atomic_expression> "^" |
-                        <atomic_expression> "{" ((<expression> ",")* <expression> ("," | E) | E) "}"*/
+                        <atomic_expression> "^" */
 
     AST left = parse_atomic_expr_term(p);
     AST left_copy = NULL_AST;
@@ -476,27 +544,6 @@ AST parse_atomic_expr(parser* p) {
             advance_token(p);
             continue;
         } 
-        //<atomic_expression> "{" ((<expression> ",")* <expression> | E) "}"
-        if (current_token(p).type == TOK_OPEN_BRACKET) {
-            left_copy = left;
-            left = new_ast_node(p, AST_comp_literal_expr);
-            left.as_comp_literal_expr->type = left_copy;
-            left.as_comp_literal_expr->base.start = left_copy.base->start;
-            da_init(&left.as_comp_literal_expr->elems, 1);
-            advance_token(p);
-            if (current_token(p).type == TOK_CLOSE_BRACKET) {
-                left.as_comp_literal_expr->base.end = &current_token(p);
-                return left;
-            }
-            while (current_token(p).type != TOK_CLOSE_BRACKET) {
-                da_append(&left.as_comp_literal_expr->elems, parse_expr(p));
-                advance_token(p);
-                if (current_token(p).type == TOK_COMMA) advance_token(p);
-            }
-            left.as_comp_literal_expr->base.end = &current_token(p);
-            advance_token(p);
-            continue;
-        }
         return left;
     }
     return left;
@@ -522,15 +569,36 @@ AST parse_stmt_block(parser* p) {
 AST parse_atomic_expr_term(parser* p) {
     //this function is for <atomic_expression> bnf leafs with terminals explicitly in them
     //not left-assoc, basically
-    /*<atomic_expression_terminals> ::= <literal> | <identifier> | "." <identifier> | <fn> | 
-                        "i8" | "i16" | "i32" | "i64" | "int" |
-                        "u8" | "u16" | "u32" | "u64" | "uint" |
-                        "f16" | "f32" | "f64" | "float" | "bool" |
-                        <fn_type> | <aggregate> | <enum> |
-                        "(" <expression> ")"*/
+    /*<atomic_expression_terminals> ::= <type> | <literal> | <identifier> | "." <identifier> | 
+                                        <fn_literal> | "(" <expression> ")" | 
+                                        <type> "{" ((<expression> ",")* <expression> ("," | E) | E) "}" |*/
 
     AST n;
 
+    n = parse_type(p);
+    if (!is_null_AST(n)) {
+        //we MIGHT be in a compound literal
+        if (current_token(p).type == TOK_OPEN_BRACE) {
+            AST lit = new_ast_node(p, AST_comp_literal_expr);
+            lit.as_comp_literal_expr->type = n;
+            lit.as_comp_literal_expr->base.start = n.base->start;
+            da_init(&lit.as_comp_literal_expr->elems, 1);
+            advance_token(p);
+            if (current_token(p).type == TOK_CLOSE_BRACKET) {
+                lit.as_comp_literal_expr->base.end = &current_token(p);
+                return lit;
+            }
+            while (current_token(p).type != TOK_CLOSE_BRACKET) {
+                da_append(&lit.as_comp_literal_expr->elems, parse_expr(p));
+                advance_token(p);
+                if (current_token(p).type == TOK_COMMA) advance_token(p);
+            }
+            lit.as_comp_literal_expr->base.end = &current_token(p);
+            advance_token(p);
+            return lit;
+        }
+        return n;
+    }
     switch (current_token(p).type) {
         //<literal>
         case TOK_LITERAL_INT:
@@ -545,9 +613,6 @@ AST parse_atomic_expr_term(parser* p) {
             n.as_literal_expr->base.end = &current_token(p);
             advance_token(p);
             return n;
-        //<identifier>
-        case TOK_IDENTIFIER:
-            return parse_identifier(p); 
         // "." <identifier> enum selector! this is for the semanal
         case TOK_PERIOD:
             n = new_ast_node(p, AST_selector_expr);
@@ -559,44 +624,9 @@ AST parse_atomic_expr_term(parser* p) {
             n.as_identifier->base.end = &current_token(p);
             advance_token(p);
             return n;            
-        //<fn> ::= <fn_type> <stmt_block>
+        //fn lit or fn ptr. who knows?
         case TOK_KEYWORD_FN:
-            n = new_ast_node(p, AST_func_literal_expr);
-            n.as_func_literal_expr->base.start = &current_token(p);
-
-            n.as_func_literal_expr->type = parse_fn_type(p);
-            n.as_func_literal_expr->code_block = parse_stmt_block(p);
-            n.as_func_literal_expr->base.end = &current_token(p);
-            return n;
-        //"i8" | "i16" | "i32" | "i64" | "int" |
-        //"u8" | "u16" | "u32" | "u64" | "uint" |
-        //"f16" | "f32" | "f64" | "float" | "bool" |
-        case TOK_TYPE_KEYWORD_INT:
-        case TOK_TYPE_KEYWORD_I8:
-        case TOK_TYPE_KEYWORD_I16:
-        case TOK_TYPE_KEYWORD_I32:
-        case TOK_TYPE_KEYWORD_I64:
-        case TOK_TYPE_KEYWORD_UINT:
-        case TOK_TYPE_KEYWORD_U8:
-        case TOK_TYPE_KEYWORD_U16:
-        case TOK_TYPE_KEYWORD_U32:
-        case TOK_TYPE_KEYWORD_U64:
-        case TOK_TYPE_KEYWORD_FLOAT:
-        case TOK_TYPE_KEYWORD_F16:
-        case TOK_TYPE_KEYWORD_F32:
-        case TOK_TYPE_KEYWORD_F64:
-        case TOK_TYPE_KEYWORD_BOOL:
-            n = new_ast_node(p, AST_basic_type_expr);
-            n.as_basic_type_expr->base.start = &current_token(p);
-            n.as_basic_type_expr->lit = &current_token(p);
-            n.as_basic_type_expr->base.end = &current_token(p);
-            advance_token(p);
-            return n;
-        case TOK_KEYWORD_STRUCT:
-        case TOK_KEYWORD_UNION:
-            return parse_aggregate(p);
-        case TOK_KEYWORD_ENUM:
-            return parse_enum(p);
+            return parse_fn(p);
         case TOK_OPEN_PAREN:
             advance_token(p);
             n = parse_expr(p);
@@ -628,17 +658,17 @@ AST parse_aggregate(parser* p) {
             if (current_token(p).type == TOK_CLOSE_PAREN) break;
             if (current_token(p).type == TOK_IDENTIFIER) {
                 if (peek_token(p, 1).type == TOK_COLON) {
-                    //<param> ::= <unary_expression> ":" <unary_expression>
+                    //<param> ::= <identifier> ":" <type>
                     AST_typed_field curr_field = {0};
-                    AST field = parse_unary_expr(p);
+                    AST field = parse_identifier(p);
                     advance_token(p);
-                    da_append(&n.as_struct_type_expr->fields, ((AST_typed_field){.field = field, .type = parse_unary_expr(p)}));
+                    da_append(&n.as_struct_type_expr->fields, ((AST_typed_field){.field = field, .type = parse_type(p)}));
                     continue;
                 }
                 if (peek_token(p, 1).type == TOK_COMMA) { 
-                    //<multi_param> ::= (<unary_expression>  ",")+ <unary_expression> ":" <unary_expression> 
+                    //<multi_param> ::= (<identifier>  ",")+ <identifier> ":" <type> 
                     AST_typed_field curr_field;
-                    curr_field.field = parse_unary_expr(p);
+                    curr_field.field = parse_identifier(p);
                     curr_field.type.type = 0;
                     da_append(&n.as_struct_type_expr->fields, curr_field);
                     advance_token(p);
@@ -657,10 +687,10 @@ AST parse_aggregate(parser* p) {
 
 AST parse_enum(parser* p) {
     //enum's param_list separator is =, not :
-    //<enum> ::= "enum" (<unary_expression> | E) "{" <param_list> "}" ";" 
+    //<enum> ::= "enum" (<type> | E) "{" <param_list> "}" ";" 
     AST n = new_ast_node(p, AST_enum_type_expr);
     n.as_enum_type_expr->base.start = &current_token(p);
-    n.as_enum_type_expr->backing_type = parse_unary_expr(p);
+    n.as_enum_type_expr->backing_type = parse_type(p);
     da_init(&n.as_enum_type_expr->variants, 1);
     advance_token(p);
     if (current_token(p).type != TOK_OPEN_BRACE) error_at_parser(p, "expected {");
@@ -675,19 +705,21 @@ AST parse_enum(parser* p) {
             if (current_token(p).type == TOK_CLOSE_PAREN) break;
             if (current_token(p).type == TOK_IDENTIFIER) {
                 if (peek_token(p, 1).type == TOK_EQUAL) {
-                    //<param> ::= <unary_expression> "=" <unary_expression>
+                    //<param> ::= <identifier> "=" <expression>
                     AST_enum_variant var = {0};
-                    var.ident = parse_unary_expr(p);
+                    var.ident = parse_identifier(p);
                     advance_token(p); advance_token(p);
+                    var.expr = parse_expr(p);
                     var.tok = &current_token(p);
                     da_append(&n.as_enum_type_expr->variants, var);
                     continue;
                 }
                 if (peek_token(p, 1).type == TOK_COMMA) { 
-                    //<multi_param> ::= (<unary_expression>  ",")+ <unary_expression> "=" <unary_expression> 
+                    //<multi_param> ::= (<identifier> ",")+ <identifier> "=" <expression> 
                     AST_enum_variant var = {0};
-                    var.ident = parse_unary_expr(p);
+                    var.ident = parse_identifier(p);
                     advance_token(p); advance_token(p);
+                    var.expr = NULL_AST;
                     var.tok = NULL;
                     da_append(&n.as_enum_type_expr->variants, var);
                     continue;
@@ -703,19 +735,49 @@ AST parse_enum(parser* p) {
     return n;
 }
 
-AST parse_fn_type(parser* p) {
-    /*<fn_type> ::= "fn" "(" (<param_list> | E) ")" ("->" (<unary_expression> | "(" <param_list> ")") | E)
+int verify_type(parser* p) {
+    switch (peek_token(p, 1).type) {
+        case TOK_IDENTIFIER:
+        case TOK_KEYWORD_FN:
+        case TOK_TYPE_KEYWORD_INT:
+        case TOK_TYPE_KEYWORD_I8:
+        case TOK_TYPE_KEYWORD_I16:
+        case TOK_TYPE_KEYWORD_I32:
+        case TOK_TYPE_KEYWORD_I64:
+        case TOK_TYPE_KEYWORD_UINT:
+        case TOK_TYPE_KEYWORD_U8:
+        case TOK_TYPE_KEYWORD_U16:
+        case TOK_TYPE_KEYWORD_U32:
+        case TOK_TYPE_KEYWORD_U64:
+        case TOK_TYPE_KEYWORD_FLOAT:
+        case TOK_TYPE_KEYWORD_F16:
+        case TOK_TYPE_KEYWORD_F32:
+        case TOK_TYPE_KEYWORD_F64:
+        case TOK_TYPE_KEYWORD_BOOL:
+        case TOK_KEYWORD_STRUCT:
+        case TOK_KEYWORD_UNION:
+            return 1;
+        default:
+            return 0;
+    }
+}
 
-        <param> ::= <unary_expression> ":" <unary_expression> 
-        <multi_param> ::= (<unary_expression>  ",")+ <unary_expression> ":" <unary_expression> 
+AST parse_fn(parser* p) {
+    /*<fn_literal> ::= "fn" "(" (<param_list> ("," | E) | E) ")" ("->" (<type> | "(" <param_list> ")") | E) <stmt_block>
+
+        <param> ::= <identifier> ":" <type> 
+        <multi_param> ::= (<identifier>  ",")+ <identifier> ":" <type> 
         <param_list> ::= <param_list> "," <param> | 
                          <param_list> "," <multi_param> | 
                          <param> | <multi_param>
         */
+    //OR:
+    //<fn_pointer> ::= "fn" "(" ((<type> ",")* <type> | E) ")" ("->" (<type> | "(" (<type> ",")* <type> ")")| E) 
 
     AST n = new_ast_node(p, AST_fn_type_expr);
     n.as_fn_type_expr->base.start = &current_token(p);
     da_init(&n.as_fn_type_expr->parameters, 1);
+    da_init(&n.as_fn_type_expr->returns, 1);
     advance_token(p);
     if (current_token(p).type != TOK_OPEN_PAREN) error_at_parser(p, "expected (");
     advance_token(p);
@@ -724,7 +786,6 @@ AST parse_fn_type(parser* p) {
         /*        <param_list> ::= <param_list> "," <param> | 
                          <param_list> "," <multi_param> | 
                          <param> | <multi_param>
-
         */
         for (int i = p->current_tok; i < p->tokens.len; i++) {
             if (current_token(p).type == TOK_COLON) error_at_parser(p, "unexpected :");
@@ -732,30 +793,30 @@ AST parse_fn_type(parser* p) {
             if (current_token(p).type == TOK_CLOSE_PAREN) break;
             if (current_token(p).type == TOK_IDENTIFIER) {
                 if (peek_token(p, 1).type == TOK_COLON) {
+                    n.as_fn_type_expr->is_literal = true;
                     //<param> ::= <unary_expression> ":" <unary_expression>
                     AST_typed_field curr_field = {0};
                     AST field = parse_unary_expr(p);
                     advance_token(p);
-                    da_append(&n.as_fn_type_expr->parameters, ((AST_typed_field){.field = field, .type = parse_unary_expr(p)}));
+                    da_append(&n.as_fn_type_expr->parameters, ((AST_typed_field){.field = field, .type = parse_type(p)}));
                     continue;
                 }
-                if (peek_token(p, 1).type == TOK_COMMA) { 
+                if (peek_token(p, 1).type == TOK_COMMA || peek_token(p, 1).type == TOK_CLOSE_PAREN) { 
                     //<multi_param> ::= (<unary_expression>  ",")+ <unary_expression> ":" <unary_expression> 
                     AST_typed_field curr_field;
                     curr_field.field = parse_unary_expr(p);
                     curr_field.type.type = 0;
                     da_append(&n.as_fn_type_expr->parameters, curr_field);
-                    advance_token(p);
+                    if (current_token(p).type != TOK_CLOSE_PAREN) advance_token(p);
                     continue;
                 }
+                error_at_parser(p, "INTERNAL COMPILER ERROR: fell out of fn_type parse loop for params");
             }
-            error_at_parser(p, "unexpected? if you see this, this is a compiler failure!");
         }
     }
     if (current_token(p).type != TOK_CLOSE_PAREN) error_at_parser(p, "expected )");
     advance_token(p);
 
-    da_init(&n.as_fn_type_expr->returns, 1);
     if (current_token(p).type == TOK_ARROW_RIGHT) {
         //returns time!
         advance_token(p);
@@ -773,35 +834,60 @@ AST parse_fn_type(parser* p) {
                 if (current_token(p).type == TOK_CLOSE_PAREN) break;
                 if (current_token(p).type == TOK_IDENTIFIER) {
                     if (peek_token(p, 1).type == TOK_COLON) {
-                        //<param> ::= <unary_expression> ":" <unary_expression>
+                        n.as_fn_type_expr->is_literal = true;
+                        //<param> ::= <identifier> ":" <type>
                         AST_typed_field curr_field = {0};
-                        AST field = parse_unary_expr(p);
+                        AST field = parse_identifier(p);
                         advance_token(p);
-                        da_append(&n.as_fn_type_expr->returns, ((AST_typed_field){.field = field, .type = parse_unary_expr(p)}));
+                        da_append(&n.as_fn_type_expr->returns, ((AST_typed_field){.field = field, .type = parse_type(p)}));
                         continue;
                     }
-                    if (peek_token(p, 1).type == TOK_COMMA) { 
-                        //<multi_param> ::= (<unary_expression>  ",")+ <unary_expression> ":" <unary_expression> 
+                    if (peek_token(p, 1).type == TOK_COMMA || peek_token(p, 1).type == TOK_CLOSE_PAREN) { 
+                        //<multi_param> ::= (<identifier>  ",")+ <identifier> ":" <type> 
                         AST_typed_field curr_field;
-                        curr_field.field = parse_unary_expr(p);
+                        curr_field.field = parse_identifier(p);
                         curr_field.type.type = 0;
                         da_append(&n.as_fn_type_expr->returns, curr_field);
-                        advance_token(p);
+                        if (current_token(p).type != TOK_CLOSE_PAREN) advance_token(p);
                         continue;
                     }
                 }
-                error_at_parser(p, "unexpected");
+                error_at_parser(p, "INTERNAL COMPILER ERROR: fell out of fn_type parse loop for returns");
             }
             advance_token(p);
         } else {
-            AST uexpr = parse_unary_expr(p);
-            if (is_null_AST(uexpr)) error_at_parser(p, "expected type or identifier");
+            AST type = parse_type(p);
+            if (is_null_AST(type)) error_at_parser(p, "expected type or identifier");
             AST_typed_field curr_field = {0};
-            curr_field.type = uexpr;
+            curr_field.type = type;
+            curr_field.field = type;
             da_append(&n.as_fn_type_expr->returns, curr_field);
         }
     }
     n.as_fn_type_expr->base.end = &current_token(p);
+
+    if (n.as_fn_type_expr->is_literal == true) {
+        AST lit = new_ast_node(p, AST_func_literal_expr);
+        lit.as_func_literal_expr->base.start = &current_token(p);
+
+        lit.as_func_literal_expr->type = n;
+        lit.as_func_literal_expr->code_block = parse_stmt_block(p);
+        lit.as_func_literal_expr->base.end = &current_token(p);
+
+        return lit;        
+    }
+
+    //we now need to swap all AST_typed_field info, since its in the wrong place entirely.
+    for (int i = 0; i < n.as_fn_type_expr->parameters.len; i++) {
+        n.as_fn_type_expr->parameters.at[i].type = n.as_fn_type_expr->parameters.at[i].field;
+        n.as_fn_type_expr->parameters.at[i].field = NULL_AST;
+    }
+
+    for (int i = 0; i < n.as_fn_type_expr->returns.len; i++) {
+        n.as_fn_type_expr->returns.at[i].type = n.as_fn_type_expr->returns.at[i].field;
+        n.as_fn_type_expr->returns.at[i].field = NULL_AST;
+    }
+
     return n;
 }
 
@@ -861,20 +947,6 @@ AST parse_unary_expr(parser* p) {
                 n.as_array_type_expr->base.end = &current_token(p);
                 return n;
             }
-        //("^" | "[]") ("mut" | "let") ( <unary_expression> | E)
-            advance_token(p);
-            if (current_token(p).type != TOK_CLOSE_BRACKET) error_at_parser(p, "expected ]");
-            n = new_ast_node(p, AST_slice_type_expr);
-            n.as_slice_type_expr->base.start = &current_token(p);
-        case TOK_CARET:
-            if (is_null_AST(n)) n = new_ast_node(p, AST_pointer_type_expr);
-            advance_token(p);
-            if (current_token(p).type != TOK_KEYWORD_MUT && current_token(p).type != TOK_KEYWORD_LET) error_at_parser(p, "expected mut or let");
-            n.as_pointer_type_expr->mutable = current_token(p).type == TOK_KEYWORD_MUT;
-            advance_token(p);
-            n.as_pointer_type_expr->subexpr = parse_unary_expr(p);
-            n.as_pointer_type_expr->base.end = &current_token(p);
-            return n;
         //"distinct" <unary_expression>
         case TOK_KEYWORD_DISTINCT:
             n = new_ast_node(p, AST_distinct_type_expr);
@@ -893,6 +965,8 @@ AST parse_expr(parser* p) {
     //we first need to detect WHICH expr branch we're on.
     //
     /*<expression> ::= <expression> <binop> <expression> | <unary_expression>*/
+
+    if (current_token(p).type == TOK_OPEN_BRACE) error_at_parser(p, "unexpected {");
 
     //<unary_expression>
     return parse_binop_expr(p, -1);
@@ -983,12 +1057,13 @@ AST parse_decl_stmt(parser* p) {
     if (current_token(p).type == TOK_COLON) {
         advance_token(p);
         if (current_token(p).type == TOK_EQUAL) error_at_parser(p, "expected type");
-        n.as_decl_stmt->type = parse_unary_expr(p);
+        n.as_decl_stmt->type = parse_type(p);
     }
     if (current_token(p).type != TOK_EQUAL && current_token(p).type != TOK_SEMICOLON) error_at_parser(p, "expected either = or ;");
     advance_token(p);
     if (current_token(p).type == TOK_UNINIT) n.as_decl_stmt->rhs = NULL_AST;
     else {n.as_decl_stmt->rhs = parse_expr(p);}
+    if (current_token(p).type != TOK_SEMICOLON) error_at_parser(p, "expected ;");
     n.as_decl_stmt->base.end = &current_token(p);
     advance_token(p);
     return n;
