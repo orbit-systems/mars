@@ -8,8 +8,8 @@
 
 #include "phobos/phobos.h"
 #include "phobos/dot.h"
-#include "phobos/parse.h"
-#include "phobos/sema.h"
+#include "phobos/parse/parse.h"
+#include "phobos/analysis/sema.h"
 
 #include "atlas/atlas.h"
 #include "atlas/targets.h"

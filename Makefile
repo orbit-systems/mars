@@ -4,6 +4,8 @@ SRCPATHS = \
 	src/*.c \
 	src/mars/*.c \
 	src/mars/phobos/*.c \
+	src/mars/phobos/parse/*.c \
+	src/mars/phobos/analysis/*.c \
 	src/atlas/*.c \
 	src/atlas/passes/*.c \
 	src/atlas/passes/analysis/*.c \

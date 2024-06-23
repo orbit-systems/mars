@@ -4,9 +4,9 @@
 #include "term.h"
 
 #include "phobos.h"
-#include "lex.h"
-#include "parse.h"
-#include "sema.h"
+#include "parse/lex.h"
+#include "parse/parse.h"
+#include "analysis/sema.h"
 #include "ast.h"
 
 module_list active_modules;

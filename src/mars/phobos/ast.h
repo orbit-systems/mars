@@ -2,10 +2,10 @@
 #define PHOBOS_AST_H
 
 #include "orbit.h"
-#include "lex.h"
+#include "parse/lex.h"
 #include "arena.h"
-#include "exactval.h"
-#include "type.h"
+#include "analysis/exactval.h"
+#include "analysis/type.h"
 
 typedef struct parser parser;
 

@@ -3,8 +3,8 @@
 
 #include "orbit.h"
 #include "alloc.h"
-#include "lex.h"
-#include "parse.h"
+#include "parse/lex.h"
+#include "parse/parse.h"
 #include "ast.h"
 
 da_typedef(lexer);

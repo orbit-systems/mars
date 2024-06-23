@@ -1,9 +1,8 @@
 #include "orbit.h"
-#include "lex.h"
 #include "term.h"
 #include "arena.h"
 #include "ast.h"
-#include "parse.h"
+#include "parse/parse.h"
 
 const size_t ast_type_size[] = {
     0,

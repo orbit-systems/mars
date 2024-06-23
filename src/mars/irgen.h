@@ -3,7 +3,7 @@
 
 #include "atlas.h"
 #include "atlas/passes/passes.h"
-#include "phobos/sema.h"
+#include "phobos/analysis/sema.h"
 
 void generate_ir_atlas_from_mars(mars_module* mod, AtlasModule* atmod);
 
