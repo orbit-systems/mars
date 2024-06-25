@@ -1,9 +1,5 @@
 module add_test;
 
-let add = fn(a, b: u32) -> fn(a, b) -> u8 {
+let add = fn(a, b: u32) -> u8 {
     return a + b;
 };
-
-/*if ?(foo % 8) {
-    add_padding(8 - (foo % 8));
-}*/

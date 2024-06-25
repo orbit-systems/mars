@@ -68,7 +68,9 @@ AST parse_stmt(parser* p) {
             da_init(&n.as_return_stmt->returns, 1);
             while (current_token(p).type != TOK_SEMICOLON) {
                 da_append(&n.as_return_stmt->returns, parse_expr(p));
-                if (current_token(p).type == TOK_COMMA) advance_token(p);
+                if (current_token(p).type == TOK_SEMICOLON) break;
+                if (current_token(p).type != TOK_COMMA) error_at_parser(p, "expected ,");
+                advance_token(p);
             }
             n.as_return_stmt->base.end = &current_token(p);
             advance_token(p);
