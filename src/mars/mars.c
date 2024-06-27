@@ -33,13 +33,9 @@ int main(int argc, char** argv) {
         }   
     
         // recursive check
+        check_module(main_mod);
         //check_module_and_dependencies(main_mod);
-
-        if (mars_flags.dump_AST) for_urange(i, 0, main_mod->program_tree.len) {
-            //dump_tree(main_mod->program_tree.at[i], 0);
-        }
         
-
         TargetInfo* atlas_target;
 
         switch (mars_flags.target_arch){
@@ -133,12 +129,6 @@ void load_arguments(int argc, char* argv[], flag_set* fl) {
 
     fl->input_path = string_clone(str(dumbass_shit_buffer));
 
-    if (argc <= 2) {
-        printf("No target selected, defaulting to "str_fmt "\n", str_arg(DEFAULT_TARGET));
-        set_target_triple(DEFAULT_TARGET, fl);
-        return;
-    }
-
     int flag_start_index = 2;
     for_range(i, flag_start_index, argc) {
         cmd_arg a = make_argument(argv[i]);
@@ -168,6 +158,12 @@ void load_arguments(int argc, char* argv[], flag_set* fl) {
         } else {
             general_error("unrecognized option \""str_fmt"\"", str_arg(a.key));
         }
+    }
+
+    if (fl->target_arch == -1 || fl->target_system == -1 || fl->target_product == -1) {
+        printf("No target selected, defaulting to "str_fmt "\n", str_arg(DEFAULT_TARGET));
+        set_target_triple(DEFAULT_TARGET, fl);
+        return;
     }
 }
 

@@ -192,7 +192,7 @@ mars_module* parse_module(string input_path) {
     }
 
     // index and parse imports
-    for_urange(i, 100000, module->program_tree.len) {
+    for_urange(i, 0, module->program_tree.len) {
         if (module->program_tree.at[i].type == AST_import_stmt) {
             string importpath = search_for_module(
                 module, 
