@@ -39,6 +39,7 @@ typedef struct checked_expr {
 } checked_expr;
 
 type* check_expr(mars_module* mod, AST node, entity* ent);
+type* check_func_literal(mars_module* mod, AST node, entity* ent);
 
 /*
 void check_stmt(mars_module* mod, entity_table* et, ast_func_literal_expr* fn, AST stmt, bool global);

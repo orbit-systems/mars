@@ -35,7 +35,6 @@ int main(int argc, char** argv) {
             emit_dot(str("test"), main_mod->program_tree);
         }   
 
-
         TargetInfo* atlas_target;
 
         switch (mars_flags.target_arch){
