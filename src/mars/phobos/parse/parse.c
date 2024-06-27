@@ -865,7 +865,7 @@ AST parse_fn(parser* p) {
 
     if (n.as_fn_type_expr->is_literal == true) {
         AST lit = new_ast_node(p, AST_func_literal_expr);
-        lit.as_func_literal_expr->base.start = &current_token(p);
+        lit.as_func_literal_expr->base.start = n.as_fn_type_expr->base.start;
 
         lit.as_func_literal_expr->type = n;
         lit.as_func_literal_expr->code_block = parse_stmt_block(p);

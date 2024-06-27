@@ -16,7 +16,7 @@ let kprint = fn(str: []let u8) {
 };
 
 let kputc = fn(c: u8) {
-    asm(c -> "ra", PUTC -> "rb") {
+    asm(c -> "ra", PUTC_PORT -> "rb") {
         "out rb, ra",
     } 
 };

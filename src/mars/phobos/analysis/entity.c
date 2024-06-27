@@ -1,5 +1,4 @@
 #include "entity.h"
-#include "../atlas/atlas.h" //bodge
 
 entity_table_list entity_tables;
 
@@ -46,7 +45,7 @@ entity* new_entity(entity_table* et, string ident, AST decl) {
     entity* e = arena_alloc(&et->alloca, sizeof(entity), alignof(entity));
     *e = (entity){0};
     e->identifier = ident;
-    e->decl = decl;
+    e->declaration = decl;
     e->top = et;
     da_append(et, e);
     return e;

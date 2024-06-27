@@ -5,7 +5,7 @@
 #include "phobos.h"
 #include "ast.h"
 #include "parse/parse.h"
-#include "MarsType.h"
+#include "type.h"
 
 typedef struct entity entity;
 typedef struct entity_table_list entity_table_list;
