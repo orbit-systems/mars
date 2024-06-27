@@ -1,4 +1,4 @@
-<program> ::= <module_stmt> <import_stmt>* <stmts>
+<program> ::= <module_stmt> <import_stmt>* <stmt>*
 <module_stmt> ::= "module"  <identifier>  ";" 
 <import_stmt> ::= "import" (<identifier> | E) <string> ";" 
 

@@ -16,7 +16,7 @@
                         <atomic_expression> "[" <expression> "]" |
                         <atomic_expression> "[" (<expression> | E) ":" (<expression> | E) "]" |
                         <atomic_expression> "(" ((<expression> ",")* <expression> ("," | E) | E) ")" |
-                        <atomic_expression> "^" 
+                        <atomic_expression> "^"
 
 <type> ::= <identifier> |
         "i8" | "i16" | "i32" | "i64" | "int" |

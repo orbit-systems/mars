@@ -5,7 +5,7 @@
 #include "phobos.h"
 #include "ast.h"
 #include "parse/parse.h"
-#include "type.h"
+#include "MarsType.h"
 
 typedef struct entity entity;
 typedef struct entity_table_list entity_table_list;
@@ -13,7 +13,8 @@ typedef struct entity_table entity_table;
 
 typedef struct entity {
     string identifier;
-    AST decl; // If it's NULL_AST, it hasn't been declared yet.
+
+    AST declaration;
 
     union {
         type* entity_type;
@@ -22,7 +23,6 @@ typedef struct entity {
 
     exact_value* const_val;
     entity_table* top; // scope in which it is declared
-
     union {
         u16 param_idx;
         u16 return_idx;
@@ -50,6 +50,7 @@ typedef struct entity_table_list {
 } entity_table_list;
 
 typedef struct entity_table {
+    AST origin;
     entity_table* parent;
     arena alloca;
 
