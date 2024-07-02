@@ -470,6 +470,28 @@ AST parse_atomic_expr(parser* p) {
     while (current_token(p).type != TOK_EOF) {
         if (current_token(p).type == TOK_COLON_COLON || current_token(p).type == TOK_PERIOD || current_token(p).type == TOK_ARROW_RIGHT) {
             //<atomic_expression> ("::" | "." | "->") <identifier>
+            if (current_token(p).type == TOK_PERIOD && peek_token(p, 1).type == TOK_OPEN_BRACE) {
+                // compound literal of form type.{1, 2, 3}
+                left_copy = left;
+                left = new_ast_node(p, AST_comp_literal_expr);
+                left.as_comp_literal_expr->type = left_copy;
+                left.as_comp_literal_expr->base.start = left_copy.base->start;
+                advance_token(p);
+                advance_token(p);
+                da_init(&left.as_comp_literal_expr->elems, 2);
+                while (current_token(p).type != TOK_CLOSE_BRACKET) {
+                    AST elem = parse_expr(p);
+                    da_append(&left.as_comp_literal_expr->elems, elem);
+                    if (current_token(p).type == TOK_COMMA) {
+                        advance_token(p);
+                        continue;
+                    } else {
+                        error_at_parser(p, "expected , or }");
+                    }
+                }
+                left.as_comp_literal_expr->base.end = &current_token(p);
+                continue;
+            }
             left_copy = left;
             left = new_ast_node(p, AST_selector_expr);
             left.as_selector_expr->base.start = left_copy.base->start;
