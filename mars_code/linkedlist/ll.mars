@@ -1,0 +1,26 @@
+module ll;
+
+import arena "../arena";
+
+type Node = struct {
+    val: int,
+    next: ^mut Node,
+};
+
+let new_node = fn(val: int) -> ^mut Node {
+    let n = arena::alloc(sizeof(Node), alignof(Node));
+    n.val = val;
+    n.next = null;
+    return n;
+};
+
+let node_at = fn(node: ^let Node, index: int) -> ^mut Node {
+    mut i = index;
+    mut n = node;
+    while i != 0 {
+        if n == null return null;
+        n = n.next;
+        i--;
+    }
+    return n;
+}
