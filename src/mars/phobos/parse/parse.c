@@ -490,6 +490,7 @@ AST parse_atomic_expr(parser* p) {
                     }
                 }
                 left.as_comp_literal_expr->base.end = &current_token(p);
+                advance_token(p);
                 continue;
             }
             left_copy = left;
@@ -499,7 +500,7 @@ AST parse_atomic_expr(parser* p) {
             left.as_selector_expr->op = &current_token(p);
             advance_token(p);
             left.as_selector_expr->rhs = parse_identifier(p);
-            left.as_selector_expr->base.end = &current_token(p);
+            left.as_selector_expr->base.end = &peek_token(p, -1);
             continue;
         }
         //<atomic_expression> "[" <expression> "]" |
