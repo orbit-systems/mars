@@ -21,15 +21,15 @@ void generate_ir_atlas_from_mars(mars_module* mod, FeModule* atmod) {
     }
 }
 
-FeGlobal* generate_ir_global_from_stmt_decl(FeModule* mod, AST ast) { //FIXME: add sanity
-    ast_decl_stmt* decl_stmt = ast.as_decl_stmt; 
+FeData* generate_ir_global_from_stmt_decl(FeModule* mod, AST ast) { //FIXME: add sanity
+    ast_decl_stmt* decl_stmt = ast.as_decl_stmt;
 
     //note: CAE problem, we update the AIR_Symbol name after AIR_Global creation
 
     //note: global decl_stmts are single entries on the lhs, so we can just assume that lhs[0] == ast_identifier_expr
 
-    FeGlobal* air_g = fe_new_global(mod, NULL, /*global=*/true, /*read_only=*/decl_stmt->is_mut);
-    air_g->sym->name = decl_stmt->lhs.at[0].as_identifier_expr->tok->text; 
+    FeData* air_g = fe_new_data(mod, NULL, /*global=*/true, /*read_only=*/decl_stmt->is_mut);
+    air_g->sym->name = decl_stmt->lhs.at[0].as_identifier_expr->tok->text;
 
     if (decl_stmt->rhs.type == AST_func_literal_expr) {
         FeFunction* fn = generate_ir_function(mod, decl_stmt->rhs);
@@ -47,7 +47,7 @@ FeGlobal* generate_ir_global_from_stmt_decl(FeModule* mod, AST ast) { //FIXME: a
 FeInst* generate_ir_expr_literal(FeFunction* f, FeBasicBlock* bb, AST ast) {
     ast_literal_expr* literal = ast.as_literal_expr;
     FeConst* ir = (FeConst*) fe_const(f);
-    
+
     switch (literal->value.kind) {
     case EV_I64:
         ir->base.T = fe_type(am, FE_I64, 0);
@@ -67,14 +67,14 @@ FeInst* generate_ir_expr_binop(FeFunction* f, FeBasicBlock* bb, AST ast) {
 
     FeInst* lhs = generate_ir_expr_value(f, bb, binop->lhs);
     FeInst* rhs = generate_ir_expr_value(f, bb, binop->rhs);
-    FeInst* ir  = fe_append(bb, fe_binop(f, FE_ADD, lhs, rhs));
+    FeInst* ir  = fe_append(bb, fe_binop(f, FE_INST_ADD, lhs, rhs));
     ir->T = lhs->T;
 
     switch (binop->op->type) {
-    case TOK_ADD: ir->tag = FE_ADD; break;
-    case TOK_SUB: ir->tag = FE_SUB; break;
-    case TOK_MUL: ir->tag = FE_MUL; break;
-    case TOK_DIV: ir->tag = FE_DIV; break;
+    case TOK_ADD: ir->tag = FE_INST_ADD; break;
+    case TOK_SUB: ir->tag = FE_INST_SUB; break;
+    case TOK_MUL: ir->tag = FE_INST_MUL; break;
+    case TOK_DIV: ir->tag = FE_INST_DIV; break;
     default:
         warning_at_node(mars_mod, ast, "unhandled binop type");
         CRASH("unhandled binop type");
@@ -86,7 +86,7 @@ FeInst* generate_ir_expr_binop(FeFunction* f, FeBasicBlock* bb, AST ast) {
 
 FeInst* generate_ir_expr_ident_load(FeFunction* f, FeBasicBlock* bb, AST ast) {
     ast_identifier_expr* ident = ast.as_identifier_expr;
-    if (ident->is_discard) return fe_append(bb, fe_inst(f, FE_INVALID));
+    if (ident->is_discard) return fe_append(bb, fe_inst(f, FE_INST_INVALID));
 
     // if a stackalloc and entityextra havent been generated, generate them
 
@@ -170,8 +170,8 @@ void generate_ir_stmt_assign(FeFunction* f, FeBasicBlock* bb, AST ast) {
 
 void generate_ir_stmt_return(FeFunction* f, FeBasicBlock* bb, AST ast) {
     ast_return_stmt* astret = ast.as_return_stmt;
-    
-    // if its a plain return, we need to get the 
+
+    // if its a plain return, we need to get the
     // return values from the return variables
     if (astret->returns.len == 0) {
         for_urange(i, 0, astret->returns.len) {
@@ -180,7 +180,7 @@ void generate_ir_stmt_return(FeFunction* f, FeBasicBlock* bb, AST ast) {
             FeInst* stackoffset = ptrmap_get(&entity2stackoffset, f->returns[i]);
 
             FeInst* load = fe_append(bb, fe_load(f, stackoffset, false));
-            load->T = ((FeStackOffset*)stackoffset)->object->t;
+            load->T = ((FeStackAddr*)stackoffset)->object->t;
             FeInst* retval = fe_append(bb, fe_returnval(f, i, load));
         }
     } else {
@@ -196,7 +196,7 @@ void generate_ir_stmt_return(FeFunction* f, FeBasicBlock* bb, AST ast) {
     FeInst* ret = fe_return(f);
     // printf("[%p\n %p\n %p]\n", bb->len, bb->cap, bb->at);
     fe_append(bb, ret);
-    
+
     // printf("HEREEEEE\n");
 
 }
@@ -226,7 +226,7 @@ FeFunction* generate_ir_function(FeModule* mod, AST ast) {
         if (astfunc->params[i]->entity_type->tag != TYPE_I64) {
             CRASH("only i64 params supported (for testing)");
         }
-        
+
         /* the sequence we want to generate is:
             %1 = paramval <i>
             %2 = stackoffset <object of i>
@@ -241,7 +241,7 @@ FeFunction* generate_ir_function(FeModule* mod, AST ast) {
         FeInst* stackoffset = fe_append(bb, fe_stackoffset(f, stackobj));
         stackoffset->T = fe_type(mod, FE_PTR, 0);
         FeInst* store = fe_append(bb, fe_store(f, stackoffset, paramval, false));
-        
+
 
         // store the entity's stackoffset
         entity* e = astfunc->params[i];
@@ -254,13 +254,13 @@ FeFunction* generate_ir_function(FeModule* mod, AST ast) {
         if (astfunc->returns[i]->entity_type->tag != TYPE_I64) {
             CRASH("only i64 returns supported (for testing)");
         }
-        
+
         /* generate the stack alloc and set to zero
             %1 = stackalloc <type of i>
             %2 = const <type of i, 0>
             %3 = store %1, %2
         */
-        
+
         FeStackObject* stackobj = fe_new_stackobject(f, translate_type(am, astfunc->returns[i]->entity_type));
         FeInst* stackoffset = fe_append(bb, fe_stackoffset(f, stackobj));
         stackoffset->T = fe_type(mod, FE_PTR, 0);
@@ -268,7 +268,7 @@ FeFunction* generate_ir_function(FeModule* mod, AST ast) {
         FeInst* con = fe_append(bb, fe_const(f));
         con->T = f->returns[i]->T;
         ((FeConst*) con)->u64 = 0;
-        
+
         FeInst* store = fe_append(bb, fe_store(f, stackoffset, con, false));
 
         // store the entity's stackalloc

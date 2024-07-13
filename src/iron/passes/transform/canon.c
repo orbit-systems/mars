@@ -14,7 +14,7 @@ static void sort_instructions(FeBasicBlock* bb) {
 
     for (u64 i = 0; i < bb->len; i++) {
         if (last_paramval >= bb->len) break;
-        if (bb->at[i]->tag == FE_PARAMVAL) {
+        if (bb->at[i]->tag == FE_INST_PARAMVAL) {
             fe_move_inst(bb, last_paramval, i);
             last_paramval++;
         }
@@ -23,10 +23,10 @@ static void sort_instructions(FeBasicBlock* bb) {
 
 static void canonicalize(FeInst* ir) {
     switch (ir->tag) {
-    case FE_ADD:
-    case FE_MUL:
+    case FE_INST_ADD:
+    case FE_INST_MUL:
         FeBinop* binop = (FeBinop*) ir;
-        if (binop->lhs->tag == FE_CONST && binop->rhs->tag != FE_CONST) {
+        if (binop->lhs->tag == FE_INST_CONST && binop->rhs->tag != FE_INST_CONST) {
             void* temp = binop->lhs;
             binop->lhs = binop->rhs;
             binop->rhs = temp;

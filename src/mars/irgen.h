@@ -6,7 +6,7 @@
 
 void generate_ir_atlas_from_mars(mars_module* mod, FeModule* atmod);
 
-FeGlobal* generate_ir_global_from_stmt_decl(FeModule* mod, AST ast);
+FeData* generate_ir_global_from_stmt_decl(FeModule* mod, AST ast);
 FeInst* generate_ir_expr_literal(FeFunction* f, FeBasicBlock* bb, AST ast);
 FeInst* generate_ir_expr_value(FeFunction* f, FeBasicBlock* bb, AST ast);
 FeInst* generate_ir_expr_binop(FeFunction* f, FeBasicBlock* bb, AST ast);

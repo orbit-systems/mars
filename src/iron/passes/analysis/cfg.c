@@ -23,10 +23,10 @@ static void pass_cfg_func(FeFunction* f) {
         }
 
         switch (terminator->tag) {
-        case FE_RETURN:
+        case FE_INST_RETURN:
             bb->out_len = 0;
             break;
-        case FE_JUMP:
+        case FE_INST_JUMP:
             bb->out_len = 1;
             FeJump* jump = (FeJump*) terminator;
             
@@ -34,7 +34,7 @@ static void pass_cfg_func(FeFunction* f) {
             bb->outgoing[0] = jump->dest;
             jump->dest->in_len++;
             break;
-        case FE_BRANCH:
+        case FE_INST_BRANCH:
             bb->out_len = 2;
             FeBranch* branch = (FeBranch*) terminator;
 

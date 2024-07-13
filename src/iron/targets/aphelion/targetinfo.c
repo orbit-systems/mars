@@ -56,15 +56,10 @@ const FeArchInstInfo aphelion_instructions[] = {
 };
 
 const FeArchAsmSyntaxInfo aphelion_format_info = {
-    .i64 = constr("d64 {}"),
-    .i32 = constr("d32 {}"),
-    .i16 = constr("d16 {}"),
-    .i8  = constr("d8 {}"),
-    
-    .u64 = constr("d64 {}"),
-    .u32 = constr("d32 {}"),
-    .u16 = constr("d16 {}"),
-    .u8  = constr("d8 {}"),
+    .d64 = constr("d64 {}"),
+    .d32 = constr("d32 {}"),
+    .d16 = constr("d16 {}"),
+    .d8  = constr("d8 {}"),
 
     .zero = constr("zero {}"),
 

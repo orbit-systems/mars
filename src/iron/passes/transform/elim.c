@@ -2,7 +2,7 @@
 
 /* pass "elim" - remove instructions marked eliminated
 
-    move non-FE_ELIMINATED instructions to the top of the basic block
+    move non-FE_INST_ELIMINATED instructions to the top of the basic block
     and set the length of the basic block to exclude the extra instructions.
 
 */
@@ -12,7 +12,7 @@ static void transcribe_w_no_elims(FeBasicBlock* bb) {
     u64 place = 0;
     for_urange(i, 0, bb->len) {
         FeInst* ir = bb->at[i];
-        if (ir == NULL || ir->tag == FE_ELIMINATED) continue;
+        if (ir == NULL || ir->tag == FE_INST_ELIMINATED) continue;
 
         if (place == i) {
             place++;

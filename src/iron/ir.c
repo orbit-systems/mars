@@ -86,13 +86,10 @@ void fe_set_func_returns(FeFunction* f, u16 count, ...) {
     va_end(args);
 }
 
-// if (sym == NULL), create new symbol with default name
-FeGlobal* fe_new_global(FeModule* mod, FeSymbol* sym, bool read_only) {
-    FeGlobal* gl = mars_alloc(sizeof(FeGlobal));
+FeData* fe_new_data(FeModule* mod, FeSymbol* sym, bool read_only) {
+    FeData* gl = mars_alloc(sizeof(FeData));
 
-    gl->sym = sym ? sym : fe_new_symbol(mod, strprintf("symbol%zu", sym), FE_VIS_GLOBAL);
-    gl->sym->is_function = false;
-    gl->sym->global = gl;
+    gl->sym = sym;
     gl->read_only = read_only;
     gl->data = NULL;
     gl->data_len = 0;
@@ -102,20 +99,26 @@ FeGlobal* fe_new_global(FeModule* mod, FeSymbol* sym, bool read_only) {
     return gl;
 }
 
-void fe_set_global_data(FeGlobal* global, u8* data, u32 data_len, bool zeroed) {
-    global->is_symbol_ref = false;
-    global->data = data;
-    global->data_len = data_len;
-    global->zeroed = zeroed;
+void fe_set_data_bytes(FeData* data, u8* bytes, u32 data_len, bool zeroed) {
+    data->kind = FE_DATA_BYTES;
+    data->data = data;
+    data->data_len = data_len;
+    data->zeroed = zeroed;
 }
 
-void fe_set_global_symref(FeGlobal* global, FeSymbol* symref) {
-    global->is_symbol_ref = true;
-    global->symref = symref;
+void fe_set_data_as_symref(FeData* data, FeSymbol* symref) {
+    data->kind = FE_DATA_SYMREF;
+    data->symref = symref;
+}
+
+void fe_set_data_as_numeric(FeData* data, u64 content, u8 kind) {
+    if (!(kind > _FE_DATA_NUMERIC_BEGIN && kind < _FE_DATA_NUMERIC_END)) {
+        CRASH("data kind %d is not numeric", kind);
+    }
+    data->kind = kind;
 }
 
 // WARNING: does NOT check if a symbol already exists
-// in most cases, use air_find_or_create_symbol
 FeSymbol* fe_new_symbol(FeModule* mod, string name, u8 visibility) {
     FeSymbol* sym = mars_alloc(sizeof(FeSymbol));
     sym->name = name;
@@ -125,12 +128,12 @@ FeSymbol* fe_new_symbol(FeModule* mod, string name, u8 visibility) {
     return sym;
 }
 
-// use this instead of fe_new_symbol
 FeSymbol* fe_find_or_new_symbol(FeModule* mod, string name, u8 visibility) {
     FeSymbol* sym = fe_find_symbol(mod, name);
     return sym ? sym : fe_new_symbol(mod, name, visibility);
 }
 
+// returns NULL if the symbol cannot be found
 FeSymbol* fe_find_symbol(FeModule* mod, string name) {
     for_urange(i, 0, mod->symtab.len) {
         if (string_eq(mod->symtab.at[i]->name, name)) {
@@ -168,7 +171,7 @@ FeInst* fe_append(FeBasicBlock* bb, FeInst* ir) {
 }
 
 FeInst* fe_inst(FeFunction* f, u8 type) {
-    if (type >= FE_INSTR_COUNT) type = FE_INVALID;
+    if (type >= _FE_INST_COUNT) type = FE_INST_INVALID;
     FeInst* ir = arena_alloc(&f->alloca, air_sizes[type], 8);
     ir->tag = type;
     ir->T = fe_type(f->mod, FE_VOID, 0);
@@ -177,45 +180,47 @@ FeInst* fe_inst(FeFunction* f, u8 type) {
 }
 
 const size_t air_sizes[] = {
-    [FE_INVALID]    = 0,
-    [FE_ELIMINATED] = 0,
+    [FE_INST_INVALID]    = 0,
+    [FE_INST_ELIMINATED] = 0,
 
-    [FE_ADD] = sizeof(FeBinop),
-    [FE_SUB] = sizeof(FeBinop),
-    [FE_MUL] = sizeof(FeBinop),
-    [FE_DIV] = sizeof(FeBinop),
+    [FE_INST_ADD] = sizeof(FeBinop),
+    [FE_INST_SUB] = sizeof(FeBinop),
+    [FE_INST_MUL] = sizeof(FeBinop),
+    [FE_INST_DIV] = sizeof(FeBinop),
     
-    [FE_AND]   = sizeof(FeBinop),
-    [FE_OR]    = sizeof(FeBinop),
-    [FE_NOR]   = sizeof(FeBinop),
-    [FE_XOR]   = sizeof(FeBinop),
-    [FE_SHL]   = sizeof(FeBinop),
-    [FE_LSR]   = sizeof(FeBinop),
-    [FE_ASR]   = sizeof(FeBinop),
+    [FE_INST_AND]   = sizeof(FeBinop),
+    [FE_INST_OR]    = sizeof(FeBinop),
+    [FE_INST_NOR]   = sizeof(FeBinop),
+    [FE_INST_XOR]   = sizeof(FeBinop),
+    [FE_INST_SHL]   = sizeof(FeBinop),
+    [FE_INST_LSR]   = sizeof(FeBinop),
+    [FE_INST_ASR]   = sizeof(FeBinop),
 
-    [FE_STACKOFFSET] = sizeof(FeStackOffset),
-    [FE_GETFIELDPTR] = sizeof(FeGetFieldPtr),
-    [FE_GETINDEXPTR] = sizeof(FeGetIndexPtr),
+    [FE_INST_CAST]  = sizeof(FeCast),
 
-    [FE_LOAD]     = sizeof(FeLoad),
-    [FE_VOL_LOAD] = sizeof(FeLoad),
+    [FE_INST_STACKADDR] = sizeof(FeStackAddr),
+    [FE_INST_GETFIELDPTR] = sizeof(FeGetFieldPtr),
+    [FE_INST_GETINDEXPTR] = sizeof(FeGetIndexPtr),
 
-    [FE_STORE]     = sizeof(FeStore),
-    [FE_VOL_STORE] = sizeof(FeStore),
+    [FE_INST_LOAD]     = sizeof(FeLoad),
+    [FE_INST_VOL_LOAD] = sizeof(FeLoad),
 
-    [FE_CONST]      = sizeof(FeConst),
-    [FE_LOADSYMBOL] = sizeof(FeLoadSymbol),
+    [FE_INST_STORE]     = sizeof(FeStore),
+    [FE_INST_VOL_STORE] = sizeof(FeStore),
 
-    [FE_MOV] = sizeof(FeMov),
-    [FE_PHI] = sizeof(FePhi),
+    [FE_INST_CONST]      = sizeof(FeConst),
+    [FE_INST_LOADSYMBOL] = sizeof(FeLoadSymbol),
 
-    [FE_BRANCH] = sizeof(FeBranch),
-    [FE_JUMP]   = sizeof(FeJump),
+    [FE_INST_MOV] = sizeof(FeMov),
+    [FE_INST_PHI] = sizeof(FePhi),
 
-    [FE_PARAMVAL]  = sizeof(FeParamVal),
-    [FE_RETURNVAL] = sizeof(FeReturnVal),
+    [FE_INST_BRANCH] = sizeof(FeBranch),
+    [FE_INST_JUMP]   = sizeof(FeJump),
 
-    [FE_RETURN] = sizeof(FeReturn),
+    [FE_INST_PARAMVAL]  = sizeof(FeParamVal),
+    [FE_INST_RETURNVAL] = sizeof(FeReturnVal),
+
+    [FE_INST_RETURN] = sizeof(FeReturn),
 };
 
 FeInst* fe_binop(FeFunction* f, u8 type, FeInst* lhs, FeInst* rhs) {
@@ -227,70 +232,70 @@ FeInst* fe_binop(FeFunction* f, u8 type, FeInst* lhs, FeInst* rhs) {
 }
 
 FeInst* fe_cast(FeFunction* f, FeInst* source, FeType* to) {
-    FeCast* ir = (FeCast*) fe_inst(f, FE_CAST);
+    FeCast* ir = (FeCast*) fe_inst(f, FE_INST_CAST);
     ir->source = source;
     ir->to = to;
     return (FeInst*) ir;
 }
 
 FeInst* fe_stackoffset(FeFunction* f, FeStackObject* obj) {
-    FeStackOffset* ir = (FeStackOffset*) fe_inst(f, FE_STACKOFFSET);
+    FeStackAddr* ir = (FeStackAddr*) fe_inst(f, FE_INST_STACKADDR);
 
     ir->object = obj;
     return (FeInst*) ir;
 }
 
 FeInst* fe_getfieldptr(FeFunction* f, u32 index, FeInst* source) {
-    FeGetFieldPtr* ir = (FeGetFieldPtr*) fe_inst(f, FE_GETFIELDPTR);
+    FeGetFieldPtr* ir = (FeGetFieldPtr*) fe_inst(f, FE_INST_GETFIELDPTR);
     ir->index = index;
     ir->source = source;
     return (FeInst*) ir;
 }
 
 FeInst* fe_getindexptr(FeFunction* f, FeInst* index, FeInst* source) {
-    FeGetIndexPtr* ir = (FeGetIndexPtr*) fe_inst(f, FE_GETINDEXPTR);
+    FeGetIndexPtr* ir = (FeGetIndexPtr*) fe_inst(f, FE_INST_GETINDEXPTR);
     ir->index = index;
     ir->source = source;
     return (FeInst*) ir;
 }
 
 FeInst* fe_load(FeFunction* f, FeInst* location, bool is_vol) {
-    FeLoad* ir = (FeLoad*) fe_inst(f, FE_LOAD);
+    FeLoad* ir = (FeLoad*) fe_inst(f, FE_INST_LOAD);
 
-    if (is_vol) ir->base.tag = FE_VOL_LOAD;
+    if (is_vol) ir->base.tag = FE_INST_VOL_LOAD;
     ir->location = location;
     return (FeInst*) ir;
 }
 
 FeInst* fe_store(FeFunction* f, FeInst* location, FeInst* value, bool is_vol) {
-    FeStore* ir = (FeStore*) fe_inst(f, FE_STORE);
+    FeStore* ir = (FeStore*) fe_inst(f, FE_INST_STORE);
     
-    if (is_vol) ir->base.tag = FE_VOL_STORE;
+    if (is_vol) ir->base.tag = FE_INST_VOL_STORE;
     ir->location = location;
     ir->value = value;
     return (FeInst*) ir;
 }
 
 FeInst* fe_const(FeFunction* f) {
-    FeConst* ir = (FeConst*) fe_inst(f, FE_CONST);
+    FeConst* ir = (FeConst*) fe_inst(f, FE_INST_CONST);
     return (FeInst*) ir;
 }
 
 FeInst* fe_loadsymbol(FeFunction* f, FeSymbol* symbol) {
-    FeLoadSymbol* ir = (FeLoadSymbol*) fe_inst(f, FE_LOADSYMBOL);
+    FeLoadSymbol* ir = (FeLoadSymbol*) fe_inst(f, FE_INST_LOADSYMBOL);
     ir->sym = symbol;
     return (FeInst*) ir;
 }
 
 FeInst* fe_mov(FeFunction* f, FeInst* source) {
-    FeMov* ir = (FeMov*) fe_inst(f, FE_MOV);
+    FeMov* ir = (FeMov*) fe_inst(f, FE_INST_MOV);
     ir->source = source;
     return (FeInst*) ir;
 }
 
 // use in the format (f, source_count, source_1, source_BB_1, source_2, source_BB_2, ...)
 FeInst* fe_phi(FeFunction* f, u32 count, ...) {
-    FePhi* ir = (FePhi*) fe_inst(f, FE_PHI);
+    FePhi* ir = (FePhi*) fe_inst(f, FE_INST_PHI);
     ir->len = count;
 
     ir->sources    = mars_alloc(sizeof(*ir->sources) * count);
@@ -331,13 +336,13 @@ void fe_add_phi_source(FePhi* phi, FeInst* source, FeBasicBlock* source_block) {
 }
 
 FeInst* fe_jump(FeFunction* f, FeBasicBlock* dest) {
-    FeJump* ir = (FeJump*) fe_inst(f, FE_JUMP);
+    FeJump* ir = (FeJump*) fe_inst(f, FE_INST_JUMP);
     ir->dest = dest;
     return (FeInst*) ir;
 }
 
 FeInst* fe_branch(FeFunction* f, u8 cond, FeInst* lhs, FeInst* rhs, FeBasicBlock* if_true, FeBasicBlock* if_false) {
-    FeBranch* ir = (FeBranch*) fe_inst(f, FE_BRANCH);
+    FeBranch* ir = (FeBranch*) fe_inst(f, FE_INST_BRANCH);
     ir->cond = cond;
     ir->lhs = lhs;
     ir->rhs = rhs;
@@ -347,20 +352,20 @@ FeInst* fe_branch(FeFunction* f, u8 cond, FeInst* lhs, FeInst* rhs, FeBasicBlock
 }
 
 FeInst* fe_paramval(FeFunction* f, u32 param) {
-    FeParamVal* ir = (FeParamVal*) fe_inst(f, FE_PARAMVAL);
+    FeParamVal* ir = (FeParamVal*) fe_inst(f, FE_INST_PARAMVAL);
     ir->param_idx = param;
     return (FeInst*) ir;
 }
 
 FeInst* fe_returnval(FeFunction* f, u32 param, FeInst* source) {
-    FeReturnVal* ir = (FeReturnVal*) fe_inst(f, FE_RETURNVAL);
+    FeReturnVal* ir = (FeReturnVal*) fe_inst(f, FE_INST_RETURNVAL);
     ir->return_idx = param;
     ir->source = source;
     return (FeInst*) ir;
 }
 
 FeInst* fe_return(FeFunction* f) {
-    return fe_inst(f, FE_RETURN);
+    return fe_inst(f, FE_INST_RETURN);
 }
 
 void fe_move_inst(FeBasicBlock* bb, u64 to, u64 from) {

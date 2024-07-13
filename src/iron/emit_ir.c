@@ -151,7 +151,7 @@ static void emit_function(FeFunction* f, StringBuilder* sb) {
         FeBasicBlock* bb = f->blocks.at[b];
         for_urange(i, 0, bb->len) {
             FeInst* inst = bb->at[i];
-            if (inst->tag == FE_ELIMINATED) continue;
+            if (inst->tag == FE_INST_ELIMINATED) continue;
             inst->number = counter++; // assign a number to every IR
         }
     }
@@ -170,33 +170,33 @@ static void emit_function(FeFunction* f, StringBuilder* sb) {
         for_urange(i, 0, bb->len) {
             FeInst* inst = bb->at[i];
 
-            if (inst->tag == FE_ELIMINATED) continue;
+            if (inst->tag == FE_INST_ELIMINATED) continue;
 
             sb_printf(sb, "    #%llu = ", inst->number);
             switch (inst->tag) {
-            case FE_ADD: {
+            case FE_INST_ADD: {
                 FeBinop* binop = (FeBinop*) inst;
                 sb_append_c(sb, "add.");
                 sb_type_nme(binop->base.T, sb);
                 sb_printf(sb, " #%llu, #%llu", binop->lhs->number, binop->rhs->number);
             } break;
-            case FE_LOAD: {
+            case FE_INST_LOAD: {
                 FeLoad* load = (FeLoad*) inst;
                 sb_append_c(sb, "load.");
                 sb_type_nme(load->base.T, sb);
                 sb_printf(sb, " #%llu", load->location->number);
             } break;
-            case FE_STORE: {
+            case FE_INST_STORE: {
                 FeStore* store = (FeStore*) inst;
                 sb_append_c(sb, "store.");
                 sb_type_nme(store->value->T, sb);
                 sb_printf(sb, " #%llu, #%llu", store->location->number, store->value->number);
             } break;
-            case FE_MOV: {
+            case FE_INST_MOV: {
                 FeMov* mov = (FeMov*) inst;
                 sb_printf(sb, "mov #%llu", mov->source->number);
             } break;
-            case FE_CONST: {
+            case FE_INST_CONST: {
                 FeConst* con = (FeConst*) inst;
                 sb_append_c(sb, "const.");
                 sb_type_nme(inst->T, sb);
@@ -217,20 +217,20 @@ static void emit_function(FeFunction* f, StringBuilder* sb) {
                     break;
                 }
             } break;
-            case FE_PARAMVAL: {
+            case FE_INST_PARAMVAL: {
                 FeParamVal* param = (FeParamVal*) inst;
                 sb_printf(sb, "parmval %llu", param->param_idx);
             } break;
-            case FE_RETURNVAL: {
+            case FE_INST_RETURNVAL: {
                 FeReturnVal* ret = (FeReturnVal*) inst;
                 sb_printf(sb, "returnval %llu, #%llu", ret->return_idx, ret->source->number);
             } break;
-            case FE_STACKOFFSET: {
-                FeStackOffset* so = (FeStackOffset*) inst;
+            case FE_INST_STACKADDR: {
+                FeStackAddr* so = (FeStackAddr*) inst;
                 u64 index = stack_object_index(f, so->object);
                 sb_printf(sb, "stackoffset #%llu", index + 1);
             } break;
-            case FE_RETURN:
+            case FE_INST_RETURN:
                 sb_append_c(sb, "return");
                 break;
             default:

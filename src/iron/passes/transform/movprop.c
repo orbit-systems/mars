@@ -8,7 +8,7 @@
 
 static u64 air_set_usage(FeBasicBlock* bb, FeInst* source, u64 start_index, FeInst* dest) {
     for (u64 i = start_index; i < bb->len; i++) {
-        if (bb->at[i]->tag == FE_ELIMINATED) continue;
+        if (bb->at[i]->tag == FE_INST_ELIMINATED) continue;
         // FIXME: kayla you're gonna be SO fucking mad at me for this
         // searching the struct for a pointer :sobbing:
         FeInst** ir = (FeInst**)bb->at[i];
@@ -39,10 +39,10 @@ void run_pass_movprop(FeModule* mod) {
             FeBasicBlock* bb = mod->ir_module->functions[i]->blocks.at[j];
 
             for_urange(k, 0, bb->len) {
-                if (bb->at[k]->tag != FE_MOV) continue;
+                if (bb->at[k]->tag != FE_INST_MOV) continue;
 
                 set_uses_of(mod->ir_module->functions[i], bb->at[k], ((FeMov*)bb->at[k])->source);
-                bb->at[k]->tag = FE_ELIMINATED;
+                bb->at[k]->tag = FE_INST_ELIMINATED;
             }
 
         }

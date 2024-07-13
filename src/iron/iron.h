@@ -13,7 +13,7 @@ typedef        FeInst*     FeInstPTR;
 
 typedef struct FeFunction     FeFunction;
 typedef struct FeFunctionItem FeFunctionItem;
-typedef struct FeGlobal       FeGlobal;
+typedef struct FeData         FeData;
 typedef struct FeSymbol       FeSymbol;
 typedef struct FeBasicBlock   FeBasicBlock;
 
@@ -24,7 +24,7 @@ typedef struct FeAsm            FeAsm;
 typedef struct FeAsmInst        FeAsmInst;
 typedef struct FeAsmInline      FeAsmInline;
 typedef struct FeAsmLocalLabel  FeAsmLocalLabel;
-typedef struct FeAsmGlobalLabel FeAsmGlobalLabel;
+typedef struct FeAsmSymbolLabel FeAsmSymbolLabel;
 typedef struct FeAsmFuncBegin   FeAsmFuncBegin;
 typedef struct FeAsmFuncEnd     FeAsmFuncEnd;
 typedef struct FeAsmData        FeAsmData;
@@ -41,7 +41,7 @@ typedef struct FeModule {
     string name;
 
     FeFunction** functions;
-    FeGlobal** globals;
+    FeData** globals;
 
     u32 functions_len;
     u32 globals_len;
@@ -52,7 +52,7 @@ typedef struct FeModule {
         size_t cap;
 
         Arena alloca;
-    } symtab;
+    } symtab; // symbol table
 
     struct {
         FeType** at;
@@ -152,14 +152,27 @@ typedef struct FeSymbol {
     union {
         void* ref;
         FeFunction* function;
-        FeGlobal* global;
+        FeData* data;
     };
     bool is_function;
     bool is_extern;
     u8 visibility;
 } FeSymbol;
 
-typedef struct FeGlobal {
+enum {
+    FE_DATA_NONE = 0,
+    FE_DATA_BYTES,
+    FE_DATA_SYMREF,
+
+    _FE_DATA_NUMERIC_BEGIN,
+    FE_DATA_D8,
+    FE_DATA_D16,
+    FE_DATA_D32,
+    FE_DATA_D64,
+    _FE_DATA_NUMERIC_END,
+};
+
+typedef struct FeData {
     FeSymbol* sym;
 
     union {
@@ -169,11 +182,16 @@ typedef struct FeGlobal {
             bool zeroed;
         };
         FeSymbol* symref;
+
+        u8  d8;
+        u16 d16;
+        u32 d32;
+        u64 d64;
     };
 
-    bool is_symbol_ref : 1;
-    bool read_only : 1;
-} FeGlobal;
+    u8 kind;
+    bool read_only;
+} FeData;
 
 #define FE_FN_ALLOCA_BLOCK_SIZE 0x1000
 
@@ -238,70 +256,67 @@ typedef struct FeBasicBlock {
 } FeBasicBlock;
 
 enum {
-    FE_INVALID,
-    FE_ELIMINATED, // an AIR element that has been "deleted".
+    FE_INST_INVALID,
+    FE_INST_ELIMINATED, // an AIR element that has been "deleted".
 
     // FeBinop
-    FE_ADD,
-    FE_SUB,
-    FE_MUL,
-    FE_DIV,
+    FE_INST_ADD,
+    FE_INST_SUB,
+    FE_INST_MUL,
+    FE_INST_DIV,
 
     // FeBinop
-    FE_AND,
-    FE_OR,
-    FE_NOR,
-    FE_XOR,
-    FE_SHL,
-    FE_ASR,
-    FE_LSR,
-
-    // FE_UnOp
-    FE_NOT,
+    FE_INST_AND,
+    FE_INST_OR,
+    FE_INST_NOR,
+    FE_INST_XOR,
+    FE_INST_SHL,
+    FE_INST_ASR,
+    FE_INST_LSR,
 
     // FeCast
-    FE_CAST,
+    FE_INST_CAST,
 
-    // FeStackOffset
-    FE_STACKOFFSET,
+    // FeStackAddr
+    FE_INST_STACKADDR,
 
     // FeGetFieldPtr
-    FE_GETFIELDPTR,
+    FE_INST_GETFIELDPTR,
 
     // FeGetIndexPtr
-    FE_GETINDEXPTR,
+    FE_INST_GETINDEXPTR,
 
     // FeLoad
-    FE_LOAD,
-    FE_VOL_LOAD,
+    FE_INST_LOAD,
+    FE_INST_VOL_LOAD,
 
     // FeStore
-    FE_STORE,
-    FE_VOL_STORE,
+    FE_INST_STORE,
+    FE_INST_VOL_STORE,
 
     // FeConst
-    FE_CONST,
+    FE_INST_CONST,
     // FeLoadSymbol
-    FE_LOADSYMBOL,
+    FE_INST_LOADSYMBOL,
 
     // FeMov
-    FE_MOV,
+    FE_INST_MOV,
     // FePhi
-    FE_PHI,
+    FE_INST_PHI,
 
     // FeBranch
-    FE_BRANCH,
+    FE_INST_BRANCH,
     // FeJump
-    FE_JUMP,
+    FE_INST_JUMP,
 
     // FeParamVal
-    FE_PARAMVAL,
+    FE_INST_PARAMVAL,
     // FeReturnVal
-    FE_RETURNVAL,
+    FE_INST_RETURNVAL,
     // FeReturn
-    FE_RETURN,
+    FE_INST_RETURN,
 
-    FE_INSTR_COUNT,
+    _FE_INST_COUNT,
 };
 
 // basic AIR structure
@@ -327,11 +342,11 @@ typedef struct FeCast {
     FeInst* source;
 } FeCast;
 
-typedef struct FeStackOffset {
+typedef struct FeStackAddr {
     FeInst base;
 
     FeStackObject* object;
-} FeStackOffset;
+} FeStackAddr;
 
 // used for struct accesses
 typedef struct FeGetFieldPtr {
@@ -462,7 +477,7 @@ FeModule*     fe_new_module(string name);
 FeType*       fe_type(FeModule* m, u8 kind, u64 len);
 FeFunction*   fe_new_function(FeModule* mod, FeSymbol* sym);
 FeBasicBlock* fe_new_basic_block(FeFunction* fn, string name);
-FeGlobal*     fe_new_global(FeModule* mod, FeSymbol* sym, bool read_only);
+FeData*     fe_new_data(FeModule* mod, FeSymbol* sym, bool read_only);
 FeSymbol*     fe_new_symbol(FeModule* mod, string name, u8 visibility);
 FeSymbol*     fe_find_symbol(FeModule* mod, string name);
 FeSymbol*     fe_find_or_new_symbol(FeModule* mod, string name, u8 visibility);
@@ -471,8 +486,8 @@ FeStackObject* fe_new_stackobject(FeFunction* f, FeType* t);
 void fe_set_func_params(FeFunction* f, u16 count, ...);
 void fe_set_func_returns(FeFunction* f, u16 count, ...);
 u32  fe_bb_index(FeFunction* fn, FeBasicBlock* bb);
-void fe_set_global_data(FeGlobal* global, u8* data, u32 data_len, bool zeroed);
-void fe_set_global_symref(FeGlobal* global, FeSymbol* symref);
+void fe_set_data_bytes(FeData* data, u8* bytes, u32 data_len, bool zeroed);
+void fe_set_data_as_symref(FeData* data, FeSymbol* symref);
 
 FeInst* fe_append(FeBasicBlock* bb, FeInst* ir);
 FeInst* fe_inst(FeFunction* f, u8 type);
@@ -553,9 +568,10 @@ typedef struct FeImmediate {
 
 enum {
     FE_ASM_INST = 1,
+    FE_ASM_JUMP_PATTERN,
     FE_ASM_INLINE,
     FE_ASM_LOCAL_LABEL,
-    FE_ASM_GLOBAL_LABEL,
+    FE_ASM_SYMBOL_LABEL,
     FE_ASM_FUNC_BEGIN,
     FE_ASM_FUNC_END,
     FE_ASM_DATA,
@@ -581,6 +597,15 @@ typedef struct FeAsmInst {
     FeArchInstInfo* template;
 } FeAsmInst;
 
+// inline data structure for control-flow edges.
+typedef struct FeAsmJumpPattern {
+    _FE_ASM_BASE
+
+    // source is implicitly the previous instruction
+    FeAsm* dst; // where is it jumping?
+    bool is_cond; // is it conditional (could control flow pass through this) ?
+} FeAsmJumpPattern;
+
 // textual inline assembly.
 typedef struct FeAsmInline {
     _FE_ASM_BASE
@@ -602,17 +627,18 @@ typedef struct FeAsmInline {
 
 } FeAsmInline;
 
+// a lable that is not visible on the global level.
 typedef struct FeAsmLocalLabel {
     _FE_ASM_BASE
     
     string text;
 } FeAsmLocalLabel;
 
-typedef struct FeAsmGlobalLabel {
+typedef struct FeAsmSymbolLabel {
     _FE_ASM_BASE
     
     FeSymbol* sym; // defines this symbol in the final assembly
-} FeAsmGlobalLabel;
+} FeAsmSymbolLabel;
 
 // tell the register allocator to start
 typedef struct FeAsmFuncBegin {
@@ -621,7 +647,7 @@ typedef struct FeAsmFuncBegin {
     FeFunction* func;
 } FeAsmFuncBegin;
 
-// tell the register allocator to stop
+// tell the register allocator to stop, basically
 typedef struct FeAsmFuncEnd {
     _FE_ASM_BASE
 
@@ -630,14 +656,7 @@ typedef struct FeAsmFuncEnd {
 
 #undef _FE_ASM_BASE
 
-typedef struct FeAsmJumpPattern {
-    FeAsm* src; // where is the jump instruction?
-    FeAsm* dst; // where is it jumping?
-    bool is_cond; // is it conditional (could control flow pass through this) ?
-} FeAsmJumpPattern;
-
-da_typedef(FeAsmJumpPattern);
-
+// IR -> ASM outputs this
 typedef struct FeAsmBuffer {
     FeAsm** at;
     size_t len;
@@ -646,15 +665,13 @@ typedef struct FeAsmBuffer {
     Arena alloca;
 
     FeArchInfo* target_arch;
-
-    da(FeAsmJumpPattern) jumps;
 } FeAsmBuffer;
 
-FeAsm*     fe_asm_append(FeModule* m, FeAsm* a);
-FeAsm*     fe_asm(FeModule* m, u8 kind);
-FeAsm*     fe_asm_inst(FeModule* m, FeArchInstInfo template);
+FeAsm* fe_asm_append(FeModule* m, FeAsm* a);
+FeAsm* fe_asm(FeModule* m, u8 kind);
+FeAsm* fe_asm_inst(FeModule* m, FeArchInstInfo* template);
 
-FeVReg*    fe_new_vreg(FeModule* m, u32 regclass);
+FeVReg* fe_new_vreg(FeModule* m, u32 regclass);
 
 // fails if no target is provided
 void       fe_codegen(FeModule* m);
@@ -716,15 +733,10 @@ typedef struct FeArchAsmSyntaxInfo {
     string file_begin; // arbitrary text to put at the beginning
     string file_end; // arbitrary text to put at the end
 
-    string u64;
-    string u32;
-    string u16;
-    string u8;
-
-    string i64;
-    string i32;
-    string i16;
-    string i8;
+    string d64;
+    string d32;
+    string d16;
+    string d8;
     
     string zero; // filling a section with zero
 

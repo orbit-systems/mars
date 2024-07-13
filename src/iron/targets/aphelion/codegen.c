@@ -49,7 +49,7 @@ static AsmBlock* aphelion_translate_block(AsmModule* m, AsmFunction* f, FeFuncti
 
         switch (raw_ir->tag) {
         
-        case FE_PARAMVAL: {
+        case FE_INST_PARAMVAL: {
             FeParamVal* ir = (FeParamVal*) raw_ir;
 
             assert(ir_f->params[ir->param_idx]->T->kind == FE_I64);
@@ -77,10 +77,10 @@ static AsmBlock* aphelion_translate_block(AsmModule* m, AsmFunction* f, FeFuncti
 
             asm_add_inst(b, mov);
         } break;
-        case FE_ADD: {
+        case FE_INST_ADD: {
             FeBinop* ir = (FeBinop*) raw_ir;
             
-            assert(ir->rhs->tag != FE_CONST && ir->lhs->tag != FE_CONST);
+            assert(ir->rhs->tag != FE_INST_CONST && ir->lhs->tag != FE_INST_CONST);
             assert(ir->rhs->T->kind == FE_I64 && ir->lhs->T->kind == FE_I64);
 
 
@@ -98,10 +98,10 @@ static AsmBlock* aphelion_translate_block(AsmModule* m, AsmFunction* f, FeFuncti
 
             asm_add_inst(b, addr);
         } break;
-        case FE_MUL: {
+        case FE_INST_MUL: {
             FeBinop* ir = (FeBinop*) raw_ir;
             
-            assert(ir->rhs->tag != FE_CONST && ir->lhs->tag != FE_CONST);
+            assert(ir->rhs->tag != FE_INST_CONST && ir->lhs->tag != FE_INST_CONST);
             assert(ir->rhs->T->kind == FE_I64 && ir->lhs->T->kind == FE_I64);
 
 
@@ -119,7 +119,7 @@ static AsmBlock* aphelion_translate_block(AsmModule* m, AsmFunction* f, FeFuncti
 
             asm_add_inst(b, addr);
         } break;
-        case FE_RETURNVAL: {
+        case FE_INST_RETURNVAL: {
             FeReturnVal* ir = (FeReturnVal*) raw_ir;
 
             FeVReg* out = asm_new_vreg(m, f, APHEL_REGCLASS_GPR);
@@ -145,7 +145,7 @@ static AsmBlock* aphelion_translate_block(AsmModule* m, AsmFunction* f, FeFuncti
 
             asm_add_inst(b, retval);
         } break;
-        case FE_RETURN: {
+        case FE_INST_RETURN: {
             FeAsmInst* ret = asm_new_inst(m, APHEL_INST_RET);
             asm_add_inst(b, ret);
         } break;

@@ -16,7 +16,7 @@ da_typedef(FeInstPTR);
 static FeStore* last_local_store_to_loc(FeBasicBlock* bb, FeInst* location, u64 from) {
     if (location == NULL) return NULL;
     for (i64 i = from-1; i >= 0; i--) {
-        if (bb->at[i]->tag == FE_STORE && ((FeStore*)bb->at[i])->location == location) {
+        if (bb->at[i]->tag == FE_INST_STORE && ((FeStore*)bb->at[i])->location == location) {
             return (FeStore*) bb->at[i];
         }
     }
@@ -25,7 +25,7 @@ static FeStore* last_local_store_to_loc(FeBasicBlock* bb, FeInst* location, u64 
 
 static u64 air_get_usage(FeBasicBlock* bb, FeInst* source, u64 start_index) {
     for (u64 i = start_index; i < bb->len; i++) {
-        if (bb->at[i]->tag == FE_ELIMINATED) continue;
+        if (bb->at[i]->tag == FE_INST_ELIMINATED) continue;
         // FIXME: kayla you're gonna be SO fucking mad at me for this
         // searching the struct for a pointer :sobbing:
         FeInst** ir = (FeInst**)bb->at[i];
@@ -59,7 +59,7 @@ void run_pass_trme(FeModule* mod) {
             FeBasicBlock* bb = f->blocks.at[j];
 
             for (u64 inst = 0; inst < bb->len; inst++) {
-                if (bb->at[inst]->tag != FE_LOAD) continue;
+                if (bb->at[inst]->tag != FE_INST_LOAD) continue;
 
                 FeLoad* ir = (FeLoad*) bb->at[inst];  
                 FeStore* last_store = last_local_store_to_loc(bb, ir->location, inst);
@@ -70,7 +70,7 @@ void run_pass_trme(FeModule* mod) {
                 // but its fine because sizeof(FeLoad) >= sizeof(FeMov)
                 // dont do this kinda thing unless you're
                 // ABSOLUTELY SURE its going to be okay
-                ir->base.tag = FE_MOV;
+                ir->base.tag = FE_INST_MOV;
                 ((FeMov*)ir)->source = last_store->value;
             }
         }
@@ -80,13 +80,13 @@ void run_pass_trme(FeModule* mod) {
             FeBasicBlock* bb = f->blocks.at[j];
 
             for (u64 inst = 0; inst < bb->len; inst++) {
-                if (bb->at[inst]->tag != FE_STACKOFFSET) continue;
+                if (bb->at[inst]->tag != FE_INST_STACKADDR) continue;
 
                 for (u64 search_bb = 0; search_bb < f->blocks.len; search_bb++) {
                     u64 next_usage = air_get_usage(f->blocks.at[search_bb], bb->at[inst], 0);
                     while (next_usage != UINT64_MAX) {
                         FeInst* usage = f->blocks.at[search_bb]->at[next_usage];
-                        if (usage->tag != FE_STORE) {
+                        if (usage->tag != FE_INST_STORE) {
                             goto continue_stackalloc_scan;
                         }
                         da_append(&store_elim_list, usage);
@@ -95,12 +95,12 @@ void run_pass_trme(FeModule* mod) {
                 }
 
                 // if you're still around, this stack slot is useless and can be eliminated
-                remove_stack_slot(f, ((FeStackOffset*)bb->at[inst])->object);
-                bb->at[inst]->tag = FE_ELIMINATED;
+                remove_stack_slot(f, ((FeStackAddr*)bb->at[inst])->object);
+                bb->at[inst]->tag = FE_INST_ELIMINATED;
 
                 // eliminate the stores as well
                 for (u64 s = 0; s < store_elim_list.len; s++) {
-                    store_elim_list.at[s]->tag = FE_ELIMINATED;
+                    store_elim_list.at[s]->tag = FE_INST_ELIMINATED;
                 }
 
                 continue_stackalloc_scan:
