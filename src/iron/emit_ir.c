@@ -211,7 +211,7 @@ static void emit_function(FeFunction* f, StringBuilder* sb) {
             } break;
             case FE_INST_PARAMVAL: {
                 FeParamVal* param = (FeParamVal*) inst;
-                sb_printf(sb, "parmval %llu", param->param_idx);
+                sb_printf(sb, "paramval %llu", param->param_idx);
             } break;
             case FE_INST_RETURNVAL: {
                 FeReturnVal* ret = (FeReturnVal*) inst;

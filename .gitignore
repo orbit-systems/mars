@@ -16,3 +16,4 @@ vgcore*
 *.dot
 *.d
 mars
+.clangd
