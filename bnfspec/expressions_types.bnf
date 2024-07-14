@@ -38,8 +38,8 @@
 
 <unop> ::= "&" | "-" | "~" | "!" | "?" | "sizeof" | "alignof"
 
-<aggregate> ::= ("struct" | "union")  "{" <param_list> "}" ";" 
+<aggregate> ::= ("struct" | "union")  "{" <param_list> "}"
 //enum param_list uses = as a separator, not a :
 //enum param_list also has expressions instead of types.
 //its just a really fucky param_list,  we should seperate this out
-<enum> ::= "enum" <type> "{" <param_list> "}" ";" 
+<enum> ::= "enum" <type> "{" <param_list> "}"

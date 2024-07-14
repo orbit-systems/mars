@@ -18,9 +18,9 @@ let node_at = fn(node: ^let Node, index: int) -> ^mut Node {
     mut i = index;
     mut n = node;
     while i != 0 {
-        if n == null return null;
+        if n == null do return null;
         n = n.next;
-        i--;
+        i -= 1;
     }
     return n;
 }

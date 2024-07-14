@@ -671,7 +671,7 @@ AST parse_atomic_expr_term(parser* p) {
 }
 
 AST parse_aggregate(parser* p) {
-    //<aggregate> ::= ("struct" | "union")  "{" <param_list> "}" ";" 
+    //<aggregate> ::= ("struct" | "union")  "{" <param_list> "}" 
     AST n = new_ast_node(p, AST_struct_type_expr);
     n.as_struct_type_expr->base.start = &current_token(p);
     n.as_struct_type_expr->is_union = current_token(p).type == TOK_KEYWORD_UNION;
@@ -679,7 +679,7 @@ AST parse_aggregate(parser* p) {
     advance_token(p);
     if (current_token(p).type != TOK_OPEN_BRACE) error_at_parser(p, "expected {");
     advance_token(p);
-    if (current_token(p).type != TOK_CLOSE_PAREN) { 
+    if (current_token(p).type != TOK_CLOSE_BRACE) { 
         /*        <param_list> ::= <param_list> "," <param> | 
                          <param_list> "," <multi_param> | 
                          <param> | <multi_param>
@@ -688,7 +688,7 @@ AST parse_aggregate(parser* p) {
         for (int i = p->current_tok; i < p->tokens.len; i++) {
             if (current_token(p).type == TOK_COLON) error_at_parser(p, "unexpected :");
             if (current_token(p).type == TOK_COMMA) advance_token(p);
-            if (current_token(p).type == TOK_CLOSE_PAREN) break;
+            if (current_token(p).type == TOK_CLOSE_BRACE) break;
             if (current_token(p).type == TOK_IDENTIFIER) {
                 if (peek_token(p, 1).type == TOK_COLON) {
                     //<param> ::= <identifier> ":" <type>
@@ -711,8 +711,6 @@ AST parse_aggregate(parser* p) {
             error_at_parser(p, "unexpected");
         }
     }
-    advance_token(p);
-    if (current_token(p).type == TOK_SEMICOLON) error_at_parser(p, "expected ;");
     n.as_struct_type_expr->base.end = &current_token(p);
     advance_token(p);
     return n;
@@ -720,7 +718,7 @@ AST parse_aggregate(parser* p) {
 
 AST parse_enum(parser* p) {
     //enum's param_list separator is =, not :
-    //<enum> ::= "enum" (<type> | E) "{" <param_list> "}" ";" 
+    //<enum> ::= "enum" (<type> | E) "{" <param_list> "}"
     AST n = new_ast_node(p, AST_enum_type_expr);
     n.as_enum_type_expr->base.start = &current_token(p);
     n.as_enum_type_expr->backing_type = parse_type(p);
@@ -728,14 +726,14 @@ AST parse_enum(parser* p) {
     advance_token(p);
     if (current_token(p).type != TOK_OPEN_BRACE) error_at_parser(p, "expected {");
     advance_token(p);
-    if (current_token(p).type != TOK_CLOSE_PAREN) { 
+    if (current_token(p).type != TOK_CLOSE_BRACE) { 
         /*        <param_list> ::= <param_list> "," <param> | 
                          <param_list> "," <multi_param> | 
                          <param> | <multi_param>    */
         for (int i = p->current_tok; i < p->tokens.len; i++) {
             if (current_token(p).type == TOK_EQUAL) error_at_parser(p, "unexpected :");
             if (current_token(p).type == TOK_COMMA) advance_token(p);
-            if (current_token(p).type == TOK_CLOSE_PAREN) break;
+            if (current_token(p).type == TOK_CLOSE_BRACE) break;
             if (current_token(p).type == TOK_IDENTIFIER) {
                 if (peek_token(p, 1).type == TOK_EQUAL) {
                     //<param> ::= <identifier> "=" <expression>
@@ -761,8 +759,6 @@ AST parse_enum(parser* p) {
             error_at_parser(p, "unexpected");
         }
     }
-    advance_token(p);
-    if (current_token(p).type == TOK_SEMICOLON) error_at_parser(p, "expected ;");
     n.as_enum_type_expr->base.end = &current_token(p);
     advance_token(p);
     return n;
