@@ -52,7 +52,7 @@ AST parse_stmt(parser* p) {
     /*<stmt> ::= <decl> | <return> | <if> | <else> | <while> | 
            <for_type_one> | <for_type_two> | <asm> | <stmt_block> |
            <switch> | <break> | <fallthrough> | <expression> ";" | <extern> | <defer> | <continue> | ";"
-            <assignment> | */
+            <assignment> | <type_decl> */
     AST n;
 
     switch (current_token(p).type) {
@@ -312,6 +312,19 @@ AST parse_stmt(parser* p) {
             n.as_empty_stmt->tok = &current_token(p);
             n.as_empty_stmt->base.start = &current_token(p);
             n.as_empty_stmt->base.end = &current_token(p);
+            advance_token(p);
+            return n;
+        //<type_decl> ::= "type" <identifier> "=" <type> ";"
+        case TOK_KEYWORD_TYPE: 
+            n = new_ast_node(p, AST_type_decl_stmt);
+            n.as_type_decl_stmt->base.start = &current_token(p);
+            advance_token(p);
+            n.as_type_decl_stmt->lhs = parse_identifier(p);
+            if (current_token(p).type != TOK_EQUAL) error_at_parser(p, "expected =");
+            advance_token(p);
+            n.as_type_decl_stmt->rhs = parse_type(p);
+            if (current_token(p).type != TOK_SEMICOLON) error_at_parser(p, "expected ;");
+            n.as_type_decl_stmt->base.end = &current_token(p);
             advance_token(p);
             return n;
         default:
