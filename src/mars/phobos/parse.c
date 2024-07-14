@@ -1,5 +1,5 @@
-#include "orbit.h"
-#include "term.h"
+#include "common/orbit.h"
+#include "mars/term.h"
 
 #include "parse.h"
 #include "ast.h"

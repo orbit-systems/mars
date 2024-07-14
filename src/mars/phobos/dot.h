@@ -1,7 +1,7 @@
 #pragma once
 #define PHOBOS_DOT_H
 
-#include "orbit.h"
+#include "common/orbit.h"
 #include "ast.h"
 
 void emit_dot(string path, da(AST) nodes);

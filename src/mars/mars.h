@@ -1,9 +1,9 @@
 #pragma once
 #define MARS_H
 
-#include "orbit.h"
-#include "alloc.h"
-#include "term.h"
+#include "common/orbit.h"
+#include "common/alloc.h"
+#include "mars/term.h"
 
 #define DEFAULT_TARGET str("aphelion-none-asm")
 

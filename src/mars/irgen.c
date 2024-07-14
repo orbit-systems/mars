@@ -1,7 +1,7 @@
 #include "irgen.h"
 
 #include "phobos/sema.h"
-#include "ptrmap.h"
+#include "common/ptrmap.h"
 
 static mars_module* mars_mod;
 static FeModule* am;

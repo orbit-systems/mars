@@ -1,8 +1,8 @@
 #pragma once
 #define PHOBOS_H
 
-#include "orbit.h"
-#include "alloc.h"
+#include "common/orbit.h"
+#include "common/alloc.h"
 #include "lex.h"
 #include "parse.h"
 #include "ast.h"

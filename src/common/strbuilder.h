@@ -1,5 +1,5 @@
-#include "orbit.h"
-#include "arena.h"
+#include "common/orbit.h"
+#include "common/arena.h"
 
 // better way to do this but whatever
 

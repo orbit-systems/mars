@@ -1,7 +1,7 @@
 #pragma once
 #define ATLAS_IRGEN_H
 
-#include "iron.h"
+#include "iron/iron.h"
 #include "phobos/sema.h"
 
 void generate_ir_atlas_from_mars(mars_module* mod, FeModule* atmod);

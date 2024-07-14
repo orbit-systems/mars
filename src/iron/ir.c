@@ -1,4 +1,4 @@
-#include "iron.h"
+#include "iron/iron.h"
 
 #include "iron/passes/passes.h"
 

@@ -1,5 +1,5 @@
 #include "aphelion.h"
-#include "iron.h"
+#include "iron/iron.h"
 
 const FeArchRegisterInfo aphelion_regclass_zero_regs[] = {
     [APHEL_ZERO_RZ] = { .name = constr("rz")},

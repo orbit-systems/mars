@@ -1,8 +1,8 @@
 #pragma once
 
-#include "orbit.h"
-#include "alloc.h"
-#include "arena.h"
+#include "common/orbit.h"
+#include "common/alloc.h"
+#include "common/arena.h"
 
 typedef struct FeModule FeModule;
 typedef struct FePass   FePass;

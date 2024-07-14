@@ -1,8 +1,8 @@
 // generate the actual orbit.h code here
 #define ORBIT_IMPLEMENTATION
 
-#include "orbit.h"
-#include "mars.h"
+#include "common/orbit.h"
+#include "mars/mars.h"
 #include "irgen.h"
 #include "targettriples.h"
 
@@ -11,7 +11,7 @@
 #include "phobos/parse.h"
 #include "phobos/sema.h"
 
-#include "iron.h"
+#include "iron/iron.h"
 #include "iron/targets.h"
 #include "iron/passes/passes.h"
 

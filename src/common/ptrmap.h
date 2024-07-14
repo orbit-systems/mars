@@ -1,8 +1,8 @@
 #pragma once
 #define PTRMAP_H
 
-#include "orbit.h"
-#include "alloc.h"
+#include "common/orbit.h"
+#include "common/alloc.h"
 
 typedef struct PtrMap {
     void** keys;

@@ -1,4 +1,4 @@
-#include "strbuilder.h"
+#include "common/strbuilder.h"
 
 void sb_init(StringBuilder* sb) {
     da_init(sb, SB_INITIAL_CAPACITY);

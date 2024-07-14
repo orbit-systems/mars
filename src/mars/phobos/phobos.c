@@ -1,7 +1,7 @@
-#include "orbit.h"
-#include "mars.h"
+#include "common/orbit.h"
+#include "mars/mars.h"
 
-#include "term.h"
+#include "mars/term.h"
 
 #include "phobos.h"
 #include "lex.h"

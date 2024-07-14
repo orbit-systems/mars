@@ -1,4 +1,4 @@
-#include "alloc.h"
+#include "common/alloc.h"
 
 void* mars_alloc(size_t size) {
     void* p = malloc(size);

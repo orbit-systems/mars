@@ -1,7 +1,7 @@
 #pragma once
 #define LEXER_H
-#include "iron.h"
-#include "term.h"
+#include "iron/iron.h"
+#include "mars/term.h"
 
 FeModule* llta_parse_ir(string path);
 

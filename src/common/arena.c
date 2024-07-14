@@ -1,13 +1,12 @@
-#include "orbit.h"
-#include "arena.h"
-#include "term.h"
-#include "alloc.h"
+#include "common/orbit.h"
+#include "common/arena.h"
+#include "common/alloc.h"
 
 arena_block arena_block_make(size_t size) {
     arena_block block;
     block.raw = mars_alloc(size);
     if (block.raw == NULL) {
-        general_error("internal: arena block size %zu too big, can't allocate", size);
+        CRASH("internal: arena block size %zu too big, can't allocate", size);
     }
     block.size = (u32) size;
     block.offset = 0;
@@ -65,7 +64,7 @@ void* arena_alloc(Arena* al, size_t size, size_t align) {
 
 size_t align_forward(size_t ptr, size_t align) {
     if (!is_pow_2(align)) {
-        general_error("internal: align is not a power of two (got %zu)\n", align);
+        CRASH("internal: align is not a power of two (got %zu)\n", align);
     }
     
     return (ptr + align - 1) & ~(align - 1);

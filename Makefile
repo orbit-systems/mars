@@ -1,7 +1,7 @@
 TARGETS = aphelion 
 
 SRCPATHS = \
-	src/*.c \
+	src/common/*.c \
 	src/mars/*.c \
 	src/mars/phobos/*.c \
 	src/iron/*.c \
@@ -28,7 +28,7 @@ endif
 CC = gcc
 LD = gcc
 
-INCLUDEPATHS = -Isrc/ -Isrc/mars/ -Isrc/mars/phobos/ -Isrc/iron/ -Isrc/iron/targets
+INCLUDEPATHS = -Isrc
 DEBUGFLAGS = -lm -pg -g
 ASANFLAGS = -fsanitize=undefined -fsanitize=address
 CFLAGS = -MD -Werror=incompatible-pointer-types -Wno-discarded-qualifiers -lm

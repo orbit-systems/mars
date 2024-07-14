@@ -1,4 +1,4 @@
-#include "iron.h"
+#include "iron/iron.h"
 #include "passes/passes.h"
 
 #include "targets/aphelion/aphelion.h"

@@ -1,4 +1,4 @@
-#include "iron.h"
+#include "iron/iron.h"
 
 /* pass "algsimp" - algebraic simplification and optimization
     (a + 1) + 2  ->  a + (1 + 2)  ->  a + 3

@@ -1,7 +1,7 @@
-#include "orbit.h"
+#include "common/orbit.h"
 #include "lex.h"
-#include "term.h"
-#include "arena.h"
+#include "mars/term.h"
+#include "common/arena.h"
 #include "ast.h"
 #include "parse.h"
 

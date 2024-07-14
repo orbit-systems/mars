@@ -1,6 +1,6 @@
 #pragma once
 
-#include "iron.h"
+#include "iron/iron.h"
 
 /* REQUIRED PASSES
     canon           general cleanup & canonicalization

@@ -1,5 +1,5 @@
 #include "asmprinter.h"
-#include "ptrmap.h"
+#include "common/ptrmap.h"
 
 /* sorry, have to redo this!
 

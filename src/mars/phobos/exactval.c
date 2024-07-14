@@ -1,6 +1,6 @@
 #include "exactval.h"
-#include "arena.h"
-#include "alloc.h"
+#include "common/arena.h"
+#include "common/alloc.h"
 
 // TODO rework exactvals to use a type* instead of a kind tag.
 // it sucks to keep the 'exact_value's and the 'checked_expr's synced up

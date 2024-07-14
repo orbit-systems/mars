@@ -1,10 +1,10 @@
 #pragma once
 #define PHOBOS_PARSER_H
 
-#include "orbit.h"
+#include "common/orbit.h"
 #include "lex.h"
 #include "ast.h"
-#include "arena.h"
+#include "common/arena.h"
 
 typedef struct parser {
     Arena* alloca;

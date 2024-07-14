@@ -1,8 +1,8 @@
 #pragma once
 #define PHOBOS_EXACTVAL_H
 
-#include "orbit.h"
-#include "arena.h"
+#include "common/orbit.h"
+#include "common/arena.h"
 
 typedef struct exact_value exact_value;
 

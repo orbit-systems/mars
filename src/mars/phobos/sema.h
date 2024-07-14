@@ -3,7 +3,7 @@
 
 #include "phobos.h"
 #include "parse.h"
-#include "term.h"
+#include "mars/term.h"
 #include "ast.h"
 #include "exactval.h"
 

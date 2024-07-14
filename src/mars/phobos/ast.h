@@ -1,9 +1,9 @@
 #pragma once
 #define PHOBOS_AST_H
 
-#include "orbit.h"
+#include "common/orbit.h"
 #include "lex.h"
-#include "arena.h"
+#include "common/arena.h"
 #include "exactval.h"
 #include "type.h"
 

@@ -1,7 +1,7 @@
 #pragma once
 #define PHOBOS_ENTITY_H
 
-#include "orbit.h"
+#include "common/orbit.h"
 #include "phobos.h"
 #include "ast.h"
 #include "parse.h"

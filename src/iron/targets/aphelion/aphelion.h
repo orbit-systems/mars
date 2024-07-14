@@ -1,7 +1,7 @@
 #pragma once
 
-#include "iron.h"
-#include "targets/asmprinter.h"
+#include "iron/iron.h"
+#include "iron/targets/asmprinter.h"
 
 enum {
     APHEL_REGCLASS_ZERO,

@@ -1,4 +1,4 @@
-#include "orbit.h"
+#include "common/orbit.h"
 #include "lexer.h"
 
 #define skip_whitespace(c, i) while (lex_src.raw[i] == ' ' && i < lex_src.len) {i++; c = lex_src.raw[i];}

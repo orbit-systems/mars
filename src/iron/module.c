@@ -1,4 +1,4 @@
-#include "iron.h"
+#include "iron/iron.h"
 #include "passes/passes.h"
 
 void fe_typegraph_init(FeModule* m);

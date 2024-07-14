@@ -1,4 +1,4 @@
-#include "ptrmap.h"
+#include "common/ptrmap.h"
 
 size_t hashfunc(void* key) {
     size_t hash = 5381;

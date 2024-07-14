@@ -1,4 +1,4 @@
-#include "iron.h"
+#include "iron/iron.h"
 
 /* pass "canon" - general cleanup & canonicalization
 

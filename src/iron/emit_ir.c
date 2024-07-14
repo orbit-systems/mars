@@ -1,6 +1,6 @@
-#include "iron.h"
-#include "strbuilder.h"
-#include "ptrmap.h"
+#include "iron/iron.h"
+#include "common/strbuilder.h"
+#include "common/ptrmap.h"
 
 static string simple_type_2_str(FeType* t) {
     switch (t->kind){
