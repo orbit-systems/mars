@@ -13,6 +13,8 @@
     issue and i'll give you alternative contact info if you do not have discord.
  */
 
+// #define debug_trace(p) printf("stack -> %s @ %zu '" str_fmt "'\n", __func__, (p)->current_tok, str_arg((p)->tokens.at[(p)->current_tok].text))
+#define debug_trace(p)
 
 // construct a parser struct from a lexer and an arena allocator
 parser make_parser(lexer* l, arena* alloca) {
@@ -27,6 +29,7 @@ parser make_parser(lexer* l, arena* alloca) {
 }
 
 void parse_file(parser* p) {
+    debug_trace(p);
     //<program> ::= <module_stmt> <import_stmt>* <stmts>
     p->module_decl = parse_module_decl(p);
 
@@ -49,6 +52,7 @@ void parse_file(parser* p) {
 }
 
 AST parse_stmt(parser* p) {
+    debug_trace(p);
     /*<stmt> ::= <decl> | <return> | <if> | <else> | <while> | 
            <for_type_one> | <for_type_two> | <asm> | <stmt_block> |
            <switch> | <break> | <fallthrough> | <expression> ";" | <extern> | <defer> | <continue> | ";"
@@ -363,6 +367,7 @@ AST parse_stmt(parser* p) {
 }
 
 AST parse_cfs(parser* p) {
+    debug_trace(p);
     AST n = new_ast_node(p, AST_stmt_block);
     n.as_stmt_block->base.start = &current_token(p);
     da_init(&n.as_stmt_block->stmts, 1);
@@ -400,6 +405,7 @@ int verify_assign_op(parser* p) {
 }
 
 AST parse_identifier(parser* p) {
+    debug_trace(p);
     AST n = new_ast_node(p, AST_identifier);
     n.as_identifier->base.start = &current_token(p);
     n.as_identifier->tok = &current_token(p);
@@ -409,6 +415,7 @@ AST parse_identifier(parser* p) {
 }
 
 AST parse_type(parser* p) {
+    debug_trace(p);
     AST n = NULL_AST;
     switch (current_token(p).type) {
         //<identifier>
@@ -465,6 +472,7 @@ AST parse_type(parser* p) {
 }
 
 AST parse_atomic_expr(parser* p) {
+    debug_trace(p);
     //this function handles explicitly atomic_expr that require left-assoc stuff.
 
 /*<atomic_expression> ::= <literal> |  "." <identifier> | 
@@ -585,6 +593,7 @@ AST parse_atomic_expr(parser* p) {
 }
 
 AST parse_stmt_block(parser* p) {
+    debug_trace(p);
     //<stmt_block> ::=  "{" <stmt>* "}"
     AST n = new_ast_node(p, AST_stmt_block); 
     da_init(&n.as_stmt_block->stmts, 1);
@@ -602,6 +611,7 @@ AST parse_stmt_block(parser* p) {
 }
 
 AST parse_atomic_expr_term(parser* p) {
+    debug_trace(p);
     //this function is for <atomic_expression> bnf leafs with terminals explicitly in them
     //not left-assoc, basically
     /*<atomic_expression_terminals> ::= <type> | <literal> | <identifier> | "." <identifier> | 
@@ -672,6 +682,7 @@ AST parse_atomic_expr_term(parser* p) {
 }
 
 AST parse_aggregate(parser* p) {
+    debug_trace(p);
     //<aggregate> ::= ("struct" | "union")  "{" <param_list> "}" 
     AST n = new_ast_node(p, AST_struct_type_expr);
     n.as_struct_type_expr->base.start = &current_token(p);
@@ -718,6 +729,7 @@ AST parse_aggregate(parser* p) {
 }
 
 AST parse_enum(parser* p) {
+    debug_trace(p);
     //enum's param_list separator is =, not :
     //<enum> ::= "enum" (<type> | E) "{" <param_list> "}"
     AST n = new_ast_node(p, AST_enum_type_expr);
@@ -793,6 +805,7 @@ int verify_type(parser* p) {
 }
 
 AST parse_fn(parser* p) {
+    debug_trace(p);
     /*<fn_literal> ::= "fn" "(" (<param_list> ("," | E) | E) ")" ("->" (<type> | "(" <param_list> ")") | E) <stmt_block>
 
         <param> ::= <identifier> ":" <type> 
@@ -922,6 +935,7 @@ AST parse_fn(parser* p) {
 }
 
 AST parse_unary_expr(parser* p) {
+    debug_trace(p);
     /*<unary_expression> ::= <unop> <unary_expression> |
                        ("cast" | "bitcast") "(" <unary_expression> ")" <unary_expression> |
                        ("^" | "[]") ("mut" | "let") ( <unary_expression> | E) |
@@ -991,6 +1005,7 @@ AST parse_unary_expr(parser* p) {
 }
 
 AST parse_expr(parser* p) {
+    debug_trace(p);
     //this is gonna be painful
     //we first need to detect WHICH expr branch we're on.
     //
@@ -1003,6 +1018,7 @@ AST parse_expr(parser* p) {
 }
 
 AST parse_binop_expr(parser* p, int precedence) {
+    debug_trace(p);
     //pratt parsing!
     //explanation: we keep tr
     //ack of a precedence p when we start.
@@ -1018,6 +1034,7 @@ AST parse_binop_expr(parser* p, int precedence) {
 }
 
 AST parse_binop_recurse(parser* p, AST lhs, int precedence) {
+    debug_trace(p);
     AST n = new_ast_node(p, AST_binary_op_expr);
     n.as_binary_op_expr->base.start = lhs.base->start;
     n.as_binary_op_expr->op = &current_token(p);
@@ -1069,6 +1086,7 @@ int verify_binop(parser* p, token tok, bool error) {
 }
 
 AST parse_decl_stmt(parser* p) {
+    debug_trace(p);
     //<decl> ::= ("let" | "mut") (<identifier> ",")* <identifier> ("," | E) 
     //(":" <type> | E) "=" <r_value> ";"
     AST n = new_ast_node(p, AST_decl_stmt);
@@ -1100,6 +1118,7 @@ AST parse_decl_stmt(parser* p) {
 }
 
 AST parse_module_decl(parser* p) {
+    debug_trace(p);
     //<module_stmt> ::= <ws> "module" <fws> <identifier> <ws> ";" <ws>
     AST n = new_ast_node(p, AST_module_decl);
 
@@ -1124,6 +1143,7 @@ AST parse_module_decl(parser* p) {
 }
 
 AST parse_import_decl(parser* p) {
+    debug_trace(p);
     //<import_stmt> ::= "import" (<identifier> | E) <string> ";" 
     AST n = new_ast_node(p, AST_import_stmt);
     n.as_import_stmt->base.start = &current_token(p);
