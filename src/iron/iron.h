@@ -420,12 +420,13 @@ typedef struct FeJump {
 } FeJump;
 
 enum {
-    COND_LT,    // <
-    COND_GT,    // >
-    COND_LE,    // >=
-    COND_GE,    // <=
-    COND_EQ,    // ==
-    COND_NE,    // !=
+    FE_COND_NONE,
+    FE_COND_LT,    // <
+    FE_COND_GT,    // >
+    FE_COND_LE,    // >=
+    FE_COND_GE,    // <=
+    FE_COND_EQ,    // ==
+    FE_COND_NE,    // !=
 };
 
 typedef struct FeBranch {
@@ -561,7 +562,8 @@ typedef struct FeImmediate {
     u8 kind;
 
 enum {
-    FE_ASM_INST = 1,
+    FE_ASM_NONE = 0,
+    FE_ASM_INST,
     FE_ASM_JUMP_PATTERN,
     FE_ASM_INLINE,
     FE_ASM_LOCAL_LABEL,

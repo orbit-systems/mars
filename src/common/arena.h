@@ -5,20 +5,12 @@
 
 // memory arenas
 
-typedef struct {
-    void* raw;
-    u32 offset;
-    u32 size;
-} arena_block;
+typedef struct _ArenaBlock _ArenaBlock;
 
-arena_block arena_block_make(size_t size);
-void  arena_block_delete(arena_block* a);
-void* arena_block_alloc(arena_block* a, size_t size, size_t align);
-
-da_typedef(arena_block);
+da_typedef(_ArenaBlock);
 
 typedef struct Arena {
-    da(arena_block) list;
+    da(_ArenaBlock) list;
     u32 arena_size;
 } Arena;
 

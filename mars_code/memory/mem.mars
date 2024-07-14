@@ -17,9 +17,9 @@ let copy = fn(to: ^mut, from: ^let, len: uint) {
 };
 
 let equal = fn(block1, block2: ^let, len: uint) -> bool {
-    mut block1_byte = cast(^mut u8) block1;
-    mut block2_byte = cast(^mut u8) block2;
-    let block1_stop = block1_byte + cast(^mut u8) len;
+    mut block1_byte = cast(^let u8) block1;
+    mut block2_byte = cast(^let u8) block2;
+    let block1_stop = block1_byte + cast(^let u8) len;
 
     while block1_byte != block1_stop {
 

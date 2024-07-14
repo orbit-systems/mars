@@ -17,7 +17,7 @@
 #include <stdalign.h>
 #include <stdnoreturn.h>
 
-#include "common/alloc.h" 
+#include "common/alloc.h"
 
 #define malloc mars_alloc
 

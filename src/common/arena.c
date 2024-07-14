@@ -2,8 +2,18 @@
 #include "common/arena.h"
 #include "common/alloc.h"
 
-arena_block arena_block_make(size_t size) {
-    arena_block block;
+_ArenaBlock arena_block_make(size_t size);
+void  arena_block_delete(_ArenaBlock* a);
+void* arena_block_alloc(_ArenaBlock* a, size_t size, size_t align);
+
+typedef struct _ArenaBlock {
+    void* raw;
+    u32 offset;
+    u32 size;
+} _ArenaBlock;
+
+_ArenaBlock arena_block_make(size_t size) {
+    _ArenaBlock block;
     block.raw = mars_alloc(size);
     if (block.raw == NULL) {
         CRASH("internal: arena block size %zu too big, can't allocate", size);
@@ -13,12 +23,12 @@ arena_block arena_block_make(size_t size) {
     return block;
 }
 
-void arena_block_delete(arena_block* block) {
+void arena_block_delete(_ArenaBlock* block) {
     mars_free(block->raw);
-    *block = (arena_block){0};
+    *block = (_ArenaBlock){0};
 }
 
-void* arena_block_alloc(arena_block* block, size_t size, size_t align) {
+void* arena_block_alloc(_ArenaBlock* block, size_t size, size_t align) {
     u32 offset = block->offset;
     u32 new_offset = align_forward(block->offset, align) + size;
     if (new_offset > block->size) {
@@ -33,7 +43,7 @@ Arena arena_make(size_t block_size) {
     da_init(&al.list, 1);
     al.arena_size = block_size;
     
-    arena_block initial_arena = arena_block_make(al.arena_size);
+    _ArenaBlock initial_arena = arena_block_make(al.arena_size);
     da_append(&al.list, initial_arena);
 
     return al;
@@ -53,7 +63,7 @@ void* arena_alloc(Arena* al, size_t size, size_t align) {
     if (attempt != NULL) return attempt; // yay!
 
     // FUCK! we need to append another arena_block block
-    arena_block new_arena = arena_block_make(al->arena_size);
+    _ArenaBlock new_arena = arena_block_make(al->arena_size);
     da_append(&al->list, new_arena);
 
     // we're gonna try again
