@@ -188,17 +188,19 @@ const size_t air_sizes[] = {
     [FE_INST_IDIV] = sizeof(FeBinop),
     [FE_INST_UDIV] = sizeof(FeBinop),
     
-    [FE_INST_AND]   = sizeof(FeBinop),
-    [FE_INST_OR]    = sizeof(FeBinop),
-    [FE_INST_NOR]   = sizeof(FeBinop),
-    [FE_INST_XOR]   = sizeof(FeBinop),
-    [FE_INST_SHL]   = sizeof(FeBinop),
-    [FE_INST_LSR]   = sizeof(FeBinop),
-    [FE_INST_ASR]   = sizeof(FeBinop),
+    [FE_INST_AND]  = sizeof(FeBinop),
+    [FE_INST_OR]   = sizeof(FeBinop),
+    [FE_INST_NOR]  = sizeof(FeBinop),
+    [FE_INST_XOR]  = sizeof(FeBinop),
+    [FE_INST_SHL]  = sizeof(FeBinop),
+    [FE_INST_LSR]  = sizeof(FeBinop),
+    [FE_INST_ASR]  = sizeof(FeBinop),
 
-    [FE_INST_CAST]  = sizeof(FeCast),
+    [FE_INST_NOT]  = sizeof(FeUnop),
+    [FE_INST_NEG]  = sizeof(FeUnop),
+    [FE_INST_CAST] = sizeof(FeUnop),
 
-    [FE_INST_STACKADDR] = sizeof(FeStackAddr),
+    [FE_INST_STACKADDR]   = sizeof(FeStackAddr),
     [FE_INST_GETFIELDPTR] = sizeof(FeGetFieldPtr),
     [FE_INST_GETINDEXPTR] = sizeof(FeGetIndexPtr),
 
@@ -231,10 +233,9 @@ FeInst* fe_binop(FeFunction* f, u8 type, FeInst* lhs, FeInst* rhs) {
     return (FeInst*) ir;
 }
 
-FeInst* fe_cast(FeFunction* f, FeInst* source, FeType* to) {
-    FeCast* ir = (FeCast*) fe_inst(f, FE_INST_CAST);
+FeInst* fe_unop(FeFunction* f, u8 type, FeInst* source) {
+    FeUnop* ir = (FeUnop*) fe_inst(f, type);
     ir->source = source;
-    ir->to = to;
     return (FeInst*) ir;
 }
 

@@ -32,7 +32,7 @@ INCLUDEPATHS = -Isrc
 DEBUGFLAGS = -lm -pg -g
 ASANFLAGS = -fsanitize=undefined -fsanitize=address
 CFLAGS = -MD -Werror=incompatible-pointer-types -Wno-discarded-qualifiers -lm
-OPT = -O2
+OPT = -O3
 
 FILE_NUM = 0
 

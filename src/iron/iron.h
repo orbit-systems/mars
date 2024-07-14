@@ -271,7 +271,9 @@ enum {
     FE_INST_ASR,
     FE_INST_LSR,
 
-    // FeCast
+    // FeUnop
+    FE_INST_NOT,
+    FE_INST_NEG,
     FE_INST_CAST,
 
     // FeStackAddr
@@ -332,12 +334,12 @@ typedef struct FeBinop {
     FeInst* rhs;
 } FeBinop;
 
-typedef struct FeCast {
+typedef struct FeUnop {
     FeInst base;
 
-    FeType* to;
     FeInst* source;
-} FeCast;
+} FeUnop;
+
 
 typedef struct FeStackAddr {
     FeInst base;
@@ -469,7 +471,7 @@ FeModule*     fe_new_module(string name);
 FeType*       fe_type(FeModule* m, u8 kind, u64 len);
 FeFunction*   fe_new_function(FeModule* mod, FeSymbol* sym);
 FeBasicBlock* fe_new_basic_block(FeFunction* fn, string name);
-FeData*     fe_new_data(FeModule* mod, FeSymbol* sym, bool read_only);
+FeData*       fe_new_data(FeModule* mod, FeSymbol* sym, bool read_only);
 FeSymbol*     fe_new_symbol(FeModule* mod, string name, u8 visibility);
 FeSymbol*     fe_find_symbol(FeModule* mod, string name);
 FeSymbol*     fe_find_or_new_symbol(FeModule* mod, string name, u8 visibility);
@@ -485,7 +487,7 @@ FeInst* fe_append(FeBasicBlock* bb, FeInst* ir);
 FeInst* fe_inst(FeFunction* f, u8 type);
 
 FeInst* fe_binop(FeFunction* f, u8 type, FeInst* lhs, FeInst* rhs);
-FeInst* fe_cast(FeFunction* f, FeInst* source, FeType* to);
+FeInst* fe_unop(FeFunction* f, u8 type, FeInst* source);
 FeInst* fe_stackaddr(FeFunction* f, FeStackObject* obj);
 FeInst* fe_getfieldptr(FeFunction* f, u32 index, FeInst* source);
 FeInst* fe_getindexptr(FeFunction* f, FeInst* index, FeInst* source);
@@ -503,7 +505,7 @@ FeInst* fe_return(FeFunction* f);
 
 void   fe_add_phi_source(FePhi* phi, FeInst* source, FeBasicBlock* source_block);
 void   fe_move_inst(FeBasicBlock* bb, u64 to, u64 from);
-string fe_emit_textual_ir(FeModule* am);
+string fe_emit_textual_ir(FeModule* m);
 
 // ASSEMBLY SHIT
 
