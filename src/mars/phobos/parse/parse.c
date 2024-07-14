@@ -367,6 +367,7 @@ AST parse_cfs(parser* p) {
     n.as_stmt_block->base.start = &current_token(p);
     da_init(&n.as_stmt_block->stmts, 1);
     if (current_token(p).type == TOK_KEYWORD_DO) {
+        advance_token(p);
         da_append(&n.as_stmt_block->stmts, parse_stmt(p));
         n.as_stmt_block->base.end = &current_token(p);
         return n;
