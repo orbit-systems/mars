@@ -563,14 +563,14 @@ typedef struct FeImmediate {
 
 enum {
     FE_ASM_NONE = 0,
-    FE_ASM_INST,
-    FE_ASM_JUMP_PATTERN,
-    FE_ASM_INLINE,
-    FE_ASM_LOCAL_LABEL,
-    FE_ASM_SYMBOL_LABEL,
-    FE_ASM_FUNC_BEGIN,
-    FE_ASM_FUNC_END,
-    FE_ASM_DATA,
+    FE_ASM_INST,            // an assembly code instruction.
+    FE_ASM_JUMP_PATTERN,    // indicates a control-flow jump.
+    FE_ASM_INLINE,          // arbitrary assembly text (with optional register interaction)
+    FE_ASM_LOCAL_LABEL,     // a label for internal use, such as a basic block.
+    FE_ASM_SYMBOL_LABEL,    // a label that defines a symbol.
+    FE_ASM_FUNC_BEGIN,      // marks the beginning of a function.
+    FE_ASM_FUNC_END,        // marks the end of a function.
+    FE_ASM_DATA,            // creates a chunk of arbitrary data.
 };
 
 typedef struct FeAsm {
@@ -649,6 +649,12 @@ typedef struct FeAsmFuncEnd {
 
     FeAsmFuncBegin* open;
 } FeAsmFuncEnd;
+
+typedef struct FeAsmData {
+    _FE_ASM_BASE
+
+    FeData* data;
+} FeAsmData;
 
 #undef _FE_ASM_BASE
 
