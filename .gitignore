@@ -16,3 +16,4 @@ anvil.exe
 vgcore*
 *.dot
 *.d
+.clangd
