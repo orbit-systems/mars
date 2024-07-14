@@ -66,8 +66,8 @@ void run_pass_stackprom(FeModule* mod) {
         da_init(&alloca_list, 4);
     }
 
-    for_urange(i, 0, mod->ir_module->functions_len) {
-        stackprom_f(mod->ir_module->functions[i]);
+    for_urange(i, 0, mod->functions_len) {
+        stackprom_f(mod->functions[i]);
     }
 
     da_destroy(&alloca_list);

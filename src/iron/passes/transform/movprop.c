@@ -34,14 +34,14 @@ static void set_uses_of(FeFunction* f, FeInst* source, FeInst* dest) {
 }
 
 void run_pass_movprop(FeModule* mod) {
-    for_urange(i, 0, mod->ir_module->functions_len) {
-        for_urange(j, 0, mod->ir_module->functions[i]->blocks.len) {
-            FeBasicBlock* bb = mod->ir_module->functions[i]->blocks.at[j];
+    for_urange(i, 0, mod->functions_len) {
+        for_urange(j, 0, mod->functions[i]->blocks.len) {
+            FeBasicBlock* bb = mod->functions[i]->blocks.at[j];
 
             for_urange(k, 0, bb->len) {
                 if (bb->at[k]->tag != FE_INST_MOV) continue;
 
-                set_uses_of(mod->ir_module->functions[i], bb->at[k], ((FeMov*)bb->at[k])->source);
+                set_uses_of(mod->functions[i], bb->at[k], ((FeMov*)bb->at[k])->source);
                 bb->at[k]->tag = FE_INST_ELIMINATED;
             }
 

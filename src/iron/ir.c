@@ -87,23 +87,21 @@ void fe_set_func_returns(FeFunction* f, u16 count, ...) {
 }
 
 FeData* fe_new_data(FeModule* mod, FeSymbol* sym, bool read_only) {
-    FeData* gl = mars_alloc(sizeof(FeData));
+    FeData* data = mars_alloc(sizeof(FeData));
 
-    gl->sym = sym;
-    gl->read_only = read_only;
-    gl->data = NULL;
-    gl->data_len = 0;
+    data->sym = sym;
+    data->read_only = read_only;
 
-    mod->globals = mars_realloc(mod->globals, sizeof(*mod->globals) * (mod->globals_len+1));
-    mod->globals[mod->globals_len++] = gl;
-    return gl;
+    mod->datas = mars_realloc(mod->datas, sizeof(*mod->datas) * (mod->datas_len+1));
+    mod->datas[mod->datas_len++] = data;
+    return data;
 }
 
-void fe_set_data_bytes(FeData* data, u8* bytes, u32 data_len, bool zeroed) {
+void fe_set_data_bytes(FeData* data, u8* bytes, u32 len, bool zeroed) {
     data->kind = FE_DATA_BYTES;
-    data->data = data;
-    data->data_len = data_len;
-    data->zeroed = zeroed;
+    data->bytes.data = bytes;
+    data->bytes.len = len;
+    data->bytes.zeroed = zeroed;
 }
 
 void fe_set_data_as_symref(FeData* data, FeSymbol* symref) {
@@ -185,8 +183,10 @@ const size_t air_sizes[] = {
 
     [FE_INST_ADD] = sizeof(FeBinop),
     [FE_INST_SUB] = sizeof(FeBinop),
-    [FE_INST_MUL] = sizeof(FeBinop),
-    [FE_INST_DIV] = sizeof(FeBinop),
+    [FE_INST_IMUL] = sizeof(FeBinop),
+    [FE_INST_UMUL] = sizeof(FeBinop),
+    [FE_INST_IDIV] = sizeof(FeBinop),
+    [FE_INST_UDIV] = sizeof(FeBinop),
     
     [FE_INST_AND]   = sizeof(FeBinop),
     [FE_INST_OR]    = sizeof(FeBinop),
@@ -238,7 +238,7 @@ FeInst* fe_cast(FeFunction* f, FeInst* source, FeType* to) {
     return (FeInst*) ir;
 }
 
-FeInst* fe_stackoffset(FeFunction* f, FeStackObject* obj) {
+FeInst* fe_stackaddr(FeFunction* f, FeStackObject* obj) {
     FeStackAddr* ir = (FeStackAddr*) fe_inst(f, FE_INST_STACKADDR);
 
     ir->object = obj;

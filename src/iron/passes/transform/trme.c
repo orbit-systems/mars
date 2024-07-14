@@ -51,8 +51,8 @@ void run_pass_trme(FeModule* mod) {
     da(FeInstPTR) store_elim_list;
     da_init(&store_elim_list, 4);
 
-    for (u64 i = 0; i < mod->ir_module->functions_len; i++) {
-        FeFunction* f = mod->ir_module->functions[i];
+    for (u64 i = 0; i < mod->functions_len; i++) {
+        FeFunction* f = mod->functions[i];
 
         // transform redundant loads into movs
         for (u64 j = 0; j < f->blocks.len; j++) {

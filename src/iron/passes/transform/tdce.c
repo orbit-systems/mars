@@ -14,8 +14,10 @@ static bool has_side_effects(FeInst* ir) {
     switch (ir->tag) {
     case FE_INST_ADD:
     case FE_INST_SUB:
-    case FE_INST_MUL:
-    case FE_INST_DIV:
+    case FE_INST_UMUL:
+    case FE_INST_IMUL:
+    case FE_INST_UDIV:
+    case FE_INST_IDIV:
     case FE_INST_MOV:
     case FE_INST_CONST:
     case FE_INST_PARAMVAL:
@@ -31,8 +33,10 @@ static void register_uses(FeInst* ir) {
     switch (ir->tag) {
     case FE_INST_ADD:
     case FE_INST_SUB:
-    case FE_INST_MUL:
-    case FE_INST_DIV:
+    case FE_INST_UMUL:
+    case FE_INST_IMUL:
+    case FE_INST_UDIV:
+    case FE_INST_IDIV:
         FeBinop* binop = (FeBinop*) ir;
         binop->lhs->use_count++;
         binop->rhs->use_count++;
@@ -91,8 +95,10 @@ static void try_eliminate(FeInst* ir) {
     switch (ir->tag) {
     case FE_INST_ADD:
     case FE_INST_SUB:
-    case FE_INST_MUL:
-    case FE_INST_DIV:
+    case FE_INST_UMUL:
+    case FE_INST_IMUL:
+    case FE_INST_UDIV:
+    case FE_INST_IDIV:
         FeBinop* binop = (FeBinop*) ir;
         binop->lhs->use_count--;
         binop->rhs->use_count--;
@@ -147,8 +153,8 @@ static void tdce_on_function(FeFunction* f) {
 
 void run_pass_tdce(FeModule* mod) {
 
-    for_urange(i, 0, mod->ir_module->functions_len) {
-        tdce_on_function(mod->ir_module->functions[i]);
+    for_urange(i, 0, mod->functions_len) {
+        tdce_on_function(mod->functions[i]);
     }
 }
 

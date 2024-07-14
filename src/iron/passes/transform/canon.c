@@ -24,7 +24,8 @@ static void sort_instructions(FeBasicBlock* bb) {
 static void canonicalize(FeInst* ir) {
     switch (ir->tag) {
     case FE_INST_ADD:
-    case FE_INST_MUL:
+    case FE_INST_UMUL:
+    case FE_INST_IMUL:
         FeBinop* binop = (FeBinop*) ir;
         if (binop->lhs->tag == FE_INST_CONST && binop->rhs->tag != FE_INST_CONST) {
             void* temp = binop->lhs;
@@ -39,9 +40,9 @@ static void canonicalize(FeInst* ir) {
 
 void run_pass_canon(FeModule* mod) {
     // reorg stackallocs and paramvals
-    for_urange(i, 0, mod->ir_module->functions_len) {
-        for_urange(j, 0, mod->ir_module->functions[i]->blocks.len) {
-            FeBasicBlock* bb = mod->ir_module->functions[i]->blocks.at[j];
+    for_urange(i, 0, mod->functions_len) {
+        for_urange(j, 0, mod->functions[i]->blocks.len) {
+            FeBasicBlock* bb = mod->functions[i]->blocks.at[j];
             sort_instructions(bb);
 
             for_urange(inst, 0, bb->len) {

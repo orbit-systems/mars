@@ -1,6 +1,8 @@
 #include "asmprinter.h"
 #include "ptrmap.h"
 
+/* sorry, have to redo this!
+
 void debug_asm_printer(FeModule* am) {
     //printf("func_len: %d\n", am->functions_len);
     foreach_non_da(AsmFunction* curr_func, am->functions, am->functions_len, [count]) {
@@ -162,5 +164,6 @@ void print_asm_inst(AsmModule* m, FeAsmInst* inst, bool debug_mode) {
             printf("%c", c);
         }
     }
-
 }
+
+*/

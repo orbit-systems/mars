@@ -1,7 +1,7 @@
 #include "iron.h"
 #include "passes/passes.h"
 
-static void fe_typegraph_init(FeModule* m);
+void fe_typegraph_init(FeModule* m);
 
 FeModule* fe_new_module(string name) {
     FeModule* mod = mars_alloc(sizeof(*mod));
@@ -12,7 +12,7 @@ FeModule* fe_new_module(string name) {
 
     da_init(mod->assembly, 32);
 
-    fe_typegraph_init(&mod->typegraph);
+    fe_typegraph_init(mod);
 
     da_init(&mod->pass_queue, 4);
     fe_sched_pass(mod, &air_pass_canon);

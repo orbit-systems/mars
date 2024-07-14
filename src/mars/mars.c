@@ -39,44 +39,13 @@ int main(int argc, char** argv) {
         if (mars_flags.dump_AST) for_urange(i, 0, main_mod->program_tree.len) {
             dump_tree(main_mod->program_tree.at[i], 0);
         }
-        
-
-        FeArchInfo* atlas_target;
-
-        switch (mars_flags.target_arch){
-        case TARGET_ARCH_APHELION: 
-            atlas_target = &aphelion_target_info; 
-            break;
-        default:
-            CRASH("cannot select atlas target");
-            break;
-        }
-
-        atlas_module = atlas_new_module(main_mod->module_name, atlas_target);
-
-        printf("attempt IR generation\n");
-
-        generate_ir_atlas_from_mars(main_mod, atlas_module);
-    
-        printf("IR generated\n");
     } else {
-        atlas_module = llta_parse_ir(mars_flags.input_path);
+        // atlas_module = llta_parse_ir(mars_flags.input_path);
     }
 
-    // atlas canonicalization pass is scheduled by default, dw :3
-    fe_sched_pass(atlas_module, &air_pass_trme);
-    fe_sched_pass(atlas_module, &air_pass_tdce);
-    fe_sched_pass(atlas_module, &air_pass_movprop);
-    fe_sched_pass(atlas_module, &air_pass_elim);
-
-    fe_run_all_passes(atlas_module, true);
-
-    fe_sched_pass(atlas_module, &pass_aphelion_codegen);
-    fe_sched_pass(atlas_module, &pass_aphelion_movopt);
-
-    fe_run_all_passes(atlas_module, false);
-
-    asm_printer(atlas_module, false);
+    // TODO stub because, once again, 
+    // i cannot be fucked to update this every time i make iron changes
+    TODO("IR generation");
 
     return 0;
 }

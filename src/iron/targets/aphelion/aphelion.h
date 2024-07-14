@@ -48,6 +48,3 @@ enum {
 };
 
 extern const FeArchInfo aphelion_arch_info;
-
-extern FePass pass_aphelion_codegen;
-extern FePass pass_aphelion_movopt;

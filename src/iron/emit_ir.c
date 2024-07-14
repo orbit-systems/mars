@@ -6,10 +6,6 @@ static string simple_type_2_str(FeType* t) {
     switch (t->kind){
     case FE_VOID: return constr("void");
     case FE_BOOL: return constr("bool");
-    case FE_U8:   return constr("u8");
-    case FE_U16:  return constr("u16");
-    case FE_U32:  return constr("u32");
-    case FE_U64:  return constr("u64");
     case FE_I8:   return constr("i8");
     case FE_I16:  return constr("i16");
     case FE_I32:  return constr("i32");
@@ -41,9 +37,9 @@ static void emit_type_definitions(FeModule* m, StringBuilder* sb) {
 
         memset(buffer, 0, sizeof(buffer));
         char* bufptr = buffer;
-        
+
         bufptr += sprintf(bufptr, "type t%d = ", t->number);
-        
+
         switch (t->kind) {
         case FE_ARRAY:
             if (is_null_str(simple_type_2_str(t->array.sub))) {
@@ -56,7 +52,7 @@ static void emit_type_definitions(FeModule* m, StringBuilder* sb) {
 
             bufptr += sprintf(bufptr, "{");
             for_urange(i, 0, t->aggregate.len) {
-                
+
                 if (is_null_str(simple_type_2_str(t->array.sub))) {
                     bufptr += sprintf(bufptr, "t%d", t->aggregate.fields[i]->number);
                 } else {
@@ -77,7 +73,7 @@ static void emit_type_definitions(FeModule* m, StringBuilder* sb) {
         bufptr += sprintf(bufptr, "\n");
 
         sb_append_c(sb, bufptr);
-    }  
+    }
 }
 
 static int print_type_nme(FeType* t, char** bufptr) {
@@ -159,7 +155,7 @@ static void emit_function(FeFunction* f, StringBuilder* sb) {
     for_urange(b, 0, f->blocks.len) {
         FeBasicBlock* bb = f->blocks.at[b];
         sb_append_c(sb, "  ");
-        
+
         if (b == f->entry_idx) {
             sb_append_c(sb, "@entry ");
         }
@@ -205,10 +201,6 @@ static void emit_function(FeFunction* f, StringBuilder* sb) {
                 case FE_I16: sb_printf(sb, " %lld", (i64)con->i16); break;
                 case FE_I32: sb_printf(sb, " %lld", (i64)con->i32); break;
                 case FE_I64: sb_printf(sb, " %lld", (i64)con->i64); break;
-                case FE_U8:  sb_printf(sb, " %llu", (u64)con->u8);  break;
-                case FE_U16: sb_printf(sb, " %llu", (u64)con->u16); break;
-                case FE_U32: sb_printf(sb, " %llu", (u64)con->u32); break;
-                case FE_U64: sb_printf(sb, " %llu", (u64)con->u64); break;
                 case FE_F16: sb_printf(sb, " %f",   (f32)con->f16); break;
                 case FE_F32: sb_printf(sb, " %f",   con->f32); break;
                 case FE_F64: sb_printf(sb, " %lf",  con->f64); break;
@@ -228,7 +220,7 @@ static void emit_function(FeFunction* f, StringBuilder* sb) {
             case FE_INST_STACKADDR: {
                 FeStackAddr* so = (FeStackAddr*) inst;
                 u64 index = stack_object_index(f, so->object);
-                sb_printf(sb, "stackoffset #%llu", index + 1);
+                sb_printf(sb, "stackaddr #%llu", index + 1);
             } break;
             case FE_INST_RETURN:
                 sb_append_c(sb, "return");

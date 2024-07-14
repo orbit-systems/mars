@@ -25,9 +25,9 @@ static void transcribe_w_no_elims(FeBasicBlock* bb) {
 }
 
 void run_pass_elim(FeModule* mod) {
-    for_urange(i, 0, mod->ir_module->functions_len) {
-        for_urange(j, 0, mod->ir_module->functions[i]->blocks.len) {
-            FeBasicBlock* bb = mod->ir_module->functions[i]->blocks.at[j];
+    for_urange(i, 0, mod->functions_len) {
+        for_urange(j, 0, mod->functions[i]->blocks.len) {
+            FeBasicBlock* bb = mod->functions[i]->blocks.at[j];
             transcribe_w_no_elims(bb);
         }
     }

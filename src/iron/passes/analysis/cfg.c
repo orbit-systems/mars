@@ -140,8 +140,8 @@ static FeBasicBlock** compute_dominator_set(FeFunction* f, FeBasicBlock* bb, FeB
 void run_pass_cfg(FeModule* mod) {
 
     // TODO: only update the CFG for functions where it has been modified
-    for_urange(i, 0, mod->ir_module->functions_len) {
-        pass_cfg_func(mod->ir_module->functions[i]);
+    for_urange(i, 0, mod->functions_len) {
+        pass_cfg_func(mod->functions[i]);
     }
 
 }

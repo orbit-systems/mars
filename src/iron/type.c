@@ -3,7 +3,7 @@
 void fe_typegraph_init(FeModule* m) {
 
     da_init(&m->typegraph, 16);
-    m->typegraph.alloca = arena_make(0x400);
+    m->typegraph.alloca = arena_make(0x1000);
 
     FeType* none = arena_alloc(&m->typegraph.alloca, sizeof(FeType), alignof(FeType));
     none->kind = FE_VOID;
@@ -19,26 +19,6 @@ void fe_typegraph_init(FeModule* m) {
     ptr->kind = FE_PTR;
     // f64->size = f64->align = 8;
     da_append(&m->typegraph, ptr);
-
-    FeType* u8 = arena_alloc(&m->typegraph.alloca, sizeof(FeType), alignof(FeType));
-    u8->kind = FE_U8;
-    // u8->size = u8->align = 1;
-    da_append(&m->typegraph, u8);
-
-    FeType* u16 = arena_alloc(&m->typegraph.alloca, sizeof(FeType), alignof(FeType));
-    u16->kind = FE_U16;
-    // u16->size = u16->align = 2;
-    da_append(&m->typegraph, u16);
-
-    FeType* u32 = arena_alloc(&m->typegraph.alloca, sizeof(FeType), alignof(FeType));
-    u32->kind = FE_U32;
-    // u32->size = u32->align = 4;
-    da_append(&m->typegraph, u32);
-
-    FeType* u64 = arena_alloc(&m->typegraph.alloca, sizeof(FeType), alignof(FeType));
-    u64->kind = FE_U64;
-    // u64->size = u64->align = 8;
-    da_append(&m->typegraph, u64);
 
     FeType* i8 = arena_alloc(&m->typegraph.alloca, sizeof(FeType), alignof(FeType));
     i8->kind = FE_I8;
@@ -85,10 +65,6 @@ FeType* fe_type(FeModule* m, u8 kind, u64 len) {
     case FE_VOID:
     case FE_BOOL:
     case FE_PTR:
-    case FE_U8:
-    case FE_U16:
-    case FE_U32:
-    case FE_U64:
     case FE_I8:
     case FE_I16:
     case FE_I32:

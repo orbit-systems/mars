@@ -31,7 +31,7 @@ LD = gcc
 INCLUDEPATHS = -Isrc/ -Isrc/mars/ -Isrc/mars/phobos/ -Isrc/iron/ -Isrc/iron/targets
 DEBUGFLAGS = -lm -pg -g
 ASANFLAGS = -fsanitize=undefined -fsanitize=address
-CFLAGS = -MD -Wincompatible-pointer-types -Wno-discarded-qualifiers -lm -Wno-deprecated-declarations
+CFLAGS = -MD -Werror=incompatible-pointer-types -Wno-discarded-qualifiers -lm
 OPT = -O2
 
 FILE_NUM = 0

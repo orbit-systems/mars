@@ -41,10 +41,10 @@ typedef struct FeModule {
     string name;
 
     FeFunction** functions;
-    FeData** globals;
+    FeData** datas;
 
     u32 functions_len;
-    u32 globals_len;
+    u32 datas_len;
 
     struct {
         FeSymbol** at;
@@ -101,11 +101,6 @@ enum {
     FE_BOOL,
 
     FE_PTR,
-
-    FE_U8,
-    FE_U16,
-    FE_U32,
-    FE_U64,
 
     FE_I8,
     FE_I16,
@@ -178,9 +173,9 @@ typedef struct FeData {
     union {
         struct {
             u8* data;
-            u32 data_len;
+            u32 len;
             bool zeroed;
-        };
+        } bytes;
         FeSymbol* symref;
 
         u8  d8;
@@ -262,8 +257,10 @@ enum {
     // FeBinop
     FE_INST_ADD,
     FE_INST_SUB,
-    FE_INST_MUL,
-    FE_INST_DIV,
+    FE_INST_IMUL,
+    FE_INST_UMUL,
+    FE_INST_IDIV,
+    FE_INST_UDIV,
 
     // FeBinop
     FE_INST_AND,
@@ -388,11 +385,6 @@ typedef struct FeConst {
         i32 i32;
         i64 i64;
 
-        u8  u8;
-        u16 u16;
-        u32 u32;
-        u64 u64;
-
         f16 f16;
         f32 f32;
         f64 f64;
@@ -494,7 +486,7 @@ FeInst* fe_inst(FeFunction* f, u8 type);
 
 FeInst* fe_binop(FeFunction* f, u8 type, FeInst* lhs, FeInst* rhs);
 FeInst* fe_cast(FeFunction* f, FeInst* source, FeType* to);
-FeInst* fe_stackoffset(FeFunction* f, FeStackObject* obj);
+FeInst* fe_stackaddr(FeFunction* f, FeStackObject* obj);
 FeInst* fe_getfieldptr(FeFunction* f, u32 index, FeInst* source);
 FeInst* fe_getindexptr(FeFunction* f, FeInst* index, FeInst* source);
 FeInst* fe_load(FeFunction* f, FeInst* location, bool is_vol);
@@ -627,7 +619,7 @@ typedef struct FeAsmInline {
 
 } FeAsmInline;
 
-// a lable that is not visible on the global level.
+// a lable that is only visible within this function/data block.
 typedef struct FeAsmLocalLabel {
     _FE_ASM_BASE
     
