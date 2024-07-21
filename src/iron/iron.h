@@ -468,7 +468,7 @@ typedef struct FeInstReturn {
     FeInst base;
 } FeInstReturn;
 
-extern const size_t air_sizes[];
+extern const size_t fe_inst_sizes[];
 
 FeModule*     fe_new_module(string name);
 FeType*       fe_type(FeModule* m, u8 kind, u64 len);

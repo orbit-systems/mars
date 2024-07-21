@@ -170,14 +170,14 @@ FeInst* fe_append(FeBasicBlock* bb, FeInst* ir) {
 
 FeInst* fe_inst(FeFunction* f, u8 type) {
     if (type >= _FE_INST_COUNT) type = FE_INST_INVALID;
-    FeInst* ir = arena_alloc(&f->alloca, air_sizes[type], 8);
+    FeInst* ir = arena_alloc(&f->alloca, fe_inst_sizes[type], 8);
     ir->kind = type;
     ir->type = fe_type(f->mod, FE_VOID, 0);
     ir->number = 0;
     return ir;
 }
 
-const size_t air_sizes[] = {
+const size_t fe_inst_sizes[] = {
     [FE_INST_INVALID]    = 0,
     [FE_INST_ELIMINATED] = 0,
 

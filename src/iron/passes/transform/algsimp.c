@@ -40,19 +40,15 @@
         (x | 1) | 2  ->  x | (1 | 2)
 */
 
-static bool binop_both_sides_const(FeInst* inst) {
-    if (!(inst->kind > _FE_BINOP_BEGIN && inst->kind < _FE_BINOP_END)) return false;
-    FeInstBinop* binop = (FeInstBinop*) inst;
-    return binop->lhs->kind == FE_INST_LOAD_CONST && binop->rhs->kind == FE_INST_LOAD_CONST;
-}
+// if possible, replace the contents of target with source.
+static bool replace_with(FeInst* target, FeInst* source) {
+    if (fe_inst_sizes[target->kind] < fe_inst_sizes[source->kind]) {
+        // source node is too big, we cant stuff it in
+        return false;
+    }
 
-static FeInst* constant_evaluation(FeInst* inst) {
-
-    // (sandwich): im boutta do some CURSED shit
-    static_assert(sizeof(FeInstBinop) >= sizeof(FeInstLoadConst));
-    
-    TODO("");
-    return inst;
+    memcpy(target, source, fe_inst_sizes[source->kind]);
+    return true;
 }
 
 static bool is_const_one(FeInst* inst) {
@@ -122,6 +118,7 @@ static FeInst* identity_reduction(FeInst* inst) {
             // -(-x) -> x
             return ((FeInstUnop*)unop->source)->source;
         }
+        break;
     default: break;
     }
     return inst;

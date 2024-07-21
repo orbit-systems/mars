@@ -10,7 +10,7 @@ static u64 get_usage(FeBasicBlock* bb, FeInst* source, u64 start_index) {
     for (u64 i = start_index; i < bb->len; i++) {
         if (bb->at[i]->kind == FE_INST_ELIMINATED) continue;
         FeInst** ir = (FeInst**)bb->at[i];
-        for (u64 j = sizeof(FeInst)/sizeof(FeInst*); j <= air_sizes[bb->at[i]->kind]/sizeof(FeInst*); j++) {
+        for (u64 j = sizeof(FeInst)/sizeof(FeInst*); j <= fe_inst_sizes[bb->at[i]->kind]/sizeof(FeInst*); j++) {
             if (ir[j] == source) return i;
         }
     }
