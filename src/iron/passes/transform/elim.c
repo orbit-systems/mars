@@ -12,7 +12,7 @@ static void transcribe_w_no_elims(FeBasicBlock* bb) {
     u64 place = 0;
     for_urange(i, 0, bb->len) {
         FeInst* ir = bb->at[i];
-        if (ir == NULL || ir->tag == FE_INST_ELIMINATED) continue;
+        if (ir == NULL || ir->kind == FE_INST_ELIMINATED) continue;
 
         if (place == i) {
             place++;
@@ -33,7 +33,7 @@ void run_pass_elim(FeModule* mod) {
     }
 }
 
-FePass air_pass_elim = {
+FePass fe_pass_elim = {
     .name = "elim",
     .callback = run_pass_elim,
 };

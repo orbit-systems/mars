@@ -224,7 +224,7 @@ typedef struct FeFunction {
 
 typedef struct FeFunctionItem {
 
-    FeType* T;
+    FeType* type;
 
     // if its an aggregate, this is exposed as a pointer marked "by_val" so that
     // calling conventions work without needing target-specific information.
@@ -252,9 +252,10 @@ typedef struct FeBasicBlock {
 
 enum {
     FE_INST_INVALID,
-    FE_INST_ELIMINATED, // an AIR element that has been "deleted".
+    FE_INST_ELIMINATED, // an FeInst that has been "deleted".
 
     // FeBinop
+    _FE_BINOP_BEGIN,
     FE_INST_ADD,
     FE_INST_SUB,
     FE_INST_IMUL,
@@ -270,49 +271,50 @@ enum {
     FE_INST_SHL,
     FE_INST_ASR,
     FE_INST_LSR,
+    _FE_BINOP_END,
 
-    // FeUnop
+    // FeInstUnop
     FE_INST_NOT,
     FE_INST_NEG,
     FE_INST_CAST,
 
-    // FeStackAddr
+    // FeInstStackAddr
     FE_INST_STACKADDR,
 
-    // FeGetFieldPtr
-    FE_INST_GETFIELDPTR,
+    // FeInstFieldPtr
+    FE_INST_FIELDPTR,
 
-    // FeGetIndexPtr
-    FE_INST_GETINDEXPTR,
+    // FeInstIndexPtr
+    FE_INST_INDEXPTR,
 
-    // FeLoad
+    // FeInstLoad
     FE_INST_LOAD,
     FE_INST_VOL_LOAD,
 
-    // FeStore
+    // FeInstStore
     FE_INST_STORE,
     FE_INST_VOL_STORE,
 
-    // FeConst
-    FE_INST_CONST,
+    // FeInstLoadConst
+    FE_INST_LOAD_CONST,
     // FeLoadSymbol
     FE_INST_LOADSYMBOL,
 
-    // FeMov
+    // FeInstMov
     FE_INST_MOV,
-    // FePhi
+    // FeInstPhi
     FE_INST_PHI,
 
-    // FeBranch
+    // FeInstBranch
     FE_INST_BRANCH,
-    // FeJump
+    // FeInstJump
     FE_INST_JUMP,
 
-    // FeParamVal
+    // FeInstParamVal
     FE_INST_PARAMVAL,
-    // FeReturnVal
+    // FeInstReturnVal
     FE_INST_RETURNVAL,
-    // FeReturn
+    // FeInstReturn
     FE_INST_RETURN,
 
     _FE_INST_COUNT,
@@ -320,63 +322,63 @@ enum {
 
 // basic AIR structure
 typedef struct FeInst {
-    FeType* T;
+    FeType* type;
     FeBasicBlock* bb;
     u32 number;
     u16 use_count;
-    u8 tag;
+    u8 kind;
 } FeInst;
 
-typedef struct FeBinop {
+typedef struct FeInstBinop {
     FeInst base;
 
     FeInst* lhs;
     FeInst* rhs;
-} FeBinop;
+} FeInstBinop;
 
-typedef struct FeUnop {
+typedef struct FeInstUnop {
     FeInst base;
 
     FeInst* source;
-} FeUnop;
+} FeInstUnop;
 
 
-typedef struct FeStackAddr {
+typedef struct FeInstStackAddr {
     FeInst base;
 
     FeStackObject* object;
-} FeStackAddr;
+} FeInstStackAddr;
 
 // used for struct accesses
-typedef struct FeGetFieldPtr {
+typedef struct FeInstFieldPtr {
     FeInst base;
 
     FeInst* source;
     u32 index;
-} FeGetFieldPtr;
+} FeInstFieldPtr;
 
 // used for array accesses
-typedef struct FeGetIndexPtr {
+typedef struct FeInstIndexPtr {
     FeInst base;
 
     FeInst* source;
     FeInst* index;
-} FeGetIndexPtr;
+} FeInstIndexPtr;
 
-typedef struct FeLoad {
+typedef struct FeInstLoad {
     FeInst base;
 
     FeInst* location;
-} FeLoad;
+} FeInstLoad;
 
-typedef struct FeStore {
+typedef struct FeInstStore {
     FeInst base;
 
     FeInst* location;
     FeInst* value;
-} FeStore;
+} FeInstStore;
 
-typedef struct FeConst {
+typedef struct FeInstLoadConst {
     FeInst base;
 
     union {
@@ -391,7 +393,7 @@ typedef struct FeConst {
         f32 f32;
         f64 f64;
     };
-} FeConst;
+} FeInstLoadConst;
 
 typedef struct FeLoadSymbol {
     FeInst base;
@@ -399,25 +401,25 @@ typedef struct FeLoadSymbol {
     FeSymbol* sym;
 } FeLoadSymbol;
 
-typedef struct FeMov {
+typedef struct FeInstMov {
     FeInst base;
 
     FeInst* source;
-} FeMov;
+} FeInstMov;
 
-typedef struct FePhi {
+typedef struct FeInstPhi {
     FeInst base;
 
     FeInst** sources;
     FeBasicBlock** source_BBs;
     u32 len;
-} FePhi;
+} FeInstPhi;
 
-typedef struct FeJump {
+typedef struct FeInstJump {
     FeInst base;
 
     FeBasicBlock* dest;
-} FeJump;
+} FeInstJump;
 
 enum {
     FE_COND_NONE,
@@ -429,7 +431,7 @@ enum {
     FE_COND_NE,    // !=
 };
 
-typedef struct FeBranch {
+typedef struct FeInstBranch {
     FeInst base;
 
     u8 cond;
@@ -439,32 +441,32 @@ typedef struct FeBranch {
 
     FeBasicBlock* if_true;
     FeBasicBlock* if_false;
-} FeBranch;
+} FeInstBranch;
 
 // get value from register parameter OR the pointer to a stack parameter.
 // if register, lifetime of the register starts from the start of the entry 
 // basic block and continues to this node.
 // MUST BE THE FIRST INSTRUCTION IN THE ENTRY BLOCK OR IN A SEQUENCE OF 
-// OTHER FeParamVal INSTRUCTIONS
+// OTHER FeInstParamVal INSTRUCTIONS
 // BECAUSE OF HOW THE REG ALLOCATOR USES THIS TO CONSTRUCT MACHINE REGISTER LIFETIMES
 // ALONGSIDE VIRTUAL REGISTER LIFETIMES
-typedef struct FeParamVal {
+typedef struct FeInstParamVal {
     FeInst base;
 
     u32 param_idx;
-} FeParamVal;
+} FeInstParamVal;
 
 // set register return val
-typedef struct FeReturnVal {
+typedef struct FeInstReturnVal {
     FeInst base;
     FeInst* source;
 
     u32 return_idx;
-} FeReturnVal;
+} FeInstReturnVal;
 
-typedef struct FeReturn {
+typedef struct FeInstReturn {
     FeInst base;
-} FeReturn;
+} FeInstReturn;
 
 extern const size_t air_sizes[];
 
@@ -504,7 +506,7 @@ FeInst* fe_paramval(FeFunction* f, u32 param);
 FeInst* fe_returnval(FeFunction* f, u32 param, FeInst* source);
 FeInst* fe_return(FeFunction* f);
 
-void   fe_add_phi_source(FePhi* phi, FeInst* source, FeBasicBlock* source_block);
+void   fe_add_phi_source(FeInstPhi* phi, FeInst* source, FeBasicBlock* source_block);
 void   fe_move_inst(FeBasicBlock* bb, u64 to, u64 from);
 string fe_emit_textual_ir(FeModule* m);
 

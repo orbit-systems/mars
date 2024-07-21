@@ -8,11 +8,11 @@
 
 static u64 air_set_usage(FeBasicBlock* bb, FeInst* source, u64 start_index, FeInst* dest) {
     for (u64 i = start_index; i < bb->len; i++) {
-        if (bb->at[i]->tag == FE_INST_ELIMINATED) continue;
+        if (bb->at[i]->kind == FE_INST_ELIMINATED) continue;
         // FIXME: kayla you're gonna be SO fucking mad at me for this
         // searching the struct for a pointer :sobbing:
         FeInst** ir = (FeInst**)bb->at[i];
-        for (u64 j = sizeof(FeInst)/sizeof(FeInst*); j <= air_sizes[bb->at[i]->tag]/sizeof(FeInst*); j++) {
+        for (u64 j = sizeof(FeInst)/sizeof(FeInst*); j <= air_sizes[bb->at[i]->kind]/sizeof(FeInst*); j++) {
             if (ir[j] == source) {
                 ir[j] = dest;
                 return i;
@@ -39,17 +39,17 @@ void run_pass_movprop(FeModule* mod) {
             FeBasicBlock* bb = mod->functions[i]->blocks.at[j];
 
             for_urange(k, 0, bb->len) {
-                if (bb->at[k]->tag != FE_INST_MOV) continue;
+                if (bb->at[k]->kind != FE_INST_MOV) continue;
 
-                set_uses_of(mod->functions[i], bb->at[k], ((FeMov*)bb->at[k])->source);
-                bb->at[k]->tag = FE_INST_ELIMINATED;
+                set_uses_of(mod->functions[i], bb->at[k], ((FeInstMov*)bb->at[k])->source);
+                bb->at[k]->kind = FE_INST_ELIMINATED;
             }
 
         }
     }
 }
 
-FePass air_pass_movprop = {
+FePass fe_pass_movprop = {
     .name = "movprop",
     .callback = run_pass_movprop,
 };

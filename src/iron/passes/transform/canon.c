@@ -14,7 +14,7 @@ static void sort_instructions(FeBasicBlock* bb) {
 
     for (u64 i = 0; i < bb->len; i++) {
         if (last_paramval >= bb->len) break;
-        if (bb->at[i]->tag == FE_INST_PARAMVAL) {
+        if (bb->at[i]->kind == FE_INST_PARAMVAL) {
             fe_move_inst(bb, last_paramval, i);
             last_paramval++;
         }
@@ -22,12 +22,12 @@ static void sort_instructions(FeBasicBlock* bb) {
 }
 
 static void canonicalize(FeInst* ir) {
-    switch (ir->tag) {
+    switch (ir->kind) {
     case FE_INST_ADD:
     case FE_INST_UMUL:
     case FE_INST_IMUL:
-        FeBinop* binop = (FeBinop*) ir;
-        if (binop->lhs->tag == FE_INST_CONST && binop->rhs->tag != FE_INST_CONST) {
+        FeInstBinop* binop = (FeInstBinop*) ir;
+        if (binop->lhs->kind == FE_INST_LOAD_CONST && binop->rhs->kind != FE_INST_LOAD_CONST) {
             void* temp = binop->lhs;
             binop->lhs = binop->rhs;
             binop->rhs = temp;
@@ -52,7 +52,7 @@ void run_pass_canon(FeModule* mod) {
     }
 }
 
-FePass air_pass_canon = {
+FePass fe_pass_canon = {
     .name = "canon",
     .callback = run_pass_canon,
 };

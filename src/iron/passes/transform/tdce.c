@@ -11,7 +11,7 @@
 //   and idk what i was going to say
 //   its funnier like this i think
 static bool has_side_effects(FeInst* ir) {
-    switch (ir->tag) {
+    switch (ir->kind) {
     case FE_INST_ADD:
     case FE_INST_SUB:
     case FE_INST_UMUL:
@@ -19,7 +19,7 @@ static bool has_side_effects(FeInst* ir) {
     case FE_INST_UDIV:
     case FE_INST_IDIV:
     case FE_INST_MOV:
-    case FE_INST_CONST:
+    case FE_INST_LOAD_CONST:
     case FE_INST_PARAMVAL:
     case FE_INST_STACKADDR:
         return false;
@@ -30,44 +30,44 @@ static bool has_side_effects(FeInst* ir) {
 }
 
 static void register_uses(FeInst* ir) {
-    switch (ir->tag) {
+    switch (ir->kind) {
     case FE_INST_ADD:
     case FE_INST_SUB:
     case FE_INST_UMUL:
     case FE_INST_IMUL:
     case FE_INST_UDIV:
     case FE_INST_IDIV:
-        FeBinop* binop = (FeBinop*) ir;
+        FeInstBinop* binop = (FeInstBinop*) ir;
         binop->lhs->use_count++;
         binop->rhs->use_count++;
         break;
     case FE_INST_LOAD:
-        FeLoad* load = (FeLoad*) ir;
+        FeInstLoad* load = (FeInstLoad*) ir;
         load->location->use_count++;
         break;
     case FE_INST_STORE:
-        FeStore* store = (FeStore*) ir;
+        FeInstStore* store = (FeInstStore*) ir;
         store->location->use_count++;
         store->value->use_count++;
         break;
     case FE_INST_RETURNVAL:
-        FeReturnVal* retval = (FeReturnVal*) ir;
+        FeInstReturnVal* retval = (FeInstReturnVal*) ir;
         if (retval->source) retval->source->use_count++;
         break;
     case FE_INST_MOV:
-        FeMov* mov = (FeMov*) ir;
+        FeInstMov* mov = (FeInstMov*) ir;
         if (mov->source) mov->source->use_count++;
         break;
 
     case FE_INST_INVALID:
     case FE_INST_ELIMINATED:
-    case FE_INST_CONST:
+    case FE_INST_LOAD_CONST:
     case FE_INST_PARAMVAL:
     case FE_INST_STACKADDR:
     case FE_INST_RETURN:
         break;
     default:
-        CRASH("unhandled AIR type %d", ir->tag);
+        CRASH("unhandled AIR type %d", ir->kind);
         break;
     }
 }
@@ -92,48 +92,48 @@ static void try_eliminate(FeInst* ir) {
     // recursively attempt to eliminate dead code
     if (ir == NULL || ir->use_count != 0 || has_side_effects(ir)) return;
 
-    switch (ir->tag) {
+    switch (ir->kind) {
     case FE_INST_ADD:
     case FE_INST_SUB:
     case FE_INST_UMUL:
     case FE_INST_IMUL:
     case FE_INST_UDIV:
     case FE_INST_IDIV:
-        FeBinop* binop = (FeBinop*) ir;
+        FeInstBinop* binop = (FeInstBinop*) ir;
         binop->lhs->use_count--;
         binop->rhs->use_count--;
         try_eliminate(binop->lhs);
         try_eliminate(binop->rhs);
         break;
     case FE_INST_STORE:
-        FeStore* store = (FeStore*) ir;
+        FeInstStore* store = (FeInstStore*) ir;
         store->location->use_count--;
         store->value->use_count--;
         try_eliminate(store->location);
         try_eliminate(store->value);
         break;
     case FE_INST_RETURNVAL:
-        FeReturnVal* retval = (FeReturnVal*) ir;
+        FeInstReturnVal* retval = (FeInstReturnVal*) ir;
         if (retval->source) retval->source->use_count--;
         try_eliminate(retval->source);
         break;
     case FE_INST_MOV:
-        FeMov* mov = (FeMov*) ir;
+        FeInstMov* mov = (FeInstMov*) ir;
         if (mov->source) mov->source->use_count--;
         try_eliminate(mov->source);
         break;
 
     case FE_INST_INVALID:
     case FE_INST_ELIMINATED:
-    case FE_INST_CONST:
+    case FE_INST_LOAD_CONST:
     case FE_INST_PARAMVAL:
     case FE_INST_RETURN:
         break;
     default:
-        CRASH("unhandled AIR type %d", ir->tag);
+        CRASH("unhandled AIR type %d", ir->kind);
         break;
     }
-    ir->tag = FE_INST_ELIMINATED;
+    ir->kind = FE_INST_ELIMINATED;
 }
 
 static void tdce_on_function(FeFunction* f) {
@@ -144,7 +144,7 @@ static void tdce_on_function(FeFunction* f) {
     for_urange(i, 0, f->blocks.len) {
         for_urange(j, 0, f->blocks.at[i]->len) {
             FeInst* ir = f->blocks.at[i]->at[j];
-            if (ir->tag == FE_INST_ELIMINATED) continue;
+            if (ir->kind == FE_INST_ELIMINATED) continue;
             try_eliminate(ir);
         }
     }
@@ -158,7 +158,7 @@ void run_pass_tdce(FeModule* mod) {
     }
 }
 
-FePass air_pass_tdce = {
+FePass fe_pass_tdce = {
     .name = "tdce",
     .callback = run_pass_tdce,
 };

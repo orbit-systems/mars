@@ -29,7 +29,7 @@ void fe_run_next_pass(FeModule* m, bool printout) {
     FePass* next = m->pass_queue.at[0];
 
     if (next->requires_cfg && !m->pass_queue.cfg_up_to_date) {
-        fe_sched_pass_at(m, &air_pass_cfg, 0);
+        fe_sched_pass_at(m, &fe_pass_cfg, 0);
         fe_run_next_pass(m, printout);
         m->pass_queue.cfg_up_to_date = true;
     }

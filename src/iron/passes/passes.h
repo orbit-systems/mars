@@ -6,13 +6,13 @@
     canon           general cleanup & canonicalization
 */
 
-extern FePass air_pass_canon;
+extern FePass fe_pass_canon;
 
 /* ANALYSIS PASSES
     cfg             populate and provide information about control flow graphs
 */
 
-extern FePass air_pass_cfg;
+extern FePass fe_pass_cfg;
 
 /* OPTIMIZATION PASSES
     movprop         mov propogation
@@ -28,7 +28,7 @@ extern FePass air_pass_cfg;
     sroa            scalar replacement of aggregates
 */
 
-extern FePass air_pass_movprop;
-extern FePass air_pass_elim;
-extern FePass air_pass_tdce;
-extern FePass air_pass_trme;
+extern FePass fe_pass_movprop;
+extern FePass fe_pass_elim;
+extern FePass fe_pass_tdce;
+extern FePass fe_pass_trme;

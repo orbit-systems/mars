@@ -22,13 +22,13 @@ static void pass_cfg_func(FeFunction* f) {
             mars_free(bb->outgoing);
         }
 
-        switch (terminator->tag) {
+        switch (terminator->kind) {
         case FE_INST_RETURN:
             bb->out_len = 0;
             break;
         case FE_INST_JUMP:
             bb->out_len = 1;
-            FeJump* jump = (FeJump*) terminator;
+            FeInstJump* jump = (FeInstJump*) terminator;
             
             bb->outgoing = mars_alloc(sizeof(bb->outgoing[0])*bb->out_len);
             bb->outgoing[0] = jump->dest;
@@ -36,7 +36,7 @@ static void pass_cfg_func(FeFunction* f) {
             break;
         case FE_INST_BRANCH:
             bb->out_len = 2;
-            FeBranch* branch = (FeBranch*) terminator;
+            FeInstBranch* branch = (FeInstBranch*) terminator;
 
             bb->outgoing = mars_alloc(sizeof(bb->outgoing[0])*bb->out_len);
             bb->outgoing[0] = branch->if_false;
@@ -146,7 +146,7 @@ void run_pass_cfg(FeModule* mod) {
 
 }
 
-FePass air_pass_cfg = {
+FePass fe_pass_cfg = {
     .name = "cfg",
     .callback = run_pass_cfg,
 };
