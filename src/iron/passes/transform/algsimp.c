@@ -31,7 +31,7 @@
         x || false -> x
         x || true  -> true
         !(!x)      -> x
-        (-x)      -> x
+        -(-x)      -> x
 
     reassociation:
         (x + 1) + 2  ->  x + (1 + 2)
