@@ -262,11 +262,18 @@ enum {
     FE_INST_UMUL,
     FE_INST_IDIV,
     FE_INST_UDIV,
+    FE_INST_IMOD,
+    FE_INST_UMOD,
+
+    FE_INST_FADD,
+    FE_INST_FSUB,
+    FE_INST_FMUL,
+    FE_INST_FDIV,
+    FE_INST_FMOD,
 
     // FeBinop
     FE_INST_AND,
     FE_INST_OR,
-    FE_INST_NOR,
     FE_INST_XOR,
     FE_INST_SHL,
     FE_INST_ASR,
@@ -382,7 +389,7 @@ typedef struct FeInstLoadConst {
     FeInst base;
 
     union {
-        bool bool;
+        bool bool : 1;
         
         i8  i8;
         i16 i16;
@@ -484,11 +491,15 @@ void fe_set_func_params(FeFunction* f, u16 count, ...);
 void fe_set_func_returns(FeFunction* f, u16 count, ...);
 u32  fe_bb_index(FeFunction* fn, FeBasicBlock* bb);
 void fe_set_data_bytes(FeData* data, u8* bytes, u32 data_len, bool zeroed);
-void fe_set_data_as_symref(FeData* data, FeSymbol* symref);
+void fe_set_data_symref(FeData* data, FeSymbol* symref);
 
 FeInst* fe_append(FeBasicBlock* bb, FeInst* ir);
-FeInst* fe_inst(FeFunction* f, u8 type);
+FeInst* fe_insert(FeBasicBlock* bb, FeInst* inst, i64 index);
+FeInst* fe_insert_before(FeBasicBlock* bb, FeInst* inst, FeInst* ref);
+FeInst* fe_insert_after(FeBasicBlock* bb, FeInst* inst, FeInst* ref);
+i64     fe_index_of_inst(FeBasicBlock* bb, FeInst* inst);
 
+FeInst* fe_inst(FeFunction* f, u8 type);
 FeInst* fe_binop(FeFunction* f, u8 type, FeInst* lhs, FeInst* rhs);
 FeInst* fe_unop(FeFunction* f, u8 type, FeInst* source);
 FeInst* fe_stackaddr(FeFunction* f, FeStackObject* obj);

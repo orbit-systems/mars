@@ -104,12 +104,12 @@ void fe_set_data_bytes(FeData* data, u8* bytes, u32 len, bool zeroed) {
     data->bytes.zeroed = zeroed;
 }
 
-void fe_set_data_as_symref(FeData* data, FeSymbol* symref) {
+void fe_set_data_symref(FeData* data, FeSymbol* symref) {
     data->kind = FE_DATA_SYMREF;
     data->symref = symref;
 }
 
-void fe_set_data_as_numeric(FeData* data, u64 content, u8 kind) {
+void fe_set_data_numeric(FeData* data, u64 content, u8 kind) {
     if (!(kind > _FE_DATA_NUMERIC_BEGIN && kind < _FE_DATA_NUMERIC_END)) {
         CRASH("data kind %d is not numeric", kind);
     }
@@ -162,10 +162,34 @@ u32 fe_bb_index(FeFunction* fn, FeBasicBlock* bb) {
     return UINT32_MAX;
 }
 
-FeInst* fe_append(FeBasicBlock* bb, FeInst* ir) {
-    ir->bb = bb;
-    da_append(bb, ir);
-    return ir;
+FeInst* fe_append(FeBasicBlock* bb, FeInst* inst) {
+    inst->bb = bb;
+    da_append(bb, inst);
+    return inst;
+}
+
+FeInst* fe_insert(FeBasicBlock* bb, FeInst* inst, i64 index) {
+    inst->bb = bb;
+    da_insert_at(bb, inst, index);
+    return inst;
+}
+
+i64 fe_index_of_inst(FeBasicBlock* bb, FeInst* inst) {
+    for_range(i, 0, bb->len) {
+        if (bb->at[i] == inst) {
+            return i;
+        }
+    }
+}
+
+// inserts inst before ref
+FeInst* fe_insert_before(FeBasicBlock* bb, FeInst* inst, FeInst* ref) {
+    return fe_insert(bb, inst, fe_index_of_inst(bb, ref));
+}
+
+// inserts inst after ref
+FeInst* fe_insert_after(FeBasicBlock* bb, FeInst* inst, FeInst* ref) {
+    return fe_insert(bb, inst, fe_index_of_inst(bb, ref) + 1);
 }
 
 FeInst* fe_inst(FeFunction* f, u8 type) {
@@ -190,7 +214,6 @@ const size_t fe_inst_sizes[] = {
     
     [FE_INST_AND]  = sizeof(FeInstBinop),
     [FE_INST_OR]   = sizeof(FeInstBinop),
-    [FE_INST_NOR]  = sizeof(FeInstBinop),
     [FE_INST_XOR]  = sizeof(FeInstBinop),
     [FE_INST_SHL]  = sizeof(FeInstBinop),
     [FE_INST_LSR]  = sizeof(FeInstBinop),

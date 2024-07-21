@@ -51,6 +51,59 @@ static bool replace_with(FeInst* target, FeInst* source) {
     return true;
 }
 
+#define int_operate(op, dest, src1, src2) \
+    switch (dest->base.type->kind) {\
+    case FE_I64:  dest->i64  = src1->i64  op src2->i64;  break;\
+    case FE_I32:  dest->i32  = src1->i32  op src2->i32;  break;\
+    case FE_I16:  dest->i16  = src1->i16  op src2->i16;  break;\
+    case FE_I8:   dest->i64  = src1->i8   op src2->i8;   break;\
+    case FE_BOOL: dest->bool = src1->bool op src2->bool; break;\
+    }
+
+#define uint_operate(op, dest, src1, src2) \
+    switch (dest->base.type->kind) {\
+    case FE_I64:  dest->i64  = (u64) src1->i64  op (u64) src2->i64;  break;\
+    case FE_I32:  dest->i32  = (u32) src1->i32  op (u32) src2->i32;  break;\
+    case FE_I16:  dest->i16  = (u16) src1->i16  op (u16) src2->i16;  break;\
+    case FE_I8:   dest->i64  = (u8)  src1->i8   op (u8)  src2->i8;   break;\
+    case FE_BOOL: dest->bool =       src1->bool op       src2->bool; break;\
+    }
+
+static FeInst* const_eval_binop(FeFunction* f, FeInst* inst) {
+    if (!(_FE_BINOP_BEGIN < inst->kind && inst->kind < _FE_BINOP_END)) {
+        return inst;
+    }
+    FeInstBinop* binop = (FeInstBinop*) inst;
+
+    if (binop->lhs->kind != FE_INST_LOAD_CONST || binop->rhs->kind != FE_INST_LOAD_CONST) {
+        return inst;
+    }
+
+    FeInstLoadConst* src1 = (FeInstLoadConst*) binop->lhs;
+    FeInstLoadConst* src2 = (FeInstLoadConst*) binop->rhs;
+    FeInstLoadConst* lc   = (FeInstLoadConst*) fe_inst(f, FE_INST_LOAD_CONST);
+    lc->base.type = inst->type;
+
+    switch (inst->kind) {
+    case FE_INST_ADD:   int_operate(+, lc, src1, src2); break;
+    case FE_INST_SUB:   int_operate(-, lc, src1, src2); break;
+    case FE_INST_IMUL:  int_operate(*, lc, src1, src2); break;
+    case FE_INST_UMUL: uint_operate(*, lc, src1, src2); break;
+    case FE_INST_IDIV:  int_operate(/, lc, src1, src2); break;
+    case FE_INST_UDIV: uint_operate(/, lc, src1, src2); break;
+    case FE_INST_AND:  uint_operate(&, lc, src1, src2); break;
+    case FE_INST_OR:   uint_operate(|, lc, src1, src2); break;
+    case FE_INST_XOR:  uint_operate(^, lc, src1, src2); break;
+    case FE_INST_SHL:  uint_operate(<<, lc, src1, src2); break;
+    case FE_INST_ASR:   int_operate(>>, lc, src1, src2); break;
+    case FE_INST_LSR:  uint_operate(>>, lc, src1, src2); break;
+    default:
+        break;
+    }
+    
+    return lc;
+}
+
 static bool is_const_one(FeInst* inst) {
     if (inst->kind != FE_INST_LOAD_CONST) return false;
 
