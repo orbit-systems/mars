@@ -14,12 +14,24 @@
         x / 2 -> x >> 1 // extend to powers of two
         x % 2 -> x & 1  // extend to powers of two (is this valid? please tell me)
 
-        x * 0  -> 0
-        x & 0  -> 0
-        x | 0  -> x
-        x / 1  -> x
-        x << 0 -> x
-        x >> 0 -> x
+    identity reduction:
+        x + 0      -> x
+        x - 0      -> x
+        0 - x      -> -x
+        x * 0      -> 0
+        x * 1      -> x
+        x / 1      -> x
+        x & 0      -> 0
+        x | 0      -> x
+        x ^ 0      -> x
+        x << 0     -> x
+        x >> 0     -> x
+        x && false -> false
+        x && true  -> x
+        x || false -> x
+        x || true  -> true
+        !(!x)      -> x
+        (-x)      -> x
 
     reassociation:
         (x + 1) + 2  ->  x + (1 + 2)
@@ -28,7 +40,7 @@
         (x | 1) | 2  ->  x | (1 | 2)
 */
 
-static bool both_sides_const(FeInst* inst) {
+static bool binop_both_sides_const(FeInst* inst) {
     if (!(inst->kind > _FE_BINOP_BEGIN && inst->kind < _FE_BINOP_END)) return false;
     FeInstBinop* binop = (FeInstBinop*) inst;
     return binop->lhs->kind == FE_INST_LOAD_CONST && binop->rhs->kind == FE_INST_LOAD_CONST;
@@ -39,11 +51,6 @@ static FeInst* constant_evaluation(FeInst* inst) {
     // (sandwich): im boutta do some CURSED shit
     static_assert(sizeof(FeInstBinop) >= sizeof(FeInstLoadConst));
     
-    FeInstLoadConst* lc = (FeInstLoadConst*) inst;
-
-    switch (inst->kind) {
-    case FE_INST_ADD:
-    }
     TODO("");
     return inst;
 }
@@ -82,9 +89,46 @@ static bool is_const_zero(FeInst* inst) {
     return false;
 }
 
+static FeInst* identity_reduction(FeInst* inst) {
+
+    FeInstBinop* binop = (FeInstBinop*) inst;
+    FeInstUnop* unop = (FeInstUnop*) inst;
+
+    switch (inst->kind) {
+    case FE_INST_ADD: // x + 0  -> x
+    case FE_INST_SUB: // x - 0  -> x
+    case FE_INST_OR:  // x | 0  -> x
+    case FE_INST_XOR: // x ^ 0  -> x
+    case FE_INST_SHL: // x << 0 -> x
+    case FE_INST_LSR: // x >> 0 -> x
+    case FE_INST_ASR: // x >> 0 -> x
+        if (is_const_zero(binop->rhs)) {
+            return binop->lhs;
+        }
+        break;
+    case FE_INST_UMUL:
+    case FE_INST_IMUL:
+        if (is_const_zero(binop->rhs)) {
+            return binop->rhs; // x * 0 -> 0
+        }
+        if (is_const_one(binop->rhs)) {
+            return binop->lhs; // x * 1 -> x
+        }
+        break;
+    case FE_INST_NOT:
+    case FE_INST_NEG:
+        if (unop->source->kind == inst->kind) {
+            // !(!x) -> x
+            // -(-x) -> x
+            return ((FeInstUnop*)unop->source)->source;
+        }
+    default: break;
+    }
+    return inst;
+}
+
 static FeInst* strength_reduction(FeInst* inst) {
     switch (inst->kind) {
-        break;
     default:
         break;
     }
