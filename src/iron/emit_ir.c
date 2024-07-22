@@ -107,9 +107,9 @@ static u64 stack_object_index(FeFunction* f, FeStackObject* obj) {
 }
 
 static void emit_function(FeFunction* f, StringBuilder* sb) {
-    sb_append_c(sb, "func \"");
+    sb_append_c(sb, "func ");
     sb_append(sb, f->sym->name);
-    sb_append_c(sb, "\" (");
+    sb_append_c(sb, " (");
 
     for_range(i, 0, f->params_len) {
         sb_type_nme(f->params[i]->type, sb);
@@ -192,7 +192,7 @@ static void emit_function(FeFunction* f, StringBuilder* sb) {
                 FeInstMov* mov = (FeInstMov*) inst;
                 sb_printf(sb, "mov #%llu", mov->source->number);
             } break;
-            case FE_INST_LOAD_CONST: {
+            case FE_INST_CONST: {
                 FeInstLoadConst* con = (FeInstLoadConst*) inst;
                 sb_append_c(sb, "const.");
                 sb_type_nme(inst->type, sb);
@@ -205,7 +205,6 @@ static void emit_function(FeFunction* f, StringBuilder* sb) {
                 case FE_F32: sb_printf(sb, " %f",   con->f32); break;
                 case FE_F64: sb_printf(sb, " %lf",  con->f64); break;
                 default:
-                    sb_append_c(sb, "???");
                     break;
                 }
             } break;

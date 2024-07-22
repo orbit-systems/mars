@@ -27,7 +27,7 @@ static void canonicalize(FeInst* ir) {
     case FE_INST_UMUL:
     case FE_INST_IMUL:
         FeInstBinop* binop = (FeInstBinop*) ir;
-        if (binop->lhs->kind == FE_INST_LOAD_CONST && binop->rhs->kind != FE_INST_LOAD_CONST) {
+        if (binop->lhs->kind == FE_INST_CONST && binop->rhs->kind != FE_INST_CONST) {
             void* temp = binop->lhs;
             binop->lhs = binop->rhs;
             binop->rhs = temp;

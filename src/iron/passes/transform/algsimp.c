@@ -75,13 +75,13 @@ static FeInst* const_eval_binop(FeFunction* f, FeInst* inst) {
     }
     FeInstBinop* binop = (FeInstBinop*) inst;
 
-    if (binop->lhs->kind != FE_INST_LOAD_CONST || binop->rhs->kind != FE_INST_LOAD_CONST) {
+    if (binop->lhs->kind != FE_INST_CONST || binop->rhs->kind != FE_INST_CONST) {
         return inst;
     }
 
     FeInstLoadConst* src1 = (FeInstLoadConst*) binop->lhs;
     FeInstLoadConst* src2 = (FeInstLoadConst*) binop->rhs;
-    FeInstLoadConst* lc   = (FeInstLoadConst*) fe_inst(f, FE_INST_LOAD_CONST);
+    FeInstLoadConst* lc   = (FeInstLoadConst*) fe_inst(f, FE_INST_CONST);
     lc->base.type = inst->type;
 
     switch (inst->kind) {
@@ -101,11 +101,11 @@ static FeInst* const_eval_binop(FeFunction* f, FeInst* inst) {
         break;
     }
     
-    return lc;
+    return (FeInst*) lc;
 }
 
 static bool is_const_one(FeInst* inst) {
-    if (inst->kind != FE_INST_LOAD_CONST) return false;
+    if (inst->kind != FE_INST_CONST) return false;
 
     FeInstLoadConst* lc = (FeInstLoadConst*) inst;
     switch (lc->base.type->kind) {
@@ -122,7 +122,7 @@ static bool is_const_one(FeInst* inst) {
 }
 
 static bool is_const_zero(FeInst* inst) {
-    if (inst->kind != FE_INST_LOAD_CONST) return false;
+    if (inst->kind != FE_INST_CONST) return false;
 
     FeInstLoadConst* lc = (FeInstLoadConst*) inst;
     switch (lc->base.type->kind) {

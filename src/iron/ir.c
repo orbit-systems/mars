@@ -6,7 +6,8 @@
 FeFunction* fe_new_function(FeModule* mod, FeSymbol* sym) {
     FeFunction* fn = mars_alloc(sizeof(FeFunction));
 
-    fn->sym = sym ? sym : fe_new_symbol(mod, strprintf("symbol%zu", sym), FE_VIS_GLOBAL);
+    fn->sym = sym ? sym : fe_new_symbol(mod, NULL_STR, FE_VIS_GLOBAL);
+    if (!sym) fn->sym->name = strprintf("symbol_%016llx", fn->sym);
     fn->sym->is_function = true;
     fn->sym->function = fn;
 
@@ -58,14 +59,14 @@ void fe_set_func_params(FeFunction* f, u16 count, ...) {
     va_end(args);
 }
 
-// takes multiple entity*
+// takes multiple FeType*
 void fe_set_func_returns(FeFunction* f, u16 count, ...) {
     f->returns_len = count;
 
     if (f->returns) mars_free(f->returns);
 
     f->returns = mars_alloc(sizeof(*f->returns) * count);
-    if (!f->params) CRASH("mars_alloc failed");
+    if (!f->returns) CRASH("mars_alloc failed");
 
     bool no_set = false;
     va_list args;
@@ -205,8 +206,8 @@ const size_t fe_inst_sizes[] = {
     [FE_INST_INVALID]    = 0,
     [FE_INST_ELIMINATED] = 0,
 
-    [FE_INST_ADD] = sizeof(FeInstBinop),
-    [FE_INST_SUB] = sizeof(FeInstBinop),
+    [FE_INST_ADD]  = sizeof(FeInstBinop),
+    [FE_INST_SUB]  = sizeof(FeInstBinop),
     [FE_INST_IMUL] = sizeof(FeInstBinop),
     [FE_INST_UMUL] = sizeof(FeInstBinop),
     [FE_INST_IDIV] = sizeof(FeInstBinop),
@@ -223,9 +224,9 @@ const size_t fe_inst_sizes[] = {
     [FE_INST_NEG]  = sizeof(FeInstUnop),
     [FE_INST_CAST] = sizeof(FeInstUnop),
 
-    [FE_INST_STACKADDR]   = sizeof(FeInstStackAddr),
-    [FE_INST_FIELDPTR] = sizeof(FeInstFieldPtr),
-    [FE_INST_INDEXPTR] = sizeof(FeInstIndexPtr),
+    [FE_INST_STACKADDR] = sizeof(FeInstStackAddr),
+    [FE_INST_FIELDPTR]  = sizeof(FeInstFieldPtr),
+    [FE_INST_INDEXPTR]  = sizeof(FeInstIndexPtr),
 
     [FE_INST_LOAD]     = sizeof(FeInstLoad),
     [FE_INST_VOL_LOAD] = sizeof(FeInstLoad),
@@ -233,8 +234,8 @@ const size_t fe_inst_sizes[] = {
     [FE_INST_STORE]     = sizeof(FeInstStore),
     [FE_INST_VOL_STORE] = sizeof(FeInstStore),
 
-    [FE_INST_LOAD_CONST]      = sizeof(FeInstLoadConst),
-    [FE_INST_LOADSYMBOL] = sizeof(FeLoadSymbol),
+    [FE_INST_CONST]  = sizeof(FeInstLoadConst),
+    [FE_INST_LOAD_SYMBOL] = sizeof(FeLoadSymbol),
 
     [FE_INST_MOV] = sizeof(FeInstMov),
     [FE_INST_PHI] = sizeof(FeInstPhi),
@@ -301,12 +302,12 @@ FeInst* fe_store(FeFunction* f, FeInst* location, FeInst* value, bool is_vol) {
 }
 
 FeInst* fe_const(FeFunction* f) {
-    FeInstLoadConst* ir = (FeInstLoadConst*) fe_inst(f, FE_INST_LOAD_CONST);
+    FeInstLoadConst* ir = (FeInstLoadConst*) fe_inst(f, FE_INST_CONST);
     return (FeInst*) ir;
 }
 
-FeInst* fe_loadsymbol(FeFunction* f, FeSymbol* symbol) {
-    FeLoadSymbol* ir = (FeLoadSymbol*) fe_inst(f, FE_INST_LOADSYMBOL);
+FeInst* fe_load_symbol(FeFunction* f, FeSymbol* symbol) {
+    FeLoadSymbol* ir = (FeLoadSymbol*) fe_inst(f, FE_INST_LOAD_SYMBOL);
     ir->sym = symbol;
     return (FeInst*) ir;
 }

@@ -6,6 +6,8 @@ void fe_typegraph_init(FeModule* m);
 FeModule* fe_new_module(string name) {
     FeModule* mod = mars_alloc(sizeof(*mod));
 
+    mod->name = name;
+
     da_init(&mod->symtab, 32);
 
     mod->assembly = mars_alloc(sizeof(*mod->assembly));

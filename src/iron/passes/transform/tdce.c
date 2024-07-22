@@ -19,7 +19,7 @@ static bool has_side_effects(FeInst* ir) {
     case FE_INST_UDIV:
     case FE_INST_IDIV:
     case FE_INST_MOV:
-    case FE_INST_LOAD_CONST:
+    case FE_INST_CONST:
     case FE_INST_PARAMVAL:
     case FE_INST_STACKADDR:
         return false;
@@ -61,7 +61,7 @@ static void register_uses(FeInst* ir) {
 
     case FE_INST_INVALID:
     case FE_INST_ELIMINATED:
-    case FE_INST_LOAD_CONST:
+    case FE_INST_CONST:
     case FE_INST_PARAMVAL:
     case FE_INST_STACKADDR:
     case FE_INST_RETURN:
@@ -125,7 +125,7 @@ static void try_eliminate(FeInst* ir) {
 
     case FE_INST_INVALID:
     case FE_INST_ELIMINATED:
-    case FE_INST_LOAD_CONST:
+    case FE_INST_CONST:
     case FE_INST_PARAMVAL:
     case FE_INST_RETURN:
         break;

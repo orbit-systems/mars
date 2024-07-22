@@ -19,11 +19,42 @@
 
 flag_set mars_flags;
 
+void test_iron() {
+    printf("\n");
+    FeModule* m = fe_new_module(str("test"));
+    
+    FeSymbol* sym = fe_new_symbol(m, str("this_symbol_is_false"), FE_VIS_GLOBAL);
+    FeFunction* f = fe_new_function(m, sym);
+    fe_set_func_returns(f, 1, fe_type(m, FE_I64, 0));
+    FeBasicBlock* bb = fe_new_basic_block(f, str("block1"));
+
+    FeInstLoadConst* c1 = (FeInstLoadConst*) fe_append(bb, fe_const(f));
+    c1->base.type = fe_type(m, FE_I64, 0);
+    c1->i64 = 10;
+    
+    FeInstLoadConst* c2 = (FeInstLoadConst*) fe_append(bb, fe_const(f));
+    c2->base.type = fe_type(m, FE_I64, 0);
+    c2->i64 = 20;
+    
+    FeInstBinop* add = (FeInstBinop*) fe_append(bb, fe_binop(f, FE_INST_ADD, (FeInst*) c1, (FeInst*) c2));
+    add->base.type = fe_type(m, FE_I64, 0);
+
+    fe_append(bb, fe_returnval(f, 0, (FeInst*) add));
+    fe_append(bb, fe_return(f));
+
+    fe_sched_pass(m, &fe_pass_tdce);
+    fe_run_all_passes(m, true);
+
+    // string s = fe_emit_textual_ir(m);
+    // printf(str_fmt, str_arg(s));
+}
+
 int main(int argc, char** argv) {
+
+    test_iron();
+
+    /*
     load_arguments(argc, argv, &mars_flags);
-
-
-    FeModule* atlas_module;
 
     if (!mars_flags.use_llta) {
 
@@ -46,6 +77,7 @@ int main(int argc, char** argv) {
     // TODO stub because, once again, 
     // i cannot be fucked to update this every time i make iron changes
     TODO("IR generation");
+    */
 
     return 0;
 }

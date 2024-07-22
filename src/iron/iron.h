@@ -188,7 +188,7 @@ typedef struct FeData {
     bool read_only;
 } FeData;
 
-#define FE_FN_ALLOCA_BLOCK_SIZE 0x1000
+#define FE_FN_ALLOCA_BLOCK_SIZE 0x4000
 
 typedef struct FeStackObject {
     FeType* t;
@@ -303,9 +303,9 @@ enum {
     FE_INST_VOL_STORE,
 
     // FeInstLoadConst
-    FE_INST_LOAD_CONST,
+    FE_INST_CONST,
     // FeLoadSymbol
-    FE_INST_LOADSYMBOL,
+    FE_INST_LOAD_SYMBOL,
 
     // FeInstMov
     FE_INST_MOV,
@@ -508,7 +508,7 @@ FeInst* fe_getindexptr(FeFunction* f, FeInst* index, FeInst* source);
 FeInst* fe_load(FeFunction* f, FeInst* location, bool is_vol);
 FeInst* fe_store(FeFunction* f, FeInst* location, FeInst* value, bool is_vol);
 FeInst* fe_const(FeFunction* f);
-FeInst* fe_loadsymbol(FeFunction* f, FeSymbol* symbol);
+FeInst* fe_load_symbol(FeFunction* f, FeSymbol* symbol);
 FeInst* fe_mov(FeFunction* f, FeInst* source);
 FeInst* fe_phi(FeFunction* f, u32 count, ...);
 FeInst* fe_jump(FeFunction* f, FeBasicBlock* dest);
