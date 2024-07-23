@@ -30,11 +30,11 @@ void test_iron() {
 
     FeInstLoadConst* c1 = (FeInstLoadConst*) fe_append(bb, fe_inst_const(f));
     c1->base.type = fe_type(m, FE_I64, 0);
-    c1->i64 = 10;
+    c1->i64 = 1;
     
     FeInstLoadConst* c2 = (FeInstLoadConst*) fe_append(bb, fe_inst_const(f));
     c2->base.type = fe_type(m, FE_I64, 0);
-    c2->i64 = 20;
+    c2->i64 = 2;
     
     FeInstBinop* add = (FeInstBinop*) fe_append(bb, fe_inst_binop(f, FE_INST_ADD, (FeInst*) c1, (FeInst*) c2));
     add->base.type = fe_type(m, FE_I64, 0);

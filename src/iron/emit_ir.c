@@ -86,7 +86,7 @@ static int print_type_nme(FeType* t, char** bufptr) {
     return *bufptr - og;
 }
 
-static int sb_type_nme(FeType* t, StringBuilder* sb) {
+static int sb_type_name(FeType* t, StringBuilder* sb) {
     char buf[16] = {0};
 
     if (is_null_str(simple_type_2_str(t))) {
@@ -112,7 +112,7 @@ static void emit_function(FeFunction* f, StringBuilder* sb) {
     sb_append_c(sb, " (");
 
     for_range(i, 0, f->params_len) {
-        sb_type_nme(f->params[i]->type, sb);
+        sb_type_name(f->params[i]->type, sb);
         if (i + 1 != f->params_len) {
             sb_append_c(sb, ", ");
         }
@@ -121,7 +121,7 @@ static void emit_function(FeFunction* f, StringBuilder* sb) {
     sb_append_c(sb, ") -> (");
 
     for_range(i, 0, f->returns_len) {
-        sb_type_nme(f->returns[i]->type, sb);
+        sb_type_name(f->returns[i]->type, sb);
         if (i + 1 != f->returns_len) {
             sb_append_c(sb, ", ");
         }
@@ -138,7 +138,7 @@ static void emit_function(FeFunction* f, StringBuilder* sb) {
     for_urange(i, 0, f->stack.len) {
         FeStackObject* so = f->stack.at[i];
         sb_printf(sb, "    #%llu = stack.", i + 1);
-        sb_type_nme(so->t, sb);
+        sb_type_name(so->t, sb);
         sb_append_c(sb, "\n");
         counter++;
     }
@@ -151,6 +151,21 @@ static void emit_function(FeFunction* f, StringBuilder* sb) {
             inst->number = counter++; // assign a number to every IR
         }
     }
+
+    static char* opname[] = {
+        [FE_INST_ADD]   = "add.",
+        [FE_INST_SUB]   = "sub.",
+        [FE_INST_IMUL]  = "imul.",
+        [FE_INST_UMUL]  = "umul.",
+        [FE_INST_IDIV]  = "idiv.",
+        [FE_INST_UDIV]  = "udiv.",
+        [FE_INST_AND]   = "and.",
+        [FE_INST_OR]    = "or.",
+        [FE_INST_XOR]   = "xor.",
+        [FE_INST_SHL]   = "shl.",
+        [FE_INST_LSR]   = "lsr.",
+        [FE_INST_ASR]   = "asr.",
+    };
 
     for_urange(b, 0, f->blocks.len) {
         FeBasicBlock* bb = f->blocks.at[b];
@@ -170,22 +185,33 @@ static void emit_function(FeFunction* f, StringBuilder* sb) {
 
             sb_printf(sb, "    #%llu = ", inst->number);
             switch (inst->kind) {
-            case FE_INST_ADD: {
+            case FE_INST_ADD:
+            case FE_INST_SUB:
+            case FE_INST_IMUL:
+            case FE_INST_UMUL:
+            case FE_INST_IDIV:
+            case FE_INST_UDIV:
+            case FE_INST_AND:
+            case FE_INST_OR: 
+            case FE_INST_XOR: 
+            case FE_INST_SHL: 
+            case FE_INST_LSR: 
+            case FE_INST_ASR: {
                 FeInstBinop* binop = (FeInstBinop*) inst;
-                sb_append_c(sb, "add.");
-                sb_type_nme(binop->base.type, sb);
+                sb_append_c(sb, opname[inst->kind]);
+                sb_type_name(binop->base.type, sb);
                 sb_printf(sb, " #%llu, #%llu", binop->lhs->number, binop->rhs->number);
             } break;
             case FE_INST_LOAD: {
                 FeInstLoad* load = (FeInstLoad*) inst;
                 sb_append_c(sb, "load.");
-                sb_type_nme(load->base.type, sb);
+                sb_type_name(load->base.type, sb);
                 sb_printf(sb, " #%llu", load->location->number);
             } break;
             case FE_INST_STORE: {
                 FeInstStore* store = (FeInstStore*) inst;
                 sb_append_c(sb, "store.");
-                sb_type_nme(store->value->type, sb);
+                sb_type_name(store->value->type, sb);
                 sb_printf(sb, " #%llu, #%llu", store->location->number, store->value->number);
             } break;
             case FE_INST_MOV: {
@@ -195,7 +221,7 @@ static void emit_function(FeFunction* f, StringBuilder* sb) {
             case FE_INST_CONST: {
                 FeInstLoadConst* con = (FeInstLoadConst*) inst;
                 sb_append_c(sb, "const.");
-                sb_type_nme(inst->type, sb);
+                sb_type_name(inst->type, sb);
                 switch (con->base.type->kind) {
                 case FE_I8:  sb_printf(sb, " %lld", (i64)con->i8);  break;
                 case FE_I16: sb_printf(sb, " %lld", (i64)con->i16); break;

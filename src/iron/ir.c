@@ -404,3 +404,8 @@ void fe_move(FeBasicBlock* bb, u64 to, u64 from) {
     }
     bb->at[to] = from_elem;
 }
+
+// rewrite all uses of `from` to be uses of `to`
+// void fe_rewrite_all_uses(FeFunction* f, FeInst* to, FeInst* from) {
+    
+// }

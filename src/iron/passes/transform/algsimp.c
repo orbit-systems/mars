@@ -211,8 +211,13 @@ void run_pass_algsimp(FeModule* mod) {
                 if (inst != new_inst) {
                     if (!replace_with(inst, new_inst)) {
                         // couldn't drop-in-replace, we have to put in a move and shit
-                        TODO("");                        
-                        ii++;
+
+                        fe_insert_before(bb, new_inst, inst);
+                        FeInst* mov = fe_inst_mov(f, new_inst);
+                        if (!replace_with(inst, mov)) {
+                            TODO("mov cant be dropped in! contact sandwichman about this");
+                        }
+                        ii += 2;
                     }
                 }
 
