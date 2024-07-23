@@ -4,8 +4,6 @@
 
 */
 
-da_typedef(FeInstPTR);
-
 static u64 get_usage(FeBasicBlock* bb, FeInst* source, u64 start_index) {
     for (u64 i = start_index; i < bb->len; i++) {
         if (bb->at[i]->kind == FE_INST_ELIMINATED) continue;

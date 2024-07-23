@@ -11,6 +11,8 @@ typedef struct FeType FeType;
 typedef struct FeInst      FeInst;
 typedef        FeInst*     FeInstPTR;
 
+da_typedef(FeInstPTR);
+
 typedef struct FeFunction     FeFunction;
 typedef struct FeFunctionItem FeFunctionItem;
 typedef struct FeData         FeData;
@@ -504,7 +506,8 @@ FeInst* fe_insert_before(FeBasicBlock* bb, FeInst* inst, FeInst* ref);
 FeInst* fe_insert_after(FeBasicBlock* bb, FeInst* inst, FeInst* ref);
 i64     fe_index_of_inst(FeBasicBlock* bb, FeInst* inst);
 void    fe_move(FeBasicBlock* bb, u64 to, u64 from);
-void    fe_rewrite_uses_of(FeFunction* f, FeInst* source, FeInst* dest);
+void    fe_rewrite_uses(FeFunction* f, FeInst* source, FeInst* dest);
+void    fe_add_uses_to_worklist(FeFunction* f, FeInst* source, da(FeInstPTR)* worklist);
 
 FeInst* fe_inst(FeFunction* f, u8 type);
 FeInst* fe_inst_binop(FeFunction* f, u8 type, FeInst* lhs, FeInst* rhs);

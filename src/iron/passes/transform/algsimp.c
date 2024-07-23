@@ -143,7 +143,7 @@ static bool is_const_zero(FeInst* inst) {
     return false;
 }
 
-static FeInst* identity_reduction(FeInst* inst) {
+static FeInst* identity_reduction(FeInst* inst, bool* needs_appending) {
 
     FeInstBinop* binop = (FeInstBinop*) inst;
     FeInstUnop* unop = (FeInstUnop*) inst;
@@ -190,8 +190,6 @@ static FeInst* strength_reduction(FeInst* inst) {
     return inst;
 }
 
-da_typedef(FeInstPTR);
-
 void run_pass_algsimp(FeModule* mod) {
     da(FeInstPTR) worklist = {0};
     da_init(&worklist, 64);
@@ -202,22 +200,46 @@ void run_pass_algsimp(FeModule* mod) {
 
         for_range(bi, 0, f->blocks.len) {
             FeBasicBlock* bb = f->blocks.at[bi];
-            
             for_range(ii, 0, bb->len) {
-                FeInst* inst = bb->at[ii];
+                if (bb->at[ii]->kind != FE_INST_ELIMINATED);
+                da_append(&worklist, bb->at[ii]);
+            }
+        }
 
-                FeInst* new_inst = const_eval(f, inst);
+        while (worklist.len != 0) {
+            FeInst* inst = da_pop(&worklist);
 
-                if (inst != new_inst) {
-                    fe_insert_before(bb, new_inst, inst);
-                    fe_rewrite_uses_of(f, inst, new_inst);
-                    ii++;
-                } else if (inst != (new_inst = identity_reduction(inst))){
-                    fe_rewrite_uses_of(f, inst, new_inst);
-                }
+            FeInst* new_inst;
+
+            // first try to identity-reduce
+            // then try to constant-evaluate
+            // then try to strength-reduce
+
+            // this is because identity reduction can catch some cases
+            // that fall into constant evaluation. constant evaluation
+            // creates a new FeInst, where identity reduction generally
+            // does not. strength reduction is done last because some
+            // strength reduction cases would also fall into constant 
+            // evaluation so its better to const-eval it instead of 
+            // strength-reducing AND THEN const-eval
+
+            bool needs_appending = false;
+            if (inst != (new_inst = identity_reduction(inst, &needs_appending))){
+                if (needs_appending) fe_insert_before(inst->bb, new_inst, inst);
+                fe_rewrite_uses(f, inst, new_inst);
+                inst->kind = FE_INST_ELIMINATED;
+                fe_add_uses_to_worklist(f, new_inst, &worklist);
+            } else if (inst != (new_inst = const_eval(f, inst))) {
+                fe_insert_before(inst->bb, new_inst, inst);
+                fe_rewrite_uses(f, inst, new_inst);
+                inst->kind = FE_INST_ELIMINATED;
+                fe_add_uses_to_worklist(f, new_inst, &worklist);
+            } else if (inst != (new_inst = strength_reduction(inst))) {
+                fe_add_uses_to_worklist(f, new_inst, &worklist);
             }
         }
     }
+    da_destroy(&worklist);
 }
 
 FePass fe_pass_algsimp = {

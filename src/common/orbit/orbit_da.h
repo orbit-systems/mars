@@ -65,6 +65,7 @@
 #define da_destroy(da_ptr) do { \
     if ((da_ptr)->at == NULL) break; \
     free((da_ptr)->at); \
+    (da_ptr)->at = NULL; \
     (da_ptr)->len = 0;\
     (da_ptr)->cap = 0;\
 } while (0)
@@ -86,7 +87,7 @@
 } while (0)
 
 #define da_push(da_ptr, element) da_append(da_ptr, element)
-#define da_pop(da_ptr) (da_ptr)->len--
+#define da_pop(da_ptr) ((da_ptr)->at[(da_ptr)->len-- - 1])
 #define da_pop_front(da_ptr) da_remove_at(da_ptr, 0)
 
 #define foreach(item, da) \

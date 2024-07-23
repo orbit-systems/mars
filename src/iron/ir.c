@@ -428,12 +428,34 @@ static u64 set_usage(FeBasicBlock* bb, FeInst* source, u64 start_index, FeInst* 
     return UINT64_MAX;
 }
 
-void fe_rewrite_uses_of(FeFunction* f, FeInst* source, FeInst* dest) {
+void fe_rewrite_uses(FeFunction* f, FeInst* source, FeInst* dest) {
     for_urange(i, 0, f->blocks.len) {
         FeBasicBlock* bb = f->blocks.at[i];
         u64 next_usage = set_usage(bb, source, 0, dest);
         while (next_usage != UINT64_MAX) {
             next_usage = set_usage(bb, source, next_usage+1, dest);
+        }
+    }
+}
+
+static u64 get_usage(FeBasicBlock* bb, FeInst* source, u64 start_index) {
+    for (u64 i = start_index; i < bb->len; i++) {
+        if (bb->at[i]->kind == FE_INST_ELIMINATED) continue;
+        FeInst** ir = (FeInst**)bb->at[i];
+        for (u64 j = sizeof(FeInst)/sizeof(FeInst*); j <= fe_inst_sizes[bb->at[i]->kind]/sizeof(FeInst*); j++) {
+            if (ir[j] == source) return i;
+        }
+    }
+    return UINT64_MAX;
+}
+
+void fe_add_uses_to_worklist(FeFunction* f, FeInst* source, da(FeInstPTR)* worklist) {
+    for_urange(i, 0, f->blocks.len) {
+        FeBasicBlock* bb = f->blocks.at[i];
+        u64 next_usage = get_usage(bb, source, 0);
+        while (next_usage != UINT64_MAX) {
+            da_append(worklist, bb->at[next_usage]);
+            next_usage = get_usage(bb, source, next_usage+1);
         }
     }
 }
