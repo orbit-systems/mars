@@ -137,9 +137,10 @@ typedef struct FeType {
 } FeType;
 
 enum {
-    FE_VIS_GLOBAL,
+    FE_VIS_IMPORT,
+    FE_VIS_EXPORT,
     FE_VIS_LOCAL,
-    FE_VIS_WEAK,
+    FE_VIS_EXPORT_WEAK,
 };
 
 typedef struct FeSymbol {
@@ -150,8 +151,7 @@ typedef struct FeSymbol {
         FeData* data;
     };
     bool is_function;
-    bool is_extern;
-    u8 visibility;
+    u8 binding;
 } FeSymbol;
 
 enum {
@@ -284,6 +284,7 @@ enum {
     FE_INST_NOT,
     FE_INST_NEG,
     FE_INST_CAST,
+    FE_INST_BITCAST,
 
     // FeInstStackAddr
     FE_INST_STACKADDR,
@@ -430,10 +431,14 @@ typedef struct FeInstJump {
 
 enum {
     FE_COND_NONE,
-    FE_COND_LT,    // <
-    FE_COND_GT,    // >
-    FE_COND_LE,    // >=
-    FE_COND_GE,    // <=
+    FE_COND_ILT,   // signed <
+    FE_COND_IGT,   // signed >
+    FE_COND_ILE,   // signed >=
+    FE_COND_IGE,   // signed <=
+    FE_COND_ULT,   // unsigned <
+    FE_COND_UGT,   // unsigned >
+    FE_COND_ULE,   // unsigned >=
+    FE_COND_UGE,   // unsigned <=
     FE_COND_EQ,    // ==
     FE_COND_NE,    // !=
 };
@@ -482,9 +487,9 @@ FeType*       fe_type(FeModule* m, u8 kind, u64 len);
 FeFunction*   fe_new_function(FeModule* mod, FeSymbol* sym);
 FeBasicBlock* fe_new_basic_block(FeFunction* fn, string name);
 FeData*       fe_new_data(FeModule* mod, FeSymbol* sym, bool read_only);
-FeSymbol*     fe_new_symbol(FeModule* mod, string name, u8 visibility);
+FeSymbol*     fe_new_symbol(FeModule* mod, string name, u8 binding);
 FeSymbol*     fe_find_symbol(FeModule* mod, string name);
-FeSymbol*     fe_find_or_new_symbol(FeModule* mod, string name, u8 visibility);
+FeSymbol*     fe_find_or_new_symbol(FeModule* mod, string name, u8 binding);
 
 FeStackObject* fe_new_stackobject(FeFunction* f, FeType* t);
 void fe_set_func_params(FeFunction* f, u16 count, ...);
@@ -499,6 +504,7 @@ FeInst* fe_insert_before(FeBasicBlock* bb, FeInst* inst, FeInst* ref);
 FeInst* fe_insert_after(FeBasicBlock* bb, FeInst* inst, FeInst* ref);
 i64     fe_index_of_inst(FeBasicBlock* bb, FeInst* inst);
 void    fe_move(FeBasicBlock* bb, u64 to, u64 from);
+void    fe_rewrite_uses_of(FeFunction* f, FeInst* source, FeInst* dest);
 
 FeInst* fe_inst(FeFunction* f, u8 type);
 FeInst* fe_inst_binop(FeFunction* f, u8 type, FeInst* lhs, FeInst* rhs);

@@ -6,7 +6,7 @@
 FeFunction* fe_new_function(FeModule* mod, FeSymbol* sym) {
     FeFunction* fn = mars_alloc(sizeof(FeFunction));
 
-    fn->sym = sym ? sym : fe_new_symbol(mod, NULL_STR, FE_VIS_GLOBAL);
+    fn->sym = sym ? sym : fe_new_symbol(mod, NULL_STR, FE_VIS_EXPORT);
     if (!sym) fn->sym->name = strprintf("symbol_%016llx", fn->sym);
     fn->sym->is_function = true;
     fn->sym->function = fn;
@@ -118,18 +118,18 @@ void fe_set_data_numeric(FeData* data, u64 content, u8 kind) {
 }
 
 // WARNING: does NOT check if a symbol already exists
-FeSymbol* fe_new_symbol(FeModule* mod, string name, u8 visibility) {
+FeSymbol* fe_new_symbol(FeModule* mod, string name, u8 binding) {
     FeSymbol* sym = mars_alloc(sizeof(FeSymbol));
     sym->name = name;
-    sym->visibility = visibility;
+    sym->binding = binding;
 
     da_append(&mod->symtab, sym);
     return sym;
 }
 
-FeSymbol* fe_find_or_new_symbol(FeModule* mod, string name, u8 visibility) {
+FeSymbol* fe_find_or_new_symbol(FeModule* mod, string name, u8 binding) {
     FeSymbol* sym = fe_find_symbol(mod, name);
-    return sym ? sym : fe_new_symbol(mod, name, visibility);
+    return sym ? sym : fe_new_symbol(mod, name, binding);
 }
 
 // returns NULL if the symbol cannot be found
@@ -220,9 +220,10 @@ const size_t fe_inst_sizes[] = {
     [FE_INST_LSR]  = sizeof(FeInstBinop),
     [FE_INST_ASR]  = sizeof(FeInstBinop),
 
-    [FE_INST_NOT]  = sizeof(FeInstUnop),
-    [FE_INST_NEG]  = sizeof(FeInstUnop),
-    [FE_INST_CAST] = sizeof(FeInstUnop),
+    [FE_INST_NOT]     = sizeof(FeInstUnop),
+    [FE_INST_NEG]     = sizeof(FeInstUnop),
+    [FE_INST_CAST]    = sizeof(FeInstUnop),
+    [FE_INST_BITCAST] = sizeof(FeInstUnop),
 
     [FE_INST_STACKADDR] = sizeof(FeInstStackAddr),
     [FE_INST_FIELDPTR]  = sizeof(FeInstFieldPtr),
@@ -379,6 +380,10 @@ FeInst* fe_inst_branch(FeFunction* f, u8 cond, FeInst* lhs, FeInst* rhs, FeBasic
 FeInst* fe_inst_paramval(FeFunction* f, u32 param) {
     FeInstParamVal* ir = (FeInstParamVal*) fe_inst(f, FE_INST_PARAMVAL);
     ir->param_idx = param;
+    if (param >= f->params_len) {
+        CRASH("paramval index %d is out of range", param);
+    }
+    ir->base.type = f->params[param]->type;
     return (FeInst*) ir;
 }
 
@@ -406,6 +411,29 @@ void fe_move(FeBasicBlock* bb, u64 to, u64 from) {
 }
 
 // rewrite all uses of `from` to be uses of `to`
-// void fe_rewrite_all_uses(FeFunction* f, FeInst* to, FeInst* from) {
-    
-// }
+
+static u64 set_usage(FeBasicBlock* bb, FeInst* source, u64 start_index, FeInst* dest) {
+    for (u64 i = start_index; i < bb->len; i++) {
+        if (bb->at[i]->kind == FE_INST_ELIMINATED) continue;
+        // FIXME: kayla you're gonna be SO fucking mad at me for this
+        // searching the struct for a pointer :sobbing:
+        FeInst** ir = (FeInst**)bb->at[i];
+        for (u64 j = sizeof(FeInst)/sizeof(FeInst*); j <= fe_inst_sizes[bb->at[i]->kind]/sizeof(FeInst*); j++) {
+            if (ir[j] == source) {
+                ir[j] = dest;
+                return i;
+            }
+        }
+    }
+    return UINT64_MAX;
+}
+
+void fe_rewrite_uses_of(FeFunction* f, FeInst* source, FeInst* dest) {
+    for_urange(i, 0, f->blocks.len) {
+        FeBasicBlock* bb = f->blocks.at[i];
+        u64 next_usage = set_usage(bb, source, 0, dest);
+        while (next_usage != UINT64_MAX) {
+            next_usage = set_usage(bb, source, next_usage+1, dest);
+        }
+    }
+}

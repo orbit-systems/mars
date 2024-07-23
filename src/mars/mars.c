@@ -23,20 +23,20 @@ void test_iron() {
     printf("\n");
     FeModule* m = fe_new_module(str("test"));
     
-    FeSymbol* sym = fe_new_symbol(m, str("this_symbol_is_false"), FE_VIS_GLOBAL);
+    FeSymbol* sym = fe_new_symbol(m, str("multiply_by_zero"), FE_VIS_LOCAL);
     FeFunction* f = fe_new_function(m, sym);
+    fe_set_func_params(f, 1, fe_type(m, FE_I64, 0));
     fe_set_func_returns(f, 1, fe_type(m, FE_I64, 0));
+
     FeBasicBlock* bb = fe_new_basic_block(f, str("block1"));
 
-    FeInstLoadConst* c1 = (FeInstLoadConst*) fe_append(bb, fe_inst_const(f));
-    c1->base.type = fe_type(m, FE_I64, 0);
-    c1->i64 = 1;
+    FeInstParamVal* p = (FeInstParamVal*) fe_append(bb, fe_inst_paramval(f, 0));
     
-    FeInstLoadConst* c2 = (FeInstLoadConst*) fe_append(bb, fe_inst_const(f));
-    c2->base.type = fe_type(m, FE_I64, 0);
-    c2->i64 = 2;
+    FeInstLoadConst* c = (FeInstLoadConst*) fe_append(bb, fe_inst_const(f));
+    c->base.type = fe_type(m, FE_I64, 0);
+    c->i64 = 0;
     
-    FeInstBinop* add = (FeInstBinop*) fe_append(bb, fe_inst_binop(f, FE_INST_ADD, (FeInst*) c1, (FeInst*) c2));
+    FeInstBinop* add = (FeInstBinop*) fe_append(bb, fe_inst_binop(f, FE_INST_IMUL, (FeInst*) p, (FeInst*) c));
     add->base.type = fe_type(m, FE_I64, 0);
 
     fe_append(bb, fe_inst_returnval(f, 0, (FeInst*) add));

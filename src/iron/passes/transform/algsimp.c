@@ -209,18 +209,12 @@ void run_pass_algsimp(FeModule* mod) {
                 FeInst* new_inst = const_eval(f, inst);
 
                 if (inst != new_inst) {
-                    if (!replace_with(inst, new_inst)) {
-                        // couldn't drop-in-replace, we have to put in a move and shit
-
-                        fe_insert_before(bb, new_inst, inst);
-                        FeInst* mov = fe_inst_mov(f, new_inst);
-                        if (!replace_with(inst, mov)) {
-                            TODO("mov cant be dropped in! contact sandwichman about this");
-                        }
-                        ii += 2;
-                    }
+                    fe_insert_before(bb, new_inst, inst);
+                    fe_rewrite_uses_of(f, inst, new_inst);
+                    ii++;
+                } else if (inst != (new_inst = identity_reduction(inst))){
+                    fe_rewrite_uses_of(f, inst, new_inst);
                 }
-
             }
         }
     }
