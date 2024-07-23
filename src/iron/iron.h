@@ -73,9 +73,10 @@ typedef struct FeModule {
     } pass_queue;
 
     struct {
-        u8 arch;
-        u8 system;
-        u8 product;
+        u16 arch;
+        u16 system;
+        u16 product;
+        void* arch_metadata;
     } target;
 
     FeAsmBuffer* assembly;
@@ -262,6 +263,7 @@ enum {
     FE_INST_INVALID,
     FE_INST_ELIMINATED, // an FeInst that has been "deleted".
 
+    _FE_INST_NO_SIDE_EFFECTS_BEGIN,
     // FeBinop
     _FE_BINOP_BEGIN,
     FE_INST_ADD,
@@ -303,14 +305,6 @@ enum {
     // FeInstIndexPtr
     FE_INST_INDEXPTR,
 
-    // FeInstLoad
-    FE_INST_LOAD,
-    FE_INST_VOL_LOAD,
-
-    // FeInstStore
-    FE_INST_STORE,
-    FE_INST_VOL_STORE,
-
     // FeInstLoadConst
     FE_INST_CONST,
     // FeLoadSymbol
@@ -321,13 +315,24 @@ enum {
     // FeInstPhi
     FE_INST_PHI,
 
+    // FeInstParamVal
+    FE_INST_PARAMVAL,
+
+    _FE_INST_NO_SIDE_EFFECTS_END,
+
+    // FeInstLoad
+    FE_INST_LOAD,
+    FE_INST_VOL_LOAD,
+
+    // FeInstStore
+    FE_INST_STORE,
+    FE_INST_VOL_STORE,
+
     // FeInstBranch
     FE_INST_BRANCH,
     // FeInstJump
     FE_INST_JUMP,
 
-    // FeInstParamVal
-    FE_INST_PARAMVAL,
     // FeInstReturnVal
     FE_INST_RETURNVAL,
     // FeInstReturn

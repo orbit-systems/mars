@@ -11,22 +11,7 @@
 //   and idk what i was going to say
 //   its funnier like this i think
 static bool has_side_effects(FeInst* ir) {
-    switch (ir->kind) {
-    case FE_INST_ADD:
-    case FE_INST_SUB:
-    case FE_INST_UMUL:
-    case FE_INST_IMUL:
-    case FE_INST_UDIV:
-    case FE_INST_IDIV:
-    case FE_INST_MOV:
-    case FE_INST_CONST:
-    case FE_INST_PARAMVAL:
-    case FE_INST_STACKADDR:
-        return false;
-
-    default: // assume side effects until proven otherwise
-        return true;
-    }
+    return !(_FE_INST_NO_SIDE_EFFECTS_BEGIN < ir->kind && ir->kind < _FE_INST_NO_SIDE_EFFECTS_END);
 }
 
 static void register_uses(FeInst* ir) {
@@ -58,6 +43,12 @@ static void register_uses(FeInst* ir) {
         FeInstMov* mov = (FeInstMov*) ir;
         if (mov->source) mov->source->use_count++;
         break;
+    case FE_INST_NOT:
+    case FE_INST_NEG:
+    case FE_INST_CAST:
+        FeInstUnop* unop = (FeInstUnop*) unop;
+        if (unop->source) unop->source->use_count++;
+        break;
 
     case FE_INST_INVALID:
     case FE_INST_ELIMINATED:
@@ -67,7 +58,7 @@ static void register_uses(FeInst* ir) {
     case FE_INST_RETURN:
         break;
     default:
-        CRASH("unhandled AIR type %d", ir->kind);
+        CRASH("unhandled inst type %d", ir->kind);
         break;
     }
 }
@@ -122,6 +113,12 @@ static void try_eliminate(FeInst* ir) {
         if (mov->source) mov->source->use_count--;
         try_eliminate(mov->source);
         break;
+    case FE_INST_NEG:
+    case FE_INST_NOT:
+    case FE_INST_CAST:
+        FeInstUnop* unop = (FeInstUnop*) ir;
+        if (unop->source) unop->source->use_count--;
+        try_eliminate(unop->source);
 
     case FE_INST_INVALID:
     case FE_INST_ELIMINATED:
@@ -130,7 +127,7 @@ static void try_eliminate(FeInst* ir) {
     case FE_INST_RETURN:
         break;
     default:
-        CRASH("unhandled AIR type %d", ir->kind);
+        CRASH("unhandled inst type %d", ir->kind);
         break;
     }
     ir->kind = FE_INST_ELIMINATED;

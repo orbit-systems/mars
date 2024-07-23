@@ -84,14 +84,14 @@ const FeArchInfo aphelion_arch_info = {
     .regclasses = (FeArchRegisterClass[]){
         [APHEL_REGCLASS_ZERO] = {
             .regs = aphelion_regclass_zero_regs,
-            .regs_len = APHEL_ZERO_LEN,
+            .regs_len = _APHEL_ZERO_LEN,
         },
         [APHEL_REGCLASS_GPR] = {
             .regs = aphelion_regclass_gpr_regs,
-            .regs_len = APHEL_GPR_LEN,
+            .regs_len = _APHEL_GPR_LEN,
         },
     },
-    .regclasses_len = APHEL_REGCLASS_LEN,
+    .regclasses_len = _APHEL_REGCLASS_LEN,
 
     // instruction templates
     .insts = aphelion_instructions,

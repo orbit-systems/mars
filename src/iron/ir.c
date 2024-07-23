@@ -171,7 +171,11 @@ FeInst* fe_append(FeBasicBlock* bb, FeInst* inst) {
 
 FeInst* fe_insert(FeBasicBlock* bb, FeInst* inst, i64 index) {
     inst->bb = bb;
-    da_insert_at(bb, inst, index);
+    if (bb->at[index]->kind == FE_INST_ELIMINATED) {
+        bb->at[index] = inst;
+    } else {
+        da_insert_at(bb, inst, index);
+    }
     return inst;
 }
 

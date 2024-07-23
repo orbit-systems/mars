@@ -143,7 +143,7 @@ static bool is_const_zero(FeInst* inst) {
     return false;
 }
 
-static FeInst* identity_reduction(FeInst* inst, bool* needs_appending) {
+static FeInst* identity_reduction(FeInst* inst, bool* needs_inserting) {
 
     FeInstBinop* binop = (FeInstBinop*) inst;
     FeInstUnop* unop = (FeInstUnop*) inst;
@@ -223,9 +223,9 @@ void run_pass_algsimp(FeModule* mod) {
             // evaluation so its better to const-eval it instead of 
             // strength-reducing AND THEN const-eval
 
-            bool needs_appending = false;
-            if (inst != (new_inst = identity_reduction(inst, &needs_appending))){
-                if (needs_appending) fe_insert_before(inst->bb, new_inst, inst);
+            bool needs_inserting = false;
+            if (inst != (new_inst = identity_reduction(inst, &needs_inserting))){
+                if (needs_inserting) fe_insert_before(inst->bb, new_inst, inst);
                 fe_rewrite_uses(f, inst, new_inst);
                 inst->kind = FE_INST_ELIMINATED;
                 fe_add_uses_to_worklist(f, new_inst, &worklist);

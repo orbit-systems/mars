@@ -165,6 +165,8 @@ static void emit_function(FeFunction* f, StringBuilder* sb) {
         [FE_INST_SHL]   = "shl.",
         [FE_INST_LSR]   = "lsr.",
         [FE_INST_ASR]   = "asr.",
+        [FE_INST_NEG]   = "neg.",
+        [FE_INST_NOT]   = "not.",
     };
 
     for_urange(b, 0, f->blocks.len) {
@@ -201,6 +203,13 @@ static void emit_function(FeFunction* f, StringBuilder* sb) {
                 sb_append_c(sb, opname[inst->kind]);
                 sb_type_name(binop->base.type, sb);
                 sb_printf(sb, " #%llu, #%llu", binop->lhs->number, binop->rhs->number);
+            } break;
+            case FE_INST_NEG:
+            case FE_INST_NOT: {
+                FeInstUnop* unop = (FeInstUnop*) inst;
+                sb_append_c(sb, opname[inst->kind]);
+                sb_type_name(unop->base.type, sb);
+                sb_printf(sb, " #%llu", unop->source->number);
             } break;
             case FE_INST_LOAD: {
                 FeInstLoad* load = (FeInstLoad*) inst;
