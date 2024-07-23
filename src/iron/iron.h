@@ -498,27 +498,27 @@ FeInst* fe_insert(FeBasicBlock* bb, FeInst* inst, i64 index);
 FeInst* fe_insert_before(FeBasicBlock* bb, FeInst* inst, FeInst* ref);
 FeInst* fe_insert_after(FeBasicBlock* bb, FeInst* inst, FeInst* ref);
 i64     fe_index_of_inst(FeBasicBlock* bb, FeInst* inst);
+void    fe_move(FeBasicBlock* bb, u64 to, u64 from);
 
 FeInst* fe_inst(FeFunction* f, u8 type);
-FeInst* fe_binop(FeFunction* f, u8 type, FeInst* lhs, FeInst* rhs);
-FeInst* fe_unop(FeFunction* f, u8 type, FeInst* source);
-FeInst* fe_stackaddr(FeFunction* f, FeStackObject* obj);
-FeInst* fe_getfieldptr(FeFunction* f, u32 index, FeInst* source);
-FeInst* fe_getindexptr(FeFunction* f, FeInst* index, FeInst* source);
-FeInst* fe_load(FeFunction* f, FeInst* location, bool is_vol);
-FeInst* fe_store(FeFunction* f, FeInst* location, FeInst* value, bool is_vol);
-FeInst* fe_const(FeFunction* f);
-FeInst* fe_load_symbol(FeFunction* f, FeSymbol* symbol);
-FeInst* fe_mov(FeFunction* f, FeInst* source);
-FeInst* fe_phi(FeFunction* f, u32 count, ...);
-FeInst* fe_jump(FeFunction* f, FeBasicBlock* dest);
-FeInst* fe_branch(FeFunction* f, u8 cond, FeInst* lhs, FeInst* rhs, FeBasicBlock* if_true, FeBasicBlock* if_false);
-FeInst* fe_paramval(FeFunction* f, u32 param);
-FeInst* fe_returnval(FeFunction* f, u32 param, FeInst* source);
-FeInst* fe_return(FeFunction* f);
+FeInst* fe_inst_binop(FeFunction* f, u8 type, FeInst* lhs, FeInst* rhs);
+FeInst* fe_inst_unop(FeFunction* f, u8 type, FeInst* source);
+FeInst* fe_inst_stackaddr(FeFunction* f, FeStackObject* obj);
+FeInst* fe_inst_getfieldptr(FeFunction* f, u32 index, FeInst* source);
+FeInst* fe_inst_getindexptr(FeFunction* f, FeInst* index, FeInst* source);
+FeInst* fe_inst_load(FeFunction* f, FeInst* location, bool is_vol);
+FeInst* fe_inst_store(FeFunction* f, FeInst* location, FeInst* value, bool is_vol);
+FeInst* fe_inst_const(FeFunction* f);
+FeInst* fe_inst_load_symbol(FeFunction* f, FeSymbol* symbol);
+FeInst* fe_inst_mov(FeFunction* f, FeInst* source);
+FeInst* fe_inst_phi(FeFunction* f, u32 count, ...);
+FeInst* fe_inst_jump(FeFunction* f, FeBasicBlock* dest);
+FeInst* fe_inst_branch(FeFunction* f, u8 cond, FeInst* lhs, FeInst* rhs, FeBasicBlock* if_true, FeBasicBlock* if_false);
+FeInst* fe_inst_paramval(FeFunction* f, u32 param);
+FeInst* fe_inst_returnval(FeFunction* f, u32 param, FeInst* source);
+FeInst* fe_inst_return(FeFunction* f);
 
 void   fe_add_phi_source(FeInstPhi* phi, FeInst* source, FeBasicBlock* source_block);
-void   fe_move_inst(FeBasicBlock* bb, u64 to, u64 from);
 string fe_emit_textual_ir(FeModule* m);
 
 // ASSEMBLY SHIT

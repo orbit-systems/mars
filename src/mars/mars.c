@@ -28,20 +28,21 @@ void test_iron() {
     fe_set_func_returns(f, 1, fe_type(m, FE_I64, 0));
     FeBasicBlock* bb = fe_new_basic_block(f, str("block1"));
 
-    FeInstLoadConst* c1 = (FeInstLoadConst*) fe_append(bb, fe_const(f));
+    FeInstLoadConst* c1 = (FeInstLoadConst*) fe_append(bb, fe_inst_const(f));
     c1->base.type = fe_type(m, FE_I64, 0);
     c1->i64 = 10;
     
-    FeInstLoadConst* c2 = (FeInstLoadConst*) fe_append(bb, fe_const(f));
+    FeInstLoadConst* c2 = (FeInstLoadConst*) fe_append(bb, fe_inst_const(f));
     c2->base.type = fe_type(m, FE_I64, 0);
     c2->i64 = 20;
     
-    FeInstBinop* add = (FeInstBinop*) fe_append(bb, fe_binop(f, FE_INST_ADD, (FeInst*) c1, (FeInst*) c2));
+    FeInstBinop* add = (FeInstBinop*) fe_append(bb, fe_inst_binop(f, FE_INST_ADD, (FeInst*) c1, (FeInst*) c2));
     add->base.type = fe_type(m, FE_I64, 0);
 
-    fe_append(bb, fe_returnval(f, 0, (FeInst*) add));
-    fe_append(bb, fe_return(f));
+    fe_append(bb, fe_inst_returnval(f, 0, (FeInst*) add));
+    fe_append(bb, fe_inst_return(f));
 
+    fe_sched_pass(m, &fe_pass_algsimp);
     fe_sched_pass(m, &fe_pass_tdce);
     fe_run_all_passes(m, true);
 

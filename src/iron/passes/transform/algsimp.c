@@ -81,7 +81,7 @@ static FeInst* const_eval_binop(FeFunction* f, FeInst* inst) {
 
     FeInstLoadConst* src1 = (FeInstLoadConst*) binop->lhs;
     FeInstLoadConst* src2 = (FeInstLoadConst*) binop->rhs;
-    FeInstLoadConst* lc   = (FeInstLoadConst*) fe_inst(f, FE_INST_CONST);
+    FeInstLoadConst* lc   = (FeInstLoadConst*) fe_inst_const(f);
     lc->base.type = inst->type;
 
     switch (inst->kind) {
@@ -102,6 +102,11 @@ static FeInst* const_eval_binop(FeFunction* f, FeInst* inst) {
     }
     
     return (FeInst*) lc;
+}
+
+
+static FeInst* const_eval(FeFunction* f, FeInst* inst) {
+    return const_eval_binop(f, inst);
 }
 
 static bool is_const_one(FeInst* inst) {
@@ -185,6 +190,38 @@ static FeInst* strength_reduction(FeInst* inst) {
     return inst;
 }
 
-void run_pass_algsimp(FeModule* mod) {
+da_typedef(FeInstPTR);
 
+void run_pass_algsimp(FeModule* mod) {
+    da(FeInstPTR) worklist = {0};
+    da_init(&worklist, 64);
+
+    for_range(fi, 0, mod->functions_len) {
+        FeFunction* f = mod->functions[fi];
+        da_clear(&worklist);
+
+        for_range(bi, 0, f->blocks.len) {
+            FeBasicBlock* bb = f->blocks.at[bi];
+            
+            for_range(ii, 0, bb->len) {
+                FeInst* inst = bb->at[ii];
+
+                FeInst* new_inst = const_eval(f, inst);
+
+                if (inst != new_inst) {
+                    if (!replace_with(inst, new_inst)) {
+                        // couldn't drop-in-replace, we have to put in a move and shit
+                        TODO("");                        
+                        ii++;
+                    }
+                }
+
+            }
+        }
+    }
 }
+
+FePass fe_pass_algsimp = {
+    .name = "algsimp",
+    .callback = run_pass_algsimp,
+};
