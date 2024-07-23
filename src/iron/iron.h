@@ -72,6 +72,12 @@ typedef struct FeModule {
         bool cfg_up_to_date;
     } pass_queue;
 
+    struct {
+        u8 arch;
+        u8 system;
+        u8 product;
+    } target;
+
     FeAsmBuffer* assembly;
 
 } FeModule;
@@ -688,7 +694,6 @@ typedef struct FeAsmBuffer {
 
     Arena alloca;
 
-    FeArchInfo* target_arch;
 } FeAsmBuffer;
 
 FeAsm* fe_asm_append(FeModule* m, FeAsm* a);
@@ -793,3 +798,31 @@ typedef struct FeArchInfo {
     FeArchAsmSyntaxInfo* syntax_info;
 
 } FeArchInfo;
+
+enum {
+    _FE_TARGET_ARCH_BEGIN,
+
+    FE_TARGET_ARCH_APHELION, // aphelion 
+    FE_TARGET_ARCH_XR17032,  // xr/17032
+    FE_TARGET_ARCH_FOX32,    // fox32
+    FE_TARGET_ARCH_X86_64,   // x86-64
+    FE_TARGET_ARCH_ARM64,    // arm64
+
+    _FE_TARGET_ARCH_END,
+};
+
+enum {
+    _FE_TARGET_SYSTEM_BEGIN,
+
+    FE_TARGET_SYSTEM_NONE,      // freestanding
+    
+    _FE_TARGET_SYSTEM_END,
+};
+
+enum {
+    _FE_TARGET_PRODUCT_BEGIN,
+
+    FE_TARGET_PRODUCT_ASSEMBLY, // textual assembly file
+
+    _FE_TARGET_PRODUCT_END,
+};
