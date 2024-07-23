@@ -41,15 +41,15 @@
 */
 
 // if possible, replace the contents of target with source.
-static bool replace_with(FeInst* target, FeInst* source) {
-    if (fe_inst_sizes[target->kind] < fe_inst_sizes[source->kind]) {
-        // source node is too big, we cant stuff it in
-        return false;
-    }
+// static bool replace_with(FeInst* target, FeInst* source) {
+//     if (fe_inst_sizes[target->kind] < fe_inst_sizes[source->kind]) {
+//         // source node is too big, we cant stuff it in
+//         return false;
+//     }
 
-    memcpy(target, source, fe_inst_sizes[source->kind]);
-    return true;
-}
+//     memcpy(target, source, fe_inst_sizes[source->kind]);
+//     return true;
+// }
 
 #define int_operate(op, dest, src1, src2) \
     switch (dest->base.type->kind) {\
@@ -79,9 +79,9 @@ static FeInst* const_eval_binop(FeFunction* f, FeInst* inst) {
         return inst;
     }
 
-    FeInstLoadConst* src1 = (FeInstLoadConst*) binop->lhs;
-    FeInstLoadConst* src2 = (FeInstLoadConst*) binop->rhs;
-    FeInstLoadConst* lc   = (FeInstLoadConst*) fe_inst_const(f);
+    FeInstConst* src1 = (FeInstConst*) binop->lhs;
+    FeInstConst* src2 = (FeInstConst*) binop->rhs;
+    FeInstConst* lc   = (FeInstConst*) fe_inst_const(f);
     lc->base.type = inst->type;
 
     switch (inst->kind) {
@@ -112,7 +112,7 @@ static FeInst* const_eval(FeFunction* f, FeInst* inst) {
 static bool is_const_one(FeInst* inst) {
     if (inst->kind != FE_INST_CONST) return false;
 
-    FeInstLoadConst* lc = (FeInstLoadConst*) inst;
+    FeInstConst* lc = (FeInstConst*) inst;
     switch (lc->base.type->kind) {
     case FE_I64: return lc->i64 == (i64) 1;
     case FE_I32: return lc->i32 == (i32) 1;
@@ -129,7 +129,7 @@ static bool is_const_one(FeInst* inst) {
 static bool is_const_zero(FeInst* inst) {
     if (inst->kind != FE_INST_CONST) return false;
 
-    FeInstLoadConst* lc = (FeInstLoadConst*) inst;
+    FeInstConst* lc = (FeInstConst*) inst;
     switch (lc->base.type->kind) {
     case FE_I64: return lc->i64 == (i64) 0;
     case FE_I32: return lc->i32 == (i32) 0;

@@ -46,7 +46,7 @@ static void register_uses(FeInst* ir) {
     case FE_INST_NOT:
     case FE_INST_NEG:
     case FE_INST_CAST:
-        FeInstUnop* unop = (FeInstUnop*) unop;
+        FeInstUnop* unop = (FeInstUnop*) ir;
         if (unop->source) unop->source->use_count++;
         break;
 
@@ -115,11 +115,10 @@ static void try_eliminate(FeInst* ir) {
         break;
     case FE_INST_NEG:
     case FE_INST_NOT:
-    case FE_INST_CAST:
         FeInstUnop* unop = (FeInstUnop*) ir;
         if (unop->source) unop->source->use_count--;
         try_eliminate(unop->source);
-
+        break;
     case FE_INST_INVALID:
     case FE_INST_ELIMINATED:
     case FE_INST_CONST:

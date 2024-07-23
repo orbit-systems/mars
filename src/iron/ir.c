@@ -239,7 +239,7 @@ const size_t fe_inst_sizes[] = {
     [FE_INST_STORE]     = sizeof(FeInstStore),
     [FE_INST_VOL_STORE] = sizeof(FeInstStore),
 
-    [FE_INST_CONST]  = sizeof(FeInstLoadConst),
+    [FE_INST_CONST]  = sizeof(FeInstConst),
     [FE_INST_LOAD_SYMBOL] = sizeof(FeLoadSymbol),
 
     [FE_INST_MOV] = sizeof(FeInstMov),
@@ -307,7 +307,7 @@ FeInst* fe_inst_store(FeFunction* f, FeInst* location, FeInst* value, bool is_vo
 }
 
 FeInst* fe_inst_const(FeFunction* f) {
-    FeInstLoadConst* ir = (FeInstLoadConst*) fe_inst(f, FE_INST_CONST);
+    FeInstConst* ir = (FeInstConst*) fe_inst(f, FE_INST_CONST);
     return (FeInst*) ir;
 }
 

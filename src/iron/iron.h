@@ -4,6 +4,10 @@
 #include "common/alloc.h"
 #include "common/arena.h"
 
+#define FE_VERSION_MAJOR 0
+#define FE_VERSION_MINOR 1
+#define FE_VERSION_PATCH 0
+
 typedef struct FeModule FeModule;
 typedef struct FePass   FePass;
 
@@ -82,8 +86,6 @@ typedef struct FeModule {
     FeAsmBuffer* assembly;
 
 } FeModule;
-
-char* random_string(int len);
 
 typedef struct FePass {
     char* name;
@@ -305,7 +307,7 @@ enum {
     // FeInstIndexPtr
     FE_INST_INDEXPTR,
 
-    // FeInstLoadConst
+    // FeInstConst
     FE_INST_CONST,
     // FeLoadSymbol
     FE_INST_LOAD_SYMBOL,
@@ -399,7 +401,7 @@ typedef struct FeInstStore {
     FeInst* value;
 } FeInstStore;
 
-typedef struct FeInstLoadConst {
+typedef struct FeInstConst {
     FeInst base;
 
     union {
@@ -414,7 +416,7 @@ typedef struct FeInstLoadConst {
         f32 f32;
         f64 f64;
     };
-} FeInstLoadConst;
+} FeInstConst;
 
 typedef struct FeLoadSymbol {
     FeInst base;
@@ -503,6 +505,11 @@ FeData*       fe_new_data(FeModule* mod, FeSymbol* sym, bool read_only);
 FeSymbol*     fe_new_symbol(FeModule* mod, string name, u8 binding);
 FeSymbol*     fe_find_symbol(FeModule* mod, string name);
 FeSymbol*     fe_find_or_new_symbol(FeModule* mod, string name, u8 binding);
+
+void fe_destroy_module(FeModule* m);
+void fe_destroy_function(FeFunction* f);
+void fe_destroy_basic_block(FeBasicBlock* bb);
+void fe_selftest();
 
 FeStackObject* fe_new_stackobject(FeFunction* f, FeType* t);
 void fe_set_func_params(FeFunction* f, u16 count, ...);

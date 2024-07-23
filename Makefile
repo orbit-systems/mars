@@ -31,7 +31,7 @@ LD = gcc
 INCLUDEPATHS = -Isrc
 DEBUGFLAGS = -lm -pg -g
 ASANFLAGS = -fsanitize=undefined -fsanitize=address
-CFLAGS = -MD -Werror=incompatible-pointer-types -Wno-discarded-qualifiers -lm
+CFLAGS = -MD -Wall -Wno-format -Wno-unused-value -Werror=incompatible-pointer-types -Wno-discarded-qualifiers -lm
 OPT = -O3
 
 FILE_NUM = 0

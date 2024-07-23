@@ -76,15 +76,15 @@ static void emit_type_definitions(FeModule* m, StringBuilder* sb) {
     }
 }
 
-static int print_type_nme(FeType* t, char** bufptr) {
-    char* og = *bufptr;
-    if (is_null_str(simple_type_2_str(t))) {
-        *bufptr += sprintf(*bufptr, "t%d", t->number);
-    } else {
-        *bufptr += sprintf(*bufptr, str_fmt, str_arg(simple_type_2_str(t)));
-    }
-    return *bufptr - og;
-}
+// static int print_type_nme(FeType* t, char** bufptr) {
+//     char* og = *bufptr;
+//     if (is_null_str(simple_type_2_str(t))) {
+//         *bufptr += sprintf(*bufptr, "t%d", t->number);
+//     } else {
+//         *bufptr += sprintf(*bufptr, str_fmt, str_arg(simple_type_2_str(t)));
+//     }
+//     return *bufptr - og;
+// }
 
 static int sb_type_name(FeType* t, StringBuilder* sb) {
     char buf[16] = {0};
@@ -228,7 +228,7 @@ static void emit_function(FeFunction* f, StringBuilder* sb) {
                 sb_printf(sb, "mov #%llu", mov->source->number);
             } break;
             case FE_INST_CONST: {
-                FeInstLoadConst* con = (FeInstLoadConst*) inst;
+                FeInstConst* con = (FeInstConst*) inst;
                 sb_append_c(sb, "const.");
                 sb_type_name(inst->type, sb);
                 switch (con->base.type->kind) {
