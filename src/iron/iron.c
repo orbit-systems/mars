@@ -62,8 +62,3 @@ void fe_destroy_basic_block(FeBasicBlock* bb) {
 
     *bb = (FeBasicBlock){0};
 }
-
-// conduct a full self-test. bugs that impede functionality should be caught here. 
-void fe_selftest() {
-    TODO("lol");
-}
