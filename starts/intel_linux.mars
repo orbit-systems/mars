@@ -1,0 +1,36 @@
+module core;
+import linux_syscall "path";
+import linux_3 "path"
+//at linux program start, this is the stack state, at esp
+//on x86, its +4. on x86_64, its +8. in the diagram, we assume x86
+
+// argc     | argv[0] | argv[1] | ... | argv[argc-1]   | argc[argc] == NULL   | envp[0] | ... | envp[?] == NULL
+// esp + 0  | esp + 4 | esp + 8 | ... | esp + 4 * argc | esp + 4 * (argc + 1) | ...     
+
+let _start = #cconv("sysv") fn() {
+    let argv : []mut []let u8;
+    let sp = ^mut;
+    let ptr_size = sizeof(int); //in mars, sizeof(int) == sizeof(^let) 
+
+    asm(sp <- esp) {} //sp = argc
+    let argc = (transmute(^u32)sp)^;
+
+    argv.raw = linux_3::alloca((argc + 1)*sizeof(argv[0]));
+    argv.len = argc;
+
+    for i in 0..<argc {
+        argv[i].raw = (transmute(^let u8)(sp + i * ptr_size);
+        let len = 0;
+        for j in 0..<argc*ptr_size {
+            if argv[i].raw[j] == 0 break;
+            len += 1;
+        }
+        argv[i].len = len;
+    }
+
+    argv[argc].raw = 0;
+    argv[argc].len = 0;
+
+    let ret : u32 = main(cast([]let []let u8) argv);    
+    linux_syscall::exit(ret);
+}
