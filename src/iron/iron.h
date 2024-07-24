@@ -249,6 +249,8 @@ typedef struct FeBasicBlock {
 
     string name;
 
+    FeFunction* function;
+
     FeBasicBlock* idom; // immediate dominator
     FeBasicBlock** domset; // all blocks that this block dominates (including self)
 

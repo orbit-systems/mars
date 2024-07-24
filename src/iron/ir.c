@@ -147,6 +147,7 @@ FeBasicBlock* fe_new_basic_block(FeFunction* fn, string name) {
     if (!bb) CRASH("mars_alloc failed");
 
     bb->name = name;
+    bb->function = fn;
     da_init(bb, 4);
 
     da_append(&fn->blocks, bb);

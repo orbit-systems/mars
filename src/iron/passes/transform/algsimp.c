@@ -214,7 +214,12 @@ static bool strength_reduction(FeInst* inst) {
 
         if (binop->rhs->kind == FE_INST_CONST && is_const_power_of_two(binop->rhs)) {
             // x * const = x << log2(const)
-            convert_to_log2(binop->rhs);
+            FeInstConst* log2const = (FeInstConst*) fe_inst_const(binop->base.bb->function);
+            log2const->base.type = binop->rhs->type;
+            log2const->i64 = ((FeInstConst*)binop->rhs)->i64;
+            fe_insert_before(binop->base.bb, (FeInst*)log2const, inst);
+            convert_to_log2((FeInst*)log2const);
+            binop->rhs = (FeInst*)log2const;
             inst->kind = FE_INST_SHL;
             return true;
         }

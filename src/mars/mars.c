@@ -93,7 +93,7 @@ void test_algsimp_sr() {
     fe_append(bb, fe_inst_return(f));
 
     fe_sched_pass(m, &fe_pass_algsimp);
-    // fe_sched_pass(m, &fe_pass_tdce);
+    fe_sched_pass(m, &fe_pass_tdce);
     fe_run_all_passes(m, true);
 
     // string s = fe_emit_textual_ir(m);

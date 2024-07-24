@@ -9,7 +9,7 @@ SRCPATHS = \
 	src/iron/passes/analysis/*.c \
 	src/iron/passes/transform/*.c \
 	src/iron/targets/*.c \
-	src/llta/*.c \
+	# src/llta/*.c
 
 SRCPATHS += $(foreach target, $(TARGETS), src/iron/targets/$(target)/*.c) 
 SRC = $(wildcard $(SRCPATHS))
