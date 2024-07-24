@@ -2,9 +2,9 @@
 
 #include "iron/iron.h"
 
-typedef struct FeAphelionArchMetadata {
+typedef struct FeAphelionArchConfig {
     bool ext_f; // extension f - floating point operations
-} FeAphelionArchMetadata;
+} FeAphelionArchConfig;
 
 enum {
     APHEL_REGCLASS_ZERO,

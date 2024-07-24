@@ -80,7 +80,7 @@ typedef struct FeModule {
         u16 arch;
         u16 system;
         u16 product;
-        void* arch_metadata;
+        void* arch_config;
     } target;
 
     FeAsmBuffer* assembly;
@@ -148,16 +148,16 @@ typedef struct FeType {
 } FeType;
 
 enum {
-    FE_VIS_IMPORT,
-    FE_VIS_EXPORT,
-    FE_VIS_LOCAL,
-    FE_VIS_EXPORT_WEAK,
+    FE_BIND_IMPORT,
+    FE_BIND_EXPORT,
+    FE_BIND_LOCAL,
+    FE_BIND_EXPORT_WEAK,
 };
 
 typedef struct FeSymbol {
     string name;
     union {
-        void* ref;
+        // void* ref;
         FeFunction* function;
         FeData* data;
     };
@@ -508,6 +508,9 @@ FeSymbol*     fe_new_symbol(FeModule* mod, string name, u8 binding);
 FeSymbol*     fe_find_symbol(FeModule* mod, string name);
 FeSymbol*     fe_find_or_new_symbol(FeModule* mod, string name, u8 binding);
 
+void fe_set_target(FeModule* m, u16 arch, u16 system, u16 product);
+void fe_set_target_config(FeModule* m, void* meta);
+
 void fe_destroy_module(FeModule* m);
 void fe_destroy_function(FeFunction* f);
 void fe_destroy_basic_block(FeBasicBlock* bb);
@@ -548,7 +551,9 @@ FeInst* fe_inst_returnval(FeFunction* f, u32 param, FeInst* source);
 FeInst* fe_inst_return(FeFunction* f);
 
 void   fe_add_phi_source(FeInstPhi* phi, FeInst* source, FeBasicBlock* source_block);
+
 string fe_emit_textual_ir(FeModule* m);
+string fe_emit_c(FeModule* m);
 
 // ASSEMBLY SHIT
 
@@ -717,9 +722,7 @@ FeAsm* fe_asm_inst(FeModule* m, FeArchInstInfo* template);
 FeVReg* fe_new_vreg(FeModule* m, u32 regclass);
 
 // fails if no target is provided
-void       fe_codegen(FeModule* m);
-
-string fe_export_assembly(FeModule* m);
+void fe_codegen(FeModule* m);
 
 
 /* TARGET DEFINITIONS AND INFORMATION */
@@ -814,29 +817,32 @@ typedef struct FeArchInfo {
 } FeArchInfo;
 
 enum {
-    _FE_TARGET_ARCH_BEGIN,
+    _FE_ARCH_BEGIN,
 
-    FE_TARGET_ARCH_APHELION, // aphelion 
-    FE_TARGET_ARCH_XR17032,  // xr/17032
-    FE_TARGET_ARCH_FOX32,    // fox32
-    FE_TARGET_ARCH_X86_64,   // x86-64
-    FE_TARGET_ARCH_ARM64,    // arm64
+    FE_ARCH_APHELION, // aphelion 
+    FE_ARCH_XR17032,  // xr/17032
+    FE_ARCH_X86_64,   // x86-64
+    FE_ARCH_FOX32,    // fox32
+    FE_ARCH_ARM64,    // arm64
 
-    _FE_TARGET_ARCH_END,
+    _FE_ARCH_END,
 };
 
 enum {
-    _FE_TARGET_SYSTEM_BEGIN,
+    _FE_SYSTEM_BEGIN,
 
-    FE_TARGET_SYSTEM_NONE,      // freestanding
+    FE_SYSTEM_NONE,      // freestanding
     
-    _FE_TARGET_SYSTEM_END,
+    _FE_SYSTEM_END,
 };
 
 enum {
-    _FE_TARGET_PRODUCT_BEGIN,
+    _FE_PRODUCT_BEGIN,
 
-    FE_TARGET_PRODUCT_ASSEMBLY, // textual assembly file
+    FE_PRODUCT_ASSEMBLY, // textual assembly file
 
-    _FE_TARGET_PRODUCT_END,
+    _FE_PRODUCT_END,
 };
+
+#include "iron/passes/passes.h"
+#include "iron/arch/aphelion/aphelion.h"

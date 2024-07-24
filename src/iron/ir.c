@@ -6,7 +6,7 @@
 FeFunction* fe_new_function(FeModule* mod, FeSymbol* sym) {
     FeFunction* fn = mars_alloc(sizeof(FeFunction));
 
-    fn->sym = sym ? sym : fe_new_symbol(mod, NULL_STR, FE_VIS_EXPORT);
+    fn->sym = sym ? sym : fe_new_symbol(mod, NULL_STR, FE_BIND_EXPORT);
     if (!sym) fn->sym->name = strprintf("symbol_%016llx", fn->sym);
     fn->sym->is_function = true;
     fn->sym->function = fn;

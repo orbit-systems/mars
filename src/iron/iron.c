@@ -5,6 +5,7 @@ void fe_typegraph_init(FeModule* m);
 
 FeModule* fe_new_module(string name) {
     FeModule* mod = mars_alloc(sizeof(*mod));
+    *mod = (FeModule){0};
 
     mod->name = name;
 
