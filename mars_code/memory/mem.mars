@@ -42,13 +42,9 @@ let str_equal = fn(a, b: []let u8) -> bool {
 
 let set = fn(dest: ^mut, len: uint, val: u8) -> bool {
     mut cursor = cast(^mut u8) dest;
-<<<<<<< HEAD
+
     let stop = cursor + cast(^mut u8) len;
     while (cursor != stop) {
-=======
-    let stop = cursor + len;
-    while cursor != stop {
->>>>>>> newasm
         cursor^ = val;
         cursor += 1;
     }

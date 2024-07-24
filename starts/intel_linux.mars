@@ -13,6 +13,7 @@ let _start = #cconv("sysv") fn() {
     let ptr_size = sizeof(int); //in mars, sizeof(int) == sizeof(^let) 
 
     asm(sp <- esp) {} //sp = argc
+    
     let argc = (transmute(^u32)sp)^;
 
     argv.raw = linux_3::alloca((argc + 1)*sizeof(argv[0]));

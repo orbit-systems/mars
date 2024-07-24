@@ -26,11 +26,13 @@
         x ^ 0      -> x
         x << 0     -> x
         x >> 0     -> x
-        x && false -> false
-        x && true  -> x
-        x || false -> x
-        x || true  -> true
-        !(!x)      -> x
+        sandwichman, note for you: what the FUCK does this mean?
+            x && false -> false         this should be false
+            x && true  -> true          this should be true only if x != 0, otherwise false
+            x || false -> x             this should be true if x != 0, otherwise false
+            x || true  -> true          this should be true, always
+            !(!x)      -> x             this should be true if x != 0, otherwise false. i assume here you meant ~(~x)?
+
         -(-x)      -> x
 
     reassociation:
@@ -38,6 +40,7 @@
         (x * 1) * 2  ->  x * (1 * 2)
         (x & 1) & 2  ->  x & (1 & 2)
         (x | 1) | 2  ->  x | (1 | 2)
+        xor is also associative
 */
 
 // if possible, replace the contents of target with source.
