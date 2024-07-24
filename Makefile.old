@@ -1,10 +1,10 @@
 SRCPATHS = \
 	src/*.c src/phobos/*.c \
-	src/atlas/*.c \
-	src/atlas/passes/*.c \
-	src/atlas/passes/analysis/*.c \
-	src/atlas/passes/transform/*.c \
-	src/atlas/targets/*.c
+	src/iron/*.c \
+	src/iron/passes/*.c \
+	src/iron/passes/analysis/*.c \
+	src/iron/passes/transform/*.c \
+	src/iron/targets/*.c
 
 SRC = $(wildcard $(SRCPATHS))
 OBJECTS = $(SRC:src/%.c=build/%.o)
@@ -18,7 +18,7 @@ endif
 CC = gcc
 LD = gcc
 
-INCLUDEPATHS = -Isrc/ -Isrc/phobos/ -Isrc/atlas/
+INCLUDEPATHS = -Isrc/ -Isrc/phobos/ -Isrc/iron/
 DEBUGFLAGS = -lm -rdynamic -pg -g
 ASANFLAGS = -fsanitize=undefined -fsanitize=address
 DONTBEAFUCKINGIDIOT = -Wall -Wextra -pedantic -Wno-missing-field-initializers -Wno-unused-result
@@ -32,7 +32,7 @@ build/%.o: src/%.c
 	@$(CC) -c -o $@ $< $(INCLUDEPATHS) -MD $(CFLAGS) $(OPT)
 
 build: $(OBJECTS)
-	@-cp -r build/atlas/* build/
+	@-cp -r build/iron/* build/
 	@-cp    build/phobos/* build/
 
 	@echo linking with $(LD)
@@ -45,7 +45,7 @@ dbgbuild/%.o: src/%.c
 	@$(CC) -c -o $@ $< $(INCLUDEPATHS) -MD $(DEBUGFLAGS)
 
 dbgbuild: $(OBJECTS)
-	@-cp -r build/atlas/* build/
+	@-cp -r build/iron/* build/
 	@-cp    build/phobos/* build/
 
 	@$(LD) $(OBJECTS) -o $(EXECUTABLE_NAME) $(DEBUGFLAGS)
@@ -60,10 +60,10 @@ clean:
 	@rm -rf build
 	@mkdir build
 	@mkdir build/atlas
-	@mkdir build/atlas/targets
-	@mkdir build/atlas/passes
-	@mkdir build/atlas/passes/transform
-	@mkdir build/atlas/passes/analysis
+	@mkdir build/iron/targets
+	@mkdir build/iron/passes
+	@mkdir build/iron/passes/transform
+	@mkdir build/iron/passes/analysis
 	@mkdir build/phobos
 
 

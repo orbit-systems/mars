@@ -1,0 +1,35 @@
+types are declared like so:
+
+    type (identifer) = (type-expr)
+
+a type expression is one of:
+
+    bool
+    i8
+    i16
+    i32
+    i64
+    f16
+    f32
+    f64
+    ptr
+    (struct-type)
+    (array-type)
+    (identifer)
+
+a struct-type is an aggregate type defined as:
+
+    {(type-expr)}
+    {(type-expr), (type-expr), ...}
+
+an array-type is an array type defined as:
+
+    [(uint)](type-expr)
+
+type t1 = {i64, bool, bool}
+type t2 = [3]i64
+
+
+an instruction that adds two `i32`s (#1 and #2) would look like this:
+
+    #3 = add.i32 #1, #2

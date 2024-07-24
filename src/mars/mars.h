@@ -1,9 +1,9 @@
 #pragma once
 #define MARS_H
 
-#include "orbit.h"
-#include "alloc.h"
-#include "term.h"
+#include "common/orbit.h"
+#include "common/alloc.h"
+#include "mars/term.h"
 
 #define DEFAULT_TARGET str("aphelion-none-asm")
 
@@ -18,7 +18,7 @@ typedef struct flag_set_s {
     bool output_dot;
     bool print_timings;
     bool dump_AST;
-    bool use_llta;
+    bool skip_to_iron;
 
     int target_arch;
     int target_system;

@@ -1,13 +1,14 @@
 #pragma once
 #define PHOBOS_CHECKER_H
 
-#include "phobos.h"
-#include "parse/parse.h"
+#include "mars/phobos/phobos.h"
+#include "mars/phobos/parse/parse.h"
 #include "term.h"
-#include "ast.h"
+#include "mars/phobos/ast.h"
 #include "exactval.h"
 #include "entity.h"
 #include "type.h"
+#include "mars/term.h"
 
 // emit an error that highlights an AST node
 #define error_at_node(module, node, msg, ...) do { \

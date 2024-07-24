@@ -1,5 +1,5 @@
-#include "orbit.h"
-#include "term.h"
+#include "common/orbit.h"
+#include "mars/term.h"
 
 #include "parse.h"
 
@@ -17,7 +17,7 @@
 #define debug_trace(p)
 
 // construct a parser struct from a lexer and an arena allocator
-parser make_parser(lexer* l, arena* alloca) {
+parser make_parser(lexer* l, Arena* alloca) {
     parser p = {0};
     p.alloca = alloca;
     p.tokens = l->buffer;

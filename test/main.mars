@@ -5,12 +5,3 @@ let main = fn() {
     quicksort(arr[:]);
     // arr == {1, 2, 3, 4, 5, 6}
 };
-
-
-let x = fn() {...}
-
-        test.x:
-            d64 test.sym20384902387402
-
-        test.sym20384902387402:
-            {...}

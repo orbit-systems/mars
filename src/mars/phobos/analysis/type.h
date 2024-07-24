@@ -1,8 +1,8 @@
 #pragma once
 #define PHOBOS_TYPE_H
 
-#include "orbit.h"
-#include "alloc.h"
+#include "common/orbit.h"
+#include "common/alloc.h"
 
 enum {
     // does not really do anything. serves as an invalid/void type.

@@ -1,13 +1,13 @@
 #pragma once
 #define PHOBOS_PARSER_H
 
-#include "orbit.h"
-#include "lex.h"
-#include "ast.h"
-#include "arena.h"
+#include "common/orbit.h"
+#include "mars/phobos/parse/lex.h"
+#include "mars/phobos/ast.h"
+#include "common/arena.h"
 
 typedef struct parser {
-    arena* alloca;
+    Arena* alloca;
     da(token) tokens;
     string path;
     string src;
@@ -41,7 +41,7 @@ AST parse_cfs(parser* p);
 AST parse_type(parser* p);
 int verify_type(parser* p);
 
-parser make_parser(lexer* l, arena* alloca);
+parser make_parser(lexer* l, Arena* alloca);
 void parse_file(parser* p);
 
 

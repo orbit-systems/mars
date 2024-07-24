@@ -1,7 +1,7 @@
-#include "orbit.h"
-#include "mars.h"
+#include "common/orbit.h"
+#include "mars/mars.h"
 
-#include "term.h"
+#include "mars/term.h"
 
 #include "phobos.h"
 #include "parse/lex.h"
@@ -151,7 +151,7 @@ mars_module* parse_module(string input_path) {
     da(parser) parsers;
     da_init(&parsers, lexers.len);
 
-    arena alloca = arena_make(PARSER_ARENA_SIZE);
+    Arena alloca = arena_make(PARSER_ARENA_SIZE);
 
     for_urange(i, 0, lexers.len) {
         
@@ -245,7 +245,7 @@ mars_module* parse_module(string input_path) {
     return module;
 }
 
-mars_module* create_module(da(parser)* pl, arena alloca) {
+mars_module* create_module(da(parser)* pl, Arena alloca) {
     if (pl == NULL) CRASH("build_module() provided with null parser list pointer");
     if (pl->len == 0) CRASH("build_module() provided with parser list of length 0");
 

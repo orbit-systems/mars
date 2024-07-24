@@ -1,8 +1,8 @@
 #pragma once
 #define PHOBOS_H
 
-#include "orbit.h"
-#include "alloc.h"
+#include "common/orbit.h"
+#include "common/alloc.h"
 #include "parse/lex.h"
 #include "parse/parse.h"
 #include "ast.h"
@@ -30,8 +30,8 @@ typedef struct mars_module {
     module_list import_list;
 
     da(AST) program_tree;
-    arena AST_alloca;
-    arena temp_alloca;
+    Arena AST_alloca;
+    Arena temp_alloca;
 
     bool visited : 1; // checking shit
     bool checked : 1; // has been FULLY CHECKED by the checker
@@ -46,7 +46,7 @@ mars_module* parse_module(string input_path);
 
 // creates a compilation unit from a list of parsers.
 // stitches the unchecked ASTs together and such
-mars_module* create_module(da(parser)* pl, arena alloca);
+mars_module* create_module(da(parser)* pl, Arena alloca);
 
 // find the source file of a snippet of code
 // NOTE: the snippet must be an actual substring (is_within() must return true) of one of the files

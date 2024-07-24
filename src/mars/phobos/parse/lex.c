@@ -1,5 +1,5 @@
-#include "orbit.h"
-#include "term.h"
+#include "common/orbit.h"
+#include "mars/term.h"
 #include "lex.h"
 
 #define can_start_identifier(ch) ((ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z') || ch == '_')

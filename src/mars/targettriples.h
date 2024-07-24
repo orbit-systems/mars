@@ -1,8 +1,8 @@
 #pragma once
 #define MARS_TT_H
 
-#include "orbit.h"
-#include "mars.h"
+#include "common/orbit.h"
+#include "mars/mars.h"
 
 void set_target_triple(string target, flag_set* fl);
 

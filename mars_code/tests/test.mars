@@ -4,3 +4,18 @@ let is_equal = fn(a, b: u8) -> bool {
     if (a == b) { return true; }
     return false;
 };
+
+let function = fn() {...}
+
+test.function:
+    d64 test.function.code
+test.function.code:
+    {assembly code}
+
+///////////////////////////////////////////
+
+
+fn function() {...}
+
+test.function:
+    {assembly code}

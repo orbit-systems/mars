@@ -1,8 +1,8 @@
 // generate the actual orbit.h code here
 #define ORBIT_IMPLEMENTATION
 
-#include "orbit.h"
-#include "mars.h"
+#include "common/orbit.h"
+#include "mars/mars.h"
 #include "irgen.h"
 #include "targettriples.h"
 
@@ -11,66 +11,141 @@
 #include "phobos/parse/parse.h"
 #include "phobos/analysis/sema.h"
 
-#include "atlas/atlas.h"
-#include "atlas/targets.h"
+#include "iron/iron.h"
 
 #include "llta/lexer.h"
 
 flag_set mars_flags;
 
+void test_algsimp_reassoc() {
+    printf("\n");
+
+    FeModule* m = fe_new_module(str("test"));
+    fe_set_target(m, 
+        FE_ARCH_APHELION,
+        FE_SYSTEM_NONE,
+        FE_PRODUCT_ASSEMBLY
+    );
+    // optional config options
+    fe_set_target_config(m, &(FeAphelionArchConfig){
+        .ext_f = true,
+    });
+
+    FeSymbol* sym = fe_new_symbol(m, str("algsimp_test"), FE_BIND_LOCAL);
+    FeFunction* f = fe_new_function(m, sym);
+    fe_set_func_params(f, 1, fe_type(m, FE_I64, 0));
+    fe_set_func_returns(f, 1, fe_type(m, FE_I64, 0));
+
+    FeBasicBlock* bb = fe_new_basic_block(f, str("block1"));
+
+    FeInstParamVal* p = (FeInstParamVal*) fe_append(bb, fe_inst_paramval(f, 0));
+    
+    FeInstConst* c1 = (FeInstConst*) fe_append(bb,
+        fe_inst_const(f)
+    ); c1->base.type = fe_type(m, FE_I64, 0); c1->i64 = 5;
+
+    FeInstConst* c2 = (FeInstConst*) fe_append(bb,
+        fe_inst_const(f)
+    ); c2->base.type = fe_type(m, FE_I64, 0); c2->i64 = 9;
+
+    FeInst* add = fe_append(bb, 
+        fe_inst_binop(f, FE_INST_ADD, (FeInst*) p, (FeInst*) c1)
+    ); add->type = fe_type(m, FE_I64, 0);
+
+    FeInst* add2 = fe_append(bb, 
+        fe_inst_binop(f, FE_INST_ADD, (FeInst*) add, (FeInst*) c2)
+    ); add2->type = fe_type(m, FE_I64, 0);
+
+    fe_append(bb, fe_inst_returnval(f, 0, (FeInst*) add2));
+    fe_append(bb, fe_inst_return(f));
+
+    fe_sched_pass(m, &fe_pass_algsimp);
+    fe_sched_pass(m, &fe_pass_tdce);
+    fe_run_all_passes(m, true);
+
+    // string s = fe_emit_textual_ir(m);
+    // printf(str_fmt, str_arg(s));
+    fe_destroy_module(m);
+}
+
+void test_algsimp_sr() {
+    printf("\n");
+
+    FeModule* m = fe_new_module(str("test"));
+
+    FeSymbol* sym = fe_new_symbol(m, str("algsimp_test"), FE_BIND_LOCAL);
+    FeFunction* f = fe_new_function(m, sym);
+    fe_set_func_params(f, 1, fe_type(m, FE_I64, 0));
+    fe_set_func_returns(f, 1, fe_type(m, FE_I64, 0));
+
+    FeBasicBlock* bb = fe_new_basic_block(f, str("block1"));
+
+    FeInstParamVal* p = (FeInstParamVal*) fe_append(bb, fe_inst_paramval(f, 0));
+    
+    FeInstConst* c1 = (FeInstConst*) fe_append(bb,
+        fe_inst_const(f)
+    ); c1->base.type = fe_type(m, FE_I64, 0); c1->i64 = 16;
+
+    FeInst* mul = fe_append(bb, 
+        fe_inst_binop(f, FE_INST_UMUL, (FeInst*) p, (FeInst*) c1)
+    ); mul->type = fe_type(m, FE_I64, 0);
+
+    fe_append(bb, fe_inst_returnval(f, 0, (FeInst*) mul));
+    fe_append(bb, fe_inst_return(f));
+
+    fe_sched_pass(m, &fe_pass_algsimp);
+    fe_sched_pass(m, &fe_pass_tdce);
+    fe_run_all_passes(m, true);
+
+    // string s = fe_emit_textual_ir(m);
+    // printf(str_fmt, str_arg(s));
+
+    fe_emit_c(m);
+
+    fe_destroy_module(m);
+}
+
 int main(int argc, char** argv) {
+
     load_arguments(argc, argv, &mars_flags);
 
-
-    AtlasModule* atlas_module;
-
-    if (!mars_flags.use_llta) {
-
-        mars_module* main_mod = parse_module(mars_flags.input_path);    
-
-        // recursive check
-        check_module(main_mod);
-        
-        if (mars_flags.output_dot == true) {  
-            emit_dot(str("test"), main_mod->program_tree);
-        }   
-
-        TargetInfo* atlas_target;
-
-        switch (mars_flags.target_arch){
-        case TARGET_ARCH_APHELION: 
-            atlas_target = &aphelion_target_info; 
-            break;
-        default:
-            CRASH("cannot select atlas target");
-            break;
-        }
-
-        atlas_module = atlas_new_module(main_mod->module_name, atlas_target);
-
-        printf("attempt IR generation\n");
-
-        //generate_ir_atlas_from_mars(main_mod, atlas_module);
-    
-        printf("IR generated\n");
-    } else {
-        atlas_module = llta_parse_ir(mars_flags.input_path);
+    if (mars_flags.skip_to_iron) {
+        test_algsimp_sr();
+        exit(0);
     }
 
-    // atlas canonicalization pass is scheduled by default, dw :3
-    atlas_sched_pass(atlas_module, &air_pass_trme);
-    atlas_sched_pass(atlas_module, &air_pass_tdce);
-    atlas_sched_pass(atlas_module, &air_pass_movprop);
-    atlas_sched_pass(atlas_module, &air_pass_elim);
+    mars_module* main_mod = parse_module(mars_flags.input_path);    
 
-    atlas_run_all_passes(atlas_module, true);
+    // recursive check
+    check_module(main_mod);
+    
+    if (mars_flags.output_dot == true) {  
+        emit_dot(str("test"), main_mod->program_tree);
+    }   
 
-    atlas_sched_pass(atlas_module, &pass_aphelion_codegen);
-    atlas_sched_pass(atlas_module, &pass_aphelion_movopt);
+    //TargetInfo* atlas_target;
 
-    atlas_run_all_passes(atlas_module, false);
+    switch (mars_flags.target_arch){
+    case TARGET_ARCH_APHELION: 
+        //atlas_target = &aphelion_target_info; 
+        break;
+    default:
+        CRASH("cannot select atlas target");
+       break;
+    }
 
-    asm_printer(atlas_module->asm_module, false);
+    //atlas_module = atlas_new_module(main_mod->module_name, atlas_target);
+
+    printf("attempt IR generation\n");
+
+    //generate_ir_atlas_from_mars(main_mod, atlas_module);
+    
+    printf("IR generated\n");
+
+
+    // TODO stub because, once again, 
+    // i cannot be fucked to update this every time i make iron changes
+    TODO("IR generation");
 
     return 0;
 }
@@ -86,7 +161,7 @@ void print_help() {
     printf("-timings                          print stage timings\n");
     printf("-dump-AST                         print readable AST\n");
     printf("-dot                              convert the AST to a graphviz .dot file\n");
-    printf("-llta                             use llta instead of phobos\n");
+    printf("-iron                             skip to iron testbed, no fuckin mars for u\n");
 }
 
 cmd_arg make_argument(char* s) {
@@ -152,8 +227,8 @@ void load_arguments(int argc, char* argv[], flag_set* fl) {
             fl->dump_AST = true;
         } else if (string_eq(a.key, str("-target"))) {
             set_target_triple(a.val, fl);
-        } else if (string_eq(a.key, str("-llta"))) {
-            fl->use_llta = true;
+        } else if (string_eq(a.key, str("-iron"))) {
+            fl->skip_to_iron = true;
         } else {
             general_error("unrecognized option \""str_fmt"\"", str_arg(a.key));
         }

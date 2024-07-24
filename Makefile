@@ -1,19 +1,19 @@
 TARGETS = aphelion 
 
 SRCPATHS = \
-	src/*.c \
+	src/common/*.c \
 	src/mars/*.c \
 	src/mars/phobos/*.c \
-	src/mars/phobos/parse/*.c \
 	src/mars/phobos/analysis/*.c \
-	src/atlas/*.c \
-	src/atlas/passes/*.c \
-	src/atlas/passes/analysis/*.c \
-	src/atlas/passes/transform/*.c \
-	src/atlas/targets/*.c \
-	src/llta/*.c \
-
-SRCPATHS += $(foreach target, $(TARGETS), src/atlas/targets/$(target)/*.c) 
+	src/mars/phobos/parse/*.c \
+	\
+	src/iron/*.c \
+	src/iron/passes/*.c \
+	src/iron/passes/analysis/*.c \
+	src/iron/passes/transform/*.c \
+	src/iron/targets/*.c \
+	# src/llta/*.c
+SRCPATHS += $(foreach target, $(TARGETS), src/iron/targets/$(target)/*.c) 
 SRC = $(wildcard $(SRCPATHS))
 OBJECTS = $(SRC:src/%.c=build/%.o)
 
@@ -30,11 +30,11 @@ endif
 CC = gcc
 LD = gcc
 
-INCLUDEPATHS = -Isrc/ -Isrc/mars/ -Isrc/mars/phobos/ -Isrc/atlas/ -Isrc/atlas/targets
+INCLUDEPATHS = -Isrc
 DEBUGFLAGS = -lm -pg -g
 ASANFLAGS = -fsanitize=undefined -fsanitize=address
-CFLAGS = -MD -Wincompatible-pointer-types -Wno-discarded-qualifiers -lm -Wno-deprecated-declarations -Wreturn-type
-OPT = -O2
+CFLAGS = -std=c99 -MD -Wall -Wno-format -Wno-unused -Werror=incompatible-pointer-types -Wno-discarded-qualifiers -lm
+OPT = -O3 -flto
 
 FILE_NUM = 0
 

@@ -1,4 +1,4 @@
-#include "orbit.h"
+#include "common/orbit.h"
 #include "lexer.h"
 
 #define skip_whitespace(c, i) while (lex_src.raw[i] == ' ' && i < lex_src.len) {i++; c = lex_src.raw[i];}
@@ -8,11 +8,10 @@
 da(icarus_token) llta_lex(string path);
 u8 str_to_type(string str);
 
-AtlasModule* llta_parse_ir(string path) {
+FeModule* llta_parse_ir(string path) {
     da(icarus_token) tokens = llta_lex(path);
 
-    AtlasModule* mod = atlas_new_module(str("test"),           NULL );
-    TODO("(sandwich):  replace NULL with a pointer to a target ^^^^ ");
+    FeModule* mod = fe_new_module(str("test"));
 
     foreach (icarus_token token, tokens) {
         if (string_eq(token.tok, str("define"))) {
