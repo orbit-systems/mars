@@ -185,6 +185,7 @@ i64 fe_index_of_inst(FeBasicBlock* bb, FeInst* inst) {
             return i;
         }
     }
+    return -1;
 }
 
 // inserts inst before ref

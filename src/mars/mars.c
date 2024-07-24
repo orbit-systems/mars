@@ -23,7 +23,7 @@ typedef struct FeAphelionMetadata {
     bool ext_f;
 } FeAphelionMetadata;
 
-void test_iron() {
+void test_algsimp_reassoc() {
     printf("\n");
 
     FeModule* m = fe_new_module(str("test"));
@@ -37,27 +37,63 @@ void test_iron() {
 
     FeInstParamVal* p = (FeInstParamVal*) fe_append(bb, fe_inst_paramval(f, 0));
     
-    FeInstUnop* n1 = (FeInstUnop*) fe_append(bb, 
-        fe_inst_unop(f, FE_INST_NOT, (FeInst*) p));
-    n1->base.type = fe_type(m, FE_I64, 0);
+    FeInstConst* c1 = (FeInstConst*) fe_append(bb,
+        fe_inst_const(f)
+    ); c1->base.type = fe_type(m, FE_I64, 0); c1->i64 = 5;
 
-    FeInstUnop* n2 = (FeInstUnop*) fe_append(bb, 
-        fe_inst_unop(f, FE_INST_NEG, (FeInst*) n1));
-    n2->base.type = fe_type(m, FE_I64, 0);
+    FeInstConst* c2 = (FeInstConst*) fe_append(bb,
+        fe_inst_const(f)
+    ); c2->base.type = fe_type(m, FE_I64, 0); c2->i64 = 9;
 
-    FeInstUnop* n3 = (FeInstUnop*) fe_append(bb, 
-        fe_inst_unop(f, FE_INST_NOT, (FeInst*) n2));
-    n3->base.type = fe_type(m, FE_I64, 0);
+    FeInst* add = fe_append(bb, 
+        fe_inst_binop(f, FE_INST_ADD, (FeInst*) p, (FeInst*) c1)
+    ); add->type = fe_type(m, FE_I64, 0);
 
-    FeInstUnop* n4 = (FeInstUnop*) fe_append(bb, 
-        fe_inst_unop(f, FE_INST_NEG, (FeInst*) n3));
-    n4->base.type = fe_type(m, FE_I64, 0);
+    FeInst* add2 = fe_append(bb, 
+        fe_inst_binop(f, FE_INST_ADD, (FeInst*) add, (FeInst*) c2)
+    ); add2->type = fe_type(m, FE_I64, 0);
 
-    fe_append(bb, fe_inst_returnval(f, 0, (FeInst*) n4));
+    fe_append(bb, fe_inst_returnval(f, 0, (FeInst*) add2));
     fe_append(bb, fe_inst_return(f));
 
-    // fe_sched_pass(m, &fe_pass_algsimp);
+    fe_sched_pass(m, &fe_pass_algsimp);
     fe_sched_pass(m, &fe_pass_tdce);
+    fe_run_all_passes(m, true);
+
+    // string s = fe_emit_textual_ir(m);
+    // printf(str_fmt, str_arg(s));
+
+    fe_destroy_module(m);
+}
+
+void test_algsimp_sr() {
+    printf("\n");
+
+    FeModule* m = fe_new_module(str("test"));
+
+    FeSymbol* sym = fe_new_symbol(m, str("algsimp_test"), FE_VIS_LOCAL);
+    FeFunction* f = fe_new_function(m, sym);
+    fe_set_func_params(f, 1, fe_type(m, FE_I64, 0));
+    fe_set_func_returns(f, 1, fe_type(m, FE_I64, 0));
+
+    FeBasicBlock* bb = fe_new_basic_block(f, str("block1"));
+
+    FeInstParamVal* p = (FeInstParamVal*) fe_append(bb, fe_inst_paramval(f, 0));
+    
+    FeInstConst* c1 = (FeInstConst*) fe_append(bb,
+        fe_inst_const(f)
+    ); c1->base.type = fe_type(m, FE_I64, 0); c1->i64 = 16;
+
+    FeInst* mul = fe_append(bb, 
+        fe_inst_binop(f, FE_INST_UMUL, (FeInst*) p, (FeInst*) c1)
+    ); mul->type = fe_type(m, FE_I64, 0);
+
+
+    fe_append(bb, fe_inst_returnval(f, 0, (FeInst*) mul));
+    fe_append(bb, fe_inst_return(f));
+
+    fe_sched_pass(m, &fe_pass_algsimp);
+    // fe_sched_pass(m, &fe_pass_tdce);
     fe_run_all_passes(m, true);
 
     // string s = fe_emit_textual_ir(m);
@@ -68,7 +104,7 @@ void test_iron() {
 
 int main(int argc, char** argv) {
 
-    test_iron();
+    test_algsimp_sr();
 
     /*
     load_arguments(argc, argv, &mars_flags);

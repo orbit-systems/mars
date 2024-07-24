@@ -22,6 +22,12 @@ static void register_uses(FeInst* ir) {
     case FE_INST_IMUL:
     case FE_INST_UDIV:
     case FE_INST_IDIV:
+    case FE_INST_ASR:
+    case FE_INST_LSR:
+    case FE_INST_SHL:
+    case FE_INST_XOR:
+    case FE_INST_OR:
+    case FE_INST_AND:
         FeInstBinop* binop = (FeInstBinop*) ir;
         binop->lhs->use_count++;
         binop->rhs->use_count++;
@@ -90,6 +96,12 @@ static void try_eliminate(FeInst* ir) {
     case FE_INST_IMUL:
     case FE_INST_UDIV:
     case FE_INST_IDIV:
+    case FE_INST_ASR:
+    case FE_INST_LSR:
+    case FE_INST_SHL:
+    case FE_INST_XOR:
+    case FE_INST_OR:
+    case FE_INST_AND:
         FeInstBinop* binop = (FeInstBinop*) ir;
         binop->lhs->use_count--;
         binop->rhs->use_count--;

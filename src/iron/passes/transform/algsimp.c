@@ -182,12 +182,46 @@ static FeInst* identity_reduction(FeInst* inst, bool* needs_inserting) {
     return inst;
 }
 
-static FeInst* strength_reduction(FeInst* inst) {
+bool is_const_power_of_two(FeInst* inst) {
+    FeInstConst* lc = (FeInstConst*) inst;
+    switch (lc->base.type->kind) {
+    case FE_I64: return lc->i64 != 0 && (lc->i64 & (lc->i64 - 1)) == 0;
+    case FE_I32: return lc->i32 != 0 && (lc->i32 & (lc->i32 - 1)) == 0;
+    case FE_I16: return lc->i16 != 0 && (lc->i16 & (lc->i16 - 1)) == 0;
+    case FE_I8:  return lc->i8  != 0 && (lc->i8  & (lc->i8  - 1)) == 0;
+    default: break;
+    }
+    return false;
+}
+
+void convert_to_log2(FeInst* inst) {
+    FeInstConst* lc = (FeInstConst*) inst;
+    switch (lc->base.type->kind) {
+    case FE_I64:lc->i64 = 8*sizeof(lc->i64) - __builtin_clzll(lc->i64) - 1; break;
+    case FE_I32:lc->i32 = 8*sizeof(lc->i64) - __builtin_clzll(lc->i32) - 1; break;
+    case FE_I16:lc->i16 = 8*sizeof(lc->i64) - __builtin_clzll(lc->i16) - 1; break;
+    case FE_I8: lc->i8  = 8*sizeof(lc->i64) - __builtin_clzll(lc->i8 ) - 1; break;
+    default: break;
+    }
+}
+
+static bool strength_reduction(FeInst* inst) {
+
+    FeInstBinop* binop = (FeInstBinop*) inst;
+
     switch (inst->kind) {
+    case FE_INST_UMUL:
+
+        if (binop->rhs->kind == FE_INST_CONST && is_const_power_of_two(binop->rhs)) {
+            // x * const = x << log2(const)
+            convert_to_log2(binop->rhs);
+            inst->kind = FE_INST_SHL;
+            return true;
+        }
     default:
         break;
     }
-    return inst;
+    return false;
 }
 
 void run_pass_algsimp(FeModule* mod) {
@@ -234,8 +268,8 @@ void run_pass_algsimp(FeModule* mod) {
                 fe_rewrite_uses(f, inst, new_inst);
                 inst->kind = FE_INST_ELIMINATED;
                 fe_add_uses_to_worklist(f, new_inst, &worklist);
-            } else if (inst != (new_inst = strength_reduction(inst))) {
-                fe_add_uses_to_worklist(f, new_inst, &worklist);
+            } else if (strength_reduction(inst)) {
+                fe_add_uses_to_worklist(f, inst, &worklist);
             }
         }
     }
