@@ -38,6 +38,7 @@ typedef struct checked_expr {
     bool local_derived : 1;
 } checked_expr;
 
+void check_module(mars_module* mod);
 type* check_expr(mars_module* mod, AST node, entity* ent);
 type* check_func_literal(mars_module* mod, AST node, entity* ent);
 
