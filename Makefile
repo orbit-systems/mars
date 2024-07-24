@@ -33,13 +33,12 @@ LD = gcc
 INCLUDEPATHS = -Isrc
 DEBUGFLAGS = -pg -g
 ASANFLAGS = -fsanitize=undefined -fsanitize=address
-CFLAGS = -std=c17 -MD -D_XOPEN_SOURCE=700 \
+CFLAGS = -std=c17 -MD -D_XOPEN_SOURCE=700 -fwrapv \
+		 -fno-delete-null-pointer-checks -fno-strict-overflow -fno-strict-aliasing \
 		 -Wall -Wno-format -Wno-unused -Werror=incompatible-pointer-types -Wno-discarded-qualifiers \
 		 -lm
 
 OPT = -O3 -flto
-
-#posix and glibc are STUPID and dont include definitions properly for some x/open and posix functions, _XOPEN_SOURCE allows us to have this
 
 FILE_NUM = 0
 
