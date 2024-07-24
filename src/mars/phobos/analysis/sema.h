@@ -3,7 +3,6 @@
 
 #include "mars/phobos/phobos.h"
 #include "mars/phobos/parse/parse.h"
-#include "term.h"
 #include "mars/phobos/ast.h"
 #include "exactval.h"
 #include "entity.h"
