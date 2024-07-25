@@ -222,7 +222,7 @@ static void emit_function(FeFunction* f, StringBuilder* sb) {
             if (inst->type->kind != FE_VOID) {
                 sb_append_c(sb, "        ");
                 emit_type_name(inst->type, sb);
-                sb_printf(sb, "_inst_%p;\n", inst);
+                sb_printf(sb, "_inst_%llx;\n", inst);
             }
         }
     }
@@ -240,17 +240,17 @@ static void emit_function(FeFunction* f, StringBuilder* sb) {
             sb_append_c(sb, "\t");
             switch (inst->kind) {
             case FE_INST_PARAMVAL:
-                sb_printf(sb, "_inst_%p = _paramval_%d", inst, ((FeInstParamVal*)inst)->param_idx);
+                sb_printf(sb, "_inst_%llx = _paramval_%d", inst, ((FeInstParamVal*)inst)->param_idx);
                 break;
             case FE_INST_CONST:
                 switch (inst->type->kind) {
-                case FE_I64: sb_printf(sb, "_inst_%p = (i64) %lldll", inst, (i64) ((FeInstConst*)inst)->i64); break;
-                case FE_I32: sb_printf(sb, "_inst_%p = (i32) %lld", inst, (i64) ((FeInstConst*)inst)->i32); break;
-                case FE_I16: sb_printf(sb, "_inst_%p = (i16) %lld", inst, (i64) ((FeInstConst*)inst)->i16); break;
-                case FE_I8:  sb_printf(sb, "_inst_%p = (i8)  %lld", inst, (i64) ((FeInstConst*)inst)->i8);  break;
-                case FE_F64: sb_printf(sb, "_inst_%p = (f64) %lf",  inst, (double) ((FeInstConst*)inst)->f64); break;
-                case FE_F32: sb_printf(sb, "_inst_%p = (f32) %lf",  inst, (double) ((FeInstConst*)inst)->f32); break;
-                case FE_F16: sb_printf(sb, "_inst_%p = (f16) %lf",  inst, (double) ((FeInstConst*)inst)->f16); break;
+                case FE_I64: sb_printf(sb, "_inst_%llx = (i64) %lldll", inst, (i64) ((FeInstConst*)inst)->i64); break;
+                case FE_I32: sb_printf(sb, "_inst_%llx = (i32) %lld", inst, (i64) ((FeInstConst*)inst)->i32); break;
+                case FE_I16: sb_printf(sb, "_inst_%llx = (i16) %lld", inst, (i64) ((FeInstConst*)inst)->i16); break;
+                case FE_I8:  sb_printf(sb, "_inst_%llx = (i8)  %lld", inst, (i64) ((FeInstConst*)inst)->i8);  break;
+                case FE_F64: sb_printf(sb, "_inst_%llx = (f64) %lf",  inst, (double) ((FeInstConst*)inst)->f64); break;
+                case FE_F32: sb_printf(sb, "_inst_%llx = (f32) %lf",  inst, (double) ((FeInstConst*)inst)->f32); break;
+                case FE_F16: sb_printf(sb, "_inst_%llx = (f16) %lf",  inst, (double) ((FeInstConst*)inst)->f16); break;
                 default: break;
                 }
                 break;
@@ -260,14 +260,14 @@ static void emit_function(FeFunction* f, StringBuilder* sb) {
             case FE_INST_IMUL:
                 FeInstBinop* binop = (FeInstBinop*) inst;
 
-                sb_printf(sb, "_inst_%p = _inst_%p %s _inst_%p", inst, binop->lhs, opstrings[inst->kind], binop->rhs);
+                sb_printf(sb, "_inst_%llx = _inst_%llx %s _inst_%llx", inst, binop->lhs, opstrings[inst->kind], binop->rhs);
                 break;
             case FE_INST_UMUL:
             case FE_INST_UDIV:
             case FE_INST_LSR:
                 binop = (FeInstBinop*) inst;
                 
-                sb_printf(sb, "_inst_%p = %s _inst_%p %s %s _inst_%p", inst, 
+                sb_printf(sb, "_inst_%llx = %s _inst_%llx %s %s _inst_%llx", inst, 
                     signed_to_unsigned_cast(binop->lhs->type), binop->lhs, opstrings[inst->kind], 
                     signed_to_unsigned_cast(binop->rhs->type), binop->rhs);
                 break;
@@ -275,9 +275,9 @@ static void emit_function(FeFunction* f, StringBuilder* sb) {
                 FeInstReturnval* retval = (FeInstReturnval*) inst;
                 
                 if (retval->return_idx == 0) {
-                    sb_printf(sb, "_returnval_%d =  _inst_%p", retval->return_idx, retval->source);
+                    sb_printf(sb, "_returnval_%d =  _inst_%llx", retval->return_idx, retval->source);
                 } else {
-                    sb_printf(sb, "*_returnval_%d = _inst_%p", retval->return_idx, retval->source);
+                    sb_printf(sb, "*_returnval_%d = _inst_%llx", retval->return_idx, retval->source);
                 }
                 break;
             case FE_INST_RETURN:
