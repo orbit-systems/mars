@@ -19,13 +19,16 @@ void check_module(mars_module* mod) {
                 //if its a function sig, then lhs types need to be ordered left to right, mapping
                 //return values to lhs value. if these numbers arent equal, we error
                 
-                check_expr(mod, trunk.as_decl_stmt->rhs, NULL);
+                if (trunk.as_decl_stmt->rhs.type == AST_func_literal_expr) {
+                    //we handle this like a func literal.
+                    if (trunk.as_decl_stmt->lhs.len != 1) error_at_node(mod, trunk.as_decl_stmt->lhs, "LHS of a function literal declaration should only have one element!");
+                    check_func_literal(mod, trunk, global_scope, trunk.as_decl_stmt->lhs.at[0]);
+                }
 
                 foreach(AST lhs, trunk.as_decl_stmt->lhs) {
                     if (lhs.type != AST_identifier) error_at_node(mod, lhs, "expected identifier, got %s", ast_type_str[lhs.type]);
                     printf("decl: "str_fmt"\n", str_arg(lhs.as_identifier->tok->text));
-                    entity* lhs_entity = new_entity(global_scope, lhs.as_identifier->tok->text, trunk);
-                    check_expr(mod, lhs, lhs_entity);
+                    check_expr(mod, lhs, global_scope);
                 }
             default:
                 error_at_node(mod, trunk, "[check_module] unexpected token type: %s", ast_type_str[trunk.type]);
@@ -33,11 +36,11 @@ void check_module(mars_module* mod) {
     }
 }
 
-type* check_expr(mars_module* mod, AST node, entity* ent) {
+type* check_expr(mars_module* mod, AST node, entity_table* scope) {
     //we fill out ent with the info it needs :)
     switch(node.type) {
         case AST_func_literal_expr:
-            return check_func_literal(mod, node, ent);
+            return check_func_literal(mod, node, scope);
         case AST_identifier:
             //ent->
         default:
@@ -45,11 +48,21 @@ type* check_expr(mars_module* mod, AST node, entity* ent) {
     }
 }
 
-type* check_func_literal(mars_module* mod, AST node, entity* ent) {
-    if (node.type != AST_func_literal_expr) error_at_node(mod, node, "[check_func_literal] INTERNAL COMPILER ERROR:\n got %s, expected function literal", ast_type_str[node.type]);
+type* check_func_literal(mars_module* mod, AST decl_root, entity_table* scope, AST identifier) {
+    if (decl_root.type != AST_decl_stmt) error_at_node(mod, decl_root, "[check_func_literal] INTERNAL COMPILER ERROR: got %s, expected declaration statement", ast_type_str[decl_root.type]);
+    if (identifier.type != AST_identifier) error_at_node(mod, identifier, "[check_func_literal] INTERNAL COMPILER ERROR: got %s, expected identifier", ast_type_str[identifier.type]);
+    
     //we need to parse the fn_type_expr and generate entities for each entity in the type, and also create a new global scope.
     //we create a new scope for this literal, and assign each new identifier to this scope. 
+    
+    AST node = decl_root.as_decl_stmt->rhs;
+
+    entity* func_ent = new_entity(scope, identifier.as_identifer->tok->text, decl_root);
+
     foreach(AST_typed_field param, node.as_func_literal_expr->type.as_fn_type_expr->parameters) {
         printf("param: "str_fmt", type: %s\n", str_arg(param.field.as_identifier->tok->text), ast_type_str[param.type.type]);
+        
     }
+    entity_table* func_scope = new_entity_table(scope);
+    
 }

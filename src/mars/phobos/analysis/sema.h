@@ -39,8 +39,8 @@ typedef struct checked_expr {
 } checked_expr;
 
 void check_module(mars_module* mod);
-type* check_expr(mars_module* mod, AST node, entity* ent);
-type* check_func_literal(mars_module* mod, AST node, entity* ent);
+type* check_expr(mars_module* mod, AST node, entity_table* scope);
+type* check_func_literal(mars_module* mod, AST decl_root, entity_table* scope, AST identifier);
 
 /*
 void check_stmt(mars_module* mod, entity_table* et, ast_func_literal_expr* fn, AST stmt, bool global);
