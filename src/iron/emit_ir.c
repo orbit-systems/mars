@@ -248,7 +248,7 @@ static void emit_function(FeFunction* f, StringBuilder* sb) {
                 sb_printf(sb, "paramval %llu", param->param_idx);
             } break;
             case FE_INST_RETURNVAL: {
-                FeInstReturnVal* ret = (FeInstReturnVal*) inst;
+                FeInstReturnval* ret = (FeInstReturnval*) inst;
                 sb_printf(sb, "returnval %llu, #%llu", ret->return_idx, ret->source->number);
             } break;
             case FE_INST_STACKADDR: {

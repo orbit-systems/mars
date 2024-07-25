@@ -1,12 +1,60 @@
 module core;
-import linux_syscall "path";
-import linux_3 "path"
+
+when instrinsics::arch == .x86_64 && intrinsics::system == .linux {
+
+    instrinsics::assert(sizeof uint  == 8);
+    instrinsics::assert(sizeof []let == 16);
+
+    let _ = fn #symbol("_start") #cconv("sysv") () {
+
+        let cstrlen = fn(cstr: ^let u8) -> uint {
+            mut len = 0;
+            while cstr[len] != '\0' do len += 1;
+            return len;
+        };
+
+        mut argc_ptr: ^mut;
+
+        // set base pointer to zero, as is convention
+        asm (0 -> "rbp");
+
+        // retrieve stack pointer
+        asm (argc_ptr <- "rsp");
+
+        // our goal here is to turn C's dumb char* args
+        // into based & marspilled gigachad []let u8
+        mut c_argv = cast(^let ^let u8) argc_ptr + 8
+        mut argc = (cast(^mut uint) argc_ptr)^; // argc is on at stackptr
+
+        mut argv: []mut []let u8 = ---;
+        argv.len = argc;
+
+        // allocate some quick stack space for our argv. slices are 16 bytes, so we need 16 * argc.
+        asm (argc * 16 -> "gpr offset", argv.raw <- "rsp") {
+            "sub rsp, offset"
+        }
+
+        for i in 0..<argc {
+            argv[i].raw = c_argv[i];
+            argv[i].len = cstrlen(c_argv[i]);
+        }
+
+        // TODO get the environment string array and marspill it
+
+        let ret = instrinsics::main(argv);
+        asm (60 -> "rax", ret -> "rdi") {
+            "syscall"
+        }
+    };
+}
+
 //at linux program start, this is the stack state, at esp
 //on x86, its +4. on x86_64, its +8. in the diagram, we assume x86
 
 // argc     | argv[0] | argv[1] | ... | argv[argc-1]   | argc[argc] == NULL   | envp[0] | ... | envp[?] == NULL
 // esp + 0  | esp + 4 | esp + 8 | ... | esp + 4 * argc | esp + 4 * (argc + 1) | ...     
 
+/*
 let _start = #cconv("sysv") fn() {
     let argv : []mut []let u8;
     let sp = ^mut;
@@ -34,4 +82,4 @@ let _start = #cconv("sysv") fn() {
 
     let ret : u32 = main(cast([]let []let u8) argv);    
     linux_syscall::exit(ret);
-}
+}*/

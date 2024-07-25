@@ -251,7 +251,7 @@ const size_t fe_inst_sizes[] = {
     [FE_INST_JUMP]   = sizeof(FeInstJump),
 
     [FE_INST_PARAMVAL]  = sizeof(FeInstParamVal),
-    [FE_INST_RETURNVAL] = sizeof(FeInstReturnVal),
+    [FE_INST_RETURNVAL] = sizeof(FeInstReturnval),
 
     [FE_INST_RETURN] = sizeof(FeInstReturn),
 };
@@ -394,7 +394,7 @@ FeInst* fe_inst_paramval(FeFunction* f, u32 param) {
 }
 
 FeInst* fe_inst_returnval(FeFunction* f, u32 param, FeInst* source) {
-    FeInstReturnVal* ir = (FeInstReturnVal*) fe_inst(f, FE_INST_RETURNVAL);
+    FeInstReturnval* ir = (FeInstReturnval*) fe_inst(f, FE_INST_RETURNVAL);
     ir->return_idx = param;
     ir->source = source;
     return (FeInst*) ir;
