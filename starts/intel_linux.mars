@@ -13,32 +13,33 @@ when instrinsics::arch == .x86_64 && intrinsics::system == .linux {
             return len;
         };
 
-        mut stackptr: ^mut;
+        mut argc_ptr: ^mut;
 
         // set base pointer to zero, as is convention
         asm (0 -> "rbp");
 
         // retrieve stack pointer
-        asm (stackptr <- "rsp");
+        asm (argc_ptr <- "rsp");
 
         // our goal here is to turn C's dumb char* args
         // into based & marspilled gigachad []let u8
-        mut c_argv = cast(^let ^let u8) stackptr + 8
-        mut argc = (cast(^mut uint) stackptr)^; // argc is on at stackptr
+        mut c_argv = cast(^let ^let u8) argc_ptr + 8
+        mut argc = (cast(^mut uint) argc_ptr)^; // argc is on at stackptr
 
         mut argv: []mut []let u8 = ---;
         argv.len = argc;
 
         // allocate some quick stack space for our argv. slices are 16 bytes, so we need 16 * argc.
-        asm (argc * 16 -> "gpr offset", stackptr <- "rsp") {
+        asm (argc * 16 -> "gpr offset", argv.raw <- "rsp") {
             "sub rsp, offset"
         }
-        argv.raw = stackptr; // put argv inside the space we just allocated
 
         for i in 0..<argc {
             argv[i].raw = c_argv[i];
             argv[i].len = cstrlen(c_argv);
         }
+
+        // TODO get the environment string array and marspill it
 
         let ret = instrinsics::main(argv);
         asm (60 -> "rax", ret -> "rdi") {
