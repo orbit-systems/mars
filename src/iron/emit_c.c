@@ -76,12 +76,12 @@ static string normalized_identifier(FeModule* m, void* entity, string name) {
 }
 
 // takes in i8, emits (u8), etc.
-static void emit_signed_to_unsigned_cast(FeType* t, StringBuilder* sb) {
+static char* signed_to_unsigned_cast(FeType* t) {
     switch (t->kind) {
-    case FE_I8:  sb_append_c(sb, "(u8)"); break;
-    case FE_I16: sb_append_c(sb, "(u16)"); break;
-    case FE_I32: sb_append_c(sb, "(u32)"); break;
-    case FE_I64: sb_append_c(sb, "(u64)"); break;
+    case FE_I8:  return "(u8)";
+    case FE_I16: return "(u16)";
+    case FE_I32: return "(u32)";
+    case FE_I64: return "(u64)";
     default:
         CRASH("");
     }
@@ -194,7 +194,17 @@ static void emit_symbol_defs(FeModule* m, StringBuilder* sb) {
         }
         sb_append_c(sb, ";\n");
     }
+
+    sb_append_c(sb, "\n");
 }
+
+static const char* opstrings[] = {
+    [FE_INST_SHL] = "<<",
+    [FE_INST_ADD] = "+",
+    [FE_INST_SUB] = "-",
+    [FE_INST_IMUL] = "*",
+    [FE_INST_UMUL] = "*",
+};
 
 static void emit_function(FeFunction* f, StringBuilder* sb) {
     emit_function_signature(f, sb);
@@ -202,15 +212,22 @@ static void emit_function(FeFunction* f, StringBuilder* sb) {
     sb_append_c(sb, " {\n");
 
     // emit value predeclarations
+    if (f->params_len != 0) {
+        sb_append_c(sb, "        ");
+        emit_type_name(f->params[0]->type, sb);
+        sb_append_c(sb, "_returnval_0;\n");
+    }
     foreach(FeBasicBlock* bb, f->blocks) {
         foreach(FeInst* inst, *bb) {
             if (inst->type->kind != FE_VOID) {
-                sb_printf(sb, "        ");
+                sb_append_c(sb, "        ");
                 emit_type_name(inst->type, sb);
                 sb_printf(sb, "_inst_%p;\n", inst);
             }
         }
     }
+
+    sb_printf(sb, "        goto _label_"str_fmt";\n", str_arg(f->blocks.at[f->entry_idx]->name));
 
     // emit instructions
     foreach(FeBasicBlock* bb, f->blocks) {
@@ -227,7 +244,7 @@ static void emit_function(FeFunction* f, StringBuilder* sb) {
                 break;
             case FE_INST_CONST:
                 switch (inst->type->kind) {
-                case FE_I64: sb_printf(sb, "_inst_%p = (i64) %lld", inst, (i64) ((FeInstConst*)inst)->i64); break;
+                case FE_I64: sb_printf(sb, "_inst_%p = (i64) %lldll", inst, (i64) ((FeInstConst*)inst)->i64); break;
                 case FE_I32: sb_printf(sb, "_inst_%p = (i32) %lld", inst, (i64) ((FeInstConst*)inst)->i32); break;
                 case FE_I16: sb_printf(sb, "_inst_%p = (i16) %lld", inst, (i64) ((FeInstConst*)inst)->i16); break;
                 case FE_I8:  sb_printf(sb, "_inst_%p = (i8)  %lld", inst, (i64) ((FeInstConst*)inst)->i8);  break;
@@ -235,6 +252,39 @@ static void emit_function(FeFunction* f, StringBuilder* sb) {
                 case FE_F32: sb_printf(sb, "_inst_%p = (f32) %lf",  inst, (double) ((FeInstConst*)inst)->f32); break;
                 case FE_F16: sb_printf(sb, "_inst_%p = (f16) %lf",  inst, (double) ((FeInstConst*)inst)->f16); break;
                 default: break;
+                }
+                break;
+            case FE_INST_SHL:
+            case FE_INST_ASR:
+            case FE_INST_ADD:
+            case FE_INST_IMUL:
+                FeInstBinop* binop = (FeInstBinop*) inst;
+
+                sb_printf(sb, "_inst_%p = _inst_%p %s _inst_%p", inst, binop->lhs, opstrings[inst->kind], binop->rhs);
+                break;
+            case FE_INST_UMUL:
+            case FE_INST_UDIV:
+            case FE_INST_LSR:
+                binop = (FeInstBinop*) inst;
+                
+                sb_printf(sb, "_inst_%p = %s _inst_%p %s %s _inst_%p", inst, 
+                    signed_to_unsigned_cast(binop->lhs->type), binop->lhs, opstrings[inst->kind], 
+                    signed_to_unsigned_cast(binop->rhs->type), binop->rhs);
+                break;
+            case FE_INST_RETURNVAL:
+                FeInstReturnval* retval = (FeInstReturnval*) inst;
+                
+                if (retval->return_idx == 0) {
+                    sb_printf(sb, "_returnval_%d =  _inst_%p", retval->return_idx, retval->source);
+                } else {
+                    sb_printf(sb, "*_returnval_%d = _inst_%p", retval->return_idx, retval->source);
+                }
+                break;
+            case FE_INST_RETURN:
+                if (f->params_len > 0) {
+                    sb_append_c(sb, "return _returnval_0");
+                } else {
+                    sb_append_c(sb, "return");
                 }
             default:
                 break;

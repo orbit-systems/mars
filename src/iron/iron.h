@@ -337,7 +337,7 @@ enum {
     // FeInstJump
     FE_INST_JUMP,
 
-    // FeInstReturnVal
+    // FeInstReturnval
     FE_INST_RETURNVAL,
     // FeInstReturn
     FE_INST_RETURN,
@@ -486,12 +486,12 @@ typedef struct FeInstParamVal {
 } FeInstParamVal;
 
 // set register return val
-typedef struct FeInstReturnVal {
+typedef struct FeInstReturnval {
     FeInst base;
     FeInst* source;
 
     u32 return_idx;
-} FeInstReturnVal;
+} FeInstReturnval;
 
 typedef struct FeInstReturn {
     FeInst base;

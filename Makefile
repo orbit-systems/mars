@@ -38,7 +38,7 @@ CFLAGS = -std=c17 -MD -D_XOPEN_SOURCE=700 -fwrapv \
 		 -Wall -Wno-format -Wno-unused -Werror=incompatible-pointer-types -Wno-discarded-qualifiers \
 		 -lm
 
-OPT = -O3 -flto
+OPT = -O3
 
 FILE_NUM = 0
 
