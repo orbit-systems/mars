@@ -21,7 +21,7 @@ void check_module(mars_module* mod) {
                 
                 if (trunk.as_decl_stmt->rhs.type == AST_func_literal_expr) {
                     //we handle this like a func literal.
-                    if (trunk.as_decl_stmt->lhs.len != 1) error_at_node(mod, trunk.as_decl_stmt->lhs, "LHS of a function literal declaration should only have one element!");
+                    if (trunk.as_decl_stmt->lhs.len != 1) error_at_node(mod, trunk, "LHS of a function literal declaration should only have one element!");
                     check_func_literal(mod, trunk, global_scope, trunk.as_decl_stmt->lhs.at[0]);
                 }
 
@@ -39,8 +39,6 @@ void check_module(mars_module* mod) {
 type* check_expr(mars_module* mod, AST node, entity_table* scope) {
     //we fill out ent with the info it needs :)
     switch(node.type) {
-        case AST_func_literal_expr:
-            return check_func_literal(mod, node, scope);
         case AST_identifier:
             //ent->
         default:
@@ -57,12 +55,12 @@ type* check_func_literal(mars_module* mod, AST decl_root, entity_table* scope, A
     
     AST node = decl_root.as_decl_stmt->rhs;
 
-    entity* func_ent = new_entity(scope, identifier.as_identifer->tok->text, decl_root);
+    entity* func_ent = new_entity(scope, identifier.as_identifier->tok->text, decl_root);
 
     foreach(AST_typed_field param, node.as_func_literal_expr->type.as_fn_type_expr->parameters) {
         printf("param: "str_fmt", type: %s\n", str_arg(param.field.as_identifier->tok->text), ast_type_str[param.type.type]);
         
     }
     entity_table* func_scope = new_entity_table(scope);
-    
+
 }
