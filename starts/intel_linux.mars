@@ -36,7 +36,7 @@ when instrinsics::arch == .x86_64 && intrinsics::system == .linux {
 
         for i in 0..<argc {
             argv[i].raw = c_argv[i];
-            argv[i].len = cstrlen(c_argv);
+            argv[i].len = cstrlen(c_argv[i]);
         }
 
         // TODO get the environment string array and marspill it
