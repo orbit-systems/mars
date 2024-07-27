@@ -1,9 +1,9 @@
 module core;
 
-when instrinsics::arch == .x86_64 && intrinsics::system == .linux {
+when instrinsics::arch == .x86 && intrinsics::system == .linux {
 
-    instrinsics::assert(sizeof uint  == 8);
-    instrinsics::assert(sizeof []let == 16);
+    instrinsics::assert(sizeof uint  == 4);
+    instrinsics::assert(sizeof []let == 8);
 
     let _ = fn #symbol("_start") #cconv("sysv") () {
 
@@ -16,10 +16,10 @@ when instrinsics::arch == .x86_64 && intrinsics::system == .linux {
         mut argc_ptr: ^mut;
 
         // set base pointer to zero, as is convention
-        asm (0 -> "rbp");
+        asm (0 -> "ebp");
 
         // retrieve stack pointer
-        asm (argc_ptr <- "rsp");
+        asm (argc_ptr <- "esp");
 
         // our goal here is to turn C's dumb char* args
         // into based & marspilled gigachad []let u8
@@ -30,8 +30,8 @@ when instrinsics::arch == .x86_64 && intrinsics::system == .linux {
         argv.len = argc;
 
         // allocate some quick stack space for our argv.
-        asm (argc * sizeof(argv[0]) -> "gpr offset", argv.raw <- "rsp") {
-            "sub rsp, offset"
+        asm (argc * sizeof(argv[0]) -> "gpr offset", argv.raw <- "esp") {
+            "sub esp, offset"
         }
 
         for i in 0..<argc {
@@ -42,7 +42,7 @@ when instrinsics::arch == .x86_64 && intrinsics::system == .linux {
         // TODO get the environment string array and marspill it
 
         let ret = instrinsics::main(argv);
-        asm (60 -> "rax", ret -> "rdi") {
+        asm (60 -> "eax", ret -> "ebx") {
             "syscall"
         }
     };
