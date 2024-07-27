@@ -5,7 +5,7 @@ when instrinsics::arch == .x86_64 && intrinsics::system == .linux {
     instrinsics::assert(sizeof uint  == 8);
     instrinsics::assert(sizeof []let == 16);
 
-    let _ = fn #symbol("_start") #cconv("sysv") () {
+    let _ = fn #symbol("_start") #cconv("sysv") #no_frame_ptr () {
 
         let cstrlen = fn(cstr: ^let u8) -> uint {
             mut len = 0;
