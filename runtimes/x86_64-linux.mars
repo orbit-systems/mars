@@ -41,7 +41,8 @@ when instrinsics::arch == .x86_64 && intrinsics::system == .linux {
 
         // TODO get the environment string array and marspill it
 
-        let ret = instrinsics::main(argv);
+        let ret = 0;
+        ret = instrinsics::main(argv);
         asm (60 -> "rax", ret -> "rdi") {
             "syscall"
         }
