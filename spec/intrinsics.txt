@@ -1,14 +1,20 @@
 the compiler defines a built in "module" called `intrinsics`.
-it mainly contains constants that the compiler fills out with information
-about itself or the module being compiled.
+it contains compile-time information and compile-time utilities.
 
 intrinsics::arch        the target architecture.
-    aphelion = 0
+    enum {aphelion = 0,}
 
 intrinsics::system      the target OS or environment.
-    freestanding = 0
+    enum {freestanding = 0,}
 
 intrinsics::product     the type of file created by the compiler.
-    assembly = 0,
+    enum {assembly = 0,}
 
-intrinsics::assert      like C's static_assert, compile-time-checks an expression for truth (must be a bool).
+intrinsics::assert      checks an expression at compile-time for truth, like C's static_assert.
+    fn (cond: bool)
+
+intrinsics::compiler    compiler ID as a string. for the official compiler, this is "mars".
+    []let u8
+
+intrinsics::stringeq    compile-time string equality. only works on compile-time-known values.
+    fn (a, b: []let u8) -> bool

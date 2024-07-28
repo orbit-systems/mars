@@ -76,16 +76,6 @@ static void emit_type_definitions(FeModule* m, StringBuilder* sb) {
     }
 }
 
-// static int print_type_nme(FeType* t, char** bufptr) {
-//     char* og = *bufptr;
-//     if (is_null_str(simple_type_2_str(t))) {
-//         *bufptr += sprintf(*bufptr, "t%d", t->number);
-//     } else {
-//         *bufptr += sprintf(*bufptr, str_fmt, str_arg(simple_type_2_str(t)));
-//     }
-//     return *bufptr - og;
-// }
-
 static int sb_type_name(FeType* t, StringBuilder* sb) {
     char buf[16] = {0};
 

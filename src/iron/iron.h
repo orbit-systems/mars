@@ -390,10 +390,23 @@ typedef struct FeInstIndexPtr {
     FeInst* index;
 } FeInstIndexPtr;
 
+/*
+    load/store alignment
+
+    the .align_offset field on FeInstLoad and FeInstStore indicates how misaligned
+    the pointer is from the type's natural alignment. if align_offset is greater 
+    or equal to the types natural alignment (a good catch-all is 255), the 
+    pointer's alignment is treated as unknown.
+*/
+
+#define FE_MEMOP_UNKNOWN_ALIGNMENT 255
+
 typedef struct FeInstLoad {
     FeInst base;
 
     FeInst* location;
+
+    u8 align_offset;
 } FeInstLoad;
 
 typedef struct FeInstStore {
@@ -401,6 +414,8 @@ typedef struct FeInstStore {
 
     FeInst* location;
     FeInst* value;
+
+    u8 align_offset;
 } FeInstStore;
 
 typedef struct FeInstConst {
