@@ -2,20 +2,13 @@ the compiler defines a built in "module" called `intrinsics`.
 it mainly contains constants that the compiler fills out with information
 about itself or the module being compiled.
 
-// instrinsics::arch - the target architecture.
-let arch : enum int {
-    aphelion = 0,
-    /* more to come! */
-} = ---;
+intrinsics::arch        the target architecture.
+    aphelion = 0
 
-// instrinsics::system - the target OS or environment.
-let system : enum int {
-    freestanding = 0,
-    /* more to come! */
-} = ---;
+intrinsics::system      the target OS or environment.
+    freestanding = 0
 
-// instrinsics::product - the type of file made by the compiler.
-let product : enum int {
+intrinsics::product     the type of file created by the compiler.
     assembly = 0,
-    /* more to come! */
-} = ---;
+
+intrinsics::assert      like C's static_assert, compile-time-checks an expression for truth (must be a bool).
