@@ -23,7 +23,7 @@ when instrinsics::arch == .x86_64 && intrinsics::system == .linux {
 
         // our goal here is to turn C's dumb char* args
         // into based & marspilled gigachad []let u8
-        mut c_argv = cast(^let ^let u8) argc_ptr + sizeof(uint)
+        mut c_argv = cast(^let ^let u8) argc_ptr + sizeof(uint);
         mut argc = (cast(^mut uint) argc_ptr)^; // argc is on at stackptr
 
         mut argv: []mut []let u8 = ---;
