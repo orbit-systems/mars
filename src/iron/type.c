@@ -58,7 +58,7 @@ void fe_typegraph_init(FeModule* m) {
     return;
 }
 
-FeType* fe_type(FeModule* m, u8 kind, u64 len) {
+FeType* fe_type(FeModule* m, u8 kind) {
 
     u64 size = 0;
     switch (kind) {
@@ -74,28 +74,40 @@ FeType* fe_type(FeModule* m, u8 kind, u64 len) {
     case FE_F64:
         return m->typegraph.at[kind];
     case FE_ARRAY:
-        size = sizeof(FeType);
-        break;
+        // size = sizeof(FeType);
+        // break;
+        CRASH("use fe_type_array() to create an array type");
     case FE_AGGREGATE:
-        size = sizeof(FeType) + sizeof(FeType*) * (len);
+        // size = sizeof(FeType) + sizeof(FeType*) * (len);
+        CRASH("use fe_type_aggregate() to create an aggregate type");
         break;
     default:
         UNREACHABLE;
     }
+}
 
-    FeType* t = arena_alloc(&m->typegraph.alloca, size, alignof(FeType));
+FeType* fe_type_array(FeModule* m, FeType* subtype, u64 len) {
+
+    FeType* t = arena_alloc(&m->typegraph.alloca, sizeof(FeType), alignof(FeType));
 
     *t = (FeType){0};
-    t->kind = kind;
+    t->kind = FE_ARRAY;
+    t->array.sub = subtype;
+    t->array.len = len;
 
-    switch (kind) {
-    case FE_AGGREGATE:
-        t->aggregate.len = len;
-        break;
-    case FE_ARRAY:
-        t->array.len = len;
-        break;
-    }
+    return t;
+}
+
+FeType* fe_type_aggregate(FeModule* m, u64 len) {
+
+    FeType* t = arena_alloc(&m->typegraph.alloca, 
+        sizeof(FeType) + sizeof(FeType*) * (len), 
+        alignof(FeType)
+    );
+
+    *t = (FeType){0};
+    t->kind = FE_AGGREGATE;
+    t->aggregate.len = len;
 
     return t;
 }

@@ -11,9 +11,9 @@
 typedef struct FeModule FeModule;
 typedef struct FePass   FePass;
 
-typedef struct FeType FeType;
-typedef struct FeInst      FeInst;
-typedef        FeInst*     FeInstPTR;
+typedef struct FeType  FeType;
+typedef struct FeInst  FeInst;
+typedef        FeInst* FeInstPTR;
 
 da_typedef(FeInstPTR);
 
@@ -497,8 +497,6 @@ typedef struct FeInstBranch {
 // basic block and continues to this node.
 // MUST BE THE FIRST INSTRUCTION IN THE ENTRY BLOCK OR IN A SEQUENCE OF 
 // OTHER FeInstParamVal INSTRUCTIONS
-// BECAUSE OF HOW THE REG ALLOCATOR USES THIS TO CONSTRUCT MACHINE REGISTER LIFETIMES
-// ALONGSIDE VIRTUAL REGISTER LIFETIMES
 typedef struct FeInstParamVal {
     FeInst base;
 
@@ -520,7 +518,9 @@ typedef struct FeInstReturn {
 extern const size_t fe_inst_sizes[];
 
 FeModule*     fe_new_module(string name);
-FeType*       fe_type(FeModule* m, u8 kind, u64 len);
+FeType*       fe_type(FeModule* m, u8 kind);
+FeType*       fe_type_array(FeModule* m, FeType* subtype, u64 len);
+FeType*       fe_type_aggregate(FeModule* m, u64 len);
 FeFunction*   fe_new_function(FeModule* mod, FeSymbol* sym);
 FeBasicBlock* fe_new_basic_block(FeFunction* fn, string name);
 FeData*       fe_new_data(FeModule* mod, FeSymbol* sym, bool read_only);

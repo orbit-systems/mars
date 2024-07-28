@@ -25,6 +25,10 @@ void fe_set_target_config(FeModule* m, void* meta) {
 }
 
 void fe_codegen(FeModule* m) {
+    if (!m->target.arch && !m->target.product && !m->target.system) {
+        CRASH("no target provided");
+    }
+
     if (!(_FE_ARCH_BEGIN    < m->target.arch    && m->target.arch    < _FE_ARCH_END)   ||
         !(_FE_SYSTEM_BEGIN  < m->target.system  && m->target.system  < _FE_SYSTEM_END) ||
         !(_FE_PRODUCT_BEGIN < m->target.product && m->target.product < _FE_PRODUCT_END)) {
