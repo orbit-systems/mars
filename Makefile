@@ -36,7 +36,6 @@ ASANFLAGS = -fsanitize=undefined -fsanitize=address
 CFLAGS = -std=c17 -MD -D_XOPEN_SOURCE=700 -fwrapv \
 		 -fno-delete-null-pointer-checks -fno-strict-overflow -fno-strict-aliasing \
 		 -Wall -Wno-format -Wno-unused -Werror=incompatible-pointer-types -Wno-discarded-qualifiers \
-		 -lm
 
 OPT = -O3
 
@@ -49,7 +48,7 @@ build/%.o: src/%.c
 
 build: $(OBJECTS)
 	@echo Linking with $(LD)...
-	@$(LD) $(OBJECTS) -o $(EXECUTABLE_NAME) $(CFLAGS)
+	@$(LD) $(OBJECTS) -o $(EXECUTABLE_NAME) $(CFLAGS) -lm
 	@echo Successfully built: $(EXECUTABLE_NAME)
 
 debug: CFLAGS += $(DEBUGFLAGS)

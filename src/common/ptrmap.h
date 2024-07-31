@@ -1,6 +1,8 @@
 #pragma once
 #define PTRMAP_H
 
+// ptrmap associates a void* with another void*.
+
 #include "common/orbit.h"
 #include "common/alloc.h"
 
