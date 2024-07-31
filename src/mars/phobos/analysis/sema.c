@@ -36,7 +36,7 @@ void check_module(mars_module* mod) {
     }
 }
 
-type* check_expr(mars_module* mod, AST node, entity_table* scope) {
+Type* check_expr(mars_module* mod, AST node, entity_table* scope) {
     //we fill out ent with the info it needs :)
     switch(node.type) {
         case AST_identifier:
@@ -46,7 +46,7 @@ type* check_expr(mars_module* mod, AST node, entity_table* scope) {
     }
 }
 
-type* check_func_literal(mars_module* mod, AST decl_root, entity_table* scope, AST identifier) {
+Type* check_func_literal(mars_module* mod, AST decl_root, entity_table* scope, AST identifier) {
     if (decl_root.type != AST_decl_stmt) error_at_node(mod, decl_root, "[check_func_literal] INTERNAL COMPILER ERROR: got %s, expected declaration statement", ast_type_str[decl_root.type]);
     if (identifier.type != AST_identifier) error_at_node(mod, identifier, "[check_func_literal] INTERNAL COMPILER ERROR: got %s, expected identifier", ast_type_str[identifier.type]);
     
@@ -63,4 +63,15 @@ type* check_func_literal(mars_module* mod, AST decl_root, entity_table* scope, A
     }
     entity_table* func_scope = new_entity_table(scope);
 
+
+    Type* fnptr = make_type(TYPE_FUNCTION); // fn (int) -> int
+
+    
+
 }
+
+/*
+
+check_stmt -> check_decl_stmt -> check_expr
+
+*/

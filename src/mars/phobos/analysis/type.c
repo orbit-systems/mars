@@ -2,14 +2,14 @@
 
 // type engine
 
-type_graph typegraph;
+TypeGraph typegraph;
 
 // #define LOG(...) printf(__VA_ARGS__)
 #define LOG(...)
 
 typedef struct {
-    type* dest;
-    type* src;
+    Type* dest;
+    Type* src;
 } type_pair;
 
 da_typedef(type_pair);
@@ -19,26 +19,26 @@ static u64 forceinline align_forward(u64 n, u64 align) {
     return (n + align - 1) & ~(align - 1);
 }
 
-void canonicalize_type_graph() {
+void type_canonicalize_graph() {
 
     LOG("preliminary normalization\n");
 
     // preliminary normalization
     for_urange(i, 0, typegraph.len) {
-        type* t = typegraph.at[i];
+        Type* t = typegraph.at[i];
         switch (t->tag) {
         case TYPE_ALIAS: // alias retargeting
             while (t->tag == TYPE_ALIAS) {
-                merge_type_references(get_target(t), t, false);
-                t = get_target(t);
+                merge_type_references(type_get_target(t), t, false);
+                t = type_get_target(t);
             }
             break;
         case TYPE_ENUM: // variant sorting
             // using insertion sort for nice best-case complexity
             for_urange(i, 1, t->as_enum.variants.len) {
                 u64 j = i;
-                while (j > 0 && type_enum_variant_less(get_variant(t, j), get_variant(t, j-1))) {
-                    enum_variant temp = *get_variant(t, j);
+                while (j > 0 && type_enum_variant_less(type_get_variant(t, j), type_get_variant(t, j-1))) {
+                    TypeEnumVariant temp = *type_get_variant(t, j);
                     t->as_enum.variants.at[j] = t->as_enum.variants.at[j-1];
                     t->as_enum.variants.at[j-1] = temp;
                     j--;
@@ -70,7 +70,7 @@ void canonicalize_type_graph() {
                 // if (!(typegraph.at[i]->dirty || typegraph.at[j]->dirty)) continue;
                 bool executed_TSA = false;
                 LOG("are %d and %d equivalent?\n", i, j);
-                if (types_are_equivalent(typegraph.at[i], typegraph.at[j], &executed_TSA)) {
+                if (type_equivalent(typegraph.at[i], typegraph.at[j], &executed_TSA)) {
                     LOG("yes!\n");
                     da_append(&equalities, ((type_pair){typegraph.at[i], typegraph.at[j]}));
                 } else {
@@ -88,11 +88,11 @@ void canonicalize_type_graph() {
             // typegraph.at[i]->dirty = false;
         }
         for (int i = equalities.len-1; i >= 0; --i) {
-            type* src = equalities.at[i].src;
+            Type* src = equalities.at[i].src;
             while (src->moved) {
                 src = src->moved; 
             }
-            type* dest = equalities.at[i].dest;
+            Type* dest = equalities.at[i].dest;
             while (dest->moved) {
                 dest = dest->moved; 
             }
@@ -119,10 +119,10 @@ void canonicalize_type_graph() {
     da_destroy(&equalities);
 }
 
-bool types_are_equivalent(type* a, type* b, bool* executed_TSA) {
+bool type_equivalent(Type* a, Type* b, bool* executed_TSA) {
 
-    while (a->tag == TYPE_ALIAS) a = get_target(a);
-    while (b->tag == TYPE_ALIAS) b = get_target(b);
+    while (a->tag == TYPE_ALIAS) a = type_get_target(a);
+    while (b->tag == TYPE_ALIAS) b = type_get_target(b);
 
     // simple checks
     if (a == b) return true;
@@ -134,7 +134,7 @@ bool types_are_equivalent(type* a, type* b, bool* executed_TSA) {
     case TYPE_POINTER:
     case TYPE_SLICE:
         if (a->as_reference.mutable != b->as_reference.mutable) return false;
-        if (get_target(a) == get_target(b)) return true;
+        if (type_get_target(a) == type_get_target(b)) return true;
         break;
     case TYPE_STRUCT:
     case TYPE_UNION:
@@ -142,7 +142,7 @@ bool types_are_equivalent(type* a, type* b, bool* executed_TSA) {
         if (a->as_aggregate.fields.len != b->as_aggregate.fields.len) return false;
         bool subtype_equals = true;
         for_urange(i, 0, a->as_aggregate.fields.len) {
-            if (get_field(a, i)->subtype != get_field(b, i)->subtype) {
+            if (type_get_field(a, i)->subtype != type_get_field(b, i)->subtype) {
                 subtype_equals = false;
                 break;
             }
@@ -158,14 +158,14 @@ bool types_are_equivalent(type* a, type* b, bool* executed_TSA) {
         }
         subtype_equals = true;
         for_urange(i, 0, a->as_function.params.len) {
-            if (a->as_function.params.at[i].subtype != b->as_function.params.at[i].subtype) {
+            if (a->as_function.params.at[i] != b->as_function.params.at[i]) {
                 subtype_equals = false;
                 break;
             }
         }
         if (subtype_equals) return true;
         for_urange(i, 0, a->as_function.returns.len) {
-            if (a->as_function.returns.at[i].subtype != b->as_function.returns.at[i].subtype) {
+            if (a->as_function.returns.at[i] != b->as_function.returns.at[i]) {
                 subtype_equals = false;
                 break;
             }
@@ -196,14 +196,14 @@ bool types_are_equivalent(type* a, type* b, bool* executed_TSA) {
     }
 
     for_urange(i, 1, a_numbers) {
-        if (!type_element_equivalent(get_type_from_num(i, 0), get_type_from_num(i, 1), 0, 1)) {
+        if (!type_element_equivalent(type_get_from_num(i, 0), type_get_from_num(i, 1), 0, 1)) {
             return false;
         }
     }
     return true;
 }
 
-bool type_element_equivalent(type* a, type* b, int num_set_a, int num_set_b) {
+bool type_element_equivalent(Type* a, Type* b, int num_set_a, int num_set_b) {
     if (a->tag != b->tag) return false;
 
     switch (a->tag) {
@@ -228,10 +228,10 @@ bool type_element_equivalent(type* a, type* b, int num_set_a, int num_set_b) {
         }
 
         for_urange(i, 0, a->as_enum.variants.len) {
-            if (get_variant(a, i)->enum_val != get_variant(b, i)->enum_val) {
+            if (type_get_variant(a, i)->enum_val != type_get_variant(b, i)->enum_val) {
                 return false;
             }
-            if (!string_eq(get_variant(a, i)->name, get_variant(b, i)->name)) {
+            if (!string_eq(type_get_variant(a, i)->name, type_get_variant(b, i)->name)) {
                 return false;
             }
         }
@@ -243,10 +243,10 @@ bool type_element_equivalent(type* a, type* b, int num_set_a, int num_set_b) {
             return false;
         }
         for_urange(i, 0, a->as_aggregate.fields.len) {
-            if (!string_eq(get_field(a, i)->name, get_field(b, i)->name)) {
+            if (!string_eq(type_get_field(a, i)->name, type_get_field(b, i)->name)) {
                 return false;
             }
-            if (get_field(a, i)->subtype->type_nums[num_set_a] != get_field(b, i)->subtype->type_nums[num_set_b]) {
+            if (type_get_field(a, i)->subtype->type_nums[num_set_a] != type_get_field(b, i)->subtype->type_nums[num_set_b]) {
                 return false;
             }
         }
@@ -259,18 +259,12 @@ bool type_element_equivalent(type* a, type* b, int num_set_a, int num_set_b) {
             return false;
         }
         for_urange(i, 0, a->as_function.params.len) {
-            if (!string_eq(a->as_function.params.at[i].name, b->as_function.params.at[i].name)) {
-                return false;
-            }
-            if (a->as_function.params.at[i].subtype->type_nums[num_set_a] != b->as_function.params.at[i].subtype->type_nums[num_set_b]) {
+            if (a->as_function.params.at[i]->type_nums[num_set_a] != b->as_function.params.at[i]->type_nums[num_set_b]) {
                 return false;
             }
         }
         for_urange(i, 0, a->as_function.returns.len) {
-            if (!string_eq(a->as_function.returns.at[i].name, b->as_function.returns.at[i].name)) {
-                return false;
-            }
-            if (a->as_function.returns.at[i].subtype->type_nums[num_set_a] != b->as_function.returns.at[i].subtype->type_nums[num_set_b]) {
+            if (a->as_function.returns.at[i]->type_nums[num_set_a] != b->as_function.returns.at[i]->type_nums[num_set_b]) {
                 return false;
             }
         }
@@ -286,7 +280,7 @@ bool type_element_equivalent(type* a, type* b, int num_set_a, int num_set_b) {
     case TYPE_POINTER:
     case TYPE_SLICE:
         if (a->as_reference.mutable != b->as_reference.mutable) return false;
-        if (get_target(a)->type_nums[num_set_a] != get_target(b)->type_nums[num_set_b]) {
+        if (type_get_target(a)->type_nums[num_set_a] != type_get_target(b)->type_nums[num_set_b]) {
             return false;
         }
         break;
@@ -299,36 +293,36 @@ bool type_element_equivalent(type* a, type* b, int num_set_a, int num_set_b) {
     return true;
 }
 
-void merge_type_references(type* dest, type* src, bool disable) {
+void merge_type_references(Type* dest, Type* src, bool disable) {
 
-    u64 src_index = get_index(src);
+    u64 src_index = type_get_index(src);
     if (src_index == UINT32_MAX) {
         return;
     }
 
     for_urange(i, 0, typegraph.len) {
-        type* t = typegraph.at[i];
+        Type* t = typegraph.at[i];
         switch (t->tag) {
         case TYPE_STRUCT:
         case TYPE_UNION:
         case TYPE_UNTYPED_AGGREGATE:
             for_urange(i, 0, t->as_aggregate.fields.len) {
-                if (get_field(t, i)->subtype == src) {
-                    get_field(t, i)->subtype = dest;
+                if (type_get_field(t, i)->subtype == src) {
+                    type_get_field(t, i)->subtype = dest;
                     // t->dirty = true;
                 }
             }
             break;
         case TYPE_FUNCTION:
             for_urange(i, 0, t->as_function.params.len) {
-                if (t->as_function.params.at[i].subtype == src) {
-                    t->as_function.params.at[i].subtype = dest;
+                if (t->as_function.params.at[i] == src) {
+                    t->as_function.params.at[i] = dest;
                     // t->dirty = true;
                 }
             }
             for_urange(i, 0, t->as_function.returns.len) {
-                if (t->as_function.returns.at[i].subtype == src) {
-                    t->as_function.returns.at[i].subtype = dest;
+                if (t->as_function.returns.at[i] == src) {
+                    t->as_function.returns.at[i] = dest;
                     // t->dirty = true;
                 }
             }
@@ -337,8 +331,8 @@ void merge_type_references(type* dest, type* src, bool disable) {
         case TYPE_SLICE:
         case TYPE_ALIAS:
         case TYPE_DISTINCT:
-            if (get_target(t) == src) {
-                set_target(t, dest);
+            if (type_get_target(t) == src) {
+                type_set_target(t, dest);
                 // t->dirty = true;
             }
             break;
@@ -358,7 +352,7 @@ void merge_type_references(type* dest, type* src, bool disable) {
     // dest->dirty = true;
 }
 
-void type_locally_number(type* t, u64* number, int num_set) {
+void type_locally_number(Type* t, u64* number, int num_set) {
     if (t->type_nums[num_set] != 0) return;
 
     t->type_nums[num_set] = (*number)++;
@@ -368,15 +362,15 @@ void type_locally_number(type* t, u64* number, int num_set) {
     case TYPE_UNION:
     case TYPE_UNTYPED_AGGREGATE:
         for_urange(i, 0, t->as_aggregate.fields.len) {
-            type_locally_number(get_field(t, i)->subtype, number, num_set);
+            type_locally_number(type_get_field(t, i)->subtype, number, num_set);
         }
         break;
     case TYPE_FUNCTION:
         for_urange(i, 0, t->as_function.params.len) {
-            type_locally_number(t->as_function.params.at[i].subtype, number, num_set);
+            type_locally_number(t->as_function.params.at[i], number, num_set);
         }
         for_urange(i, 0, t->as_function.returns.len) {
-            type_locally_number(t->as_function.returns.at[i].subtype, number, num_set);
+            type_locally_number(t->as_function.returns.at[i], number, num_set);
         }
         break;
     case TYPE_ARRAY:
@@ -386,7 +380,7 @@ void type_locally_number(type* t, u64* number, int num_set) {
     case TYPE_SLICE:
     case TYPE_DISTINCT:
     case TYPE_ALIAS:
-        type_locally_number(get_target(t), number, num_set);
+        type_locally_number(type_get_target(t), number, num_set);
         break;
     default:
         break;
@@ -394,9 +388,9 @@ void type_locally_number(type* t, u64* number, int num_set) {
 }
 
 // do checking on the fly, improved method for ""incomplete"" type graphs
-bool otf_types_are_equivalent(type* a, type* b) {
-    while (a->tag == TYPE_ALIAS) a = get_target(a);
-    while (b->tag == TYPE_ALIAS) b = get_target(b);
+bool otf_types_are_equivalent(Type* a, Type* b) {
+    while (a->tag == TYPE_ALIAS) a = type_get_target(a);
+    while (b->tag == TYPE_ALIAS) b = type_get_target(b);
 
     // simple checks
     if (a == b) return true;
@@ -408,7 +402,7 @@ bool otf_types_are_equivalent(type* a, type* b) {
     case TYPE_POINTER:
     case TYPE_SLICE:
         if (a->as_reference.mutable != b->as_reference.mutable) return false;
-        if (get_target(a) == get_target(b)) return true;
+        if (type_get_target(a) == type_get_target(b)) return true;
         break;
     case TYPE_STRUCT:
     case TYPE_UNION:
@@ -416,7 +410,7 @@ bool otf_types_are_equivalent(type* a, type* b) {
         if (a->as_aggregate.fields.len != b->as_aggregate.fields.len) return false;
         bool subtype_equals = true;
         for_urange(i, 0, a->as_aggregate.fields.len) {
-            if (get_field(a, i)->subtype != get_field(b, i)->subtype) {
+            if (type_get_field(a, i)->subtype != type_get_field(b, i)->subtype) {
                 subtype_equals = false;
                 break;
             }
@@ -432,14 +426,14 @@ bool otf_types_are_equivalent(type* a, type* b) {
         }
         subtype_equals = true;
         for_urange(i, 0, a->as_function.params.len) {
-            if (a->as_function.params.at[i].subtype != b->as_function.params.at[i].subtype) {
+            if (a->as_function.params.at[i] != b->as_function.params.at[i]) {
                 subtype_equals = false;
                 break;
             }
         }
         if (subtype_equals) return true;
         for_urange(i, 0, a->as_function.returns.len) {
-            if (a->as_function.returns.at[i].subtype != b->as_function.returns.at[i].subtype) {
+            if (a->as_function.returns.at[i] != b->as_function.returns.at[i]) {
                 subtype_equals = false;
                 break;
             }
@@ -470,14 +464,14 @@ void type_reset_numbers(int num_set) {
     }
 }
 
-type* get_type_from_num(u16 num, int num_set) {
+Type* type_get_from_num(u16 num, int num_set) {
     for_urange(i, 0, typegraph.len) {
         if (typegraph.at[i]->type_nums[num_set] == num) return typegraph.at[i];
     }
     return NULL;
 }
 
-type* make_type(u8 tag) {
+Type* make_type(u8 tag) {
     if (typegraph.at == NULL) {
         make_type_graph();
     }
@@ -485,8 +479,8 @@ type* make_type(u8 tag) {
         return typegraph.at[tag];
     }
 
-    type* t = mars_alloc(sizeof(type));
-    *t = (type){0};
+    Type* t = mars_alloc(sizeof(Type));
+    *t = (Type){0};
     t->moved = false;
     t->tag = tag;
 
@@ -494,11 +488,15 @@ type* make_type(u8 tag) {
     case TYPE_STRUCT:
     case TYPE_UNION:
     case TYPE_UNTYPED_AGGREGATE:
-        da_init(&t->as_aggregate.fields, 1);
+        da_init(&t->as_aggregate.fields, 4);
         break;
     case TYPE_ENUM:
-        da_init(&t->as_enum.variants, 1);
+        da_init(&t->as_enum.variants, 4);
         t->as_enum.backing_type = typegraph.at[TYPE_I64];
+        break;
+    case TYPE_FUNCTION:
+        da_init(&t->as_function.params, 4);
+        da_init(&t->as_function.returns, 1);
         break;
     default: break;
     }
@@ -510,7 +508,7 @@ type* make_type(u8 tag) {
 }
 
 void make_type_graph() {
-    typegraph = (type_graph){0};
+    typegraph = (TypeGraph){0};
     da_init(&typegraph, 3);
 
     for_range(i, 0, TYPE_META_INTEGRAL) {
@@ -518,23 +516,39 @@ void make_type_graph() {
     }
 }
 
-forceinline void add_field(type* s, string name, type* sub) {
-    da_append(&s->as_aggregate.fields, ((struct_field){name, sub}));
+forceinline void type_add_param(Type* s, Type* sub) {
+    da_append(&s->as_function.params, sub);
 }
 
-forceinline struct_field* get_field(type* s, size_t i) {
+forceinline Type* type_get_param(Type* s, size_t i) {
+    return s->as_function.params.at[i];
+}
+
+forceinline void type_add_return(Type* s, Type* sub) {
+    da_append(&s->as_function.returns, sub);
+}
+
+forceinline Type* type_get_return(Type* s, size_t i) {
+    return s->as_function.params.at[i];
+}
+
+forceinline void type_add_field(Type* s, string name, Type* sub) {
+    da_append(&s->as_aggregate.fields, ((TypeStructField){name, sub}));
+}
+
+forceinline TypeStructField* type_get_field(Type* s, size_t i) {
     return &s->as_aggregate.fields.at[i];
 }
 
-forceinline void add_variant(type* e, string name, i64 val) {
-    da_append(&e->as_enum.variants, ((enum_variant){name, val}));
+forceinline void type_add_variant(Type* e, string name, i64 val) {
+    da_append(&e->as_enum.variants, ((TypeEnumVariant){name, val}));
 }
 
-forceinline enum_variant* get_variant(type* e, size_t i) {
+forceinline TypeEnumVariant* type_get_variant(Type* e, size_t i) {
     return &e->as_enum.variants.at[i];
 }
 
-forceinline bool type_enum_variant_less(enum_variant* a, enum_variant* b) {
+forceinline bool type_enum_variant_less(TypeEnumVariant* a, TypeEnumVariant* b) {
     if (a->enum_val == b->enum_val) {
         // use string names
         return string_cmp(a->name, b->name) < 0;
@@ -543,15 +557,15 @@ forceinline bool type_enum_variant_less(enum_variant* a, enum_variant* b) {
     }
 }
 
-forceinline void set_target(type* p, type* dest) {
+forceinline void type_set_target(Type* p, Type* dest) {
     p->as_reference.subtype = dest;
 }
 
-forceinline type* get_target(type* p) {
+forceinline Type* type_get_target(Type* p) {
     return p->as_reference.subtype;
 }
 
-u64 get_index(type* t) {
+u64 type_get_index(Type* t) {
     for_urange(i, 0, typegraph.len) {
         if (typegraph.at[i] == t) return i;
     }
@@ -561,7 +575,7 @@ u64 get_index(type* t) {
 void print_type_graph() {
     printf("-------------------------\n");
     for_urange(i, 0, typegraph.len) {
-        type* t = typegraph.at[i];
+        Type* t = typegraph.at[i];
         if (t->moved) continue;
         // printf("%-2zu   [%-2hu, %-2hu]\t", i, t->type_nums[0], t->type_nums[1]);
         printf("%-2zu\t", i);
@@ -580,25 +594,25 @@ void print_type_graph() {
         case TYPE_F32:     printf("f32\n");    break;
         case TYPE_F64:     printf("f64\n");    break;
         case TYPE_ALIAS:
-            printf("alias %zu\n", get_index(get_target(t)));
+            printf("alias %zu\n", type_get_index(type_get_target(t)));
             break;
         case TYPE_DISTINCT:
-            printf("distinct %zu\n", get_index(get_target(t)));
+            printf("distinct %zu\n", type_get_index(type_get_target(t)));
             break;
         case TYPE_POINTER:
-            printf("pointer %zu\n", get_index(get_target(t)));
+            printf("pointer %zu\n", type_get_index(type_get_target(t)));
             break;
         case TYPE_SLICE:
-            printf("slice %zu\n", get_index(get_target(t)));
+            printf("slice %zu\n", type_get_index(type_get_target(t)));
             break;
         case TYPE_ARRAY:
-            printf("array %zu\n", get_index(t->as_array.subtype));
+            printf("array %zu\n", type_get_index(t->as_array.subtype));
             break;
         case TYPE_STRUCT:
         case TYPE_UNION:
             printf(t->tag == TYPE_STRUCT ? "struct\n" : "union\n");
             for_urange(field, 0, t->as_aggregate.fields.len) {
-                printf("\t\t.%s : %zu\n", get_field(t, field)->name, get_index(get_field(t, field)->subtype));
+                printf("\t\t.%s : %zu\n", type_get_field(t, field)->name, type_get_index(type_get_field(t, field)->subtype));
             }
             break;
         default:
@@ -609,7 +623,7 @@ void print_type_graph() {
 }
 
 // is type unboundedly recursive (have infinite size)?
-bool type_is_infinite(type* t) {
+bool type_is_infinite(Type* t) {
     if (t->visited) return true;
 
     t->visited = true;
@@ -619,7 +633,7 @@ bool type_is_infinite(type* t) {
     case TYPE_STRUCT:
     case TYPE_UNION:
         for_urange(i, 0, t->as_aggregate.fields.len) {
-            if (type_is_infinite(get_field(t, i)->subtype)) {
+            if (type_is_infinite(type_get_field(t, i)->subtype)) {
                 is_inf = true;
                 break;
             }
@@ -627,13 +641,13 @@ bool type_is_infinite(type* t) {
         break;
     case TYPE_FUNCTION:
         for_urange(i, 0, t->as_function.params.len) {
-            if (type_is_infinite(t->as_function.params.at[i].subtype)) {
+            if (type_is_infinite(t->as_function.params.at[i])) {
                 is_inf = true;
                 break;
             }
         }
         for_urange(i, 0, t->as_function.returns.len) {
-            if (type_is_infinite(t->as_function.returns.at[i].subtype)) {
+            if (type_is_infinite(t->as_function.returns.at[i])) {
                 is_inf = true;
                 break;
             }
@@ -648,7 +662,7 @@ bool type_is_infinite(type* t) {
 
     case TYPE_DISTINCT:
     case TYPE_ALIAS:
-        type_is_infinite(get_target(t));
+        type_is_infinite(type_get_target(t));
         break;
     default:
         break;
@@ -658,7 +672,7 @@ bool type_is_infinite(type* t) {
     return is_inf;
 }
 
-u32 static size_of_internal(type* t) {
+u32 static size_of_internal(Type* t) {
     if (t->size != UINT32_MAX) return t->size;
 
     switch (t->tag) {
@@ -694,7 +708,7 @@ u32 static size_of_internal(type* t) {
     case TYPE_UNION: {
         u64 max_size = 0;
         for_urange(i, 0, t->as_aggregate.fields.len) {
-            u64 size = size_of_internal(get_field(t, i)->subtype);
+            u64 size = size_of_internal(type_get_field(t, i)->subtype);
             if (size > max_size) max_size = size;
         }
         return align_forward(max_size, type_real_align_of(t));
@@ -702,8 +716,8 @@ u32 static size_of_internal(type* t) {
     case TYPE_STRUCT: {
         u64 full_size = 0;
         for_urange(i, 0, t->as_aggregate.fields.len) {
-            get_field(t, i)->offset = full_size;
-            u64 elem_size = size_of_internal(get_field(t, i)->subtype);
+            type_get_field(t, i)->offset = full_size;
+            u64 elem_size = size_of_internal(type_get_field(t, i)->subtype);
             full_size += elem_size;
         }
         return align_forward(full_size, type_real_align_of(t));
@@ -713,12 +727,12 @@ u32 static size_of_internal(type* t) {
     }
 }
 
-u32 type_real_size_of(type* t) {
+u32 type_real_size_of(Type* t) {
     if (type_is_infinite(t)) return UINT32_MAX;
     return size_of_internal(t);
 }
 
-u32 static align_of_internal(type* t) {
+u32 static align_of_internal(Type* t) {
     if (t->align != UINT32_MAX) return t->align;
 
     switch (t->tag) {
@@ -754,7 +768,7 @@ u32 static align_of_internal(type* t) {
     case TYPE_STRUCT: {
         u64 max_align = 0;
         for_urange(i, 0, t->as_aggregate.fields.len) {
-            u64 align = align_of_internal(get_field(t, i)->subtype);
+            u64 align = align_of_internal(type_get_field(t, i)->subtype);
             if (align > max_align) max_align = align;
         }
         return t->align = max_align;
@@ -764,17 +778,17 @@ u32 static align_of_internal(type* t) {
     }
 }
 
-u32 type_real_align_of(type* t) {
+u32 type_real_align_of(Type* t) {
     if (type_is_infinite(t)) return UINT32_MAX;
     return align_of_internal(t);
 }
 
-forceinline bool is_raw_pointer(type* p) {
+forceinline bool is_raw_pointer(Type* p) {
     return (p->tag == TYPE_POINTER && p->as_reference.subtype->tag == TYPE_NONE);
 }
 
-bool implicitly_cast(type* to, type* from) {
-    if (types_are_equivalent(to, from, NULL)) return true;
+bool implicitly_cast(Type* to, Type* from) {
+    if (type_equivalent(to, from, NULL)) return true;
 
     switch(from->tag) {
     case TYPE_UNTYPED_INT:
@@ -803,7 +817,7 @@ bool implicitly_cast(type* to, type* from) {
 
         return false;
     case TYPE_ENUM:
-        return types_are_equivalent(to, from->as_enum.backing_type, NULL);
+        return type_equivalent(to, from->as_enum.backing_type, NULL);
     }
     return false;
 }

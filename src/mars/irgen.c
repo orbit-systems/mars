@@ -51,6 +51,6 @@ FeFunction* generate_ir_function(FeModule* mod, AST ast) {
     TODO("");
 }
 
-FeType* translate_type(FeModule* m, type* t) {
+FeType* translate_type(FeModule* m, Type* t) {
     TODO("");
 }

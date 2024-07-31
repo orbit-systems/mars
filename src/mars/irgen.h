@@ -17,4 +17,4 @@ void generate_ir_stmt_assign(FeFunction* f, FeBasicBlock* bb, AST ast);
 void generate_ir_stmt_return(FeFunction* f, FeBasicBlock* bb, AST ast);
 FeFunction* generate_ir_function(FeModule* mod, AST ast);
 
-FeType* translate_type(FeModule* m, type* t);
+FeType* translate_type(FeModule* m, Type* t);

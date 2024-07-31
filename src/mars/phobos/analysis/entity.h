@@ -17,7 +17,7 @@ typedef struct entity {
     AST declaration;
 
     union {
-        type* entity_type;
+        Type* entity_type;
         mars_module* module;
     };
 
@@ -54,7 +54,7 @@ typedef struct entity2 {
     bool is_used       : 1;
 
     union {
-        type* entity_type;
+        Type* entity_type;
         mars_module* module;
     };
 

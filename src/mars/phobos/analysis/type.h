@@ -63,90 +63,95 @@ enum {
 
 };
 
-typedef struct type type;
+typedef struct Type Type;
+typedef Type* TypePTR;
+da_typedef(TypePTR);
 
-typedef struct struct_field {
+typedef struct TypeStructField {
     string name;
-    type* subtype;
+    Type* subtype;
     u64   offset;
-} struct_field;
+} TypeStructField;
 
-da_typedef(struct_field);
+da_typedef(TypeStructField);
 
-typedef struct enum_variant {
+typedef struct TypeEnumVariant {
     string name;
     i64   enum_val;
-} enum_variant;
+} TypeEnumVariant;
 
-da_typedef(enum_variant);
+da_typedef(TypeEnumVariant);
 
-typedef struct type {
+typedef struct Type {
     union {
         struct {
             string name; // only used by TYPE_ALIAS
-            type* subtype;
+            Type* subtype;
             bool mutable; // only used by pointers and slices
         } as_reference; // used by TYPE_POINTER, TYPE_SLICE, TYPE_ALIAS, and TYPE_DISTINCT
         struct {
-            type* subtype;
+            Type* subtype;
             u64 len;
         } as_array;
         struct {
-            da(struct_field) fields;
+            da(TypeStructField) fields;
         } as_aggregate;
         struct {
-            da(struct_field) params;
-            da(struct_field) returns;
+            da(TypePTR) params;
+            da(TypePTR) returns;
         } as_function;
         struct {
-            da(enum_variant) variants;
-            type* backing_type;
+            da(TypeEnumVariant) variants;
+            Type* backing_type;
         } as_enum;
     };
-    type* moved;
+    Type* moved;
     u8 tag;
     bool visited : 1;
     u16 type_nums[2];
 
     u32 size;
     u32 align;
-} type;
+} Type;
 
 typedef struct {
-    type** at;
+    Type** at;
     size_t len;
     size_t cap;
-} type_graph;
+} TypeGraph;
 
-extern type_graph typegraph;
+extern TypeGraph typegraph;
 
 void  make_type_graph();
-type* make_type(u8 tag);
+Type* make_type(u8 tag);
 
-void          add_field(type* s, string name, type* sub);
-struct_field* get_field(type* s, size_t i);
-void          add_variant(type* e, string name, i64 val);
-enum_variant* get_variant(type* e, size_t i);
-void  set_target(type* p, type* dest);
-type* get_target(type* p);
-u64   get_index(type* t);
+void  type_add_param(Type* s, Type* sub);
+Type* type_get_param(Type* s, size_t i);
+void  type_add_return(Type* s, Type* sub);
+Type* type_get_return(Type* s, size_t i);
 
-type* get_type_from_num(u16 num, int num_set);
-bool types_are_equivalent(type* a, type* b, bool* executed_TSA);
-bool type_element_equivalent(type* a, type* b, int num_set_a, int num_set_b);
-void type_locally_number(type* t, u64* number, int num_set);
+void type_add_field(Type* s, string name, Type* sub);
+TypeStructField* type_get_field(Type* s, size_t i);
+void type_add_variant(Type* e, string name, i64 val);
+TypeEnumVariant* type_get_variant(Type* e, size_t i);
+void  type_set_target(Type* p, Type* dest);
+Type* type_get_target(Type* p);
+u64   type_get_index(Type* t);
+
+Type* type_get_from_num(u16 num, int num_set);
+bool type_equivalent(Type* a, Type* b, bool* executed_TSA);
+bool type_element_equivalent(Type* a, Type* b, int num_set_a, int num_set_b);
+void type_locally_number(Type* t, u64* number, int num_set);
 void type_reset_numbers(int num_set);
-void canonicalize_type_graph();
-void merge_type_references(type* dest, type* src, bool disable);
-
-string* gather_aliases(type* t);
+void type_canonicalize_graph();
+void merge_type_references(Type* dest, Type* src, bool disable);
 
 void print_type_graph();
 
 // a < b
-bool type_enum_variant_less(enum_variant* a, enum_variant* b);
+bool type_enum_variant_less(TypeEnumVariant* a, TypeEnumVariant* b);
 
-u32 type_real_size_of(type* t);
-u32 type_real_align_of(type*t);
+u32 type_real_size_of(Type* t);
+u32 type_real_align_of(Type*t);
 
-bool type_is_infinite(type* t);
+bool type_is_infinite(Type* t);

@@ -28,7 +28,7 @@
 typedef struct checked_expr {
     AST expr;
 
-    type* type;
+    Type* type;
     exact_value* ev; // for if is compile time constant
     bool use_returns : 1; // use return list of type* as the type. for functions that return multiple things
 
@@ -39,8 +39,8 @@ typedef struct checked_expr {
 } checked_expr;
 
 void check_module(mars_module* mod);
-type* check_expr(mars_module* mod, AST node, entity_table* scope);
-type* check_func_literal(mars_module* mod, AST decl_root, entity_table* scope, AST identifier);
+Type* check_expr(mars_module* mod, AST node, entity_table* scope);
+Type* check_func_literal(mars_module* mod, AST decl_root, entity_table* scope, AST identifier);
 
 /*
 void check_stmt(mars_module* mod, entity_table* et, ast_func_literal_expr* fn, AST stmt, bool global);
