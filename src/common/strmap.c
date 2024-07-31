@@ -2,7 +2,6 @@
 
 #define MAX_SEARCH 30
 
-// djb2
 static u64 FNV_1a(string key) {
     const u64 FNV_OFFSET = 14695981039346656037ull;
     const u64 FNV_PRIME  = 1099511628211ull;
