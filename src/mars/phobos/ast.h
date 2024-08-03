@@ -108,6 +108,7 @@ typedef struct {
         da(AST) lhs; \
         AST rhs; \
         token* type_presema; \
+        Type* tg_type; \
         AST type; \
         bool is_mut        : 1; \
         bool is_uninit     : 1; \

@@ -853,7 +853,7 @@ AST parse_fn(parser* p) {
                     if (current_token(p).type != TOK_CLOSE_PAREN) advance_token(p);
                     continue;
                 }
-                error_at_parser(p, "INTERNAL COMPILER ERROR: fell out of fn_type parse loop for params");
+                error_at_parser(p, "expected , after identifier");
             }
         }
     }
