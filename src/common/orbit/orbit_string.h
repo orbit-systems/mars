@@ -131,10 +131,10 @@ string string_clone(string str) {
 }
 
 long string_strtol(string str, int base) {
-    char* str = clone_to_cstring(str);
-    long value = strtol(str, NULL, base);
-    free(str);
-    return long;
+    char* cstr = clone_to_cstring(str);
+    long value = strtol(cstr, NULL, base);
+    free(cstr);
+    return value;
 }
 
 void printn(char* text, size_t len) {
