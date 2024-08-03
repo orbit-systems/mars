@@ -1,5 +1,6 @@
 #pragma once
-#define ORBIT_DA_H
+
+#include <stdlib.h>
 
 // sandwich's shitty """polymorphic""" dynamic array lib V2
 // lean and mean w/ new functions
