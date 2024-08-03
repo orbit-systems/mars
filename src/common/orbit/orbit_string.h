@@ -130,6 +130,13 @@ string string_clone(string str) {
     return new_str;
 }
 
+long string_strtol(string str, int base) {
+    char* str = clone_to_cstring(str);
+    long value = strtol(str, NULL, base);
+    free(str);
+    return long;
+}
+
 void printn(char* text, size_t len) {
     size_t c = 0;
     while (c < len && text[c] != '\0')
