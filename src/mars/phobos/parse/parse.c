@@ -87,6 +87,7 @@ AST parse_stmt(parser* p) {
             n.as_if_stmt->condition = parse_expr(p);
 
             n.as_if_stmt->if_branch = parse_cfs(p);
+            n.as_if_stmt->base.end = &current_token(p);
             return n;
         //<else> ::= "else" (<if> | <stmt_block>)
         case TOK_KEYWORD_ELSE:
@@ -103,26 +104,31 @@ AST parse_stmt(parser* p) {
         //<while> ::= "while" (<expression>  | E) <control_flow_block>
         case TOK_KEYWORD_WHILE:
             n = new_ast_node(p, AST_while_stmt);
+            n.as_while_stmt->base.start = &current_token(p);
             advance_token(p);
             if (current_token(p).type == TOK_KEYWORD_DO) {
                 advance_token(p);
                 n.as_while_stmt->condition = NULL_AST;
                 n.as_while_stmt->block = parse_stmt(p);
+                n.as_while_stmt->base.end = &current_token(p);
                 return n;
             }
             if (current_token(p).type == TOK_OPEN_BRACE) {
                 n.as_while_stmt->condition = NULL_AST;
                 n.as_while_stmt->block = parse_stmt_block(p);
+                n.as_while_stmt->base.end = &current_token(p);
                 return n;
             }
             n.as_while_stmt->condition = parse_expr(p);
             if (current_token(p).type == TOK_KEYWORD_DO) {
                 advance_token(p);
                 n.as_while_stmt->block = parse_stmt(p);
+                n.as_while_stmt->base.end = &current_token(p);
                 return n;
             }
             if (current_token(p).type == TOK_OPEN_BRACE) {
                 n.as_while_stmt->block = parse_stmt_block(p);
+                n.as_while_stmt->base.end = &current_token(p);
                 return n;
             }
             error_at_parser(p, "expected do <stmt> or statement block");
@@ -457,9 +463,9 @@ AST parse_type(parser* p) {
             advance_token(p);
             if (current_token(p).type != TOK_CLOSE_BRACKET) error_at_parser(p, "expected ]");
             n = new_ast_node(p, AST_slice_type_expr);
-            n.as_slice_type_expr->base.start = &current_token(p);
         case TOK_CARET:
             if (is_null_AST(n)) n = new_ast_node(p, AST_pointer_type_expr);
+            n.as_slice_type_expr->base.start = &current_token(p);
             advance_token(p);
             if (current_token(p).type != TOK_KEYWORD_MUT && current_token(p).type != TOK_KEYWORD_LET) error_at_parser(p, "expected mut or let");
             n.as_pointer_type_expr->mutable = current_token(p).type == TOK_KEYWORD_MUT;

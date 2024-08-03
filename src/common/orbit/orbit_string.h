@@ -40,6 +40,7 @@ void  string_concat_buf(string buf, string a, string b); // this does not
 int  string_cmp(string a, string b);
 bool string_eq(string a, string b);
 bool string_ends_with(string source, string ending);
+long string_strtol(string str, int base);
 
 #ifdef ORBIT_IMPLEMENTATION
 string strprintf(char* format, ...) {
