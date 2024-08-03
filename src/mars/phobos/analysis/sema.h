@@ -39,8 +39,15 @@ typedef struct checked_expr {
 } checked_expr;
 
 void check_module(mars_module* mod);
-Type* check_expr(mars_module* mod, AST node, entity_table* scope);
-Type* check_func_literal(mars_module* mod, AST decl_root, entity_table* scope, AST identifier);
+Type* check_stmt(mars_module* mod, AST node, entity_table* scope);
+Type* check_func_literal(mars_module* mod, AST func_literal, entity_table* scope);
+checked_expr check_expr(mars_module* mod, AST node, entity_table* scope);
+checked_expr check_literal(mars_module* mod, AST literal);
+
+Type* ast_to_type(mars_module* mod, AST node);
+int check_type_pair(checked_expr lhs, checked_expr rhs, int depth);
+Type* operation_to_type(token* tok);
+
 
 /*
 void check_stmt(mars_module* mod, entity_table* et, ast_func_literal_expr* fn, AST stmt, bool global);

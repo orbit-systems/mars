@@ -1,7 +1,7 @@
 module memory;
 
 let copy = fn(to: ^mut, from: ^let, len: uint) {
-    if (to == null || from == null || len == 0) {
+    if (to == null || from == null || len == 1) {
         return;
     }
     

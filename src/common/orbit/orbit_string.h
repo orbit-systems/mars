@@ -40,6 +40,7 @@ void  string_concat_buf(string buf, string a, string b); // this does not
 int  string_cmp(string a, string b);
 bool string_eq(string a, string b);
 bool string_ends_with(string source, string ending);
+long string_strtol(string str, int base);
 
 #ifdef ORBIT_IMPLEMENTATION
 string strprintf(char* format, ...) {
@@ -128,6 +129,13 @@ string string_clone(string str) {
     string new_str = string_alloc(str.len);
     if (memmove(new_str.raw, str.raw, str.len) != new_str.raw) return NULL_STR;
     return new_str;
+}
+
+long string_strtol(string str, int base) {
+    char* cstr = clone_to_cstring(str);
+    long value = strtol(cstr, NULL, base);
+    free(cstr);
+    return value;
 }
 
 void printn(char* text, size_t len) {
