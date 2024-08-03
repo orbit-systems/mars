@@ -33,3 +33,34 @@ type t2 = [3]i64
 an instruction that adds two `i32`s (#1 and #2) would look like this:
 
     #3 = add.i32 #1, #2
+
+
+
+
+
+
+
+
+
+func add_mul (i64, i64) -> (i64, i64) {
+  block1:
+    #1 = paramval 0
+    #2 = paramval 1
+    #3 = add.i64 #1, #2
+    #4 = umul.i64 #1, #2
+    #5 = returnval 0, #3
+    #6 = returnval 1, #4
+    #7 = return
+}
+
+(func add_mul (i64 i64) (i64 i64)
+  (block block1
+    (paramval 0)
+    (paramval 1)
+    (add.i64 1 2)
+    (umul.i64 1 2)
+    (returnval 0 3)
+    (returnval 1 4)
+    (return)
+  )
+)

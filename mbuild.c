@@ -3,6 +3,7 @@
 
 #include "src/common/orbit.h"
 #include "src/common/strmap.c"
+#include "src/mars/term.h"
 // ^lmao
 
 /* usage
@@ -40,6 +41,8 @@ char* iron_sources[] = {
     "src/iron/arch",
     "src/iron/arch/aphelion",
 };
+
+char* opt = " -O3 ";
 
 char* cflags = 
     " -std=c17 -DXOPEN_SOURCE=700 -fwrapv "
@@ -151,7 +154,31 @@ char* dir_of(char* path) {
     return dir;
 }
 
+string dir_of_str(string path) {
+    int last_slash = -1;
+    for (int i = path.len - 1; i > -1; i--) {
+        if (path.raw[i] == '\\' || path.raw[i] == '/') {
+            last_slash = i;
+            break;
+        }
+    }
+
+    if (last_slash == -1) return NULL_STR;
+
+    return (string){.len = last_slash, .raw = path.raw};
+}
+
 char saved_cwd[500] = {0};
+
+void ensure_directory(string file) {
+    string dir = dir_of_str(file);
+    if (!fs_exists(dir)) {
+        ensure_directory(dir);
+        char* cdir = clone_to_cstring(dir);
+        mkdir(cdir);
+        free(cdir);
+    }
+}
 
 int main(int argc, char** argv) {
 
@@ -220,6 +247,10 @@ int main(int argc, char** argv) {
     da(string) files_to_compile = {0};
     da_init(&files_to_compile, 16);
 
+    da(string) obj_paths;
+    da_init(&obj_paths, files_to_compile.len);
+    obj_paths.len = files_to_compile.len;
+
     foreach(char* folder, source_folders) {
         // printf("%s\n", folder);
         string folderstr = str(folder);
@@ -241,6 +272,16 @@ int main(int argc, char** argv) {
             if (f.type == oft_directory || !string_ends_with(f.path, constr(".c")) ) continue;
             // printf("\t"str_fmt"\n", str_arg(subfiles[i].path));
             da_append(&files_to_compile, f.path);
+
+            string obj_path = string_clone(f.path);
+            // crazy shit but i cannot think of a situation where it would not work
+            obj_path.raw += strlen(saved_cwd)-1;
+            obj_path.len -= strlen(saved_cwd)-1;
+            memcpy(obj_path.raw, "build", 5); 
+            obj_path.raw[obj_path.len-1] = 'o';
+
+            da_append(&obj_paths, obj_path);
+
             strmap_put(&file_data, f.path, &subfiles[i]);
         }
     }
@@ -249,41 +290,85 @@ int main(int argc, char** argv) {
     if (!fs_exists(constr("build"))) {
         mkdir("build");
     }
-    chdir("build");
 
     bool* needs_to_compile = malloc(sizeof(bool)*files_to_compile.len);
     memset(needs_to_compile, 0, sizeof(bool)*files_to_compile.len);
-    da(string) obj_paths = {0};
-    da_init(&obj_paths, files_to_compile.len);
-    obj_paths.len = files_to_compile.len;
 
     int how_many_to_compile = 0;
-    foreach (string path, files_to_compile) {
-        string obj_path = string_clone(path);
-        obj_path.raw += strlen(saved_cwd)+1;
-        obj_path.len -= strlen(saved_cwd)+1;
-        obj_path.raw[obj_path.len-1] = 'o';
-
-        obj_paths.at[count] = obj_path;
+    foreach (string src_path, files_to_compile) {
+        string obj_path = obj_paths.at[count];
 
         if (!fs_exists(obj_path)) {
-            // the file doesnt exist, lets build it
+            // the object file doesnt exist, lets build it
             needs_to_compile[count] = true;
             how_many_to_compile++;
             continue;
         }
 
-        TODO("timespec check against object file and executable");
-
         da(string) dependencies;
-        TODO("dependency info");
+        TODO("timespec check against dependencies against object file");
     }
+
+    if (files_to_compile.len == 0) return 0;
 
     for_range(i, 0, files_to_compile.len) {
         if (!needs_to_compile[i]) continue;
         string compile_path = files_to_compile.at[i];
+        string short_compile_path = compile_path;
+        short_compile_path.raw += strlen(saved_cwd)+1;
+        short_compile_path.len -= strlen(saved_cwd)+1;
 
-        printf(str_fmt"\n", str_arg(files_to_compile.at[i]));
-        printf(str_fmt"\n", str_arg(obj_paths.at[i]));
+        ensure_directory(obj_paths.at[i]);
+
+        printf(STYLE_Reset"["STYLE_FG_Green"%d/%d"STYLE_Reset"] compiling "STYLE_Bold str_fmt STYLE_Reset"\n",
+            i + 1, files_to_compile.len, str_arg(short_compile_path)
+        );
+
+        // we have to actually MAKE THE COMPILER COMMAND LMAO
+        // {cc} {source} -o {output} -MD {cflags}
+        
+        string compile_command = strprintf("%s -c "str_fmt" -o "str_fmt" -Isrc -MD %s %s",
+            cc, str_arg(compile_path), str_arg(obj_paths.at[i]), opt, cflags
+        );
+        int compile_return_code = system(clone_to_cstring(compile_command));
+        if (compile_return_code != 0) return compile_return_code;
+
+        // printstr(compile_command);
+        // printf("\n");
+    }
+
+    string obj_list;
+    for_range(i, 0, obj_paths.len) {
+        obj_list.len += obj_paths.at[i].len + 1;
+    }
+    obj_list = string_alloc(obj_list.len);
+    {
+        int cursor = 0;
+        for_range(i, 0, obj_paths.len) {
+            memcpy(obj_list.raw + cursor, obj_paths.at[i].raw, obj_paths.at[i].len);
+            cursor += obj_paths.at[i].len;
+            obj_list.raw[cursor++] = ' ';
+        }
+    }    
+
+    switch (build_mode) {
+    case BUILD_MODE_MARS: {
+        string compile_command = strprintf("%s "str_fmt" -o mars %s %s",
+            cc, str_arg(obj_list), opt, cflags
+        );
+        int compile_return_code = system(clone_to_cstring(compile_command));
+        if (compile_return_code != 0) return compile_return_code;
+    } break;
+    case BUILD_MODE_IRON_EXE:{
+        string compile_command = strprintf("%s "str_fmt" -o iron %s %s",
+            cc, str_arg(obj_list), opt, cflags
+        );
+        int compile_return_code = system(clone_to_cstring(compile_command));
+        if (compile_return_code != 0) return compile_return_code;
+    } break;
+    case BUILD_MODE_IRON_STATIC:
+        TODO("iron static");
+    default:
+        break;
     }
 }
