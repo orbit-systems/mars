@@ -4,6 +4,7 @@
 #include "src/common/orbit.h"
 #include "src/common/strmap.c"
 #include "src/mars/term.h"
+#include <time.h>
 // ^lmao
 
 /* usage
@@ -21,6 +22,10 @@
     needs to work and be relatively easy to modify.
 
 */
+
+#ifdef __linux__
+    #define mkdir(x) mkdir(x, S_IRWXU);
+#endif
 
 char* cc = "gcc";
 
@@ -78,11 +83,7 @@ BuildFile retrieve_file(char* path) {
         CRASH("stat error");
     }
 
-#if !(defined(MINGW32) || defined(__MINGW32__) || defined(_WIN32))
-    f.last_modified = statbuf.st_mtim;
-#else
-    f.last_modified = (struct timespec){.tv_sec = statbuf.st_mtime, 0};
-#endif
+    f.last_modified = (Timespec){.tv_sec = statbuf.st_mtime};
 
     return f;
 }

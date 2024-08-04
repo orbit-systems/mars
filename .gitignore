@@ -9,7 +9,9 @@ build
 ols.json
 mars
 !./src/mars
-./mars.*
+!./src/iron
+iron
+mbuild
 anvil
 anvil.exe
 *.out
@@ -18,3 +20,4 @@ vgcore*
 *.d
 mars
 .clangd
+i
