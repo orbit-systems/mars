@@ -51,28 +51,34 @@ static string normalized_identifier(FeModule* m, void* entity, string name) {
         if ('0' <= c && c <= '9') continue;
         if (c == '_') continue;
         is_normal = false;
+        break;
     }
 
     if (is_normal) {
-        ptrmap_put(&sym2ident, entity, &name);
+        string* permanent_string = malloc(sizeof(string));
+        *permanent_string = name;
+        ptrmap_put(&sym2ident, entity, permanent_string);
         return name;
     }
 
-    string* new_name = malloc(sizeof(string));
-    *new_name = string_alloc(name.len + 1);
-    new_name->raw[0] = '_';
-    memcpy(&new_name->raw[1], &name.raw[0], name.len);
+    // string* new_name = malloc(sizeof(string));
+    // *new_name = string_alloc(name.len + 1);
+    // new_name->raw[0] = '_';
+    // printf("-- %p\n ", new_name->raw);
+    // memcpy(new_name->raw + 1, name.raw, name.len);
+    printf("[[[[ %p %d\n", name.raw, name.len);
+    string new_name = string_concat(constr("_"), name);
 
-    for_range(i, 0, new_name->len) {
-        char c = new_name->raw[i];
+    for_range(i, 0, new_name.len) {
+        char c = new_name.raw[i];
         if ('a' <= c && c <= 'z') continue;
         if ('A' <= c && c <= 'A') continue;
         if ('0' <= c && c <= '9') continue;
         if (c == '_') continue;
-        new_name->raw[i] = '_'; // set unrecognized chars to _
+        new_name.raw[i] = '_'; // set unrecognized chars to _
     }
 
-    return *new_name;
+    return new_name;
 }
 
 // takes in i8, emits (u8), etc.

@@ -47,7 +47,8 @@ char* iron_sources[] = {
     "src/iron/arch/aphelion",
 };
 
-char* opt = " -O3 ";
+// char* opt = " -O3 -flto";
+char* opt = "";
 
 char* cflags = 
     " -std=c17 -DXOPEN_SOURCE=700 -fwrapv "
@@ -308,7 +309,7 @@ int main(int argc, char** argv) {
         // TODO("timespec check against dependencies against object file");
     }
 
-    if (files_to_compile.len == 0) return 0;
+    // if (files_to_compile.len == 0) return 0;
 
     int file_counter = 1;
     for_range(i, 0, files_to_compile.len) {
@@ -353,6 +354,9 @@ int main(int argc, char** argv) {
 
     switch (build_mode) {
     case BUILD_MODE_MARS: {
+        if (how_many_to_compile == 0 && (fs_exists(str("mars")) || fs_exists(str("mars.exe")))) {
+            break;
+        }
         string compile_command = strprintf("%s "str_fmt" -o mars %s %s",
             cc, str_arg(obj_list), opt, cflags
         );
