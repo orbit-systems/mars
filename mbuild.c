@@ -65,9 +65,6 @@ typedef struct timespec Timespec;
 typedef struct BuildFile {
     char* realpath;
     Timespec last_modified;
-
-    struct BuildFile** deps;
-    int deps_len;
 } BuildFile;
 
 BuildFile retrieve_file(char* path) {
@@ -181,7 +178,14 @@ void ensure_directory(string file) {
     }
 }
 
+da_typedef(string);
+
+bool should_rebuild_object(string object_path);
+
+StrMap file_data = {0};
+
 int main(int argc, char** argv) {
+    strmap_init(&file_data, 64);
 
     getcwd(saved_cwd, sizeof(saved_cwd));
 
@@ -241,9 +245,6 @@ int main(int argc, char** argv) {
     }
     add_source_collection(&source_folders, iron_sources, sizeof(iron_sources)/sizeof(iron_sources[0]));
 
-    StrMap file_data = {0};
-    strmap_init(&file_data, 64);
-
     da_typedef(string);
     da(string) files_to_compile = {0};
     da_init(&files_to_compile, 16);
@@ -299,19 +300,17 @@ int main(int argc, char** argv) {
     foreach (string src_path, files_to_compile) {
         string obj_path = obj_paths.at[count];
 
-        if (!fs_exists(obj_path)) {
-            // the object file doesnt exist, lets build it
+        if (!fs_exists(obj_path) || should_rebuild_object(obj_path)) {
             needs_to_compile[count] = true;
             how_many_to_compile++;
             continue;
         }
-
-        da(string) dependencies;
-        TODO("timespec check against dependencies against object file");
+        // TODO("timespec check against dependencies against object file");
     }
 
     if (files_to_compile.len == 0) return 0;
 
+    int file_counter = 1;
     for_range(i, 0, files_to_compile.len) {
         if (!needs_to_compile[i]) continue;
         string compile_path = files_to_compile.at[i];
@@ -322,7 +321,7 @@ int main(int argc, char** argv) {
         ensure_directory(obj_paths.at[i]);
 
         printf(STYLE_Reset"["STYLE_FG_Green"%d/%d"STYLE_Reset"] compiling "STYLE_Bold str_fmt STYLE_Reset"\n",
-            i + 1, files_to_compile.len, str_arg(short_compile_path)
+            file_counter++, how_many_to_compile, str_arg(short_compile_path)
         );
 
         // we have to actually MAKE THE COMPILER COMMAND LMAO
@@ -372,4 +371,87 @@ int main(int argc, char** argv) {
     default:
         break;
     }
+}
+
+int stringchr(string s, char c) {
+    for_range(i, 0, s.len) {
+        if (s.raw[i] == c) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+bool should_rebuild_object(string object_path) {
+    // retrieve dependency file. we expect it to be near the object file
+    BuildFile object = retrieve_file(clone_to_cstring(object_path));
+
+    string dep_path = string_clone(object_path);
+    dep_path.raw[dep_path.len-1] = 'd';
+    fs_file dep;
+    if (!fs_get(dep_path, &dep)) {
+        return true;
+    }
+    fs_open(&dep, "rb");
+    string dep_text = string_alloc(dep.size);
+    fs_read_entire(&dep, dep_text.raw);
+
+    // printstr(dep_text);
+    // skip initial :
+    int colon_pos = stringchr(dep_text, ':') + 1;
+    dep_text.raw += colon_pos;
+    dep_text.len -= colon_pos;
+
+    // printstr(dep_text);
+
+    da(string) deps;
+    da_init(&deps, 32);
+
+    for_range(i, 0, dep_text.len) {
+        switch (dep_text.raw[i]) {
+        case ' ':
+        case '\r':
+        case '\n':
+        case '\t':
+        case '\v':
+            i++;
+            // continue;
+        }
+
+        if (dep_text.raw[i] == '\\' && dep_text.raw[i+1] == '\n') {
+            i += 2;
+            continue;
+        }
+        if (dep_text.raw[i] == '\\' && dep_text.raw[i+1] == '\r' && dep_text.raw[i+2] == '\n') {
+            i += 3;
+            continue;
+        }
+
+        i64 start_index = i;
+        while (i < dep_text.len) {
+            switch (dep_text.raw[i]) {
+            case ' ':
+            case '\r':
+            case '\n':
+            case '\t':
+            case '\v':
+                goto restart_loop;
+            }
+            i++;
+        }
+
+        restart_loop:
+        da_append(&deps, string_make(&dep_text.raw[start_index], i - start_index));
+    }
+    
+    foreach(string dep_path, deps) {
+        // printstr(dep_path);
+        // printf("\n");
+        BuildFile dep_file = retrieve_file(clone_to_cstring(dep_path));
+
+        if (timespec_greater(dep_file.last_modified, object.last_modified)) {
+            return true;
+        }
+    }
+    return false;
 }
