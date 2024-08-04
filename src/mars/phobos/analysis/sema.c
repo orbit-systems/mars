@@ -99,7 +99,7 @@ checked_expr check_expr(mars_module* mod, AST node, entity_table* scope) {
         case AST_literal_expr:
             return check_literal(mod, node);
         case AST_unary_op_expr:
-            checked_expr subexpr = check_expr(mod, node.as_unary_op_expr->subexpr, scope);
+            checked_expr subexpr = check_expr(mod, node.as_unary_op_expr->inside, scope);
             
 
         default:

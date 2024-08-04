@@ -61,10 +61,13 @@ typedef struct _ll_ {
 } while (0)
 
 // removes a node from the list
-#define ll_remove(list_ptr) do {\
-    \
+#define ll_remove(node_ptr) do {\
+    if ((node_ptr)->next != NULL) (node_ptr)->next->prev = (node_ptr)->prev;\
+    if ((node_ptr)->prev != NULL) (node_ptr)->prev->next = (node_ptr)->next;\
 } while (0)
 
 #define ll_remove_free(list_ptr) do {\
-    \
+    if ((node_ptr)->next != NULL) (node_ptr)->next->prev = (node_ptr)->prev;\
+    if ((node_ptr)->prev != NULL) (node_ptr)->prev->next = (node_ptr)->next;\
+    free(list_ptr);\
 } while (0)
