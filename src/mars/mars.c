@@ -28,11 +28,11 @@ int main(int argc, char** argv) {
 
     mars_module* main_mod = parse_module(mars_flags.input_path);  
       
-    check_module(main_mod);
 
     if (mars_flags.output_dot == true) {  
         emit_dot(str("test"), main_mod->program_tree);
     }   
+    check_module(main_mod);
     // recursive check
     
 

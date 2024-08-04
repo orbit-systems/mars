@@ -53,6 +53,7 @@ Type* check_stmt(mars_module* mod, AST node, entity_table* scope) {
             foreach(AST ret, node.as_return_stmt->returns) {
                 check_expr(mod, ret, scope);
             }
+            general_warning("TODO: actually detect if the returns are used via assignment or not");
             return NULL;
         }
         case AST_if_stmt: {
@@ -100,7 +101,11 @@ checked_expr check_expr(mars_module* mod, AST node, entity_table* scope) {
             return check_literal(mod, node);
         case AST_unary_op_expr:
             checked_expr subexpr = check_expr(mod, node.as_unary_op_expr->inside, scope);
+<<<<<<< Updated upstream
             
+=======
+
+>>>>>>> Stashed changes
 
         default:
             error_at_node(mod, node, "[check_expr] unexpected token type: %s", ast_type_str[node.type]);
