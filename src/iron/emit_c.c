@@ -61,12 +61,6 @@ static string normalized_identifier(FeModule* m, void* entity, string name) {
         return name;
     }
 
-    // string* new_name = malloc(sizeof(string));
-    // *new_name = string_alloc(name.len + 1);
-    // new_name->raw[0] = '_';
-    // printf("-- %p\n ", new_name->raw);
-    // memcpy(new_name->raw + 1, name.raw, name.len);
-    printf("[[[[ %p %d\n", name.raw, name.len);
     string new_name = string_concat(constr("_"), name);
 
     for_range(i, 0, new_name.len) {
