@@ -54,8 +54,8 @@ char* iron_sources[] = {
     "src/iron/arch/aphelion",
 };
 
-char* opt = " -O3 -flto";
-// char* opt = "";
+// char* opt = " -O3 -flto";
+char* opt = "";
 
 char* cflags = 
     " -std=c17 -DXOPEN_SOURCE=700 -fwrapv "
@@ -285,10 +285,7 @@ int main(int argc, char** argv) {
     }
     if (!release_build) {
         char* debug_flags = " -pg -g ";
-        char* new_cflags = malloc(strlen(cflags) + strlen(debug_flags) + 1);
-        strcpy(new_cflags, cflags);
-        strcat(new_cflags, debug_flags);
-        cflags = new_cflags;
+        cflags = add_cstr(cflags, debug_flags);
         opt = " -O0 ";
     }
 
