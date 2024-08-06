@@ -7,10 +7,28 @@
 
 ll_typedef(int);
 
+void print_linked_list(ll(int)* n, int pos) {
+    if (n->prev && pos <= 0) print_linked_list(n->prev, pos - 1);
+
+    printf("%d %p\n", pos, n);
+    printf("    prev %p\n", n->prev);
+    printf("    next %p\n", n->next);
+
+    if (n->next && pos >= 0) print_linked_list(n->next, pos + 1);
+}
+
 int main() {
-    ll(int)* n = ll_new(int);
+    fe_selftest();
 
-    ll_insert_next(n, ll_new(int));
+    ll(int)* n1 = ll_new(int);
+    ll_push_back(n1, ll_new(int));
+    ll_push_back(n1, ll_new(int));
 
-    TODO("iron frontend!");
+    print_linked_list(n1, 0);
+    printf("\n");
+
+    ll_remove(n1->next->next);
+
+    print_linked_list(n1, 0);
+
 }

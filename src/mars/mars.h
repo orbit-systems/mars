@@ -18,7 +18,6 @@ typedef struct flag_set_s {
     bool output_dot;
     bool print_timings;
     bool dump_AST;
-    bool skip_to_iron;
 
     int target_arch;
     int target_system;

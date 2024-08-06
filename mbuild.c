@@ -9,10 +9,17 @@
 
 /* usage
 
-    ./mars-build mars            build mars, with iron compiled in.
-    ./mars-build iron            build iron as a standalone application
-    ./mars-build iron static     build iron as a static library
-    TODO: ./mars-build iron dynamic    build iron as a dynamic library 
+    ./mars-build mars           build mars with iron included.
+    ./mars-build iron           build iron as a standalone application
+    ./mars-build iron-static    build iron as a static library
+
+    -opt [flags]                set optimization flags (default -O0)
+    -clean                      delete the build folder OR force rebuild from scratch
+    -release                    alias for -opt "-O3 -flto"
+    -cflags [flags]             add more flags for the c compiler
+    -cc [cc]                    specify a c compiler to use (default gcc)
+
+    TODO: ./mars-build iron-dynamic    build iron as a dynamic library 
 
     note: building iron as a static library currently requires the 'ar' utility,
     which may not be present on non-linux platforms.
@@ -47,8 +54,8 @@ char* iron_sources[] = {
     "src/iron/arch/aphelion",
 };
 
-// char* opt = " -O3 -flto";
-char* opt = "";
+char* opt = " -O3 -flto";
+// char* opt = "";
 
 char* cflags = 
     " -std=c17 -DXOPEN_SOURCE=700 -fwrapv "
@@ -100,7 +107,13 @@ void print_usage() {
     printf(
         "./build mars            build mars with iron\n"
         "./build iron            build iron as a standalone application\n"
-        "./build iron static     build iron as a static library\n"
+        "./build iron-static     build iron as a static library\n"
+        "\n"
+        "-opt [flags]            set optimization flags (default -O0)\n"
+        "-clean                  delete the build folder OR force rebuild from scratch\n"
+        "-release                sets -opt \"-O3 -flto\", removes debug info flags\n"
+        "-cflags [flags]         add more flags for the c compiler\n"
+        "-cc [cc]                specify a c compiler to use (default gcc)\n"
     );
 }
 
@@ -216,22 +229,67 @@ int main(int argc, char** argv) {
 
     // set build mode
     int build_mode = -1;
+    bool clean_build = false;
+    bool release_build = false;
     if (argc <= 1) {
         print_usage();
         return 0;
     }
-    if (argc == 2 && strcmp(argv[1], "mars") == 0) {
-        build_mode = BUILD_MODE_MARS;
-    }
-    if (argc == 2 && strcmp(argv[1], "iron") == 0) {
-        build_mode = BUILD_MODE_IRON_EXE;
-    }
-    if (argc == 3 && strcmp(argv[1], "iron") == 0 && strcmp(argv[2], "static") == 0) {
-        build_mode = BUILD_MODE_IRON_STATIC;
+    // if (argc >= 2 && strcmp(argv[1], "mars") == 0) {
+    //     build_mode = BUILD_MODE_MARS;
+    // }
+    // if (argc >= 2 && strcmp(argv[1], "iron") == 0) {
+    //     build_mode = BUILD_MODE_IRON_EXE;
+    // }
+    // if (argc >= 3 && strcmp(argv[1], "iron-static") == 0 && strcmp(argv[2], "static") == 0) {
+    //     build_mode = BUILD_MODE_IRON_STATIC;
+    // }
+    for_range(i, 1, argc) {
+        char* arg = argv[i];
+        if (strcmp(arg, "mars") == 0) {
+            build_mode = BUILD_MODE_MARS;
+        }
+        else if (strcmp(arg, "iron") == 0) {
+            build_mode = BUILD_MODE_IRON_EXE;
+        }
+        else if (strcmp(arg, "iron-static") == 0) {
+            build_mode = BUILD_MODE_IRON_STATIC;
+        }
+        else if (strcmp(arg, "-clean") == 0) {
+            clean_build = true;
+            system("rm -rf build");
+        }
+        else if (strcmp(arg, "-release") == 0) {
+            opt = " -O3 -flto ";
+            release_build = true;
+        }
+        else if (strcmp(arg, "-opt") == 0) {
+            opt = argv[i+1];
+            i++;
+        } else if (strcmp(arg, "-cc") == 0) {
+            cc = argv[i+1];
+            i++;
+        }else if (strcmp(arg, "-cflags") == 0) {
+            char* new_cflags = malloc(strlen(cflags) + strlen(argv[i+1]) + 1);
+            strcpy(new_cflags, cflags);
+            strcat(new_cflags, argv[i+1]);
+            cflags = new_cflags;
+            i++;
+        }else {
+            printf("unknown flag '%s'\n", arg);
+            exit(1);
+        }
     }
     if (build_mode == -1) {
-        print_usage();
         return 0;
+    }
+    if (!release_build) {
+        char* debug_flags = " -pg -g ";
+        char* new_cflags = malloc(strlen(cflags) + strlen(debug_flags) + 1);
+        strcpy(new_cflags, cflags);
+        strcat(new_cflags, debug_flags);
+        cflags = new_cflags;
+        opt = " -O0 ";
     }
 
     da(cstr) source_folders = {0};
@@ -354,7 +412,7 @@ int main(int argc, char** argv) {
 
     switch (build_mode) {
     case BUILD_MODE_MARS: {
-        if (how_many_to_compile == 0 && (fs_exists(str("mars")) || fs_exists(str("mars.exe")))) {
+        if (!clean_build && how_many_to_compile == 0 && (fs_exists(str("mars")) || fs_exists(str("mars.exe")))) {
             break;
         }
         string compile_command = strprintf("%s "str_fmt" -o mars %s %s",
@@ -364,6 +422,9 @@ int main(int argc, char** argv) {
         if (compile_return_code != 0) return compile_return_code;
     } break;
     case BUILD_MODE_IRON_EXE:{
+        if (!clean_build && how_many_to_compile == 0 && (fs_exists(str("iron")) || fs_exists(str("iron.exe")))) {
+            break;
+        }
         string compile_command = strprintf("%s "str_fmt" -o iron %s %s",
             cc, str_arg(obj_list), opt, cflags
         );

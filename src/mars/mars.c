@@ -21,11 +21,6 @@ int main(int argc, char** argv) {
 
     load_arguments(argc, argv, &mars_flags);
 
-    if (mars_flags.skip_to_iron) {
-        fe_selftest();
-        exit(0);
-    }
-
     mars_module* main_mod = parse_module(mars_flags.input_path);  
       
 
@@ -74,7 +69,6 @@ void print_help() {
     printf("-timings                          print stage timings\n");
     printf("-dump-AST                         print readable AST\n");
     printf("-dot                              convert the AST to a graphviz .dot file\n");
-    printf("-iron                             skip to iron testbed, no fuckin mars for u\n");
 }
 
 cmd_arg make_argument(char* s) {
@@ -140,8 +134,6 @@ void load_arguments(int argc, char* argv[], flag_set* fl) {
             fl->dump_AST = true;
         } else if (string_eq(a.key, str("-target"))) {
             set_target_triple(a.val, fl);
-        } else if (string_eq(a.key, str("-iron"))) {
-            fl->skip_to_iron = true;
         } else {
             general_error("unrecognized option \""str_fmt"\"", str_arg(a.key));
         }
