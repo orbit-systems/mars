@@ -60,6 +60,7 @@ string strprintf(char* format, ...) {
 
 string string_concat(string a, string b) {
     string c = string_alloc(a.len + b.len);
+    if (c.raw == NULL) return NULL_STR;
     for_range(i, 0, a.len) c.raw[i] = a.raw[i];
     for_range(i, 0, b.len) c.raw[a.len + i] = b.raw[i];
     return c;
