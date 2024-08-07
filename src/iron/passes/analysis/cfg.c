@@ -76,12 +76,12 @@ static void pass_cfg_func(FeFunction* f) {
     // 2d array of pointers [block][dominator]
     for_urange(i, 0, f->blocks.len) {
         
-        f->blocks.at[i]->domset = compute_dominator_set(f, f->blocks.at[i], f->blocks.at[f->entry_idx], &f->blocks.at[i]->domset_len);
+        f->blocks.at[i]->domset = compute_dominator_set(f, f->blocks.at[i], f->blocks.at[0], &f->blocks.at[i]->domset_len);
     }
     
     // starting at the dominator set for the entry, recursively re-parent idom to construct dominator tree
     // this should work ???? permission to slap me if it doesnt
-    recursive_reparent(f->blocks.at[f->entry_idx]);
+    recursive_reparent(f->blocks.at[0]);
 }
 
 static void recursive_reparent(FeBasicBlock* bb) {

@@ -78,10 +78,10 @@ static string normalized_identifier(FeModule* m, void* entity, string name) {
 // takes in i8, emits (u8), etc.
 static char* signed_to_unsigned_cast(FeType* t) {
     switch (t->kind) {
-    case FE_I8:  return "(u8)";
-    case FE_I16: return "(u16)";
-    case FE_I32: return "(u32)";
-    case FE_I64: return "(u64)";
+    case FE_TYPE_I8:  return "(u8)";
+    case FE_TYPE_I16: return "(u16)";
+    case FE_TYPE_I32: return "(u32)";
+    case FE_TYPE_I64: return "(u64)";
     default:
         CRASH("");
     }
@@ -94,16 +94,16 @@ static void emit_type_name(FeType* t, StringBuilder* sb) {
     }
 
     switch (t->kind) {
-    case FE_VOID: sb_append_c(sb, "void "); break;
-    case FE_PTR:  sb_append_c(sb, "ptr "); break;
-    case FE_I8:   sb_append_c(sb, "i8 "); break;
-    case FE_I16:  sb_append_c(sb, "i16 "); break;
-    case FE_I32:  sb_append_c(sb, "i32 "); break;
-    case FE_I64:  sb_append_c(sb, "i64 "); break;
-    case FE_F16:  sb_append_c(sb, "f16 "); break;
-    case FE_F32:  sb_append_c(sb, "f32 "); break;
-    case FE_F64:  sb_append_c(sb, "f64 "); break;
-    case FE_BOOL: sb_append_c(sb, "bool "); break;
+    case FE_TYPE_VOID: sb_append_c(sb, "void "); break;
+    case FE_TYPE_PTR:  sb_append_c(sb, "ptr "); break;
+    case FE_TYPE_I8:   sb_append_c(sb, "i8 "); break;
+    case FE_TYPE_I16:  sb_append_c(sb, "i16 "); break;
+    case FE_TYPE_I32:  sb_append_c(sb, "i32 "); break;
+    case FE_TYPE_I64:  sb_append_c(sb, "i64 "); break;
+    case FE_TYPE_F16:  sb_append_c(sb, "f16 "); break;
+    case FE_TYPE_F32:  sb_append_c(sb, "f32 "); break;
+    case FE_TYPE_F64:  sb_append_c(sb, "f64 "); break;
+    case FE_TYPE_BOOL: sb_append_c(sb, "bool "); break;
     default:      sb_printf(sb, "_type_%p ", t); break;
     }
 }
@@ -111,15 +111,15 @@ static void emit_type_name(FeType* t, StringBuilder* sb) {
 static void emit_type_ptr(FeType* t, StringBuilder* sb) {
 
     switch (t->kind) {
-    case FE_PTR:  sb_append_c(sb, "ptr* "); break;
-    case FE_I8:   sb_append_c(sb, "i8* "); break;
-    case FE_I16:  sb_append_c(sb, "i16* "); break;
-    case FE_I32:  sb_append_c(sb, "i32* "); break;
-    case FE_I64:  sb_append_c(sb, "i64* "); break;
-    case FE_F16:  sb_append_c(sb, "f16* "); break;
-    case FE_F32:  sb_append_c(sb, "f32* "); break;
-    case FE_F64:  sb_append_c(sb, "f64* "); break;
-    case FE_BOOL: sb_append_c(sb, "bool* "); break;
+    case FE_TYPE_PTR:  sb_append_c(sb, "ptr* "); break;
+    case FE_TYPE_I8:   sb_append_c(sb, "i8* "); break;
+    case FE_TYPE_I16:  sb_append_c(sb, "i16* "); break;
+    case FE_TYPE_I32:  sb_append_c(sb, "i32* "); break;
+    case FE_TYPE_I64:  sb_append_c(sb, "i64* "); break;
+    case FE_TYPE_F16:  sb_append_c(sb, "f16* "); break;
+    case FE_TYPE_F32:  sb_append_c(sb, "f32* "); break;
+    case FE_TYPE_F64:  sb_append_c(sb, "f64* "); break;
+    case FE_TYPE_BOOL: sb_append_c(sb, "bool* "); break;
     default:      sb_printf(sb, "_type_%p* ", t); break;
     }
 }
@@ -157,7 +157,7 @@ static void emit_function_signature(FeFunction* f, StringBuilder* sb) {
 
     for_range(i, 0, f->params_len) {
         FeFunctionItem* item = f->params[i];
-        if (item->by_val_aggregate) TODO("");
+        if (item->by_value) TODO("");
 
         emit_type_name(item->type, sb);
 
@@ -168,7 +168,7 @@ static void emit_function_signature(FeFunction* f, StringBuilder* sb) {
     }
     for_range(i, 1, f->returns_len) {
         FeFunctionItem* item = f->returns[i];
-        if (item->by_val_aggregate) TODO("");
+        if (item->by_value) TODO("");
 
         emit_type_ptr(item->type, sb);
 
@@ -219,7 +219,7 @@ static void emit_function(FeFunction* f, StringBuilder* sb) {
     }
     foreach(FeBasicBlock* bb, f->blocks) {
         foreach(FeInst* inst, *bb) {
-            if (inst->type->kind != FE_VOID) {
+            if (inst->type->kind != FE_TYPE_VOID) {
                 sb_append_c(sb, "        ");
                 emit_type_name(inst->type, sb);
                 sb_printf(sb, "_inst_%llx;\n", inst);
@@ -227,7 +227,7 @@ static void emit_function(FeFunction* f, StringBuilder* sb) {
         }
     }
 
-    sb_printf(sb, "        goto _label_"str_fmt";\n", str_arg(f->blocks.at[f->entry_idx]->name));
+    sb_printf(sb, "        goto _label_"str_fmt";\n", str_arg(f->blocks.at[0]->name));
 
     // emit instructions
     foreach(FeBasicBlock* bb, f->blocks) {
@@ -244,13 +244,13 @@ static void emit_function(FeFunction* f, StringBuilder* sb) {
                 break;
             case FE_INST_CONST:
                 switch (inst->type->kind) {
-                case FE_I64: sb_printf(sb, "_inst_%llx = (i64) %lldll", inst, (i64) ((FeInstConst*)inst)->i64); break;
-                case FE_I32: sb_printf(sb, "_inst_%llx = (i32) %lld", inst, (i64) ((FeInstConst*)inst)->i32); break;
-                case FE_I16: sb_printf(sb, "_inst_%llx = (i16) %lld", inst, (i64) ((FeInstConst*)inst)->i16); break;
-                case FE_I8:  sb_printf(sb, "_inst_%llx = (i8)  %lld", inst, (i64) ((FeInstConst*)inst)->i8);  break;
-                case FE_F64: sb_printf(sb, "_inst_%llx = (f64) %lf",  inst, (double) ((FeInstConst*)inst)->f64); break;
-                case FE_F32: sb_printf(sb, "_inst_%llx = (f32) %lf",  inst, (double) ((FeInstConst*)inst)->f32); break;
-                case FE_F16: sb_printf(sb, "_inst_%llx = (f16) %lf",  inst, (double) ((FeInstConst*)inst)->f16); break;
+                case FE_TYPE_I64: sb_printf(sb, "_inst_%llx = (i64) %lldll", inst, (i64) ((FeInstConst*)inst)->i64); break;
+                case FE_TYPE_I32: sb_printf(sb, "_inst_%llx = (i32) %lld", inst, (i64) ((FeInstConst*)inst)->i32); break;
+                case FE_TYPE_I16: sb_printf(sb, "_inst_%llx = (i16) %lld", inst, (i64) ((FeInstConst*)inst)->i16); break;
+                case FE_TYPE_I8:  sb_printf(sb, "_inst_%llx = (i8)  %lld", inst, (i64) ((FeInstConst*)inst)->i8);  break;
+                case FE_TYPE_F64: sb_printf(sb, "_inst_%llx = (f64) %lf",  inst, (double) ((FeInstConst*)inst)->f64); break;
+                case FE_TYPE_F32: sb_printf(sb, "_inst_%llx = (f32) %lf",  inst, (double) ((FeInstConst*)inst)->f32); break;
+                case FE_TYPE_F16: sb_printf(sb, "_inst_%llx = (f16) %lf",  inst, (double) ((FeInstConst*)inst)->f16); break;
                 default: break;
                 }
                 break;

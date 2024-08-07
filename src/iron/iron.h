@@ -107,23 +107,27 @@ void fe_run_next_pass(FeModule* m, bool printout);
 void fe_run_all_passes(FeModule* m, bool printout);
 
 enum {
-    FE_VOID,
+    _FE_TYPE_SIMPLE_BEGIN,
 
-    FE_BOOL,
+    FE_TYPE_VOID,
 
-    FE_PTR,
+    FE_TYPE_BOOL,
 
-    FE_I8,
-    FE_I16,
-    FE_I32,
-    FE_I64,
+    FE_TYPE_PTR,
 
-    FE_F16,
-    FE_F32,
-    FE_F64,
+    FE_TYPE_I8,
+    FE_TYPE_I16,
+    FE_TYPE_I32,
+    FE_TYPE_I64,
 
-    FE_AGGREGATE,
-    FE_ARRAY,
+    FE_TYPE_F16,
+    FE_TYPE_F32,
+    FE_TYPE_F64,
+
+    _FE_TYPE_SIMPLE_END,
+
+    FE_TYPE_RECORD,
+    FE_TYPE_ARRAY,
 };
 
 typedef struct FeType {
@@ -227,9 +231,6 @@ typedef struct FeFunction {
     u16 params_len;
     u16 returns_len;
 
-    u32 entry_idx; // 0 most of the time, but not guaranteed
-    // u32 exit_idx;
-
     Arena alloca;
 } FeFunction;
 
@@ -239,7 +240,7 @@ typedef struct FeFunctionItem {
 
     // if its an aggregate, this is exposed as a pointer marked "by_val" so that
     // calling conventions work without needing target-specific information.
-    bool by_val_aggregate;
+    FeType* by_value;
 } FeFunctionItem;
 
 typedef struct FeBasicBlock {
@@ -342,7 +343,7 @@ enum {
     // FeInstReturn
     FE_INST_RETURN,
 
-    _FE_INST_COUNT,
+    _FE_INST_MAX,
 };
 
 // basic AIR structure
@@ -572,7 +573,9 @@ FeInst* fe_inst_return(FeFunction* f);
 
 void   fe_add_phi_source(FeInstPhi* phi, FeInst* source, FeBasicBlock* source_block);
 
-string fe_emit_textual_ir(FeModule* m);
+string fe_emit_ir(FeModule* m, bool fancy_whitespace);
+FeModule* fe_read_ir(string text);
+
 string fe_emit_c(FeModule* m);
 
 // ASSEMBLY SHIT

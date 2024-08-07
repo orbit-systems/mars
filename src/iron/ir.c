@@ -14,7 +14,6 @@ FeFunction* fe_new_function(FeModule* mod, FeSymbol* sym) {
     fn->alloca = arena_make(FE_FN_ALLOCA_BLOCK_SIZE);
     da_init(&fn->blocks, 1);
     da_init(&fn->stack, 1);
-    fn->entry_idx = 0;
     fn->params = NULL;
     fn->returns = NULL;
     fn->mod = mod;
@@ -200,10 +199,10 @@ FeInst* fe_insert_after(FeBasicBlock* bb, FeInst* inst, FeInst* ref) {
 }
 
 FeInst* fe_inst(FeFunction* f, u8 type) {
-    if (type >= _FE_INST_COUNT) type = FE_INST_INVALID;
+    if (type >= _FE_INST_MAX) type = FE_INST_INVALID;
     FeInst* ir = arena_alloc(&f->alloca, fe_inst_sizes[type], 8);
     ir->kind = type;
-    ir->type = fe_type(f->mod, FE_VOID);
+    ir->type = fe_type(f->mod, FE_TYPE_VOID);
     ir->number = 0;
     return ir;
 }

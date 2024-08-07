@@ -1,8 +1,9 @@
 #include "common/alloc.h"
+#include "common/orbit.h"
 
 void* mars_alloc(size_t size) {
     void* p = malloc(size);
-    if (!p) return NULL;
+    if (!p) CRASH("out of memory");
 
     memset(p, 0, size);
     return p;

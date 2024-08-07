@@ -1,91 +1,22 @@
 #include "iron/iron.h"
 #include "common/strbuilder.h"
-#include "common/ptrmap.h"
 
-static string simple_type_2_str(FeType* t) {
+static bool fancy = false;
+
+static char* simpletype2cstr(FeType* t) {
     switch (t->kind){
-    case FE_VOID: return constr("void");
-    case FE_BOOL: return constr("bool");
-    case FE_I8:   return constr("i8");
-    case FE_I16:  return constr("i16");
-    case FE_I32:  return constr("i32");
-    case FE_I64:  return constr("i64");
-    case FE_F16:  return constr("f16");
-    case FE_F32:  return constr("f32");
-    case FE_F64:  return constr("f64");
-    case FE_PTR:  return constr("ptr");
+    case FE_TYPE_VOID: return "void";
+    case FE_TYPE_BOOL: return "bool";
+    case FE_TYPE_I8:   return "i8";
+    case FE_TYPE_I16:  return "i16";
+    case FE_TYPE_I32:  return "i32";
+    case FE_TYPE_I64:  return "i64";
+    case FE_TYPE_F16:  return "f16";
+    case FE_TYPE_F32:  return "f32";
+    case FE_TYPE_F64:  return "f64";
+    case FE_TYPE_PTR:  return "ptr";
     }
-
-    return NULL_STR;
-}
-
-static void emit_type_definitions(FeModule* m, StringBuilder* sb) {
-
-    // hopefully this works lmao
-
-    static char buffer[500];
-
-    u32 count = 0;
-
-    foreach(FeType* t, m->typegraph) {
-        if (!is_null_str(simple_type_2_str(t))) continue;
-        t->number = ++count;
-    }
-
-    foreach(FeType* t, m->typegraph) {
-        if (!is_null_str(simple_type_2_str(t))) continue;
-
-        memset(buffer, 0, sizeof(buffer));
-        char* bufptr = buffer;
-
-        bufptr += sprintf(bufptr, "type t%d = ", t->number);
-
-        switch (t->kind) {
-        case FE_ARRAY:
-            if (is_null_str(simple_type_2_str(t->array.sub))) {
-                bufptr += sprintf(bufptr, "[%lld]t%d", t->array.len, t->array.sub->number);
-            } else {
-                bufptr += sprintf(bufptr, "[%lld]"str_fmt, t->array.len, str_arg(simple_type_2_str(t->array.sub)));
-            }
-            break;
-        case FE_AGGREGATE:
-
-            bufptr += sprintf(bufptr, "{");
-            for_urange(i, 0, t->aggregate.len) {
-
-                if (is_null_str(simple_type_2_str(t->array.sub))) {
-                    bufptr += sprintf(bufptr, "t%d", t->aggregate.fields[i]->number);
-                } else {
-                    bufptr += sprintf(bufptr, str_fmt, str_arg(simple_type_2_str(t->aggregate.fields[i])));
-                }
-
-                if (i + 1 != t->aggregate.len) {
-                    bufptr += sprintf(bufptr, ", ");
-                }
-            }
-            bufptr += sprintf(bufptr, "}");
-            break;
-        default:
-            CRASH("");
-            break;
-        }
-
-        bufptr += sprintf(bufptr, "\n");
-
-        sb_append_c(sb, bufptr);
-    }
-}
-
-static int sb_type_name(FeType* t, StringBuilder* sb) {
-    char buf[16] = {0};
-
-    if (is_null_str(simple_type_2_str(t))) {
-        sprintf(buf, "t%d", t->number);
-    } else {
-        sprintf(buf, str_fmt, str_arg(simple_type_2_str(t)));
-    }
-    sb_append_c(sb, buf);
-    return strlen(buf);
+    return NULL;
 }
 
 static u64 stack_object_index(FeFunction* f, FeStackObject* obj) {
@@ -96,182 +27,179 @@ static u64 stack_object_index(FeFunction* f, FeStackObject* obj) {
     return UINT64_MAX;
 }
 
-static void emit_function(FeFunction* f, StringBuilder* sb) {
-    sb_append_c(sb, "func ");
-    sb_append(sb, f->sym->name);
-    sb_append_c(sb, " (");
-
-    for_range(i, 0, f->params_len) {
-        sb_type_name(f->params[i]->type, sb);
-        if (i + 1 != f->params_len) {
-            sb_append_c(sb, ", ");
-        }
+static void emit_sym(StringBuilder* sb, FeSymbol* sym) {
+    sb_append_c(sb, "(sym \"");
+    sb_append(sb, sym->name);
+    sb_append_c(sb, "\" ");
+    switch (sym->binding) {
+    case FE_BIND_LOCAL: sb_append_c(sb, "local"); break;
+    case FE_BIND_IMPORT: sb_append_c(sb, "import"); break;
+    case FE_BIND_EXPORT: sb_append_c(sb, "export"); break;
+    case FE_BIND_EXPORT_WEAK: sb_append_c(sb, "export-weak"); break;
+    default: CRASH("unknown symbol binding"); break;
     }
-
-    sb_append_c(sb, ") -> (");
-
-    for_range(i, 0, f->returns_len) {
-        sb_type_name(f->returns[i]->type, sb);
-        if (i + 1 != f->returns_len) {
-            sb_append_c(sb, ", ");
-        }
-    }
-
-    sb_append_c(sb, ") {\n");
-
-
-    PtrMap ir2num = {0};
-    ptrmap_init(&ir2num, 128);
-
-    size_t counter = 1;
-
-    for_urange(i, 0, f->stack.len) {
-        FeStackObject* so = f->stack.at[i];
-        sb_printf(sb, "    #%llu = stack.", i + 1);
-        sb_type_name(so->t, sb);
-        sb_append_c(sb, "\n");
-        counter++;
-    }
-
-    for_urange(b, 0, f->blocks.len) {
-        FeBasicBlock* bb = f->blocks.at[b];
-        for_urange(i, 0, bb->len) {
-            FeInst* inst = bb->at[i];
-            if (inst->kind == FE_INST_ELIMINATED) continue;
-            inst->number = counter++; // assign a number to every IR
-        }
-    }
-
-    static char* opname[] = {
-        [FE_INST_ADD]   = "add.",
-        [FE_INST_SUB]   = "sub.",
-        [FE_INST_IMUL]  = "imul.",
-        [FE_INST_UMUL]  = "umul.",
-        [FE_INST_IDIV]  = "idiv.",
-        [FE_INST_UDIV]  = "udiv.",
-        [FE_INST_AND]   = "and.",
-        [FE_INST_OR]    = "or.",
-        [FE_INST_XOR]   = "xor.",
-        [FE_INST_SHL]   = "shl.",
-        [FE_INST_LSR]   = "lsr.",
-        [FE_INST_ASR]   = "asr.",
-        [FE_INST_NEG]   = "neg.",
-        [FE_INST_NOT]   = "not.",
-    };
-
-    for_urange(b, 0, f->blocks.len) {
-        FeBasicBlock* bb = f->blocks.at[b];
-        sb_append_c(sb, "  ");
-
-        if (b == f->entry_idx) {
-            sb_append_c(sb, "@entry ");
-        }
-
-        sb_append(sb, bb->name);
-        sb_append_c(sb, ":\n");
-
-        for_urange(i, 0, bb->len) {
-            FeInst* inst = bb->at[i];
-
-            if (inst->kind == FE_INST_ELIMINATED) continue;
-
-            sb_printf(sb, "    #%llu = ", inst->number);
-            switch (inst->kind) {
-            case FE_INST_ADD:
-            case FE_INST_SUB:
-            case FE_INST_IMUL:
-            case FE_INST_UMUL:
-            case FE_INST_IDIV:
-            case FE_INST_UDIV:
-            case FE_INST_AND:
-            case FE_INST_OR: 
-            case FE_INST_XOR: 
-            case FE_INST_SHL: 
-            case FE_INST_LSR: 
-            case FE_INST_ASR: {
-                FeInstBinop* binop = (FeInstBinop*) inst;
-                sb_append_c(sb, opname[inst->kind]);
-                sb_type_name(binop->base.type, sb);
-                sb_printf(sb, " #%llu, #%llu", binop->lhs->number, binop->rhs->number);
-            } break;
-            case FE_INST_NEG:
-            case FE_INST_NOT: {
-                FeInstUnop* unop = (FeInstUnop*) inst;
-                sb_append_c(sb, opname[inst->kind]);
-                sb_type_name(unop->base.type, sb);
-                sb_printf(sb, " #%llu", unop->source->number);
-            } break;
-            case FE_INST_LOAD: {
-                FeInstLoad* load = (FeInstLoad*) inst;
-                sb_append_c(sb, "load.");
-                sb_type_name(load->base.type, sb);
-                sb_printf(sb, " #%llu", load->location->number);
-            } break;
-            case FE_INST_STORE: {
-                FeInstStore* store = (FeInstStore*) inst;
-                sb_append_c(sb, "store.");
-                sb_type_name(store->value->type, sb);
-                sb_printf(sb, " #%llu, #%llu", store->location->number, store->value->number);
-            } break;
-            case FE_INST_MOV: {
-                FeInstMov* mov = (FeInstMov*) inst;
-                sb_printf(sb, "mov #%llu", mov->source->number);
-            } break;
-            case FE_INST_CONST: {
-                FeInstConst* con = (FeInstConst*) inst;
-                sb_append_c(sb, "const.");
-                sb_type_name(inst->type, sb);
-                switch (con->base.type->kind) {
-                case FE_I8:  sb_printf(sb, " %lld", (i64)con->i8);  break;
-                case FE_I16: sb_printf(sb, " %lld", (i64)con->i16); break;
-                case FE_I32: sb_printf(sb, " %lld", (i64)con->i32); break;
-                case FE_I64: sb_printf(sb, " %lld", (i64)con->i64); break;
-                case FE_F16: sb_printf(sb, " %f",   (f32)con->f16); break;
-                case FE_F32: sb_printf(sb, " %f",   con->f32); break;
-                case FE_F64: sb_printf(sb, " %lf",  con->f64); break;
-                default:
-                    break;
-                }
-            } break;
-            case FE_INST_PARAMVAL: {
-                FeInstParamVal* param = (FeInstParamVal*) inst;
-                sb_printf(sb, "paramval %llu", param->param_idx);
-            } break;
-            case FE_INST_RETURNVAL: {
-                FeInstReturnval* ret = (FeInstReturnval*) inst;
-                sb_printf(sb, "returnval %llu, #%llu", ret->return_idx, ret->source->number);
-            } break;
-            case FE_INST_STACKADDR: {
-                FeInstStackAddr* so = (FeInstStackAddr*) inst;
-                u64 index = stack_object_index(f, so->object);
-                sb_printf(sb, "stackaddr #%llu", index + 1);
-            } break;
-            case FE_INST_RETURN:
-                sb_append_c(sb, "return");
-                break;
-            default:
-                sb_printf(sb, "UNKNOWN %llu", inst->kind);
-                break;
-            }
-
-            sb_append_c(sb, "\n");
-        }
-
-    }
-
-    sb_append_c(sb, "}\n");
+    sb_append_c(sb, ")");
 }
 
-string fe_emit_textual_ir(FeModule* m) {
+static u64 symbol_index(FeModule* m, FeSymbol* sym) {
+    for_urange(i, 0, m->symtab.len) {
+        if (m->symtab.at[i] == sym) return i;
+    }
+    return UINT64_MAX;
+}
+
+static void emit_type(StringBuilder* sb, FeType* t) {
+    if (_FE_TYPE_SIMPLE_BEGIN < t->kind && t->kind < _FE_TYPE_SIMPLE_END) {
+        sb_append_c(sb, simpletype2cstr(t));
+    } else if (t->kind == FE_TYPE_RECORD) {
+        sb_append_c(sb, "(rec ");
+        for_range(i, 0, t->aggregate.len) {
+            emit_type(sb, t->aggregate.fields[i]);
+            if (i != t->aggregate.len - 1) sb_append_c(sb, " ");
+        }
+        sb_append_c(sb, ")");
+    } else if (t->kind == FE_TYPE_ARRAY) {
+        sb_append_c(sb, "(arr ");
+        sb_printf(sb, "%llx ", t->array.len);
+        emit_type(sb, t->array.sub);
+        sb_append_c(sb, ")");
+    } else {
+        CRASH("invalid type");
+    }
+}
+
+static void emit_inst(StringBuilder* sb, FeInst* inst) {
+
+    static const char* opnames[] = {
+        [FE_INST_ADD]   = "add ",
+        [FE_INST_SUB]   = "sub ",
+        [FE_INST_IMUL]  = "imul ",
+        [FE_INST_UMUL]  = "umul ",
+        [FE_INST_IDIV]  = "idiv ",
+        [FE_INST_UDIV]  = "udiv ",
+        [FE_INST_AND]   = "and ",
+        [FE_INST_OR]    = "or ",
+        [FE_INST_XOR]   = "xor ",
+        [FE_INST_SHL]   = "shl ",
+        [FE_INST_LSR]   = "lsr ",
+        [FE_INST_ASR]   = "asr ",
+        [FE_INST_NEG]   = "neg ",
+        [FE_INST_NOT]   = "not ",
+    };
+
+    sb_append_c(sb, "\n      (");
+    switch (inst->kind) {
+    case FE_INST_PARAMVAL:
+        FeInstParamVal* paramval = (FeInstParamVal*) inst;
+        sb_printf(sb, "paramval %u", paramval->param_idx);
+        break;
+    case FE_INST_RETURNVAL:
+        FeInstReturnval* returnval = (FeInstReturnval*) inst;
+        sb_printf(sb, "returnval %u %u", returnval->return_idx, returnval->source->number);
+        break;
+    case FE_INST_RETURN:
+        sb_append_c(sb, "return");
+        break;
+    case FE_INST_ADD:
+    case FE_INST_SUB:
+    case FE_INST_IMUL:
+    case FE_INST_UMUL:
+    case FE_INST_IDIV:
+    case FE_INST_UDIV:
+    case FE_INST_AND:
+    case FE_INST_OR:
+    case FE_INST_XOR:
+    case FE_INST_SHL:
+    case FE_INST_LSR:
+    case FE_INST_ASR:
+        FeInstBinop* binop = (FeInstBinop*) inst;
+        sb_append_c(sb, opnames[inst->kind]);
+        emit_type(sb, inst->type);
+        sb_printf(sb, " %u %u", binop->lhs->number, binop->rhs->number);
+        break;
+    default:
+        break;
+    }
+    sb_append_c(sb, ")");
+}
+
+static void emit_function(StringBuilder* sb, FeFunction* f) {
+
+    {
+        int counter = 0;
+        foreach(FeBasicBlock* bb, f->blocks) {
+            foreach(FeInst* inst, *bb) {
+                inst->number = counter++;
+            }
+        }
+    }
+
+    sb_append_c(sb, "(fun ");
+    sb_printf(sb, "%llu ", symbol_index(f->mod, f->sym));
+
+    sb_append_c(sb, "(");
+    for_range(i, 0, f->params_len) {
+        if (f->params[i]->by_value) TODO("");
+        FeType* t = f->params[i]->type;
+        emit_type(sb, t);
+        if (i != f->params_len - 1) sb_append_c(sb, " ");
+    }
+    sb_append_c(sb, ") (");
+    for_range(i, 0, f->params_len) {
+        if (f->params[i]->by_value) TODO("");
+        FeType* t = f->params[i]->type;
+        emit_type(sb, t);
+        if (i != f->params_len - 1) sb_append_c(sb, " ");
+    }
+    sb_append_c(sb, ") ");
+
+    for_range(i, 0, f->stack.len) {
+        sb_append_c(sb, "(stk ");
+        FeType* t = f->stack.at[i]->t;
+        emit_type(sb, t);
+        sb_append_c(sb, ") ");
+    }    
+
+    sb_append_c(sb, "(\n");
+
+    foreach(FeBasicBlock* bb, f->blocks) {
+        sb_append_c(sb, "    (blk ");
+        sb_append(sb, bb->name);
+
+        foreach(FeInst* inst, *bb) {
+            emit_inst(sb, inst);
+        }
+
+        sb_append_c(sb, ")");
+    }
+
+    sb_append_c(sb, ")");
+}
+
+// `fancy_whitespace` enables line breaks and indentation.
+string fe_emit_ir(FeModule* m, bool fancy_whitespace) {
+    fancy = fancy_whitespace;
     StringBuilder sb = {0};
     sb_init(&sb);
 
-    emit_type_definitions(m, &sb);
-    for_range(i, 0, m->functions_len) {
-        emit_function(m->functions[i], &sb);
+    sb_append_c(&sb, "(mod \"");
+    sb_append(&sb, m->name);
+    sb_append_c(&sb, "\"");
+    foreach(FeSymbol* sym, m->symtab) {
+        sb_append_c(&sb, "\n  ");
+        emit_sym(&sb, sym);
     }
+    for_range(i, 0, m->functions_len) {
+        sb_append_c(&sb, "\n  ");
+        emit_function(&sb, m->functions[i]);
+
+    }
+
+    sb_append_c(&sb, ")\n");
 
     string out = string_alloc(sb_len(&sb));
     sb_write(&sb, out.raw);
+    sb_destroy(&sb);
     return out;
 }
+

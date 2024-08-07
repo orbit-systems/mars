@@ -7,10 +7,6 @@ cachegrind*
 build/*
 build
 ols.json
-mars
-!./src/mars
-iron
-!./src/iron
 mbuild
 anvil
 anvil.exe
@@ -19,4 +15,7 @@ vgcore*
 *.dot
 *.d
 mars
+iron
+!src/mars
+!src/iron
 .clangd

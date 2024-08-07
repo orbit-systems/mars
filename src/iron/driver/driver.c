@@ -1,4 +1,11 @@
 #define ORBIT_IMPLEMENTATION
+
+#define SHUT_THE_FUCK_UP_ABOUT_UNDEFINED_REALPATH
+#ifdef SHUT_THE_FUCK_UP_ABOUT_UNDEFINED_REALPATH
+    // FUCK YOU IT EXISTS
+    char* realpath(char* a, char* b);
+#endif
+
 #include "iron/iron.h"
 #include "common/orbit/orbit_ll.h"
 
@@ -18,17 +25,33 @@ void print_linked_list(ll(int)* n, int pos) {
 }
 
 int main() {
-    fe_selftest();
 
-    ll(int)* n1 = ll_new(int);
-    ll_push_back(n1, ll_new(int));
-    ll_push_back(n1, ll_new(int));
+    FeModule* m = fe_new_module(str("test"));
 
-    print_linked_list(n1, 0);
-    printf("\n");
+    FeSymbol* sym = fe_new_symbol(m, str("add_mul"), FE_BIND_LOCAL);
+    FeFunction* f = fe_new_function(m, sym);
+    fe_set_func_params(f, 2, fe_type(m, FE_TYPE_I64), fe_type(m, FE_TYPE_I64));
+    fe_set_func_returns(f, 2, fe_type(m, FE_TYPE_I64), fe_type(m, FE_TYPE_I64));
 
-    ll_remove(n1->next->next);
+    FeBasicBlock* bb = fe_new_basic_block(f, str("block1"));
+    FeInstParamVal* p0 = (FeInstParamVal*) fe_append(bb, fe_inst_paramval(f, 0));
+    FeInstParamVal* p1 = (FeInstParamVal*) fe_append(bb, fe_inst_paramval(f, 1));
 
-    print_linked_list(n1, 0);
+    FeInst* add = fe_append(bb, fe_inst_binop(f, FE_INST_ADD, (FeInst*) p0, (FeInst*) p1)); 
+    add->type = fe_type(m, FE_TYPE_I64);
 
+    FeInst* mul = fe_append(bb, fe_inst_binop(f, FE_INST_UMUL, (FeInst*) p0, (FeInst*) p1)); 
+    mul->type = fe_type(m, FE_TYPE_I64);
+
+    FeInst* r0 = fe_append(bb, fe_inst_returnval(f, 0, (FeInst*) add));
+    FeInst* r1 = fe_append(bb, fe_inst_returnval(f, 1, (FeInst*) mul));
+
+    fe_append(bb, fe_inst_return(f));
+
+    fe_run_all_passes(m, true);
+
+    fe_read_ir(fe_emit_ir(m, true));
+    // fe_read_ir(str("( a)"));
+
+    fe_destroy_module(m);
 }

@@ -56,20 +56,20 @@
 
 #define int_operate(op, dest, src1, src2) \
     switch (dest->base.type->kind) {\
-    case FE_I64:  dest->i64  = src1->i64  op src2->i64;  break;\
-    case FE_I32:  dest->i32  = src1->i32  op src2->i32;  break;\
-    case FE_I16:  dest->i16  = src1->i16  op src2->i16;  break;\
-    case FE_I8:   dest->i64  = src1->i8   op src2->i8;   break;\
-    case FE_BOOL: dest->bool = src1->bool op src2->bool; break;\
+    case FE_TYPE_I64:  dest->i64  = src1->i64  op src2->i64;  break;\
+    case FE_TYPE_I32:  dest->i32  = src1->i32  op src2->i32;  break;\
+    case FE_TYPE_I16:  dest->i16  = src1->i16  op src2->i16;  break;\
+    case FE_TYPE_I8:   dest->i64  = src1->i8   op src2->i8;   break;\
+    case FE_TYPE_BOOL: dest->bool = src1->bool op src2->bool; break;\
     }
 
 #define uint_operate(op, dest, src1, src2) \
     switch (dest->base.type->kind) {\
-    case FE_I64:  dest->i64  = (u64) src1->i64  op (u64) src2->i64;  break;\
-    case FE_I32:  dest->i32  = (u32) src1->i32  op (u32) src2->i32;  break;\
-    case FE_I16:  dest->i16  = (u16) src1->i16  op (u16) src2->i16;  break;\
-    case FE_I8:   dest->i64  = (u8)  src1->i8   op (u8)  src2->i8;   break;\
-    case FE_BOOL: dest->bool =       src1->bool op       src2->bool; break;\
+    case FE_TYPE_I64:  dest->i64  = (u64) src1->i64  op (u64) src2->i64;  break;\
+    case FE_TYPE_I32:  dest->i32  = (u32) src1->i32  op (u32) src2->i32;  break;\
+    case FE_TYPE_I16:  dest->i16  = (u16) src1->i16  op (u16) src2->i16;  break;\
+    case FE_TYPE_I8:   dest->i64  = (u8)  src1->i8   op (u8)  src2->i8;   break;\
+    case FE_TYPE_BOOL: dest->bool =       src1->bool op       src2->bool; break;\
     }
 
 static FeInst* const_eval_binop(FeFunction* f, FeInst* inst) {
@@ -117,13 +117,13 @@ static bool is_const_one(FeInst* inst) {
 
     FeInstConst* lc = (FeInstConst*) inst;
     switch (lc->base.type->kind) {
-    case FE_I64: return lc->i64 == (i64) 1;
-    case FE_I32: return lc->i32 == (i32) 1;
-    case FE_I16: return lc->i16 == (i16) 1;
-    case FE_I8:  return lc->i8  == (i8 ) 1;
-    case FE_F64: return lc->f64 == (f64) 1;
-    case FE_F32: return lc->f32 == (f32) 1;
-    case FE_F16: return lc->f16 == (f16) 1;
+    case FE_TYPE_I64: return lc->i64 == (i64) 1;
+    case FE_TYPE_I32: return lc->i32 == (i32) 1;
+    case FE_TYPE_I16: return lc->i16 == (i16) 1;
+    case FE_TYPE_I8:  return lc->i8  == (i8 ) 1;
+    case FE_TYPE_F64: return lc->f64 == (f64) 1;
+    case FE_TYPE_F32: return lc->f32 == (f32) 1;
+    case FE_TYPE_F16: return lc->f16 == (f16) 1;
     default: break;
     }
     return false;
@@ -134,13 +134,13 @@ static bool is_const_zero(FeInst* inst) {
 
     FeInstConst* lc = (FeInstConst*) inst;
     switch (lc->base.type->kind) {
-    case FE_I64: return lc->i64 == (i64) 0;
-    case FE_I32: return lc->i32 == (i32) 0;
-    case FE_I16: return lc->i16 == (i16) 0;
-    case FE_I8:  return lc->i8  == (i8 ) 0;
-    case FE_F64: return lc->f64 == (f64) 0;
-    case FE_F32: return lc->f32 == (f32) 0;
-    case FE_F16: return lc->f16 == (f16) 0;
+    case FE_TYPE_I64: return lc->i64 == (i64) 0;
+    case FE_TYPE_I32: return lc->i32 == (i32) 0;
+    case FE_TYPE_I16: return lc->i16 == (i16) 0;
+    case FE_TYPE_I8:  return lc->i8  == (i8 ) 0;
+    case FE_TYPE_F64: return lc->f64 == (f64) 0;
+    case FE_TYPE_F32: return lc->f32 == (f32) 0;
+    case FE_TYPE_F16: return lc->f16 == (f16) 0;
     default: break;
     }
     return false;
@@ -188,10 +188,10 @@ static FeInst* identity_reduction(FeInst* inst, bool* needs_inserting) {
 bool is_const_power_of_two(FeInst* inst) {
     FeInstConst* lc = (FeInstConst*) inst;
     switch (lc->base.type->kind) {
-    case FE_I64: return lc->i64 != 0 && (lc->i64 & (lc->i64 - 1)) == 0;
-    case FE_I32: return lc->i32 != 0 && (lc->i32 & (lc->i32 - 1)) == 0;
-    case FE_I16: return lc->i16 != 0 && (lc->i16 & (lc->i16 - 1)) == 0;
-    case FE_I8:  return lc->i8  != 0 && (lc->i8  & (lc->i8  - 1)) == 0;
+    case FE_TYPE_I64: return lc->i64 != 0 && (lc->i64 & (lc->i64 - 1)) == 0;
+    case FE_TYPE_I32: return lc->i32 != 0 && (lc->i32 & (lc->i32 - 1)) == 0;
+    case FE_TYPE_I16: return lc->i16 != 0 && (lc->i16 & (lc->i16 - 1)) == 0;
+    case FE_TYPE_I8:  return lc->i8  != 0 && (lc->i8  & (lc->i8  - 1)) == 0;
     default: break;
     }
     return false;
@@ -200,10 +200,10 @@ bool is_const_power_of_two(FeInst* inst) {
 void convert_to_log2(FeInst* inst) {
     FeInstConst* lc = (FeInstConst*) inst;
     switch (lc->base.type->kind) {
-    case FE_I64:lc->i64 = 8*sizeof(lc->i64) - __builtin_clzll(lc->i64) - 1; break;
-    case FE_I32:lc->i32 = 8*sizeof(lc->i64) - __builtin_clzll(lc->i32) - 1; break;
-    case FE_I16:lc->i16 = 8*sizeof(lc->i64) - __builtin_clzll(lc->i16) - 1; break;
-    case FE_I8: lc->i8  = 8*sizeof(lc->i64) - __builtin_clzll(lc->i8 ) - 1; break;
+    case FE_TYPE_I64:lc->i64 = 8*sizeof(lc->i64) - __builtin_clzll(lc->i64) - 1; break;
+    case FE_TYPE_I32:lc->i32 = 8*sizeof(lc->i64) - __builtin_clzll(lc->i32) - 1; break;
+    case FE_TYPE_I16:lc->i16 = 8*sizeof(lc->i64) - __builtin_clzll(lc->i16) - 1; break;
+    case FE_TYPE_I8: lc->i8  = 8*sizeof(lc->i64) - __builtin_clzll(lc->i8 ) - 1; break;
     default: break;
     }
 }
