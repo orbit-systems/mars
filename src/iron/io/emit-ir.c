@@ -145,13 +145,13 @@ static void emit_function(StringBuilder* sb, FeFunction* f) {
         if (i != f->params_len - 1) sb_append_c(sb, " ");
     }
     sb_append_c(sb, ") (");
-    for_range(i, 0, f->params_len) {
-        if (f->params[i]->by_value) TODO("");
-        FeType* t = f->params[i]->type;
+    for_range(i, 0, f->returns_len) {
+        if (f->returns[i]->by_value) TODO("");
+        FeType* t = f->returns[i]->type;
         emit_type(sb, t);
-        if (i != f->params_len - 1) sb_append_c(sb, " ");
+        if (i != f->returns_len - 1) sb_append_c(sb, " ");
     }
-    sb_append_c(sb, ") ");
+    sb_append_c(sb, ") \n");
 
     for_range(i, 0, f->stack.len) {
         sb_append_c(sb, "(stk ");
@@ -159,8 +159,6 @@ static void emit_function(StringBuilder* sb, FeFunction* f) {
         emit_type(sb, t);
         sb_append_c(sb, ") ");
     }    
-
-    sb_append_c(sb, "(\n");
 
     foreach(FeBasicBlock* bb, f->blocks) {
         sb_append_c(sb, "    (blk ");
@@ -202,4 +200,3 @@ string fe_emit_ir(FeModule* m, bool fancy_whitespace) {
     sb_destroy(&sb);
     return out;
 }
-

@@ -50,8 +50,10 @@ int main() {
 
     fe_run_all_passes(m, true);
 
-    fe_read_ir(fe_emit_ir(m, true));
-    // fe_read_ir(str("( a)"));
+    // fe_read_module(fe_emit_ir(m, true));
+    fe_read_module(constr(
+        "a"
+    ));
 
     fe_destroy_module(m);
 }

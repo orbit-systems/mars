@@ -1,75 +1,65 @@
+TARGETS = aphelion 
+
 SRCPATHS = \
-	src/*.c src/phobos/*.c \
+	src/common/*.c \
+	src/mars/*.c \
+	src/mars/phobos/*.c \
+	src/mars/phobos/analysis/*.c \
+	src/mars/phobos/parse/*.c \
+	\
 	src/iron/*.c \
 	src/iron/passes/*.c \
 	src/iron/passes/analysis/*.c \
 	src/iron/passes/transform/*.c \
-	src/iron/targets/*.c
-
+	src/iron/targets/*.c \
+	# src/llta/*.c
+SRCPATHS += $(foreach target, $(TARGETS), src/iron/targets/$(target)/*.c) 
 SRC = $(wildcard $(SRCPATHS))
 OBJECTS = $(SRC:src/%.c=build/%.o)
 
 EXECUTABLE_NAME = mars
+ECHO = echo
 
 ifeq ($(OS),Windows_NT)
 	EXECUTABLE_NAME = mars.exe
+else
+	ECHO = /usr/bin/echo
+	# JANK FIX FOR SANDWICH'S DUMB ECHO ON HIS LINUX MACHINE
 endif
 
 CC = gcc
 LD = gcc
 
-INCLUDEPATHS = -Isrc/ -Isrc/phobos/ -Isrc/iron/
-DEBUGFLAGS = -lm -rdynamic -pg -g
+INCLUDEPATHS = -Isrc
+DEBUGFLAGS = -pg -g
 ASANFLAGS = -fsanitize=undefined -fsanitize=address
-DONTBEAFUCKINGIDIOT = -Wall -Wextra -pedantic -Wno-missing-field-initializers -Wno-unused-result
-CFLAGS = -Wincompatible-pointer-types -Wno-discarded-qualifiers -lm
-OPT = -O2 # $(DEBUGFLAGS)
+CFLAGS = -std=c17 -MD -D_XOPEN_SOURCE=700 -fwrapv \
+		 -fno-delete-null-pointer-checks -fno-strict-overflow -fno-strict-aliasing \
+		 -Wall -Wno-format -Wno-unused -Werror=incompatible-pointer-types -Wno-discarded-qualifiers \
 
-all: build
+OPT = -O3
+
+FILE_NUM = 0
 
 build/%.o: src/%.c
-	@echo compiling $<
-	@$(CC) -c -o $@ $< $(INCLUDEPATHS) -MD $(CFLAGS) $(OPT)
+	$(eval FILE_NUM=$(shell echo $$(($(FILE_NUM)+1))))
+	$(shell $(ECHO) 1>&2 -e "\e[0m[\e[32m$(FILE_NUM)/$(words $(SRC))\e[0m]\t Compiling \e[1m$<\e[0m")
+	@$(CC) -c -o $@ $< $(INCLUDEPATHS) $(CFLAGS) $(OPT)
 
 build: $(OBJECTS)
-	@-cp -r build/iron/* build/
-	@-cp    build/phobos/* build/
+	@echo Linking with $(LD)...
+	@$(LD) $(OBJECTS) -o $(EXECUTABLE_NAME) $(CFLAGS) -lm
+	@echo Successfully built: $(EXECUTABLE_NAME)
 
-	@echo linking with $(LD)
-	@$(LD) $(OBJECTS) -o $(EXECUTABLE_NAME) $(CFLAGS)
-
-	@echo $(EXECUTABLE_NAME) built
-	
-
-dbgbuild/%.o: src/%.c
-	@$(CC) -c -o $@ $< $(INCLUDEPATHS) -MD $(DEBUGFLAGS)
-
-dbgbuild: $(OBJECTS)
-	@-cp -r build/iron/* build/
-	@-cp    build/phobos/* build/
-
-	@$(LD) $(OBJECTS) -o $(EXECUTABLE_NAME) $(DEBUGFLAGS)
-	
-test: build
-	./$(EXECUTABLE_NAME) ./mars_code
-
-test2: build
-	./$(EXECUTABLE_NAME) ./test
+debug: CFLAGS += $(DEBUGFLAGS)
+debug: OPT = -O0
+debug: build
 
 clean:
-	@rm -rf build
-	@mkdir build
-	@mkdir build/atlas
-	@mkdir build/iron/targets
-	@mkdir build/iron/passes
-	@mkdir build/iron/passes/transform
-	@mkdir build/iron/passes/analysis
-	@mkdir build/phobos
+	@rm -rf build/
+	@mkdir build/
+	@mkdir -p $(dir $(OBJECTS))
 
-
-printbuildinfo:
-	@echo using $(CC) with flags $(CFLAGS) $(OPT)
-
-new: clean printbuildinfo build
+cleanbuild: clean build
 
 -include $(OBJECTS:.o=.d)

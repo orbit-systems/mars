@@ -59,6 +59,7 @@ char* mars_sources[] = {
 char* iron_sources[] = {
     "src/common",
     "src/iron",
+    "src/iron/io",
     "src/iron/passes",
     "src/iron/passes/analysis",
     "src/iron/passes/transform",

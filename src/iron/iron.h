@@ -574,7 +574,7 @@ FeInst* fe_inst_return(FeFunction* f);
 void   fe_add_phi_source(FeInstPhi* phi, FeInst* source, FeBasicBlock* source_block);
 
 string fe_emit_ir(FeModule* m, bool fancy_whitespace);
-FeModule* fe_read_ir(string text);
+FeModule* fe_read_module(string text);
 
 string fe_emit_c(FeModule* m);
 
