@@ -13,7 +13,7 @@ Operations translate into their machine-code counterparts with almost no magic i
 Pointer dereferences are memory accesses, plain and simple, no fanfare. A programmer can look at
 C code and know *almost exactly* what the generated machine code will look like.
 
-Mars was born out of the desire for another "high level assembly" language, but without all the 
+Mars was born out of the desire for another "high-level assembly" language, but without all the 
 baggage that C comes with today (obtuse syntax, multiple—sometimes incompatible—standards, 
 unportable compiler-specific features).
 
