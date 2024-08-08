@@ -31,3 +31,4 @@ To build Iron, use `mbuild` as well:
 ./mbuild iron -release        # build as a standalone application
 ./mbuild iron static -release # build as a static library
 ```
+Use `mbuild` with no arguments to see additional options, such as optimization and compiler flag control.
