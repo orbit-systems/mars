@@ -3,31 +3,31 @@
 Mars is a statically-typed, procedural language for kernel and embedded programming. 
 Mars focuses on low-level control, with emphasis on code configuration.
 
-Mars is a work-in-progress (currently non-functional) and currently only being developed for the [Aphelion ISA](https://github.com/orbit-systems/aphelion). 
-Backends to common processors and environments are not out of the question, but significant development of the language and the compiler must happen before then.
+This repository is also home to Iron, a lightweight and low-level compiler backend. Iron is 
+developed alongside Marsbut can be built and used separately in other projects.
 
 ## Why?
 
-C is the dominant choice for programming kernels and other embedded applications, 
-and it's clear to see why. C code is explicit and translates clearly and effectively into machine code. 
-C also does not tangle itself in complex abstractions, has virtually zero overhead. 
-Its speed and capacity making it ideal for kernel applications where speed and responsiveness are key.
+C isn't an ordinary programming language. It's better categorized as a "high-level assembly".
+Operations translate into their machine-code counterparts with almost no magic in-between.
+Pointer dereferences are memory accesses, plain and simple, no fanfare. A programmer can look at
+C code and know *almost exactly* what the generated machine code will look like.
 
-Mars was born out of a desire to hold on to C's simplicity (no runtime, implicit contexts, built-in allocators, 
-large stdlibs, etc.) but dig deeper into the nitty-gritty and give the programmer more low-level control.
+Mars was born out of the desire for another "high level assembly" language, but without all the 
+baggage that C comes with today (obtuse syntax, multiple—sometimes incompatible—standards, 
+unportable compiler-specific features).
 
 ## Building
-# Prerequisites:
+### Prerequisites:
 - C Compiler
-- Make (optional)
 
-
-To build the compiler, navigate to the project folder and compile/run `anvil.c`:
+To build the Mars compiler, compile/run `mbuild.c`:
 ```shell
-$ cc anvil.c -o anvil
-$ ./anvil
+cc mbuild.c -o mbuild -Isrc
+./mbuild mars -release
 ```
-or, if you have `make` installed, do
+To build Iron, use `mbuild` as well:
 ```shell
-$ make new
+./mbuild iron -release        # build as a standalone application
+./mbuild iron static -release # build as a static library
 ```
