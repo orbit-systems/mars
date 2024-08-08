@@ -4,7 +4,7 @@ Mars is a statically-typed, procedural language for kernel and embedded programm
 Mars focuses on low-level control, with emphasis on code configuration.
 
 This repository is also home to Iron, a lightweight and low-level compiler backend. Iron is 
-developed alongside Marsbut can be built and used separately in other projects.
+developed alongside Mars, but can be built and used separately in other projects.
 
 ## Why?
 
