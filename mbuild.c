@@ -283,6 +283,10 @@ int main(int argc, char** argv) {
             cc = argv[i+1];
             i++;
         }else if (strcmp(arg, "-cflags") == 0) {
+            if (i + 1 == argc) {
+                printf("-cflags needs an argument list\n");
+                exit(-1);
+            }
             char* new_cflags = malloc(strlen(cflags) + strlen(argv[i+1]) + 1);
             strcpy(new_cflags, cflags);
             strcat(new_cflags, argv[i+1]);
