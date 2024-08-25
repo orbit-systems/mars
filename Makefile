@@ -8,12 +8,13 @@ SRCPATHS = \
 	src/mars/phobos/parse/*.c \
 	\
 	src/iron/*.c \
+	src/iron/io/*.c \
 	src/iron/passes/*.c \
 	src/iron/passes/analysis/*.c \
 	src/iron/passes/transform/*.c \
-	src/iron/targets/*.c \
+	src/iron/arch/*.c \
 	# src/llta/*.c
-SRCPATHS += $(foreach target, $(TARGETS), src/iron/targets/$(target)/*.c) 
+SRCPATHS += $(foreach target, $(TARGETS), src/iron/arch/$(target)/*.c) 
 SRC = $(wildcard $(SRCPATHS))
 OBJECTS = $(SRC:src/%.c=build/%.o)
 
