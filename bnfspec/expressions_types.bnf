@@ -11,7 +11,7 @@
 
 <atomic_expression> ::= <literal> |  "." <identifier> | 
                         "(" <expression> ")" | <fn_literal> | <type> |
-                        <type> "{" ((<expression> ",")* <expression> ("," | E) | E) "}" |
+                        (<type> | E) "." "{" ((<expression> ",")* <expression> ("," | E) | E) "}" |
                         <atomic_expression> ("::" | "." | "->") <identifier> |
                         <atomic_expression> "[" <expression> "]" |
                         <atomic_expression> "[" (<expression> | E) ":" (<expression> | E) "]" |
@@ -23,11 +23,12 @@
         "u8" | "u16" | "u32" | "u64" | "uint" |
         "f16" | "f32" | "f64" | "float" | "bool" |
         <aggregate> | <enum> | <fn_pointer> |
-        ("^" | "[]") ("mut" | "let") ( <type> | E)
+        ("^" | "[]") ("mut" | "let") ( <type> | E) |
+        "[" <expression> "]" <type>
+
 
 <unary_expression> ::= <unop> <unary_expression> |
-                       ("cast" | "bitcast") "(" <unary_expression> ")" <unary_expression> |
-                       "[" <expression> "]" <unary_expression> | 
+                       ("cast" | "bitcast") "(" <unary_expression> ")" <unary_expression> | 
                        "distinct" <unary_expression> |
                        <atomic_expression>
 
