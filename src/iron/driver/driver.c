@@ -1,11 +1,5 @@
 #define ORBIT_IMPLEMENTATION
 
-#define SHUT_THE_FUCK_UP_ABOUT_UNDEFINED_REALPATH
-#ifdef SHUT_THE_FUCK_UP_ABOUT_UNDEFINED_REALPATH
-    // FUCK YOU IT EXISTS
-    char* realpath(char* a, char* b);
-#endif
-
 #include "iron/iron.h"
 #include "common/orbit/orbit_ll.h"
 
