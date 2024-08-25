@@ -69,9 +69,24 @@ Type* check_stmt(mars_module* mod, AST node, entity_table* scope) {
             return NULL;
         }
         case AST_assign_stmt:
+            general_warning("TODO: add integral type checking to assign stmt ops, add implicit cast support");
             checked_expr rhs = check_expr(mod, node.as_assign_stmt->rhs, scope);
+            da(checked_expr) lhs_exprs;
+            da_init(&lhs_exprs, 1);
+            foreach(AST stmt, node.as_assign_stmt->lhs) da_append(&lhs_exprs, check_expr(mod, stmt, scope));
+            if (lhs_exprs.len != 1) {
+                if (lhs_exprs.len != rhs.type->as_function.returns.len) error_at_node(mod, node, 
+                    "type mismatch: function "str_fmt" returns %d values, lhs only has space for %d values", 
+                    rhs.expr.as_call_expr->lhs.as_identifier->tok->text, rhs.type->as_function.returns.len, lhs_exprs.len);
 
-
+                foreach(checked_expr cexpr, lhs_exprs) {
+                    if (check_type_cast(cexpr.type, rhs.type->as_function.returns.at[count])) error_at_node(mod, cexpr.expr, 
+                        "type mismatch: return %d cannot be cast to lhs", count);
+                }
+            } else {
+                if (check_type_cast(lhs_exprs.at[0].type, rhs.type)) error_at_node(mod, node, "type mismatch: rhs cannot be cast to lhs");
+            }
+            return NULL;
         default:
             error_at_node(mod, node, "[check_module] unexpected token type: %s", ast_type_str[node.type]);
     }
@@ -101,7 +116,10 @@ checked_expr check_expr(mars_module* mod, AST node, entity_table* scope) {
             return check_literal(mod, node);
         case AST_unary_op_expr:
             checked_expr subexpr = check_expr(mod, node.as_unary_op_expr->inside, scope);
-
+            printf("verifying op: "str_fmt"\n", str_arg(node.as_unary_op_expr->op->text));
+            if (node.as_unary_op_expr->op->type == TOK_CARET) {
+                return (checked_expr){.expr = node, .type = subexpr.type->as_reference.subtype};
+            }
         default:
             error_at_node(mod, node, "[check_expr] unexpected token type: %s", ast_type_str[node.type]);
     }
@@ -300,4 +318,21 @@ int check_type_pair(checked_expr lhs, checked_expr rhs, int depth) {
 
     if (!valid && depth == 0) valid = check_type_pair(rhs, lhs, 1);
     return valid;
+}
+
+bool check_type_cast(Type* lhs, Type* rhs) {
+    type_canonicalize_graph();
+    if (lhs->tag == rhs->tag 
+        && rhs->tag != TYPE_STRUCT
+        && rhs->tag != TYPE_UNION
+        && rhs->tag != TYPE_ENUM
+        && rhs->tag != TYPE_UNTYPED_AGGREGATE
+        && rhs->tag != TYPE_FUNCTION) return true;
+    else if (lhs->tag == rhs->tag 
+        && (rhs->tag == TYPE_STRUCT || rhs->tag == TYPE_UNION)) {
+        return type_equivalent(lhs, rhs, NULL);
+    }
+
+
+    else return false;
 }
