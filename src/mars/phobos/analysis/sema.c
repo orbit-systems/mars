@@ -25,14 +25,20 @@ Type* check_stmt(mars_module* mod, AST node, entity_table* scope) {
             if (node.as_decl_stmt->rhs.type == AST_func_literal_expr && node.as_decl_stmt->lhs.len != 1) {
                 error_at_node(mod, node, "function definition should only be assigned to one value");
             }
-
-            if (!is_null_AST(node.as_decl_stmt->type) && rhs.type->tag != ast_to_type(mod, node.as_decl_stmt->type)->tag) {
+            
+            Type* ast_type = rhs.type;
+            
+            if (!is_null_AST(node.as_decl_stmt->type)) ast_type = ast_to_type(mod, node.as_decl_stmt->type);
+            
+            if (!is_null_AST(node.as_decl_stmt->type) && check_type_cast_implicit(rhs.type, ast_type)) {
                 error_at_node(mod, node, "type mismatch: lhs and rhs cannot be cast to eachother\nTODO: find out the type of lhs and rhs to print a more informative error");
             }
 
             node.as_decl_stmt->tg_type = rhs.type;
 
             if (node.as_decl_stmt->rhs.type == AST_func_literal_expr && node.as_decl_stmt->lhs.len != rhs.type->as_function.returns.len) error_at_node(mod, node, "lhs of declaration should have %d identifiers, has %d", rhs.type->as_function.returns.len, node.as_decl_stmt->lhs.len);
+
+            //TODO: refactor this so we handle one lhs decls differently
 
             foreach(AST lhs, node.as_decl_stmt->lhs) {
                 if (lhs.type != AST_identifier) error_at_node(mod, lhs, "expected identifier, got %s", ast_type_str[lhs.type]);
@@ -41,9 +47,9 @@ Type* check_stmt(mars_module* mod, AST node, entity_table* scope) {
                 new_entity(scope, lhs.as_identifier->tok->text, lhs);
                 scope->at[scope->len - 1]->is_mutable = rhs.mutable;
                 if (node.as_decl_stmt->rhs.type == AST_func_literal_expr) scope->at[scope->len - 1]->entity_type = rhs.type->as_function.returns.at[count];
-                else scope->at[scope->len - 1]->entity_type = rhs.type;
+                else scope->at[scope->len - 1]->entity_type = ast_type;
             }
-            break;
+            return ast_type;
         }
         case AST_return_stmt: {
             int return_count = 0;
@@ -69,7 +75,7 @@ Type* check_stmt(mars_module* mod, AST node, entity_table* scope) {
             return NULL;
         }
         case AST_assign_stmt:
-            general_warning("TODO: add integral type checking to assign stmt ops, add implicit cast support");
+            general_warning("TODO: add integral type checking to assign stmt ops");
             checked_expr rhs = check_expr(mod, node.as_assign_stmt->rhs, scope);
             da(checked_expr) lhs_exprs;
             da_init(&lhs_exprs, 1);
@@ -80,11 +86,11 @@ Type* check_stmt(mars_module* mod, AST node, entity_table* scope) {
                     rhs.expr.as_call_expr->lhs.as_identifier->tok->text, rhs.type->as_function.returns.len, lhs_exprs.len);
 
                 foreach(checked_expr cexpr, lhs_exprs) {
-                    if (check_type_cast(cexpr.type, rhs.type->as_function.returns.at[count])) error_at_node(mod, cexpr.expr, 
+                    if (!check_type_cast_implicit(cexpr.type, rhs.type->as_function.returns.at[count])) error_at_node(mod, cexpr.expr, 
                         "type mismatch: return %d cannot be cast to lhs", count);
                 }
             } else {
-                if (check_type_cast(lhs_exprs.at[0].type, rhs.type)) error_at_node(mod, node, "type mismatch: rhs cannot be cast to lhs");
+                if (!check_type_cast_implicit(lhs_exprs.at[0].type, rhs.type)) error_at_node(mod, node, "type mismatch: rhs cannot be cast to lhs");
             }
             return NULL;
         default:
@@ -114,10 +120,12 @@ checked_expr check_expr(mars_module* mod, AST node, entity_table* scope) {
 
         case AST_literal_expr:
             return check_literal(mod, node);
+
         case AST_unary_op_expr:
             checked_expr subexpr = check_expr(mod, node.as_unary_op_expr->inside, scope);
             printf("verifying op: "str_fmt"\n", str_arg(node.as_unary_op_expr->op->text));
             if (node.as_unary_op_expr->op->type == TOK_CARET) {
+                if (subexpr.type->as_reference.subtype == NULL) error_at_node(mod, node.as_unary_op_expr->inside, "cannot dereference typeless ^%s pointer", subexpr.type->as_reference.mutable == true ? "mut" : "let");
                 return (checked_expr){.expr = node, .type = subexpr.type->as_reference.subtype};
             }
         default:
@@ -320,19 +328,53 @@ int check_type_pair(checked_expr lhs, checked_expr rhs, int depth) {
     return valid;
 }
 
-bool check_type_cast(Type* lhs, Type* rhs) {
+bool check_type_cast_implicit(Type* lhs, Type* rhs) {
     type_canonicalize_graph();
     if (lhs->tag == rhs->tag 
         && rhs->tag != TYPE_STRUCT
         && rhs->tag != TYPE_UNION
         && rhs->tag != TYPE_ENUM
         && rhs->tag != TYPE_UNTYPED_AGGREGATE
-        && rhs->tag != TYPE_FUNCTION) return true;
+        && rhs->tag != TYPE_FUNCTION
+        && rhs->tag != TYPE_POINTER) return true;
     else if (lhs->tag == rhs->tag 
         && (rhs->tag == TYPE_STRUCT || rhs->tag == TYPE_UNION)) {
         return type_equivalent(lhs, rhs, NULL);
     }
+    if (type_equivalent(lhs, rhs, NULL)) return true;
+    //we now have a situation where implicit casts are possible.
+    //casting rules:
+    //^mut T <-> ^mut
+    //^let T <-> ^let
+    //pointer types can implicitly lose and gain typing
+    //enum T -> T
+    //enums can be cast to their backing type
+    //(u/i)N -> (u/i)M where N, M ∈ {8, 16, 32, 64}, N <= M
+    //this one is a doozy, but basically says lhs can be cast to rhs, if and only if there is no loss of information
+    if (lhs->tag == rhs->tag && lhs->tag == TYPE_POINTER) {
+        //we check if the lhs or rhs are typed, and allow the cast if the typing is gained or dropped
+        //note: mutability constraints must be obeyed, unless mut -> let
+        if (lhs->as_reference.subtype == NULL && rhs->as_reference.subtype != NULL 
+            && (lhs->as_reference.mutable == rhs->as_reference.mutable)) return true;
 
+        if ((lhs->as_reference.subtype != NULL && rhs->as_reference.subtype == NULL) 
+            && ((lhs->as_reference.mutable == rhs->as_reference.mutable) 
+                || (lhs->as_reference.mutable == false && rhs->as_reference.mutable == true))) return true;
+    }
+
+    //enum type backing is checked to be valid, and so we can assume T is integral already
+    if (rhs->tag == TYPE_ENUM) {
+        if (rhs->as_enum.backing_type->tag == lhs->tag) return true;
+    }
+    //now we check for implicit casts between integrals
+    //we check ONLY the rhs going to lhs
+    if (TYPE_I8 <= rhs->tag && rhs->tag <= TYPE_I64 
+        && TYPE_I8 <= lhs->tag && lhs->tag <= TYPE_I64 
+        && rhs->tag <= lhs->tag) return true;
+
+    if (TYPE_U8 <= rhs->tag && rhs->tag <= TYPE_U64 
+        && TYPE_U8 <= lhs->tag && lhs->tag <= TYPE_U64 
+        && rhs->tag <= lhs->tag) return true;
 
     else return false;
 }
