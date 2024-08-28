@@ -11,6 +11,8 @@
 #include "phobos/parse/parse.h"
 #include "phobos/analysis/sema.h"
 
+#include "common/crash.h"
+
 #include "iron/iron.h"
 
 #include "llta/lexer.h"
@@ -18,6 +20,10 @@
 flag_set mars_flags;
 
 int main(int argc, char** argv) {
+    #ifndef _WIN32
+        init_signal_handler();
+    #endif
+
 
     load_arguments(argc, argv, &mars_flags);
 
