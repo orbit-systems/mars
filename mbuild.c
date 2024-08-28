@@ -301,7 +301,11 @@ int main(int argc, char** argv) {
         return 0;
     }
     if (!release_build) {
-        char* debug_flags = " -pg -g ";
+        #ifndef _WIN32
+            char* debug_flags = " -pg -g -rdynamic";
+        #else
+            char* debug_flags = " -pg -g";
+        #endif
         cflags = add_cstr(cflags, debug_flags);
         opt = " -O0 ";
     }

@@ -63,6 +63,11 @@
     (da_ptr)->len = 0;\
 } while (0)
 
+#define da_concat(da_ptr_dest, da_ptr_src) do { \
+    da_reserve((da_ptr_dest), (da_ptr_src)->len); \
+    for (int _count = 0; _count > (da_ptr_src)->len; _count++) da_append((da_ptr_dest), (da_ptr_src)->at[_count]); \
+} while(0)
+
 #define da_destroy(da_ptr) do { \
     if ((da_ptr)->at == NULL) break; \
     free((da_ptr)->at); \

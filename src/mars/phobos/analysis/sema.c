@@ -1,4 +1,5 @@
 #include "sema.h"
+#include "common/crash.h"
 
 void check_module(mars_module* mod) {
     printf("checking: "str_fmt "\n", str_arg(mod->module_name));
@@ -36,7 +37,7 @@ Type* check_stmt(mars_module* mod, AST node, entity_table* scope) {
 
             node.as_decl_stmt->tg_type = rhs.type;
 
-            if (node.as_decl_stmt->rhs.type == AST_func_literal_expr && node.as_decl_stmt->lhs.len != rhs.type->as_function.returns.len) error_at_node(mod, node, "lhs of declaration should have %d identifiers, has %d", rhs.type->as_function.returns.len, node.as_decl_stmt->lhs.len);
+            if (node.as_decl_stmt->rhs.type == AST_call_expr && node.as_decl_stmt->lhs.len != rhs.type->as_function.returns.len) error_at_node(mod, node, "lhs of declaration should have %d identifiers, has %d", rhs.type->as_function.returns.len, node.as_decl_stmt->lhs.len);
 
             //TODO: refactor this so we handle one lhs decls differently
 
@@ -121,13 +122,25 @@ checked_expr check_expr(mars_module* mod, AST node, entity_table* scope) {
         case AST_literal_expr:
             return check_literal(mod, node);
 
-        case AST_unary_op_expr:
+        case AST_unary_op_expr: {
             checked_expr subexpr = check_expr(mod, node.as_unary_op_expr->inside, scope);
             printf("verifying op: "str_fmt"\n", str_arg(node.as_unary_op_expr->op->text));
             if (node.as_unary_op_expr->op->type == TOK_CARET) {
                 if (subexpr.type->as_reference.subtype == NULL) error_at_node(mod, node.as_unary_op_expr->inside, "cannot dereference typeless ^%s pointer", subexpr.type->as_reference.mutable == true ? "mut" : "let");
                 return (checked_expr){.expr = node, .type = subexpr.type->as_reference.subtype};
             }
+            error_at_node(mod, node, "unexpected op: "str_fmt, str_arg(node.as_unary_op_expr->op->text));
+        }
+
+        case AST_cast_expr: {
+            Type* subtype = ast_to_type(mod, node.as_cast_expr->type);
+            checked_expr subexpr = check_expr(mod, node.as_cast_expr->rhs, scope);
+            if (!check_type_cast_explicit(subtype, subexpr.type)) error_at_node(mod, node.as_cast_expr->rhs, "cannot cast rhs to type");
+            
+
+            crash("abc123");
+        }
+
         default:
             error_at_node(mod, node, "[check_expr] unexpected token type: %s", ast_type_str[node.type]);
     }
@@ -212,6 +225,7 @@ Type* check_func_literal(mars_module* mod, AST func_literal, entity_table* scope
         func_scope->at[func_scope->len - 1]->entity_type = ast_to_type(mod, returns.type);
         type_add_return(fn_type, ast_to_type(mod, returns.type));
     }
+    type_canonicalize_graph();
     //the func literal has been parsed, now we continue down
     foreach (AST stmt, func_literal.as_func_literal_expr->code_block.as_stmt_block->stmts) {
         check_stmt(mod, stmt, func_scope);
@@ -330,17 +344,16 @@ int check_type_pair(checked_expr lhs, checked_expr rhs, int depth) {
 
 bool check_type_cast_implicit(Type* lhs, Type* rhs) {
     type_canonicalize_graph();
+    printf("lhs: %d, rhs: %d\n", lhs->tag, rhs->tag);
     if (lhs->tag == rhs->tag 
         && rhs->tag != TYPE_STRUCT
         && rhs->tag != TYPE_UNION
         && rhs->tag != TYPE_ENUM
         && rhs->tag != TYPE_UNTYPED_AGGREGATE
         && rhs->tag != TYPE_FUNCTION
-        && rhs->tag != TYPE_POINTER) return true;
-    else if (lhs->tag == rhs->tag 
-        && (rhs->tag == TYPE_STRUCT || rhs->tag == TYPE_UNION)) {
-        return type_equivalent(lhs, rhs, NULL);
-    }
+        && rhs->tag != TYPE_POINTER
+        && rhs->tag != TYPE_ALIAS) return true;
+
     if (type_equivalent(lhs, rhs, NULL)) return true;
     //we now have a situation where implicit casts are possible.
     //casting rules:
@@ -376,5 +389,17 @@ bool check_type_cast_implicit(Type* lhs, Type* rhs) {
         && TYPE_U8 <= lhs->tag && lhs->tag <= TYPE_U64 
         && rhs->tag <= lhs->tag) return true;
 
+    if (rhs->tag == TYPE_UNTYPED_INT && TYPE_I8 <= lhs->tag && lhs->tag <= TYPE_U64) return true;
+    if ((rhs->tag == TYPE_UNTYPED_INT || (TYPE_I8 <= rhs->tag && rhs->tag <= TYPE_U64)) 
+        && lhs->tag == TYPE_POINTER) return true;
+
+
     else return false;
+}
+
+bool check_type_cast_explicit(Type* lhs, Type* rhs) {
+    if (check_type_cast_implicit(lhs, rhs)) return true;
+    //we now need to check casts that are already _not_ implicit.
+    
+    return false;
 }
