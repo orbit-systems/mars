@@ -155,3 +155,5 @@ u32 type_real_size_of(Type* t);
 u32 type_real_align_of(Type*t);
 
 bool type_is_infinite(Type* t);
+
+Type* type_unalias(Type* t);

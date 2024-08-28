@@ -108,10 +108,21 @@ void type_canonicalize_graph() {
         da_clear(&equalities);
 
 
+        // for_urange(i, 0, typegraph.len) {
+        //     if (typegraph.at[i]->moved) {
+        //         da_unordered_remove_at(&typegraph, i);
+        //         i--;
+        //     }
+        // }
+
+        // so we have to modify the type IN PLACE
         for_urange(i, 0, typegraph.len) {
             if (typegraph.at[i]->moved) {
-                da_unordered_remove_at(&typegraph, i);
-                i--;
+                Type* t = typegraph.at[i];
+                Type* dest = t->moved;
+
+                t->tag = TYPE_ALIAS;
+                t->as_reference.subtype = dest;
             }
         }
     }
@@ -787,37 +798,9 @@ forceinline bool is_raw_pointer(Type* p) {
     return (p->tag == TYPE_POINTER && p->as_reference.subtype->tag == TYPE_NONE);
 }
 
-bool implicitly_cast(Type* to, Type* from) {
-    if (type_equivalent(to, from, NULL)) return true;
-
-    switch(from->tag) {
-    case TYPE_UNTYPED_INT:
-    case TYPE_UNTYPED_FLOAT:
-        return (to->tag >= TYPE_UNTYPED_INT && to->tag <= TYPE_F64);
-    case TYPE_POINTER:
-        if (to->tag != TYPE_POINTER) return false;
-
-        // ^mut -> ^(mut/let) T
-        if (from->as_reference.mutable && 
-            from->as_reference.subtype->tag == TYPE_NONE) return true;
-
-        // ^mut T -> ^(mut/let)
-        if (from->as_reference.mutable && 
-            to->as_reference.subtype->tag == TYPE_NONE) return true;
-        
-        // ^let T -> ^let
-        if (!from->as_reference.mutable && 
-            to->as_reference.subtype->tag == TYPE_NONE && 
-            !to->as_reference.mutable) return true;
-        
-        // ^let -> ^let T
-        if (!from->as_reference.mutable &&
-            from->as_reference.subtype == NULL &&
-            !to->as_reference.mutable) return true;
-
-        return false;
-    case TYPE_ENUM:
-        return type_equivalent(to, from->as_enum.backing_type, NULL);
+Type* type_unalias(Type* t) {
+    while (t->tag == TYPE_ALIAS) {
+        t = t->as_reference.subtype;
     }
-    return false;
+    return t;
 }

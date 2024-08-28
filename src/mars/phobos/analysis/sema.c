@@ -344,6 +344,8 @@ int check_type_pair(checked_expr lhs, checked_expr rhs, int depth) {
 
 bool check_type_cast_implicit(Type* lhs, Type* rhs) {
     type_canonicalize_graph();
+    lhs = type_unalias(lhs);
+    rhs = type_unalias(rhs);
     printf("lhs: %d, rhs: %d\n", lhs->tag, rhs->tag);
     if (lhs->tag == rhs->tag 
         && rhs->tag != TYPE_STRUCT
