@@ -109,7 +109,7 @@ checked_expr check_expr(mars_module* mod, AST node, entity_table* scope) {
         case AST_binary_op_expr:
             checked_expr lhs = check_expr(mod, node.as_binary_op_expr->lhs, scope);
             checked_expr rhs = check_expr(mod, node.as_binary_op_expr->rhs, scope);
-            if (!check_type_pair(lhs, rhs, 0)) error_at_node(mod, node, "type mismatch: lhs and rhs cannot be cast to eachother\nTODO: find out the type of lhs and rhs to print a more informative error");
+            if (!check_type_cast_implicit(lhs.type, rhs.type)) error_at_node(mod, node, "type mismatch: lhs and rhs cannot be cast to eachother\nTODO: find out the type of lhs and rhs to print a more informative error");
             Type* ret_type = operation_to_type(node.as_binary_op_expr->op);
             if (ret_type == NULL) ret_type = lhs.type;
             return (checked_expr){.expr = node, .type = ret_type};
@@ -127,7 +127,7 @@ checked_expr check_expr(mars_module* mod, AST node, entity_table* scope) {
             printf("verifying op: "str_fmt"\n", str_arg(node.as_unary_op_expr->op->text));
             if (node.as_unary_op_expr->op->type == TOK_CARET) {
                 if (subexpr.type->as_reference.subtype == NULL) error_at_node(mod, node.as_unary_op_expr->inside, "cannot dereference typeless ^%s pointer", subexpr.type->as_reference.mutable == true ? "mut" : "let");
-                return (checked_expr){.expr = node, .type = subexpr.type->as_reference.subtype};
+                return (checked_expr){.expr = node, .type = type_unalias(subexpr.type)->as_reference.subtype};
             }
             error_at_node(mod, node, "unexpected op: "str_fmt, str_arg(node.as_unary_op_expr->op->text));
         }
@@ -154,6 +154,7 @@ checked_expr check_literal(mars_module* mod, AST literal) {
             ev->kind = EV_POINTER;
             Type* pointer = make_type(TYPE_POINTER);
             pointer->as_reference.subtype = make_type(TYPE_NONE);
+            pointer->as_reference.mutable = true;
             return (checked_expr){.expr = literal, .ev = ev, .type = pointer};
         case TOK_LITERAL_INT:
             ev->as_i64 = string_strtol(literal.as_literal_expr->tok->text, 10);
@@ -299,49 +300,6 @@ Type* operation_to_type(token* tok) {
     return NULL;
 }
 
-int check_type_pair(checked_expr lhs, checked_expr rhs, int depth) {
-    //we check this twice for commutativity, and if its still 0 we return 0
-    int valid = 0;
-    if (lhs.type->tag == TYPE_UNTYPED_INT) {
-        switch (rhs.type->tag) {
-            case TYPE_I64:
-            case TYPE_I32:
-            case TYPE_I16:
-            case TYPE_I8:
-            case TYPE_U64:
-            case TYPE_U32:
-            case TYPE_U16:
-            case TYPE_U8:
-                valid = 1;
-                break;
-            default:
-                break;
-        }
-    }
-
-    if (lhs.type->tag == TYPE_POINTER) {
-        switch (rhs.type->tag) {
-            case TYPE_UNTYPED_INT:
-            case TYPE_I64:
-            case TYPE_I32:
-            case TYPE_I16:
-            case TYPE_I8:
-            case TYPE_U64:
-            case TYPE_U32:
-            case TYPE_U16:
-            case TYPE_U8:
-                valid = 1;
-                break;
-            default:
-                break;
-        }
-    }
-    if (lhs.type->tag == rhs.type->tag) valid = 1;
-
-    if (!valid && depth == 0) valid = check_type_pair(rhs, lhs, 1);
-    return valid;
-}
-
 bool check_type_cast_implicit(Type* lhs, Type* rhs) {
     type_canonicalize_graph();
     lhs = type_unalias(lhs);
@@ -369,12 +327,17 @@ bool check_type_cast_implicit(Type* lhs, Type* rhs) {
     if (lhs->tag == rhs->tag && lhs->tag == TYPE_POINTER) {
         //we check if the lhs or rhs are typed, and allow the cast if the typing is gained or dropped
         //note: mutability constraints must be obeyed, unless mut -> let
-        if (lhs->as_reference.subtype == NULL && rhs->as_reference.subtype != NULL 
+        printf("lhs mutable: %d, rhs mutable: %d\n", lhs->as_reference.mutable, rhs->as_reference.mutable);
+        if (lhs->as_reference.subtype->tag == TYPE_NONE && rhs->as_reference.subtype->tag != TYPE_NONE 
             && (lhs->as_reference.mutable == rhs->as_reference.mutable)) return true;
 
-        if ((lhs->as_reference.subtype != NULL && rhs->as_reference.subtype == NULL) 
+        if ((lhs->as_reference.subtype->tag != TYPE_NONE && rhs->as_reference.subtype->tag == TYPE_NONE) 
             && ((lhs->as_reference.mutable == rhs->as_reference.mutable) 
                 || (lhs->as_reference.mutable == false && rhs->as_reference.mutable == true))) return true;
+
+        if (lhs->as_reference.subtype == rhs->as_reference.subtype &&
+            ((lhs->as_reference.mutable == rhs->as_reference.mutable)
+            || (lhs->as_reference.mutable == false && rhs->as_reference.mutable == true))) return true;
     }
 
     //enum type backing is checked to be valid, and so we can assume T is integral already
@@ -395,13 +358,18 @@ bool check_type_cast_implicit(Type* lhs, Type* rhs) {
     if ((rhs->tag == TYPE_UNTYPED_INT || (TYPE_I8 <= rhs->tag && rhs->tag <= TYPE_U64)) 
         && lhs->tag == TYPE_POINTER) return true;
 
-
-    else return false;
+    return false;
 }
 
 bool check_type_cast_explicit(Type* lhs, Type* rhs) {
+    lhs = type_unalias(lhs);
+    rhs = type_unalias(rhs);
+
     if (check_type_cast_implicit(lhs, rhs)) return true;
     //we now need to check casts that are already _not_ implicit.
-    
+    if (TYPE_UNTYPED_INT <= lhs->tag && lhs->tag <= TYPE_F64 &&
+        TYPE_UNTYPED_INT <= rhs->tag && rhs->tag <= TYPE_F64) return true;
+
+    crash("UNKNOWN CAST! FILL THIS OUT IF YOU SEE IT!\n");
     return false;
 }

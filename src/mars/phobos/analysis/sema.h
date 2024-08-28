@@ -47,7 +47,6 @@ checked_expr check_expr(mars_module* mod, AST node, entity_table* scope);
 checked_expr check_literal(mars_module* mod, AST literal);
 
 Type* ast_to_type(mars_module* mod, AST node);
-int check_type_pair(checked_expr lhs, checked_expr rhs, int depth);
 Type* operation_to_type(token* tok);
 bool check_type_cast_implicit(Type* lhs, Type* rhs);
 bool check_type_cast_explicit(Type* lhs, Type* rhs);
