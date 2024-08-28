@@ -107,7 +107,7 @@ BuildFile retrieve_file(char* path) {
 }
 
 bool timespec_greater(Timespec a, Timespec b) {
-    return !(a.tv_sec < b.tv_sec || (a.tv_sec == b.tv_sec && a.tv_nsec > b.tv_nsec));
+    return (a.tv_sec > b.tv_sec || (a.tv_sec == b.tv_sec && a.tv_nsec > b.tv_nsec));
 }
 
 enum {
@@ -530,8 +530,9 @@ bool should_rebuild_object(string object_path) {
     foreach(string dep_path, deps) {
         // printstr(dep_path);
         // printf("\n");
+        if (dep_path.len == 0) continue;
         BuildFile dep_file = retrieve_file(clone_to_cstring(dep_path));
-
+        
         if (timespec_greater(dep_file.last_modified, object.last_modified)) {
             return true;
         }
