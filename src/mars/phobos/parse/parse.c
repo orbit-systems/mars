@@ -445,7 +445,6 @@ AST parse_type(parser* p) {
         case TOK_TYPE_KEYWORD_F32:
         case TOK_TYPE_KEYWORD_F64:
         case TOK_TYPE_KEYWORD_BOOL:
-            printf("parsing type keyword: %s\n", token_type_str[current_token(p).type]);
             n = new_ast_node(p, AST_basic_type_expr);
             n.as_basic_type_expr->base.start = &current_token(p);
             n.as_basic_type_expr->lit = &current_token(p);
@@ -488,18 +487,20 @@ AST parse_type(parser* p) {
                 n.as_array_type_expr->base.end = &current_token(p);
                 return n;
             }
+            n = new_ast_node(p, AST_slice_type_expr);
+            n.as_slice_type_expr->base.start = &current_token(p);
             advance_token(p);
             // if (current_token(p).type != TOK_CLOSE_BRACKET) error_at_parser(p, "expected ]");
-            n = new_ast_node(p, AST_slice_type_expr);
         case TOK_CARET:
             if (is_null_AST(n)) n = new_ast_node(p, AST_pointer_type_expr);
-            n.as_slice_type_expr->base.start = &current_token(p);
+            if (n.as_slice_type_expr->base.start == NULL) n.as_slice_type_expr->base.start = &current_token(p);
             advance_token(p);
             if (current_token(p).type != TOK_KEYWORD_MUT && current_token(p).type != TOK_KEYWORD_LET) error_at_parser(p, "expected mut or let");
             n.as_pointer_type_expr->mutable = current_token(p).type == TOK_KEYWORD_MUT;
             advance_token(p);
             n.as_pointer_type_expr->subexpr = parse_type(p);
-            n.as_pointer_type_expr->base.end = &current_token(p);
+            if (is_null_AST(n.as_pointer_type_expr->subexpr)) n.as_pointer_type_expr->base.end = &peek_token(p, -1);
+            else n.as_pointer_type_expr->base.end = &current_token(p);
             return n;
         //"distinct" <unary_expression>
         case TOK_KEYWORD_DISTINCT:

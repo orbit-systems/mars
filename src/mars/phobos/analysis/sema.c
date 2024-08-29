@@ -31,25 +31,45 @@ Type* check_stmt(mars_module* mod, AST node, entity_table* scope) {
             
             if (!is_null_AST(node.as_decl_stmt->type)) ast_type = ast_to_type(mod, node.as_decl_stmt->type);
             
-            if (!is_null_AST(node.as_decl_stmt->type) && !check_type_cast_implicit(rhs.type, ast_type)) {
-                error_at_node(mod, node, "type mismatch: lhs and rhs cannot be cast to eachother\nTODO: find out the type of lhs and rhs to print a more informative error");
-            }
+            node.as_decl_stmt->tg_type = ast_type;
 
-            node.as_decl_stmt->tg_type = rhs.type;
+            if (rhs.expr.type == AST_call_expr) {
+                if (node.as_decl_stmt->lhs.len != rhs.type->as_function.returns.len) 
+                    error_at_node(mod, node, "lhs of declaration should have %d identifiers, has %d", 
+                        rhs.type->as_function.returns.len, node.as_decl_stmt->lhs.len);
+                //we have a da of lhs, we can now type check each individually
+                foreach(AST lhs, node.as_decl_stmt->lhs) {
+                    if (lhs.type != AST_identifier) error_at_node(mod, lhs, "expected identifier, got %s", ast_type_str[lhs.type]);
+                    printf("decl: "str_fmt"\n", str_arg(lhs.as_identifier->tok->text));
 
-            if (node.as_decl_stmt->rhs.type == AST_call_expr && node.as_decl_stmt->lhs.len != rhs.type->as_function.returns.len) error_at_node(mod, node, "lhs of declaration should have %d identifiers, has %d", rhs.type->as_function.returns.len, node.as_decl_stmt->lhs.len);
+                    new_entity(scope, lhs.as_identifier->tok->text, lhs);
+                    if (rhs.type->as_function.returns.at[count]->tag == TYPE_POINTER) {
+                        scope->at[scope->len - 1]->is_mutable = rhs.type->as_function.returns.at[count]->as_reference.mutable;
+                    }
 
-            //TODO: refactor this so we handle one lhs decls differently
-
-            foreach(AST lhs, node.as_decl_stmt->lhs) {
+                    if (!is_null_AST(node.as_decl_stmt->type) && !check_type_cast_implicit(rhs.type, ast_type)) {
+                        error_at_node(mod, node, "type mismatch: lhs and rhs cannot be cast to eachother\nTODO: find out the type of lhs and rhs to print a more informative error");
+                    }
+                    scope->at[scope->len - 1]->entity_type = ast_type;
+                }
+            } else {
+                //we assume rhs len = 1
+                if (node.as_decl_stmt->lhs.len != 1) error_at_node(mod, node, "expected 1 lhs, got %d", node.as_decl_stmt->lhs.len);
+                AST lhs = node.as_decl_stmt->lhs.at[0];
                 if (lhs.type != AST_identifier) error_at_node(mod, lhs, "expected identifier, got %s", ast_type_str[lhs.type]);
                 printf("decl: "str_fmt"\n", str_arg(lhs.as_identifier->tok->text));
 
                 new_entity(scope, lhs.as_identifier->tok->text, lhs);
-                scope->at[scope->len - 1]->is_mutable = rhs.mutable;
-                if (node.as_decl_stmt->rhs.type == AST_func_literal_expr) scope->at[scope->len - 1]->entity_type = rhs.type->as_function.returns.at[count];
-                else scope->at[scope->len - 1]->entity_type = ast_type;
+                if (rhs.type->tag == TYPE_POINTER) {
+                    scope->at[scope->len - 1]->is_mutable = rhs.type->as_reference.mutable;
+                }
+
+                if (!is_null_AST(node.as_decl_stmt->type) && !check_type_cast_implicit(rhs.type, ast_type)) {
+                    error_at_node(mod, node, "type mismatch: lhs and rhs cannot be cast to eachother\nTODO: find out the type of lhs and rhs to print a more informative error");
+                }
+                scope->at[scope->len - 1]->entity_type = ast_type;
             }
+
             return ast_type;
         }
         case AST_return_stmt: {
@@ -83,24 +103,33 @@ Type* check_stmt(mars_module* mod, AST node, entity_table* scope) {
             return NULL;
         }
         case AST_assign_stmt:
-            general_warning("TODO: add integral type checking to assign stmt ops");
+            general_warning("TODO: add integral type checking to assign stmt ops, since = is the only supported right meow");
             checked_expr rhs = check_expr(mod, node.as_assign_stmt->rhs, scope);
+
             da(checked_expr) lhs_exprs;
             da_init(&lhs_exprs, 1);
             foreach(AST stmt, node.as_assign_stmt->lhs) da_append(&lhs_exprs, check_expr(mod, stmt, scope));
-            if (lhs_exprs.len != 1) {
+
+            if (rhs.expr.type == AST_call_expr) {
+                //the rhs return info will contain a function type for us to Wiggle with
                 if (lhs_exprs.len != rhs.type->as_function.returns.len) error_at_node(mod, node, 
                     "type mismatch: function "str_fmt" returns %d values, lhs only has space for %d values", 
                     rhs.expr.as_call_expr->lhs.as_identifier->tok->text, rhs.type->as_function.returns.len, lhs_exprs.len);
-
+                
                 foreach(checked_expr cexpr, lhs_exprs) {
-                    if (!check_type_cast_implicit(cexpr.type, rhs.type->as_function.returns.at[count])) error_at_node(mod, cexpr.expr, 
-                        "type mismatch: return %d cannot be cast to lhs", count);
+                    if (!check_type_cast_implicit(cexpr.type, rhs.type->as_function.returns.at[count])) 
+                        error_at_node(mod, cexpr.expr, "type mismatch: return %d cannot be cast to lhs", count);
                 }
-            } else {
-                if (!check_type_cast_implicit(lhs_exprs.at[0].type, rhs.type)) error_at_node(mod, node, "type mismatch: rhs cannot be cast to lhs");
-            }
-            return NULL;
+
+                return NULL;
+            } else if (lhs_exprs.len == 1) {
+                if (!check_type_cast_implicit(lhs_exprs.at[0].type, type_unalias(rhs.type))) 
+                    error_at_node(mod, node, "type mismatch: rhs cannot be cast to lhs");
+
+                return NULL;
+            }  
+
+            crash("unexpected environment in case AST_assign_stmt!\n");
         default:
             error_at_node(mod, node, "[check_module] unexpected token type: %s", ast_type_str[node.type]);
     }
@@ -128,7 +157,9 @@ checked_expr check_expr(mars_module* mod, AST node, entity_table* scope) {
 
         case AST_identifier:
             entity* ident_ent = search_for_entity(scope, node.as_identifier->tok->text);
+
             if (ident_ent == NULL) error_at_node(mod, node, "undefined identifier: " str_fmt, str_arg(node.as_identifier->tok->text));
+            
             return (checked_expr){.expr = node, .type = ident_ent->entity_type};
 
         case AST_literal_expr:
@@ -151,8 +182,53 @@ checked_expr check_expr(mars_module* mod, AST node, entity_table* scope) {
             return (checked_expr){.expr = node, .type = subtype};
         }
 
+        case AST_selector_expr: {
+            if (node.as_selector_expr->op->type != TOK_PERIOD) error_at_node(mod, node, "unhandled op: %s", token_type_str[node.as_selector_expr->op->type]);
+
+            checked_expr lhs = check_expr(mod, node.as_selector_expr->lhs, scope);
+            lhs.type = type_unalias(lhs.type);
+            //we now need to scan to see what the rhs is, if its a selector we need to dig deeper
+            if (node.as_selector_expr->rhs.type != AST_selector_expr && node.as_selector_expr->rhs.type != AST_identifier) 
+                error_at_node(mod, node.as_selector_expr->rhs, "expected identifier or selector, got %s", ast_type_str[node.as_selector_expr->rhs.type]);
+
+            Type* field_type = NULL;
+
+            if (node.as_selector_expr->rhs.type == AST_identifier) {
+                if (node.as_selector_expr->lhs.type != AST_identifier) crash("LHS of selector expr was not identifier, parser has broken!");
+
+                foreach(TypeStructField field, lhs.type->as_aggregate.fields) {
+                    if (string_eq(field.name, node.as_selector_expr->rhs.as_identifier->tok->text)) field_type = field.subtype;
+                }
+                if (lhs.type->tag == TYPE_SLICE) {
+                    //we need to see if its len or raw, and if so we can check it correctly.
+                    if (string_eq(constr("len"), node.as_selector_expr->rhs.as_identifier->tok->text)) field_type = make_type(TYPE_U64);
+                    else if (string_eq(constr("raw"), node.as_selector_expr->rhs.as_identifier->tok->text)) { 
+                        field_type = make_type(TYPE_POINTER);
+                        field_type->as_reference.mutable = lhs.type->as_reference.mutable;
+                        field_type->as_reference.subtype = lhs.type->as_reference.subtype;
+                }   }
+
+                if (!field_type) error_at_node(mod, node.as_selector_expr->rhs, "field "str_fmt" is not a field contained in this struct", str_arg(node.as_selector_expr->rhs.as_identifier->tok->text));
+                //we can return raw or len here
+                return (checked_expr){.expr = node, .type = field_type};
+            }
+
+            crash("check sel expr\n");
+        }
+
+        case AST_call_expr: {
+            checked_expr lhs = check_expr(mod, node.as_call_expr->lhs, scope);
+            if (lhs.type->tag != TYPE_FUNCTION) crash("expected function on lhs of call_expr, got type %d\n", lhs.type->tag);
+            foreach(AST rhs, node.as_call_expr->params) {
+                checked_expr argument = check_expr(mod, rhs, scope);
+                if (!check_type_cast_implicit(lhs.type->as_function.params.at[count], argument.type)) 
+                    error_at_node(mod, rhs, "cannot implicitly cast argument to parameter");
+            }
+            return (checked_expr){.expr = node, .type = lhs.type};
+        }
+
         default:
-            error_at_node(mod, node, "[check_expr] unexpected token type: %s", ast_type_str[node.type]);
+            error_at_node(mod, node, "[check_expr] unexpected ast type: %s", ast_type_str[node.type]);
     }
 }
 
@@ -277,6 +353,12 @@ Type* ast_to_type(mars_module* mod, AST node) {
             if (is_null_AST(node.as_pointer_type_expr->subexpr)) pointer->as_reference.subtype = make_type(TYPE_NONE);
             else pointer->as_reference.subtype = ast_to_type(mod, node.as_pointer_type_expr->subexpr);
             return pointer;
+        case AST_slice_type_expr:
+            Type* slice = make_type(TYPE_SLICE);
+            slice->as_reference.mutable = node.as_slice_type_expr->mutable;
+            if (is_null_AST(node.as_slice_type_expr->subexpr)) slice->as_reference.subtype = make_type(TYPE_NONE);
+            else slice->as_reference.subtype = ast_to_type(mod, node.as_slice_type_expr->subexpr);
+            return slice;
         default:
             error_at_node(mod, node, "[INTERNAL COMPILER ERROR] found unknown node \"%s\" when converting AST to Type*", ast_type_str[node.type]);
     }
