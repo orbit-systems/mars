@@ -1,6 +1,6 @@
 module memory;
 
-let copy = fn(to: ^mut, from: ^let, len: uint) {
+/*let copy = fn(to: ^mut, from: ^let, len: uint) {
     if (to == null || from == null || len == 1) {
         return;
     }
@@ -15,7 +15,7 @@ let copy = fn(to: ^mut, from: ^let, len: uint) {
         to_byte += 1;
     }
 };
-
+*/
 let equal = fn(block1, block2: ^let, len: uint) -> bool {
     mut block1_byte = cast(^let u8) block1;
     mut block2_byte = cast(^let u8) block2;

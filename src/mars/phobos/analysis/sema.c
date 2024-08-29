@@ -55,6 +55,13 @@ Type* check_stmt(mars_module* mod, AST node, entity_table* scope) {
         case AST_return_stmt: {
             int return_count = 0;
             foreach(entity* ent, *scope) { if (ent->is_return) return_count++; }
+            //get entities from higher scopes
+            entity_table* curr_scope = scope->parent;
+            while (curr_scope != NULL) {
+                foreach(entity* ent, *curr_scope) { if (ent->is_return) return_count++; }    
+                curr_scope = curr_scope->parent;
+            }
+
             if (return_count != node.as_return_stmt->returns.len) error_at_node(mod, node, "function expects %d returns, return is returning %d", return_count, node.as_return_stmt->returns.len);
 
             foreach(AST ret, node.as_return_stmt->returns) {
@@ -163,6 +170,10 @@ checked_expr check_literal(mars_module* mod, AST literal) {
             ev->as_i64 = string_strtol(literal.as_literal_expr->tok->text, 10);
             ev->kind = EV_I64;
             return (checked_expr){.expr = literal, .ev = ev, .type = make_type(TYPE_UNTYPED_INT)};
+        case TOK_LITERAL_BOOL:
+            ev->as_bool = string_cmp(constr("true"), literal.as_literal_expr->tok->text) != 0 ? 1 : 0;
+            ev->kind = EV_BOOL;
+            return (checked_expr){.expr = literal, .ev = ev, .type = make_type(TYPE_BOOL)};
         default:
             error_at_node(mod, literal, "[INTERNAL COMPILER ERROR] unable to check literal " str_fmt " with type %s", str_arg(literal.as_literal_expr->tok->text), token_type_str[literal.as_literal_expr->tok->type]);
     }
@@ -223,7 +234,7 @@ Type* check_func_literal(mars_module* mod, AST func_literal, entity_table* scope
         if (test_ent != NULL) {
             error_at_node(mod, test_ent->declaration, "identifier " str_fmt " already defined here", str_arg(returns.field.as_identifier->tok->text));
         }
-
+        printf("adding identifier: "str_fmt"\n", str_arg(returns.field.as_identifier->tok->text));
         new_entity(func_scope, returns.field.as_identifier->tok->text, returns.type);
         func_scope->at[func_scope->len - 1]->is_return = true;
         func_scope->at[func_scope->len - 1]->entity_type = ast_to_type(mod, returns.type);

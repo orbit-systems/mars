@@ -540,7 +540,7 @@ forceinline void type_add_return(Type* s, Type* sub) {
 }
 
 forceinline Type* type_get_return(Type* s, size_t i) {
-    return s->as_function.params.at[i];
+    return s->as_function.returns.at[i];
 }
 
 forceinline void type_add_field(Type* s, string name, Type* sub) {

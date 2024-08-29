@@ -445,6 +445,7 @@ AST parse_type(parser* p) {
         case TOK_TYPE_KEYWORD_F32:
         case TOK_TYPE_KEYWORD_F64:
         case TOK_TYPE_KEYWORD_BOOL:
+            printf("parsing type keyword: %s\n", token_type_str[current_token(p).type]);
             n = new_ast_node(p, AST_basic_type_expr);
             n.as_basic_type_expr->base.start = &current_token(p);
             n.as_basic_type_expr->lit = &current_token(p);
