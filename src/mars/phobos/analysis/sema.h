@@ -8,6 +8,7 @@
 #include "entity.h"
 #include "type.h"
 #include "mars/term.h"
+#include "common/crash.h"
 
 // emit an error that highlights an AST node
 #define error_at_node(module, node, msg, ...) do { \

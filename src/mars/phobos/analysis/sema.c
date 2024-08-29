@@ -31,7 +31,7 @@ Type* check_stmt(mars_module* mod, AST node, entity_table* scope) {
             
             if (!is_null_AST(node.as_decl_stmt->type)) ast_type = ast_to_type(mod, node.as_decl_stmt->type);
             
-            if (!is_null_AST(node.as_decl_stmt->type) && check_type_cast_implicit(rhs.type, ast_type)) {
+            if (!is_null_AST(node.as_decl_stmt->type) && !check_type_cast_implicit(rhs.type, ast_type)) {
                 error_at_node(mod, node, "type mismatch: lhs and rhs cannot be cast to eachother\nTODO: find out the type of lhs and rhs to print a more informative error");
             }
 
@@ -109,9 +109,14 @@ checked_expr check_expr(mars_module* mod, AST node, entity_table* scope) {
         case AST_binary_op_expr:
             checked_expr lhs = check_expr(mod, node.as_binary_op_expr->lhs, scope);
             checked_expr rhs = check_expr(mod, node.as_binary_op_expr->rhs, scope);
-            if (!check_type_cast_implicit(lhs.type, rhs.type)) error_at_node(mod, node, "type mismatch: lhs and rhs cannot be cast to eachother\nTODO: find out the type of lhs and rhs to print a more informative error");
+            bool rhs_to_lhs = check_type_cast_implicit(lhs.type, rhs.type);
+            bool lhs_to_rhs = check_type_cast_implicit(rhs.type, lhs.type);
+            if (!rhs_to_lhs && !lhs_to_rhs) error_at_node(mod, node, "type mismatch: lhs and rhs cannot be cast to eachother\nTODO: find out the type of lhs and rhs to print a more informative error");
             Type* ret_type = operation_to_type(node.as_binary_op_expr->op);
-            if (ret_type == NULL) ret_type = lhs.type;
+            if (ret_type == NULL && rhs_to_lhs && !lhs_to_rhs) ret_type = lhs.type;
+            if (ret_type == NULL && lhs_to_rhs && !rhs_to_lhs) ret_type = rhs.type;
+            if (ret_type == NULL && rhs_to_lhs && lhs_to_rhs)  ret_type = lhs.type;
+        
             return (checked_expr){.expr = node, .type = ret_type};
 
         case AST_identifier:
@@ -136,9 +141,7 @@ checked_expr check_expr(mars_module* mod, AST node, entity_table* scope) {
             Type* subtype = ast_to_type(mod, node.as_cast_expr->type);
             checked_expr subexpr = check_expr(mod, node.as_cast_expr->rhs, scope);
             if (!check_type_cast_explicit(subtype, subexpr.type)) error_at_node(mod, node.as_cast_expr->rhs, "cannot cast rhs to type");
-            
-
-            crash("abc123");
+            return (checked_expr){.expr = node, .type = subtype};
         }
 
         default:
