@@ -318,7 +318,7 @@ Type* check_func_literal(mars_module* mod, AST func_literal, entity_table* scope
         func_scope->at[func_scope->len - 1]->entity_type = ast_to_type(mod, returns.type);
         type_add_return(fn_type, ast_to_type(mod, returns.type));
     }
-    type_canonicalize_graph();
+    // type_canonicalize_graph();
     //the func literal has been parsed, now we continue down
     foreach (AST stmt, func_literal.as_func_literal_expr->code_block.as_stmt_block->stmts) {
         check_stmt(mod, stmt, func_scope);
@@ -400,6 +400,7 @@ Type* operation_to_type(token* tok) {
 
 bool check_type_cast_implicit(Type* lhs, Type* rhs) {
     type_canonicalize_graph();
+    print_type_graph();
     lhs = type_unalias(lhs);
     rhs = type_unalias(rhs);
     printf("lhs: %d, rhs: %d\n", lhs->tag, rhs->tag);

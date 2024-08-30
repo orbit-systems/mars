@@ -19,11 +19,73 @@
 
 flag_set mars_flags;
 
+
+void typegraph_test() {
+    
+    {
+        Type* ptr_none = make_type(TYPE_POINTER);
+        ptr_none->as_reference.mutable = true;
+        ptr_none->as_reference.subtype = make_type(TYPE_NONE);
+    }
+
+    {
+        Type* ptr_none = make_type(TYPE_POINTER);
+        ptr_none->as_reference.mutable = false;
+        ptr_none->as_reference.subtype = make_type(TYPE_NONE);
+    }
+
+    {
+        Type* ptr_none = make_type(TYPE_POINTER);
+        ptr_none->as_reference.mutable = false;
+        ptr_none->as_reference.subtype = make_type(TYPE_NONE);
+    }
+
+    {
+        Type* ptr_none = make_type(TYPE_POINTER);
+        ptr_none->as_reference.mutable = false;
+        ptr_none->as_reference.subtype = make_type(TYPE_NONE);
+    }
+
+    {
+        Type* ptr_u8 = make_type(TYPE_POINTER);
+        ptr_u8->as_reference.mutable = false;
+        ptr_u8->as_reference.subtype = make_type(TYPE_U8);
+    }
+
+    {
+        Type* ptr_u8 = make_type(TYPE_POINTER);
+        ptr_u8->as_reference.mutable = false;
+        ptr_u8->as_reference.subtype = make_type(TYPE_U8);
+    }
+
+    {
+        Type* ptr_u8 = make_type(TYPE_POINTER);
+        ptr_u8->as_reference.mutable = false;
+        ptr_u8->as_reference.subtype = make_type(TYPE_U8);
+    }
+
+    {
+        Type* ptr_u8 = make_type(TYPE_POINTER);
+        ptr_u8->as_reference.mutable = false;
+        ptr_u8->as_reference.subtype = make_type(TYPE_U8);
+    }
+
+    print_type_graph();
+
+    type_canonicalize_graph();
+
+    print_type_graph();
+
+    exit(0);
+}
+
+
 int main(int argc, char** argv) {
     #ifndef _WIN32
         init_signal_handler();
     #endif
 
+    typegraph_test();
 
     load_arguments(argc, argv, &mars_flags);
 

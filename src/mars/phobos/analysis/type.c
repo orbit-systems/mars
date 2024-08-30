@@ -120,6 +120,7 @@ void type_canonicalize_graph() {
             if (typegraph.at[i]->moved) {
                 Type* t = typegraph.at[i];
                 Type* dest = t->moved;
+                *t = (Type){0};
 
                 t->tag = TYPE_ALIAS;
                 t->as_reference.subtype = dest;
@@ -144,7 +145,9 @@ bool type_equivalent(Type* a, Type* b, bool* executed_TSA) {
     switch (a->tag) {
     case TYPE_POINTER:
     case TYPE_SLICE:
+        // printf("POINTER TO %d COMPARED TO POINTER TO %d\n", a->as_reference.subtype->tag, b->as_reference.subtype->tag);
         if (a->as_reference.mutable != b->as_reference.mutable) return false;
+        // printf("WHAT %p\n", type_get_target(a) == type_get_target(b));
         if (type_get_target(a) == type_get_target(b)) return true;
         break;
     case TYPE_STRUCT:
@@ -363,6 +366,7 @@ void merge_type_references(Type* dest, Type* src, bool disable) {
 }
 
 void type_locally_number(Type* t, u64* number, int num_set) {
+    t = type_unalias(t);
     if (t->type_nums[num_set] != 0) return;
 
     t->type_nums[num_set] = (*number)++;
@@ -389,83 +393,11 @@ void type_locally_number(Type* t, u64* number, int num_set) {
     case TYPE_POINTER:
     case TYPE_SLICE:
     case TYPE_DISTINCT:
-    case TYPE_ALIAS:
         type_locally_number(type_get_target(t), number, num_set);
         break;
     default:
         break;
     }
-}
-
-// do checking on the fly, improved method for ""incomplete"" type graphs
-bool otf_types_are_equivalent(Type* a, Type* b) {
-    while (a->tag == TYPE_ALIAS) a = type_get_target(a);
-    while (b->tag == TYPE_ALIAS) b = type_get_target(b);
-
-    // simple checks
-    if (a == b) return true;
-    if (a->tag != b->tag) return false;
-    if (a->tag < TYPE_META_INTEGRAL) return true;
-    
-    // a little more complex
-    switch (a->tag) {
-    case TYPE_POINTER:
-    case TYPE_SLICE:
-        if (a->as_reference.mutable != b->as_reference.mutable) return false;
-        if (type_get_target(a) == type_get_target(b)) return true;
-        break;
-    case TYPE_STRUCT:
-    case TYPE_UNION:
-    case TYPE_UNTYPED_AGGREGATE:
-        if (a->as_aggregate.fields.len != b->as_aggregate.fields.len) return false;
-        bool subtype_equals = true;
-        for_urange(i, 0, a->as_aggregate.fields.len) {
-            if (type_get_field(a, i)->subtype != type_get_field(b, i)->subtype) {
-                subtype_equals = false;
-                break;
-            }
-        }
-        if (subtype_equals) return true;
-        break;
-    case TYPE_FUNCTION:
-        if (a->as_function.params.len != b->as_function.params.len) {
-            return false;
-        }
-        if (a->as_function.returns.len != b->as_function.returns.len) {
-            return false;
-        }
-        subtype_equals = true;
-        for_urange(i, 0, a->as_function.params.len) {
-            if (a->as_function.params.at[i] != b->as_function.params.at[i]) {
-                subtype_equals = false;
-                break;
-            }
-        }
-        if (subtype_equals) return true;
-        for_urange(i, 0, a->as_function.returns.len) {
-            if (a->as_function.returns.at[i] != b->as_function.returns.at[i]) {
-                subtype_equals = false;
-                break;
-            }
-        }
-        if (subtype_equals) return true;
-        break;
-    case TYPE_ARRAY:
-        if (a->as_array.len != b->as_array.len) return false;
-        if (a->as_array.subtype == b->as_array.subtype) return true;
-        break;
-    case TYPE_DISTINCT: // distinct types are VERY strict
-        return a == b;
-    default: break;
-    }
-    
-    type_reset_numbers(0);
-    type_reset_numbers(1);
-
-    // we have to do some modified parallel TSA
-    TODO("too tired to impl this rn");
-
-
 }
 
 void type_reset_numbers(int num_set) {
@@ -592,25 +524,28 @@ void print_type_graph() {
         // printf(t->dirty ? "[dirty]\t" : "[clean]\t");
         switch (t->tag){
         case TYPE_NONE:    printf("(none)\n"); break;
-        case TYPE_I8:      printf("i8\n");     break;
-        case TYPE_I16:     printf("i16\n");    break;
-        case TYPE_I32:     printf("i32\n");    break;
-        case TYPE_I64:     printf("i64\n");    break;
-        case TYPE_U8:      printf("u8\n");     break;
-        case TYPE_U16:     printf("u16\n");    break;
-        case TYPE_U32:     printf("u32\n");    break;
-        case TYPE_U64:     printf("u64\n");    break;
-        case TYPE_F16:     printf("f16\n");    break;
-        case TYPE_F32:     printf("f32\n");    break;
-        case TYPE_F64:     printf("f64\n");    break;
+        case TYPE_UNTYPED_INT: printf("untyped int\n"); break;
+        case TYPE_UNTYPED_FLOAT: printf("untyped float\n"); break;
+        case TYPE_I8:      printf("i8\n");   break;
+        case TYPE_I16:     printf("i16\n");  break;
+        case TYPE_I32:     printf("i32\n");  break;
+        case TYPE_I64:     printf("i64\n");  break;
+        case TYPE_U8:      printf("u8\n");   break;
+        case TYPE_U16:     printf("u16\n");  break;
+        case TYPE_U32:     printf("u32\n");  break;
+        case TYPE_U64:     printf("u64\n");  break;
+        case TYPE_F16:     printf("f16\n");  break;
+        case TYPE_F32:     printf("f32\n");  break;
+        case TYPE_F64:     printf("f64\n");  break;
+        case TYPE_BOOL:    printf("bool\n"); break;
         case TYPE_ALIAS:
-            printf("alias %zu\n", type_get_index(type_get_target(t)));
+            printf("(%zu)\n", type_get_index(type_get_target(t)));
             break;
         case TYPE_DISTINCT:
             printf("distinct %zu\n", type_get_index(type_get_target(t)));
             break;
         case TYPE_POINTER:
-            printf("pointer %zu\n", type_get_index(type_get_target(t)));
+            printf("^%s %zu\n", t->as_reference.mutable ? "mut" : "let", type_get_index(type_get_target(t)));
             break;
         case TYPE_SLICE:
             printf("slice %zu\n", type_get_index(type_get_target(t)));
@@ -625,6 +560,17 @@ void print_type_graph() {
                 printf("\t\t.%s : %zu\n", type_get_field(t, field)->name, type_get_index(type_get_field(t, field)->subtype));
             }
             break;
+        case TYPE_FUNCTION:
+            printf("function (\n");
+            for_urange(field, 0, t->as_function.params.len) {
+                printf("\t\t%zu\n", type_get_index(type_get_param(t, field)));
+            }
+            printf("\t) -> (\n");
+            for_urange(field, 0, t->as_function.returns.len) {
+                printf("\t\t%zu\n", type_get_index(type_get_return(t, field)));
+            }
+            printf("\t)\n");
+
         default:
             printf("unknown tag %d\n", t->tag);
             break;
