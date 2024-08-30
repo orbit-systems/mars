@@ -4,8 +4,6 @@
 #include "common/alloc.h"
 #include "common/arena.h"
 
-#include "iron/passes/passes.h"
-
 #define FE_VERSION_MAJOR 0
 #define FE_VERSION_MINOR 1
 #define FE_VERSION_PATCH 0
@@ -577,3 +575,5 @@ enum {
     
     _FE_SYSTEM_END,
 };
+
+#include "iron/passes/passes.h"

@@ -11,9 +11,6 @@ FeModule* fe_new_module(string name) {
 
     da_init(&mod->symtab, 32);
 
-    mod->assembly = mars_alloc(sizeof(*mod->assembly));
-
-    da_init(mod->assembly, 32);
 
     fe_typegraph_init(mod);
 

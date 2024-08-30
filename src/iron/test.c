@@ -5,15 +5,6 @@ void test_algsimp_reassoc() {
     printf("\n");
 
     FeModule* m = fe_new_module(str("test"));
-    fe_set_target(m, 
-        FE_ARCH_APHELION,
-        FE_SYSTEM_NONE,
-        FE_PRODUCT_ASSEMBLY
-    );
-    // optional config options
-    fe_set_target_config(m, &(FeAphelionArchConfig){
-        .ext_f = true,
-    });
 
     FeSymbol* sym = fe_new_symbol(m, str("algsimp_test"), FE_BIND_LOCAL);
     FeFunction* f = fe_new_function(m, sym);

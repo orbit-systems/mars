@@ -1,39 +1,38 @@
 #include "common/strbuilder.h"
 
 void sb_init(StringBuilder* sb) {
-    da_init(sb, SB_INITIAL_CAPACITY);
-    sb->alloca = arena_make(SB_ARENA_BLOCK_SIZE);
+    sb->len = 0;
+    sb->cap = 256;
+    sb->buffer = malloc(sb->cap);
 }
 
 void sb_destroy(StringBuilder* sb) {
-    da_destroy(sb);
-    arena_delete(&sb->alloca);
+    free(sb->buffer);
+    *sb = (StringBuilder){0};
 }
 
 void sb_append(StringBuilder* sb, string s) {
-    // copy string to allocator
-    char* p = arena_alloc(&sb->alloca, s.len, 1);
-    memcpy(p, s.raw, s.len);
-
-    da_append(sb, ((string){.raw = p, .len = s.len}));
+    if (sb->len + s.len > sb->cap) {
+        sb->buffer = realloc(sb->buffer, sb->cap*2);
+        sb->cap *= 2;
+    }
+    memcpy(&sb->buffer[sb->len], s.raw, s.len);
+    sb->len += s.len;
 }
 
 void sb_append_c(StringBuilder* sb, char* s) {
-    // copy string to arena
-    size_t slen = strlen(s);
-    char* p = arena_alloc(&sb->alloca, slen, 1);
-    memcpy(p, s, slen);
-
-    da_append(sb, ((string){ .raw = p, .len = slen }));
+    if (sb->len + strlen(s) > sb->cap) {
+        sb->buffer = realloc(sb->buffer, sb->cap*2);
+        sb->cap *= 2;
+    }
+    memcpy(&sb->buffer[sb->len], s, strlen(s));
+    sb->len += strlen(s);
 }
-
 void sb_printf(StringBuilder* sb, char* fmt, ...) {
-    // copy string to arena
-
     va_list varargs;
     va_start(varargs, fmt);
 
-    static char buf[400];
+    static char buf[1000];
     memset(buf, 0, sizeof(buf));
 
     vsprintf(buf, fmt, varargs);
@@ -41,16 +40,9 @@ void sb_printf(StringBuilder* sb, char* fmt, ...) {
 }
 
 size_t sb_len(StringBuilder* sb) {
-    size_t len = 0;
-    foreach(string s, *sb) {
-        len += s.len;
-    }
-    return len;
+    return sb->len;
 }
 
 void sb_write(StringBuilder* sb, char* buffer) {
-    foreach(string s, *sb) {
-        memcpy(buffer, s.raw, s.len);
-        buffer += s.len;
-    }
+    memcpy(buffer, sb->buffer, sb->len);
 }

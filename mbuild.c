@@ -63,8 +63,6 @@ char* iron_sources[] = {
     "src/iron/passes",
     "src/iron/passes/analysis",
     "src/iron/passes/transform",
-    "src/iron/arch",
-    "src/iron/arch/aphelion",
 };
 
 // char* opt = " -O3 -flto";
