@@ -1,3 +1,11 @@
 module test;
 
-[2]int.x;
+let set = fn(dest: ^mut, len: uint, val: u8) -> bool {
+    mut cursor = cast(^mut u8) dest;
+
+    let stop = cursor + cast(^mut u8) len;
+    while (cursor != stop) {
+        cursor^ = val;
+        cursor += 1;
+    }
+};

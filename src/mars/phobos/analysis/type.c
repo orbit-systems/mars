@@ -4,8 +4,8 @@
 
 TypeGraph typegraph;
 
-// #define LOG(...) printf(__VA_ARGS__)
-#define LOG(...)
+#define LOG(...) printf(__VA_ARGS__)
+//#define LOG(...)
 
 typedef struct {
     Type* dest;
@@ -305,7 +305,6 @@ bool type_element_equivalent(Type* a, Type* b, int num_set_a, int num_set_b) {
 }
 
 void merge_type_references(Type* dest, Type* src, bool disable) {
-
     u64 src_index = type_get_index(src);
     if (src_index == UINT32_MAX) {
         return;

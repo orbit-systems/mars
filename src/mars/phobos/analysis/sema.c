@@ -42,10 +42,10 @@ Type* check_stmt(mars_module* mod, AST node, entity_table* scope) {
                     if (lhs.type != AST_identifier) error_at_node(mod, lhs, "expected identifier, got %s", ast_type_str[lhs.type]);
                     printf("decl: "str_fmt"\n", str_arg(lhs.as_identifier->tok->text));
 
+                    if (search_for_entity(scope, lhs.as_identifier->tok->text)) error_at_node(mod, lhs, "identifier already exists in scope");
+
                     new_entity(scope, lhs.as_identifier->tok->text, lhs);
-                    if (rhs.type->as_function.returns.at[count]->tag == TYPE_POINTER) {
-                        scope->at[scope->len - 1]->is_mutable = rhs.type->as_function.returns.at[count]->as_reference.mutable;
-                    }
+                    scope->at[scope->len - 1]->is_mutable = node.as_decl_stmt->is_mut;
 
                     if (!is_null_AST(node.as_decl_stmt->type) && !check_type_cast_implicit(rhs.type, ast_type)) {
                         error_at_node(mod, node, "type mismatch: lhs and rhs cannot be cast to eachother\nTODO: find out the type of lhs and rhs to print a more informative error");
@@ -53,24 +53,25 @@ Type* check_stmt(mars_module* mod, AST node, entity_table* scope) {
                     scope->at[scope->len - 1]->entity_type = ast_type;
                 }
             } else {
+                printf("rhs is of ast type: %s\n", ast_type_str[rhs.expr.type]);
+
                 //we assume rhs len = 1
                 if (node.as_decl_stmt->lhs.len != 1) error_at_node(mod, node, "expected 1 lhs, got %d", node.as_decl_stmt->lhs.len);
                 AST lhs = node.as_decl_stmt->lhs.at[0];
                 if (lhs.type != AST_identifier) error_at_node(mod, lhs, "expected identifier, got %s", ast_type_str[lhs.type]);
                 printf("decl: "str_fmt"\n", str_arg(lhs.as_identifier->tok->text));
 
+                if (search_for_entity(scope, lhs.as_identifier->tok->text)) error_at_node(mod, lhs, "identifier already exists in scope");
+
                 new_entity(scope, lhs.as_identifier->tok->text, lhs);
-                if (rhs.type->tag == TYPE_POINTER) {
-                    scope->at[scope->len - 1]->is_mutable = rhs.type->as_reference.mutable;
-                }
+                scope->at[scope->len - 1]->is_mutable = node.as_decl_stmt->is_mut;
 
                 if (!is_null_AST(node.as_decl_stmt->type) && !check_type_cast_implicit(rhs.type, ast_type)) {
                     error_at_node(mod, node, "type mismatch: lhs and rhs cannot be cast to eachother\nTODO: find out the type of lhs and rhs to print a more informative error");
                 }
-                scope->at[scope->len - 1]->entity_type = ast_type;
+                scope->at[scope->len - 1]->entity_type = rhs.type;
             }
-
-            return ast_type;
+            return NULL;
         }
         case AST_return_stmt: {
             int return_count = 0;
@@ -168,8 +169,9 @@ checked_expr check_expr(mars_module* mod, AST node, entity_table* scope) {
         case AST_unary_op_expr: {
             checked_expr subexpr = check_expr(mod, node.as_unary_op_expr->inside, scope);
             printf("verifying op: "str_fmt"\n", str_arg(node.as_unary_op_expr->op->text));
+            subexpr.type = type_unalias(subexpr.type);
             if (node.as_unary_op_expr->op->type == TOK_CARET) {
-                if (subexpr.type->as_reference.subtype == NULL) error_at_node(mod, node.as_unary_op_expr->inside, "cannot dereference typeless ^%s pointer", subexpr.type->as_reference.mutable == true ? "mut" : "let");
+                if (subexpr.type->as_reference.subtype->tag == TYPE_NONE) error_at_node(mod, node.as_unary_op_expr->inside, "cannot dereference typeless ^%s pointer", subexpr.type->as_reference.mutable == true ? "mut" : "let");
                 return (checked_expr){.expr = node, .type = type_unalias(subexpr.type)->as_reference.subtype};
             }
             error_at_node(mod, node, "unexpected op: "str_fmt, str_arg(node.as_unary_op_expr->op->text));
@@ -179,7 +181,7 @@ checked_expr check_expr(mars_module* mod, AST node, entity_table* scope) {
             Type* subtype = ast_to_type(mod, node.as_cast_expr->type);
             checked_expr subexpr = check_expr(mod, node.as_cast_expr->rhs, scope);
             if (!check_type_cast_explicit(subtype, subexpr.type)) error_at_node(mod, node.as_cast_expr->rhs, "cannot cast rhs to type");
-            return (checked_expr){.expr = node, .type = subtype};
+            return (checked_expr){.expr = node, .type = type_unalias(subtype)};
         }
 
         case AST_selector_expr: {
