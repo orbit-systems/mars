@@ -4,6 +4,8 @@
 #include "common/alloc.h"
 #include "common/arena.h"
 
+#include "iron/passes/passes.h"
+
 #define FE_VERSION_MAJOR 0
 #define FE_VERSION_MINOR 1
 #define FE_VERSION_PATCH 0
@@ -22,26 +24,6 @@ typedef struct FeFunctionItem FeFunctionItem;
 typedef struct FeData         FeData;
 typedef struct FeSymbol       FeSymbol;
 typedef struct FeBasicBlock   FeBasicBlock;
-
-typedef struct FeVReg           FeVReg;
-typedef struct FeAsmBuffer      FeAsmBuffer;
-
-typedef struct FeAsm            FeAsm;
-typedef struct FeAsmInst        FeAsmInst;
-typedef struct FeAsmInline      FeAsmInline;
-typedef struct FeAsmLocalLabel  FeAsmLocalLabel;
-typedef struct FeAsmSymbolLabel FeAsmSymbolLabel;
-typedef struct FeAsmFuncBegin   FeAsmFuncBegin;
-typedef struct FeAsmFuncEnd     FeAsmFuncEnd;
-typedef struct FeAsmData        FeAsmData;
-
-typedef struct FeArchInstInfo      FeArchInstInfo;
-typedef struct FeArchRegisterInfo  FeArchRegisterInfo;
-typedef struct FeArchRegisterClass FeArchRegisterClass;
-typedef struct FeArchAsmSyntaxInfo FeArchAsmSyntaxInfo;
-typedef struct FeArchInfo          FeArchInfo;
-
-#define AS(ptr, type) ((type*)(ptr))
 
 typedef struct FeModule {
     string name;
@@ -79,11 +61,9 @@ typedef struct FeModule {
     struct {
         u16 arch;
         u16 system;
-        u16 product;
         void* arch_config;
+        void* system_config;
     } target;
-
-    FeAsmBuffer* assembly;
 
 } FeModule;
 
@@ -578,267 +558,6 @@ FeModule* fe_read_module(string text);
 
 string fe_emit_c(FeModule* m);
 
-// ASSEMBLY SHIT
-
-#define FE_PHYS_UNASSIGNED (UINT32_MAX)
-
-enum {
-    FE_VSPEC_NONE,
-    FE_VSPEC_PARAMVAL, // extend this register's liveness to the beginning of the program
-    FE_VSPEC_RETURNVAL, // extend this register's liveness to the end of the program
-
-    FE_VSPEC_CALLPARAMVAL, // extend this register's liveness to the next call-classified instruction
-    FE_VSPEC_CALLRETURNVAL, // extend this register's liveness to the nearest previous call-classified instruction
-};
-
-typedef struct FeVReg {
-    // index of real register into regclass array (if FE_PHYS_UNASSIGNED, it has not been assigned yet)
-    u32 real;
-
-    u32 hint;
-
-    // register class to pick from when assigning a machine register
-    u32 required_regclass;
-
-    // any special handling information
-    u8 special;
-} FeVReg;
-
-enum {
-    FE_IMM_I64,
-    FE_IMM_U64,
-
-    FE_IMM_F64,
-    FE_IMM_F32,
-    FE_IMM_F16,
-    FE_IMM_SYM_ABSOLUTE,
-    FE_IMM_SYM_RELATIVE,
-};
-
-typedef struct FeImmediate {
-    union {
-        i64 i64;
-        u64 u64;
-
-        f64 f64; // the float stuff isnt really useful i think
-        f32 f32;
-        f16 f16;
-        FeArchAsmSyntaxInfo* sym;
-    };
-    u8 kind;
-} FeImmediate;
-
-#define _FE_ASM_BASE \
-    u8 kind;
-
-enum {
-    FE_ASM_NONE = 0,
-    FE_ASM_INST,            // an assembly code instruction.
-    FE_ASM_JUMP_PATTERN,    // indicates a control-flow jump.
-    FE_ASM_INLINE,          // arbitrary assembly text (with optional register interaction)
-    FE_ASM_LOCAL_LABEL,     // a label for internal use, such as a basic block.
-    FE_ASM_SYMBOL_LABEL,    // a label that defines a symbol.
-    FE_ASM_FUNC_BEGIN,      // marks the beginning of a function.
-    FE_ASM_FUNC_END,        // marks the end of a function.
-    FE_ASM_DATA,            // creates a chunk of arbitrary data.
-};
-
-typedef struct FeAsm {
-    _FE_ASM_BASE
-} FeAsm;
-
-typedef struct FeAsmInst {
-    _FE_ASM_BASE
-
-    // input virtual registers, length dictated by its template
-    FeVReg** ins;
-
-    // output virtual registers, length dictated by its template
-    FeVReg** outs;
-
-    // immediate values, length dictated by its template
-    FeImmediate* imms;
-
-    // instruction kind information
-    FeArchInstInfo* template;
-} FeAsmInst;
-
-// inline data structure for control-flow edges.
-typedef struct FeAsmJumpPattern {
-    _FE_ASM_BASE
-
-    // source is implicitly the previous instruction
-    FeAsm* dst; // where is it jumping?
-    bool is_cond; // is it conditional (could control flow pass through this) ?
-} FeAsmJumpPattern;
-
-// textual inline assembly.
-typedef struct FeAsmInline {
-    _FE_ASM_BASE
-
-    u16 ins_len;
-    u16 outs_len;
-    u16 interns_len;
-
-    // input virtual registers
-    FeVReg** ins;
-
-    // output virtual registers
-    FeVReg** outs;
-
-    // internal virtual registers, used inside the asm block
-    FeVReg** interns;
-
-    string text;
-
-} FeAsmInline;
-
-// a lable that is only visible within this function/data block.
-typedef struct FeAsmLocalLabel {
-    _FE_ASM_BASE
-    
-    string text;
-} FeAsmLocalLabel;
-
-typedef struct FeAsmSymbolLabel {
-    _FE_ASM_BASE
-    
-    FeSymbol* sym; // defines this symbol in the final assembly
-} FeAsmSymbolLabel;
-
-// tell the register allocator to start
-typedef struct FeAsmFuncBegin {
-    _FE_ASM_BASE
-
-    FeFunction* func;
-} FeAsmFuncBegin;
-
-// tell the register allocator to stop, basically
-typedef struct FeAsmFuncEnd {
-    _FE_ASM_BASE
-
-    FeAsmFuncBegin* open;
-} FeAsmFuncEnd;
-
-typedef struct FeAsmData {
-    _FE_ASM_BASE
-
-    FeData* data;
-} FeAsmData;
-
-#undef _FE_ASM_BASE
-
-// IR -> ASM outputs this
-typedef struct FeAsmBuffer {
-    FeAsm** at;
-    size_t len;
-    size_t cap;
-
-    Arena alloca;
-
-} FeAsmBuffer;
-
-FeAsm* fe_asm_append(FeModule* m, FeAsm* a);
-FeAsm* fe_asm(FeModule* m, u8 kind);
-FeAsm* fe_asm_inst(FeModule* m, FeArchInstInfo* template);
-
-FeVReg* fe_new_vreg(FeModule* m, u32 regclass);
-
-// fails if no target is provided
-void fe_codegen(FeModule* m);
-
-
-/* TARGET DEFINITIONS AND INFORMATION */
-
-// info about a register
-typedef struct FeArchRegisterInfo {
-    // thing to print in the asm
-    string name; // if no alias index is provided, use this
-
-    string* aliases; // if an alias index is provided, index into this
-    u16 aliases_len;
-} FeArchRegisterInfo;
-
-typedef struct FeArchRegisterClass {
-    // register list
-    FeArchRegisterInfo* regs;
-    u32 regs_len;
-
-} FeArchRegisterClass;
-
-enum {
-    FE_ISPEC_NONE = 0, // no special handling
-    FE_ISPEC_MOVE, // register allocator should try to copy-elide this
-    FE_ISPEC_CALL, // register allocator needs to be careful about lifetimes over this
-};
-
-// instruction template, each MInst follows one.
-typedef struct FeArchInstInfo {
-    string asm_string;
-
-    u16 num_imms;
-    u16 num_ins;
-    u16 num_outs;
-
-    // instruction specific stuffs
-
-    u8 bytesize;
-
-    u8 special; // any special information/classification?
-} FeArchInstInfo;
-
-/*
-    format strings for assembly - example:
-        addr {out 0}, {in 0}, {in 1}
-
-    with ins = {rb, rc} and outs = {ra}, this translates to:
-        addr ra, rb, rc
-    
-    if some of the arguments are immediates, use 'imm'
-        addr {out 0}, {in 0}, {imm 0}
-*/
-
-typedef struct FeArchAsmSyntaxInfo {
-    string file_begin; // arbitrary text to put at the beginning
-    string file_end; // arbitrary text to put at the end
-
-    string d64;
-    string d32;
-    string d16;
-    string d8;
-    
-    string zero; // filling a section with zero
-
-    string string; // if NULL_STR, just use a bunch of `u8`
-    char* escape_chars; // example: "\n\t"
-    char* escape_codes; // example: "nt"
-    u32 escapes_len; // example: 2
-
-    string align;
-
-    string label;
-    string local_label; // for things like basic block labels.
-
-    string bind_symbol_global;
-    string bind_symbol_local;
-
-} FeArchAsmSyntaxInfo;
-
-// codegen target definition
-typedef struct FeArchInfo {
-    string name;
-
-    FeArchRegisterClass* regclasses;
-    u32 regclasses_len;
-
-    FeArchInstInfo* insts;
-    u32 insts_len;
-    u8 inst_align;
-
-    FeArchAsmSyntaxInfo* syntax_info;
-
-} FeArchInfo;
-
 enum {
     _FE_ARCH_BEGIN,
 
@@ -858,14 +577,3 @@ enum {
     
     _FE_SYSTEM_END,
 };
-
-enum {
-    _FE_PRODUCT_BEGIN,
-
-    FE_PRODUCT_ASSEMBLY, // textual assembly file
-
-    _FE_PRODUCT_END,
-};
-
-#include "iron/passes/passes.h"
-#include "iron/arch/aphelion/aphelion.h"
