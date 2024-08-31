@@ -22,53 +22,27 @@ flag_set mars_flags;
 
 void typegraph_test() {
     
-    {
-        Type* ptr_none = make_type(TYPE_POINTER);
-        ptr_none->as_reference.mutable = true;
-        ptr_none->as_reference.subtype = make_type(TYPE_NONE);
-    }
+    Type* func = make_type(TYPE_FUNCTION);
+
+    type_canonicalize_graph();
 
     {
-        Type* ptr_none = make_type(TYPE_POINTER);
-        ptr_none->as_reference.mutable = false;
-        ptr_none->as_reference.subtype = make_type(TYPE_NONE);
+        Type* func_ptr = make_type(TYPE_POINTER);
+        func_ptr->as_reference.mutable = true;
+        func_ptr->as_reference.subtype = make_type(TYPE_NONE);
+        type_add_param(func, func_ptr);
+        type_add_return(func, make_type(TYPE_BOOL));
     }
 
-    {
-        Type* ptr_none = make_type(TYPE_POINTER);
-        ptr_none->as_reference.mutable = false;
-        ptr_none->as_reference.subtype = make_type(TYPE_NONE);
-    }
-
-    {
-        Type* ptr_none = make_type(TYPE_POINTER);
-        ptr_none->as_reference.mutable = false;
-        ptr_none->as_reference.subtype = make_type(TYPE_NONE);
-    }
+    type_canonicalize_graph();
 
     {
         Type* ptr_u8 = make_type(TYPE_POINTER);
-        ptr_u8->as_reference.mutable = false;
+        ptr_u8->as_reference.mutable = true;
         ptr_u8->as_reference.subtype = make_type(TYPE_U8);
     }
 
-    {
-        Type* ptr_u8 = make_type(TYPE_POINTER);
-        ptr_u8->as_reference.mutable = false;
-        ptr_u8->as_reference.subtype = make_type(TYPE_U8);
-    }
-
-    {
-        Type* ptr_u8 = make_type(TYPE_POINTER);
-        ptr_u8->as_reference.mutable = false;
-        ptr_u8->as_reference.subtype = make_type(TYPE_U8);
-    }
-
-    {
-        Type* ptr_u8 = make_type(TYPE_POINTER);
-        ptr_u8->as_reference.mutable = false;
-        ptr_u8->as_reference.subtype = make_type(TYPE_U8);
-    }
+    type_canonicalize_graph();
 
     print_type_graph();
 
@@ -85,7 +59,7 @@ int main(int argc, char** argv) {
         init_signal_handler();
     #endif
 
-    typegraph_test();
+    //typegraph_test();
 
     load_arguments(argc, argv, &mars_flags);
 

@@ -69,7 +69,7 @@ Type* check_stmt(mars_module* mod, AST node, entity_table* scope) {
                 if (!is_null_AST(node.as_decl_stmt->type) && !check_type_cast_implicit(rhs.type, ast_type)) {
                     error_at_node(mod, node, "type mismatch: lhs and rhs cannot be cast to eachother\nTODO: find out the type of lhs and rhs to print a more informative error");
                 }
-                scope->at[scope->len - 1]->entity_type = rhs.type;
+                scope->at[scope->len - 1]->entity_type = ast_type;
             }
             return NULL;
         }
@@ -300,10 +300,11 @@ Type* check_func_literal(mars_module* mod, AST func_literal, entity_table* scope
             error_at_node(mod, test_ent->declaration, "identifier " str_fmt " already defined here", str_arg(param.field.as_identifier->tok->text));
         }
 
+        Type* param_type = ast_to_type(mod, param.type);
         new_entity(func_scope, param.field.as_identifier->tok->text, param.type);
         func_scope->at[func_scope->len - 1]->is_param = true;
-        func_scope->at[func_scope->len - 1]->entity_type = ast_to_type(mod, param.type);
-        type_add_param(fn_type, ast_to_type(mod, param.type));
+        func_scope->at[func_scope->len - 1]->entity_type = param_type;
+        type_add_param(fn_type, param_type);
     }
 
     foreach(AST_typed_field returns, func_literal.as_func_literal_expr->type.as_fn_type_expr->returns) {
@@ -312,11 +313,12 @@ Type* check_func_literal(mars_module* mod, AST func_literal, entity_table* scope
         if (test_ent != NULL) {
             error_at_node(mod, test_ent->declaration, "identifier " str_fmt " already defined here", str_arg(returns.field.as_identifier->tok->text));
         }
-        printf("adding identifier: "str_fmt"\n", str_arg(returns.field.as_identifier->tok->text));
+
+        Type* return_type = ast_to_type(mod, returns.type);
         new_entity(func_scope, returns.field.as_identifier->tok->text, returns.type);
         func_scope->at[func_scope->len - 1]->is_return = true;
-        func_scope->at[func_scope->len - 1]->entity_type = ast_to_type(mod, returns.type);
-        type_add_return(fn_type, ast_to_type(mod, returns.type));
+        func_scope->at[func_scope->len - 1]->entity_type = return_type;
+        type_add_return(fn_type, return_type);
     }
     // type_canonicalize_graph();
     //the func literal has been parsed, now we continue down
@@ -400,9 +402,9 @@ Type* operation_to_type(token* tok) {
 
 bool check_type_cast_implicit(Type* lhs, Type* rhs) {
     type_canonicalize_graph();
-    print_type_graph();
     lhs = type_unalias(lhs);
     rhs = type_unalias(rhs);
+
     printf("lhs: %d, rhs: %d\n", lhs->tag, rhs->tag);
     if (lhs->tag == rhs->tag 
         && rhs->tag != TYPE_STRUCT

@@ -1,3 +1,6 @@
 module checkertest;
 
-let x = alignof [3]i32 ;
+let test = fn(a: ^mut) -> bool {
+    mut y = cast(^mut u8) a;
+    y += a;
+};

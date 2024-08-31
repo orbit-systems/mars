@@ -520,7 +520,7 @@ void print_type_graph() {
         Type* t = typegraph.at[i];
         if (t->moved) continue;
         // printf("%-2zu   [%-2hu, %-2hu]\t", i, t->type_nums[0], t->type_nums[1]);
-        printf("%-2zu\t", i);
+         printf("%-2zu\t", i);
         // printf(t->dirty ? "[dirty]\t" : "[clean]\t");
         switch (t->tag){
         case TYPE_NONE:    printf("(none)\n"); break;
