@@ -76,14 +76,14 @@ void type_canonicalize_graph() {
                 } else {
                     LOG("no!\n");
                 }
-                if (executed_TSA) {
-                    executed_TSA_at_all = true;
-                    type_reset_numbers(1);
-                }
+                // if (executed_TSA) {
+                //     executed_TSA_at_all = true;
+                //     type_reset_numbers(1);
+                // }
             }
-            if (executed_TSA_at_all) {
-                type_reset_numbers(0);
-            }
+            // if (executed_TSA_at_all) {
+            //     type_reset_numbers(0);
+            // }
             LOG("compared all to %p (%4zu / %4zu)\n", typegraph.at[i], i+1, typegraph.len);
             // typegraph.at[i]->dirty = false;
         }
@@ -196,6 +196,9 @@ bool type_equivalent(Type* a, Type* b, bool* executed_TSA) {
 
 
     // total structure analysis
+
+    type_reset_numbers(0);
+    type_reset_numbers(1);
 
     if (executed_TSA) *executed_TSA = true;
 

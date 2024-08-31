@@ -1,8 +1,6 @@
 #include "common/orbit.h"
 #include "common/arena.h"
 
-// better way to do this but whatever
-
 typedef struct StringBuilder {
     char* buffer;
     size_t len;
