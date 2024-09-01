@@ -112,8 +112,14 @@ Type* check_stmt(mars_module* mod, AST node, entity_table* scope) {
             checked_expr rhs = check_expr(mod, node.as_assign_stmt->rhs, scope);
 
             da(checked_expr) lhs_exprs;
-            da_init(&lhs_exprs, 1);
-            foreach(AST stmt, node.as_assign_stmt->lhs) da_append(&lhs_exprs, check_expr(mod, stmt, scope));
+            da_init(&lhs_exprs, node.as_assign_stmt->lhs.len);
+            foreach(AST assignee, node.as_assign_stmt->lhs) {
+                checked_expr checked_assignee = check_expr(mod, assignee, scope);
+                if (!checked_assignee.mutable) {
+                    error_at_node(mod, assignee, "cannot assign to immutable expression");
+                }
+                da_append(&lhs_exprs, checked_assignee);
+            }
 
             if (rhs.expr.type == AST_call_expr) {
                 //the rhs return info will contain a function type for us to Wiggle with
@@ -175,8 +181,14 @@ checked_expr check_expr(mars_module* mod, AST node, entity_table* scope) {
             LOG("verifying op: "str_fmt"\n", str_arg(node.as_unary_op_expr->op->text));
             subexpr.type = type_unalias(subexpr.type);
             if (node.as_unary_op_expr->op->type == TOK_CARET) {
-                if (subexpr.type->as_reference.subtype->tag == TYPE_NONE) error_at_node(mod, node.as_unary_op_expr->inside, "cannot dereference typeless ^%s pointer", subexpr.type->as_reference.mutable == true ? "mut" : "let");
-                return (checked_expr){.expr = node, .type = type_unalias(subexpr.type)->as_reference.subtype};
+                if (subexpr.type->as_reference.subtype->tag == TYPE_NONE) {
+                    error_at_node(mod, node.as_unary_op_expr->inside, "cannot dereference typeless ^%s pointer", subexpr.type->as_reference.mutable == true ? "mut" : "let");
+                }
+                return (checked_expr){
+                    .expr = node, 
+                    .type = subexpr.type->as_reference.subtype,
+                    .mutable = subexpr.type->as_reference.mutable,
+                };
             }
             error_at_node(mod, node, "unexpected op: "str_fmt, str_arg(node.as_unary_op_expr->op->text));
         }
