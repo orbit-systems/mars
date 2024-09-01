@@ -25,7 +25,7 @@ Type* check_stmt(mars_module* mod, AST node, entity_table* scope) {
     switch(node.type) {
         case AST_decl_stmt: {
             checked_expr rhs = check_expr(mod, node.as_decl_stmt->rhs, scope);
-            rhs.mutable = node.as_decl_stmt->is_mut;
+            // rhs.mutable = node.as_decl_stmt->is_mut;
 
             if (node.as_decl_stmt->rhs.type == AST_func_literal_expr && node.as_decl_stmt->lhs.len != 1) {
                 error_at_node(mod, node, "function definition should only be assigned to one value");
@@ -67,8 +67,8 @@ Type* check_stmt(mars_module* mod, AST node, entity_table* scope) {
 
                 if (search_for_entity(scope, lhs.as_identifier->tok->text)) error_at_node(mod, lhs, "identifier already exists in scope");
 
-                new_entity(scope, lhs.as_identifier->tok->text, lhs);
-                scope->at[scope->len - 1]->is_mutable = node.as_decl_stmt->is_mut;
+                entity* lhs_item_entity = new_entity(scope, lhs.as_identifier->tok->text, lhs);
+                lhs_item_entity->is_mutable = node.as_decl_stmt->is_mut;
 
                 if (!is_null_AST(node.as_decl_stmt->type) && !check_type_cast_implicit(rhs.type, ast_type)) {
                     error_at_node(mod, node, "type mismatch: lhs and rhs cannot be cast to eachother\nTODO: find out the type of lhs and rhs to print a more informative error");
@@ -171,7 +171,12 @@ checked_expr check_expr(mars_module* mod, AST node, entity_table* scope) {
 
             if (ident_ent == NULL) error_at_node(mod, node, "undefined identifier: " str_fmt, str_arg(node.as_identifier->tok->text));
             
-            return (checked_expr){.expr = node, .type = ident_ent->entity_type};
+            return (checked_expr){
+                .expr = node, 
+                .type = ident_ent->entity_type,
+                .addressable = true,
+                .mutable = ident_ent->is_mutable,
+            };
 
         case AST_literal_expr:
             return check_literal(mod, node);
