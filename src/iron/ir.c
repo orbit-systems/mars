@@ -14,8 +14,8 @@ FeFunction* fe_new_function(FeModule* mod, FeSymbol* sym) {
     fn->alloca = arena_make(FE_FN_ALLOCA_BLOCK_SIZE);
     da_init(&fn->blocks, 1);
     da_init(&fn->stack, 1);
-    fn->params = NULL;
-    fn->returns = NULL;
+    fn->params.at = NULL;
+    fn->returns.at = NULL;
     fn->mod = mod;
 
     mod->functions = mars_realloc(mod->functions, sizeof(*mod->functions) * (mod->functions_len+1));
@@ -31,59 +31,97 @@ FeStackObject* fe_new_stackobject(FeFunction* f, FeType* t) {
 }
 
 // takes multiple FeType*
-void fe_set_func_params(FeFunction* f, u16 count, ...) {
-    f->params_len = count;
+// void fe_set_func_params(FeFunction* f, u16 count, ...) {
+//     f->params_len = count;
 
-    if (f->params) mars_free(f->params);
+//     if (f->params) mars_free(f->params);
 
-    f->params = mars_alloc(sizeof(*f->params) * count);
-    if (!f->params) CRASH("mars_alloc failed");
+//     f->params = mars_alloc(sizeof(*f->params) * count);
+//     if (!f->params) CRASH("mars_alloc failed");
 
-    bool no_set = false;
-    va_list args;
-    va_start(args, count);
-    for_range(i, 0, count) {
-        FeFunctionItem* item = mars_alloc(sizeof(FeFunctionItem));
-        if (!item) CRASH("item mars_alloc failed");
+//     bool no_set = false;
+//     va_list args;
+//     va_start(args, count);
+//     for_range(i, 0, count) {
+//         FeFunctionItem* item = mars_alloc(sizeof(FeFunctionItem));
+//         if (!item) CRASH("item mars_alloc failed");
         
-        if (!no_set) {
-            item->type = va_arg(args, FeType*);
-            if (item->type == NULL) {
-                no_set = true;
-            }
-        }
+//         if (!no_set) {
+//             item->type = va_arg(args, FeType*);
+//             if (item->type == NULL) {
+//                 no_set = true;
+//             }
+//         }
         
-        f->params[i] = item;
-    }
-    va_end(args);
-}
+//         f->params[i] = item;
+//     }
+//     va_end(args);
+// }
 
 // takes multiple FeType*
-void fe_set_func_returns(FeFunction* f, u16 count, ...) {
-    f->returns_len = count;
+// void fe_set_func_returns(FeFunction* f, u16 count, ...) {
+//     f->returns_len = count;
 
-    if (f->returns) mars_free(f->returns);
+//     if (f->returns) mars_free(f->returns);
 
-    f->returns = mars_alloc(sizeof(*f->returns) * count);
-    if (!f->returns) CRASH("mars_alloc failed");
+//     f->returns = mars_alloc(sizeof(*f->returns) * count);
+//     if (!f->returns) CRASH("mars_alloc failed");
 
-    bool no_set = false;
-    va_list args;
-    va_start(args, count);
-    for_range(i, 0, count) {
-        FeFunctionItem* item = mars_alloc(sizeof(FeFunctionItem));
-        if (!item) CRASH("item mars_alloc failed");
+//     bool no_set = false;
+//     va_list args;
+//     va_start(args, count);
+//     for_range(i, 0, count) {
+//         FeFunctionItem* item = mars_alloc(sizeof(FeFunctionItem));
+//         if (!item) CRASH("item mars_alloc failed");
         
-        if (!no_set) {
-            item->type = va_arg(args, FeType*);
-            if (item->type == NULL) {
-                no_set = true;
-            }
-        }
+//         if (!no_set) {
+//             item->type = va_arg(args, FeType*);
+//             if (item->type == NULL) {
+//                 no_set = true;
+//             }
+//         }
         
-        f->returns[i] = item;
+//         f->returns[i] = item;
+//     }
+//     va_end(args);
+// }
+
+
+void fe_init_func_params(FeFunction* f, u16 count) {
+    f->params.at = mars_alloc(count * sizeof(f->params.at[0]));
+    f->params.cap = count;
+    f->params.len = 0;
+}
+void fe_init_func_returns(FeFunction* f, u16 count) {
+    f->returns.at = mars_alloc(count * sizeof(f->returns.at[0]));
+    f->returns.cap = count;
+    f->returns.len = 0;
+}
+FeFunctionItem* fe_add_func_param(FeFunction* f, FeType* t) {
+    if (f->params.at == NULL) {
+        fe_init_func_params(f, 4);
     }
-    va_end(args);
+    if (f->params.len == f->params.cap) {
+        f->params.at = mars_realloc(f->params.at, f->params.cap * 2);
+        f->params.cap *= 2;
+    }
+    FeFunctionItem* p = mars_alloc(sizeof(*p));
+    p->type = t;
+    f->params.at[f->params.len++] = p;
+    return p;
+}
+FeFunctionItem* fe_add_func_return(FeFunction* f, FeType* t) {
+    if (f->returns.at == NULL) {
+        fe_init_func_params(f, 4);
+    }
+    if (f->returns.len == f->returns.cap) {
+        f->returns.at = mars_realloc(f->returns.at, f->returns.cap * 2);
+        f->returns.cap *= 2;
+    }
+    FeFunctionItem* r = mars_alloc(sizeof(*r));
+    r->type = t;
+    f->returns.at[f->returns.len++] = r;
+    return r;
 }
 
 FeData* fe_new_data(FeModule* mod, FeSymbol* sym, bool read_only) {
@@ -385,10 +423,10 @@ FeInst* fe_inst_branch(FeFunction* f, u8 cond, FeInst* lhs, FeInst* rhs, FeBasic
 FeInst* fe_inst_paramval(FeFunction* f, u32 param) {
     FeInstParamVal* ir = (FeInstParamVal*) fe_inst(f, FE_INST_PARAMVAL);
     ir->param_idx = param;
-    if (param >= f->params_len) {
+    if (param >= f->params.len) {
         CRASH("paramval index %d is out of range", param);
     }
-    ir->base.type = f->params[param]->type;
+    ir->base.type = f->params.at[param]->type;
     return (FeInst*) ir;
 }
 

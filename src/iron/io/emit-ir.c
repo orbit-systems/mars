@@ -138,18 +138,18 @@ static void emit_function(StringBuilder* sb, FeFunction* f) {
     sb_printf(sb, "%llu ", symbol_index(f->mod, f->sym));
 
     sb_append_c(sb, "(");
-    for_range(i, 0, f->params_len) {
-        if (f->params[i]->by_value) TODO("");
-        FeType* t = f->params[i]->type;
+    for_range(i, 0, f->params.len) {
+        if (f->params.at[i]->by_value) TODO("");
+        FeType* t = f->params.at[i]->type;
         emit_type(sb, t);
-        if (i != f->params_len - 1) sb_append_c(sb, " ");
+        if (i != f->params.len - 1) sb_append_c(sb, " ");
     }
     sb_append_c(sb, ") (");
-    for_range(i, 0, f->returns_len) {
-        if (f->returns[i]->by_value) TODO("");
-        FeType* t = f->returns[i]->type;
+    for_range(i, 0, f->returns.len) {
+        if (f->returns.at[i]->by_value) TODO("");
+        FeType* t = f->returns.at[i]->type;
         emit_type(sb, t);
-        if (i != f->returns_len - 1) sb_append_c(sb, " ");
+        if (i != f->returns.len - 1) sb_append_c(sb, " ");
     }
     sb_append_c(sb, ") \n");
 

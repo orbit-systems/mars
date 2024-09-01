@@ -11,8 +11,12 @@ int main() {
 
     FeSymbol* sym = fe_new_symbol(m, str("add_mul"), FE_BIND_LOCAL);
     FeFunction* f = fe_new_function(m, sym);
-    fe_set_func_params(f, 2, fe_type(m, FE_TYPE_I64), fe_type(m, FE_TYPE_I64));
-    fe_set_func_returns(f, 2, fe_type(m, FE_TYPE_I64), fe_type(m, FE_TYPE_I64));
+    fe_init_func_params(f, 2);
+    fe_add_func_param(f, fe_type(m, FE_TYPE_I64));
+    fe_add_func_param(f, fe_type(m, FE_TYPE_I64));
+    fe_init_func_returns(f, 2);
+    fe_add_func_return(f, fe_type(m, FE_TYPE_I64));
+    fe_add_func_return(f, fe_type(m, FE_TYPE_I64));
 
     FeBasicBlock* bb = fe_new_basic_block(f, str("block1"));
     FeInstParamVal* p0 = (FeInstParamVal*) fe_append(bb, fe_inst_paramval(f, 0));

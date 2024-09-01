@@ -145,35 +145,35 @@ becomes
 
 */
 static void emit_function_signature(FeFunction* f, StringBuilder* sb) {
-    if (f->returns_len == 0) {
+    if (f->returns.len == 0) {
         sb_append_c(sb, "void ");
     } else {
-        emit_type_name(f->params[0]->type, sb);
+        emit_type_name(f->params.at[0]->type, sb);
     }
 
     sb_append(sb, normalized_identifier(f->mod, f->sym, f->sym->name));
 
     sb_append_c(sb, "(");
 
-    for_range(i, 0, f->params_len) {
-        FeFunctionItem* item = f->params[i];
+    for_range(i, 0, f->params.len) {
+        FeFunctionItem* item = f->params.at[i];
         if (item->by_value) TODO("");
 
         emit_type_name(item->type, sb);
 
         sb_printf(sb, "_paramval_%d", i);
-        if (i != f->params_len - 1 || f->returns_len > 1) {
+        if (i != f->params.len - 1 || f->returns.len > 1) {
             sb_printf(sb, ", ");
         }
     }
-    for_range(i, 1, f->returns_len) {
-        FeFunctionItem* item = f->returns[i];
+    for_range(i, 1, f->returns.len) {
+        FeFunctionItem* item = f->returns.at[i];
         if (item->by_value) TODO("");
 
         emit_type_ptr(item->type, sb);
 
         sb_printf(sb, "_returnval_%d", i);
-        if (i != f->returns_len - 1) {
+        if (i != f->returns.len - 1) {
             sb_printf(sb, ", ");
         }
     }
@@ -212,9 +212,9 @@ static void emit_function(FeFunction* f, StringBuilder* sb) {
     sb_append_c(sb, " {\n");
 
     // emit value predeclarations
-    if (f->params_len != 0) {
+    if (f->params.len != 0) {
         sb_append_c(sb, "        ");
-        emit_type_name(f->params[0]->type, sb);
+        emit_type_name(f->params.at[0]->type, sb);
         sb_append_c(sb, "_returnval_0;\n");
     }
     foreach(FeBasicBlock* bb, f->blocks) {
@@ -281,7 +281,7 @@ static void emit_function(FeFunction* f, StringBuilder* sb) {
                 }
                 break;
             case FE_INST_RETURN:
-                if (f->params_len > 0) {
+                if (f->params.len > 0) {
                     sb_append_c(sb, "return _returnval_0");
                 } else {
                     sb_append_c(sb, "return");

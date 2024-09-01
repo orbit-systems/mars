@@ -41,8 +41,8 @@ void fe_destroy_module(FeModule* m) {
 }
 
 void fe_destroy_function(FeFunction* f) {
-    mars_free(f->params);
-    mars_free(f->returns);
+    mars_free(f->params.at);
+    mars_free(f->returns.at);
     da_destroy(&f->stack);
     foreach(FeBasicBlock* bb, f->blocks) {
         fe_destroy_basic_block(bb);

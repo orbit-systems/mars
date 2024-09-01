@@ -203,11 +203,17 @@ typedef struct FeFunction {
         u32 cap;
     } stack;
 
-    FeFunctionItem** params;
-    FeFunctionItem** returns;
+    struct {
+        FeFunctionItem** at;
+        u16 len;
+        u16 cap;
+    } params;
 
-    u16 params_len;
-    u16 returns_len;
+    struct {
+        FeFunctionItem** at;
+        u16 len;
+        u16 cap;
+    } returns;
 
     Arena alloca;
 } FeFunction;
@@ -516,8 +522,10 @@ void fe_destroy_basic_block(FeBasicBlock* bb);
 void fe_selftest();
 
 FeStackObject* fe_new_stackobject(FeFunction* f, FeType* t);
-void fe_set_func_params(FeFunction* f, u16 count, ...);
-void fe_set_func_returns(FeFunction* f, u16 count, ...);
+void fe_init_func_params(FeFunction* f, u16 count);
+void fe_init_func_returns(FeFunction* f, u16 count);
+FeFunctionItem* fe_add_func_param(FeFunction* f, FeType* t);
+FeFunctionItem* fe_add_func_return(FeFunction* f, FeType* t);
 u32  fe_bb_index(FeFunction* fn, FeBasicBlock* bb);
 void fe_set_data_bytes(FeData* data, u8* bytes, u32 data_len, bool zeroed);
 void fe_set_data_symref(FeData* data, FeSymbol* symref);
