@@ -1,20 +1,24 @@
 #include "sema.h"
 #include "common/crash.h"
 
+// #define LOG(...) printf(__VA_ARGS__)
+#define LOG(...)
+
 void check_module(mars_module* mod) {
-    printf("checking: "str_fmt "\n", str_arg(mod->module_name));
+    LOG("checking: "str_fmt "\n", str_arg(mod->module_name));
     foreach(mars_module* module, mod->import_list) {
         if (!module->checked) {
             check_module(module);
         }
     }
 
-    entity_table* global_scope = new_entity_table(NULL);
+    mod->entities = new_entity_table(NULL);
 
     //its Time.
     foreach(AST trunk, mod->program_tree) {
-        check_stmt(mod, trunk, global_scope);
+        check_stmt(mod, trunk, mod->entities);
     }
+    mod->checked = true;
 }
 
 Type* check_stmt(mars_module* mod, AST node, entity_table* scope) {
@@ -40,7 +44,7 @@ Type* check_stmt(mars_module* mod, AST node, entity_table* scope) {
                 //we have a da of lhs, we can now type check each individually
                 foreach(AST lhs, node.as_decl_stmt->lhs) {
                     if (lhs.type != AST_identifier) error_at_node(mod, lhs, "expected identifier, got %s", ast_type_str[lhs.type]);
-                    printf("decl: "str_fmt"\n", str_arg(lhs.as_identifier->tok->text));
+                    LOG("decl: "str_fmt"\n", str_arg(lhs.as_identifier->tok->text));
 
                     if (search_for_entity(scope, lhs.as_identifier->tok->text)) error_at_node(mod, lhs, "identifier already exists in scope");
 
@@ -53,13 +57,13 @@ Type* check_stmt(mars_module* mod, AST node, entity_table* scope) {
                     scope->at[scope->len - 1]->entity_type = ast_type;
                 }
             } else {
-                printf("rhs is of ast type: %s\n", ast_type_str[rhs.expr.type]);
+                LOG("rhs is of ast type: %s\n", ast_type_str[rhs.expr.type]);
 
                 //we assume rhs len = 1
                 if (node.as_decl_stmt->lhs.len != 1) error_at_node(mod, node, "expected 1 lhs, got %d", node.as_decl_stmt->lhs.len);
                 AST lhs = node.as_decl_stmt->lhs.at[0];
                 if (lhs.type != AST_identifier) error_at_node(mod, lhs, "expected identifier, got %s", ast_type_str[lhs.type]);
-                printf("decl: "str_fmt"\n", str_arg(lhs.as_identifier->tok->text));
+                LOG("decl: "str_fmt"\n", str_arg(lhs.as_identifier->tok->text));
 
                 if (search_for_entity(scope, lhs.as_identifier->tok->text)) error_at_node(mod, lhs, "identifier already exists in scope");
 
@@ -168,7 +172,7 @@ checked_expr check_expr(mars_module* mod, AST node, entity_table* scope) {
 
         case AST_unary_op_expr: {
             checked_expr subexpr = check_expr(mod, node.as_unary_op_expr->inside, scope);
-            printf("verifying op: "str_fmt"\n", str_arg(node.as_unary_op_expr->op->text));
+            LOG("verifying op: "str_fmt"\n", str_arg(node.as_unary_op_expr->op->text));
             subexpr.type = type_unalias(subexpr.type);
             if (node.as_unary_op_expr->op->type == TOK_CARET) {
                 if (subexpr.type->as_reference.subtype->tag == TYPE_NONE) error_at_node(mod, node.as_unary_op_expr->inside, "cannot dereference typeless ^%s pointer", subexpr.type->as_reference.mutable == true ? "mut" : "let");
@@ -405,7 +409,7 @@ bool check_type_cast_implicit(Type* lhs, Type* rhs) {
     lhs = type_unalias(lhs);
     rhs = type_unalias(rhs);
 
-    printf("lhs: %d, rhs: %d\n", lhs->tag, rhs->tag);
+    LOG("lhs: %d, rhs: %d\n", lhs->tag, rhs->tag);
     if (lhs->tag == rhs->tag 
         && rhs->tag != TYPE_STRUCT
         && rhs->tag != TYPE_UNION
@@ -428,7 +432,7 @@ bool check_type_cast_implicit(Type* lhs, Type* rhs) {
     if (lhs->tag == rhs->tag && lhs->tag == TYPE_POINTER) {
         //we check if the lhs or rhs are typed, and allow the cast if the typing is gained or dropped
         //note: mutability constraints must be obeyed, unless mut -> let
-        printf("lhs mutable: %d, rhs mutable: %d\n", lhs->as_reference.mutable, rhs->as_reference.mutable);
+        LOG("lhs mutable: %d, rhs mutable: %d\n", lhs->as_reference.mutable, rhs->as_reference.mutable);
         if (lhs->as_reference.subtype->tag == TYPE_NONE && rhs->as_reference.subtype->tag != TYPE_NONE 
             && (lhs->as_reference.mutable == rhs->as_reference.mutable)) return true;
 

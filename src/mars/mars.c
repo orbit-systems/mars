@@ -19,47 +19,10 @@
 
 flag_set mars_flags;
 
-
-void typegraph_test() {
-    
-    Type* func = make_type(TYPE_FUNCTION);
-
-    type_canonicalize_graph();
-
-    {
-        Type* func_ptr = make_type(TYPE_POINTER);
-        func_ptr->as_reference.mutable = true;
-        func_ptr->as_reference.subtype = make_type(TYPE_NONE);
-        type_add_param(func, func_ptr);
-        type_add_return(func, make_type(TYPE_BOOL));
-    }
-
-    type_canonicalize_graph();
-
-    {
-        Type* ptr_u8 = make_type(TYPE_POINTER);
-        ptr_u8->as_reference.mutable = true;
-        ptr_u8->as_reference.subtype = make_type(TYPE_U8);
-    }
-
-    type_canonicalize_graph();
-
-    print_type_graph();
-
-    type_canonicalize_graph();
-
-    print_type_graph();
-
-    exit(0);
-}
-
-
 int main(int argc, char** argv) {
     #ifndef _WIN32
         init_signal_handler();
     #endif
-
-    //typegraph_test();
 
     load_arguments(argc, argv, &mars_flags);
 
@@ -72,32 +35,24 @@ int main(int argc, char** argv) {
     // recursive check
     check_module(main_mod);
     
+    printf("attempt IR generation\n");
 
+    FeModule* iron_module = fe_new_module(main_mod->module_name);
+    generate_ir_iron_from_mars(main_mod, iron_module);
+
+    printf("IR generated\n");
+
+    return 0;
     //TargetInfo* atlas_target;
 
-    switch (mars_flags.target_arch){
+    /*switch (mars_flags.target_arch){
     case TARGET_ARCH_APHELION: 
         //atlas_target = &aphelion_target_info; 
         break;
     default:
         CRASH("cannot select atlas target");
        break;
-    }
-
-    //atlas_module = atlas_new_module(main_mod->module_name, atlas_target);
-
-    printf("attempt IR generation\n");
-
-    //generate_ir_atlas_from_mars(main_mod, atlas_module);
-    
-    printf("IR generated\n");
-
-
-    // TODO stub because, once again, 
-    // i cannot be fucked to update this every time i make iron changes
-    TODO("IR generation");
-
-    return 0;
+    }*/
 }
 
 void print_help() {
@@ -187,34 +142,3 @@ void load_arguments(int argc, char* argv[], flag_set* fl) {
         return;
     }
 }
-
-/*
-void parse_target_triple(string tt, flag_set* fl) {
-    string arch = str("");
-    string system = str("");
-    string product = str("");
-    int curr_anchor = 0;
-    int curr_str = 0;
-    for (int i = 0; i < tt.len; i++) {
-        if (tt.raw[i] == '-' && curr_str == 0) {
-            arch = string_clone(substring(tt, curr_anchor, i));
-            curr_str++;
-            curr_anchor = i + 1;
-            continue;
-        }
-        if (tt.raw[i] == '-' && curr_str == 1) {
-            system = string_clone(substring(tt, curr_anchor, i));
-            curr_str++;
-            curr_anchor = i + 1;
-            continue;
-        }
-    }
-    product = string_clone(substring(tt, curr_anchor, tt.len));
-    fl->target_arch = arch_from_str(arch);
-    fl->target_system = sys_from_str(system);
-    fl->target_product = product_from_str(product);
-    if (fl->target_arch == -1)    general_error("Unrecognized architecture: " str_fmt, str_arg(arch));
-    if (fl->target_system == -1)  general_error("Unrecognized system: " str_fmt, str_arg(system));
-    if (fl->target_product == -1) general_error("Unrecognized product: " str_fmt, str_arg(product));
-    return;
-}*/

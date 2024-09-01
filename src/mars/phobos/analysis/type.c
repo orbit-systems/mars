@@ -4,8 +4,8 @@
 
 TypeGraph typegraph;
 
-#define LOG(...) printf(__VA_ARGS__)
-//#define LOG(...)
+// #define LOG(...) printf(__VA_ARGS__)
+#define LOG(...)
 
 typedef struct {
     Type* dest;

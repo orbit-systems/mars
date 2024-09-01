@@ -23,6 +23,8 @@ typedef struct {
     size_t cap;
 } module_list;
 
+typedef struct entity_table entity_table;
+
 typedef struct mars_module {
     string module_name;
     string module_path;
@@ -32,6 +34,7 @@ typedef struct mars_module {
     da(AST) program_tree;
     Arena AST_alloca;
     Arena temp_alloca;
+    entity_table* entities;
 
     bool visited : 1; // checking shit
     bool checked : 1; // has been FULLY CHECKED by the checker
