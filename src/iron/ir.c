@@ -272,11 +272,13 @@ const size_t fe_inst_sizes[] = {
     [FE_INST_FIELDPTR]  = sizeof(FeInstFieldPtr),
     [FE_INST_INDEXPTR]  = sizeof(FeInstIndexPtr),
 
-    [FE_INST_LOAD]     = sizeof(FeInstLoad),
-    [FE_INST_VOL_LOAD] = sizeof(FeInstLoad),
+    [FE_INST_LOAD]        = sizeof(FeInstLoad),
+    [FE_INST_VOL_LOAD]    = sizeof(FeInstLoad),
+    [FE_INST_STACK_STORE] = sizeof(FeInstStackLoad),
 
-    [FE_INST_STORE]     = sizeof(FeInstStore),
-    [FE_INST_VOL_STORE] = sizeof(FeInstStore),
+    [FE_INST_STORE]       = sizeof(FeInstStore),
+    [FE_INST_VOL_STORE]   = sizeof(FeInstStore),
+    [FE_INST_STACK_STORE] = sizeof(FeInstStackStore),
 
     [FE_INST_CONST]  = sizeof(FeInstConst),
     [FE_INST_LOAD_SYMBOL] = sizeof(FeLoadSymbol),
@@ -340,6 +342,20 @@ FeInst* fe_inst_store(FeFunction* f, FeInst* location, FeInst* value, bool is_vo
     FeInstStore* ir = (FeInstStore*) fe_inst(f, FE_INST_STORE);
     
     if (is_vol) ir->base.kind = FE_INST_VOL_STORE;
+    ir->location = location;
+    ir->value = value;
+    return (FeInst*) ir;
+}
+
+FeInst* fe_inst_stack_load(FeFunction* f, FeStackObject* location) {
+    FeInstStackLoad* ir = (FeInstStackLoad*) fe_inst(f, FE_INST_STACK_LOAD);
+
+    ir->location = location;
+    return (FeInst*) ir;
+}
+
+FeInst* fe_inst_stack_store(FeFunction* f, FeStackObject* location, FeInst* value) {
+    FeInstStackStore* ir = (FeInstStackStore*) fe_inst(f, FE_INST_STACK_STORE);
     ir->location = location;
     ir->value = value;
     return (FeInst*) ir;

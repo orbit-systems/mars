@@ -312,10 +312,12 @@ enum {
     // FeInstLoad
     FE_INST_LOAD,
     FE_INST_VOL_LOAD,
+    FE_INST_STACK_LOAD,
 
     // FeInstStore
     FE_INST_STORE,
     FE_INST_VOL_STORE,
+    FE_INST_STACK_STORE,
 
     // FeInstBranch
     FE_INST_BRANCH,
@@ -407,6 +409,22 @@ typedef struct FeInstStore {
 
     u8 align_offset;
 } FeInstStore;
+
+typedef struct FeInstStackLoad {
+    FeInst base;
+
+    FeStackObject* location;
+
+    u8 align_offset;
+} FeInstStackLoad;
+
+typedef struct FeInstStackStore {
+    FeInst base;
+
+    FeStackObject* location;
+    FeInst* value;
+
+} FeInstStackStore;
 
 typedef struct FeInstConst {
     FeInst base;
@@ -513,9 +531,6 @@ FeSymbol*     fe_new_symbol(FeModule* mod, string name, u8 binding);
 FeSymbol*     fe_find_symbol(FeModule* mod, string name);
 FeSymbol*     fe_find_or_new_symbol(FeModule* mod, string name, u8 binding);
 
-void fe_set_target(FeModule* m, u16 arch, u16 system, u16 product);
-void fe_set_target_config(FeModule* m, void* meta);
-
 void fe_destroy_module(FeModule* m);
 void fe_destroy_function(FeFunction* f);
 void fe_destroy_basic_block(FeBasicBlock* bb);
@@ -547,6 +562,8 @@ FeInst* fe_inst_getfieldptr(FeFunction* f, u32 index, FeInst* source);
 FeInst* fe_inst_getindexptr(FeFunction* f, FeInst* index, FeInst* source);
 FeInst* fe_inst_load(FeFunction* f, FeInst* location, bool is_vol);
 FeInst* fe_inst_store(FeFunction* f, FeInst* location, FeInst* value, bool is_vol);
+FeInst* fe_inst_stack_load(FeFunction* f, FeStackObject* location);
+FeInst* fe_inst_stack_store(FeFunction* f, FeStackObject* location, FeInst* value);
 FeInst* fe_inst_const(FeFunction* f);
 FeInst* fe_inst_load_symbol(FeFunction* f, FeSymbol* symbol);
 FeInst* fe_inst_mov(FeFunction* f, FeInst* source);
