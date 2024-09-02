@@ -30,14 +30,16 @@ FeData* generate_ir_global_from_stmt_decl(FeModule* mod, AST ast) { //FIXME: add
     if (ast.as_decl_stmt->lhs.len != 1) crash("global decl_stmt only supports 1 lhs at the moment\n");
     if (ast.as_decl_stmt->lhs.at[0].type != AST_identifier) crash("lhs of decl_stmt should be identifier!\n");
 
-    FeSymbol* sym = fe_new_symbol(mod, ast.as_decl_stmt->lhs.at[0].as_identifier->tok->text, FE_BIND_EXPORT);
+    string identifier_text = ast.as_decl_stmt->lhs.at[0].as_identifier->tok->text;
+
+    FeSymbol* sym = fe_new_symbol(mod, identifier_text, FE_BIND_EXPORT);
 
     //we need to now figure out whats on the rhs, and parse correctly
     switch (ast.as_decl_stmt->rhs.type) {
         case AST_func_literal_expr:
             //we obtain the type from the entity table
-            entity* func_literal_ent = search_for_entity(mars_mod->entities, ast.as_decl_stmt->lhs.at[0].as_identifier->tok->text);
-            if (!func_literal_ent) crash("expected entity "str_fmt" to exist in global scope!", str_arg(ast.as_decl_stmt->lhs.at[0].as_identifier->tok->text));
+            entity* func_literal_ent = search_for_entity(mars_mod->entities, identifier_text);
+            if (!func_literal_ent) crash("expected entity "str_fmt" to exist in global scope!", str_arg(identifier_text));
             FeFunction* func = fe_new_function(mod, sym);
             foreach(Type* param, func_literal_ent->entity_type->as_function.params)  
             fe_add_func_param(func, TEType_to_iron(mod, param));
