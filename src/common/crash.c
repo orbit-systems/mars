@@ -33,8 +33,8 @@ void crash(char* error, ...) {
     }
 
     free(strings); //this is partially unsafe?
-    exit(-1);
     #endif
+    exit(-1); // lmao
 }
 
 #ifndef __WIN32__

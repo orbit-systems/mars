@@ -25,6 +25,7 @@ int main() {
     FeInst* add = fe_append(bb, fe_inst_binop(f, FE_INST_ADD, (FeInst*) p0, (FeInst*) p1)); 
     add->type = fe_type(m, FE_TYPE_I64);
 
+
     FeInst* mul = fe_append(bb, fe_inst_binop(f, FE_INST_UMUL, (FeInst*) p0, (FeInst*) p1)); 
     mul->type = fe_type(m, FE_TYPE_I64);
 

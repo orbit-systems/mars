@@ -3,10 +3,8 @@
 #include "iron/iron.h"
 
 typedef struct FeMachBuffer    FeMachBuffer;
-
 typedef struct FeMachVReg      FeMachVReg;
 typedef struct FeMachImmediate FeMachImmediate;
-
 typedef struct FeMachBase      FeMachBase;
 typedef struct FeMachInst      FeMachInst;
 

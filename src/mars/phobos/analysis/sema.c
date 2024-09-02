@@ -48,13 +48,14 @@ Type* check_stmt(mars_module* mod, AST node, entity_table* scope) {
 
                     if (search_for_entity(scope, lhs.as_identifier->tok->text)) error_at_node(mod, lhs, "identifier already exists in scope");
 
-                    new_entity(scope, lhs.as_identifier->tok->text, lhs);
-                    scope->at[scope->len - 1]->is_mutable = node.as_decl_stmt->is_mut;
+                    entity* lhs_entity = new_entity(scope, lhs.as_identifier->tok->text, lhs);
+                    lhs_entity->is_mutable = node.as_decl_stmt->is_mut;
+                    lhs.as_identifier->entity = lhs_entity;
 
                     if (!is_null_AST(node.as_decl_stmt->type) && !check_type_cast_implicit(rhs.type, ast_type)) {
                         error_at_node(mod, node, "type mismatch: lhs and rhs cannot be cast to eachother\nTODO: find out the type of lhs and rhs to print a more informative error");
                     }
-                    scope->at[scope->len - 1]->entity_type = ast_type;
+                    lhs_entity->entity_type = ast_type;
                 }
             } else {
                 LOG("rhs is of ast type: %s\n", ast_type_str[rhs.expr.type]);
@@ -69,6 +70,7 @@ Type* check_stmt(mars_module* mod, AST node, entity_table* scope) {
 
                 entity* lhs_item_entity = new_entity(scope, lhs.as_identifier->tok->text, lhs);
                 lhs_item_entity->is_mutable = node.as_decl_stmt->is_mut;
+                lhs.as_identifier->entity = lhs_item_entity;
 
                 if (!is_null_AST(node.as_decl_stmt->type) && !check_type_cast_implicit(rhs.type, ast_type)) {
                     error_at_node(mod, node, "type mismatch: lhs and rhs cannot be cast to eachother\nTODO: find out the type of lhs and rhs to print a more informative error");
@@ -171,6 +173,8 @@ checked_expr check_expr(mars_module* mod, AST node, entity_table* scope) {
 
             if (ident_ent == NULL) error_at_node(mod, node, "undefined identifier: " str_fmt, str_arg(node.as_identifier->tok->text));
             
+            node.as_identifier->entity = ident_ent;
+
             return (checked_expr){
                 .expr = node, 
                 .type = ident_ent->entity_type,
@@ -322,9 +326,10 @@ Type* check_func_literal(mars_module* mod, AST func_literal, entity_table* scope
         }
 
         Type* param_type = ast_to_type(mod, param.type);
-        new_entity(func_scope, param.field.as_identifier->tok->text, param.type);
-        func_scope->at[func_scope->len - 1]->is_param = true;
-        func_scope->at[func_scope->len - 1]->entity_type = param_type;
+        entity* param_entity = new_entity(func_scope, param.field.as_identifier->tok->text, param.type);
+        param.field.as_identifier->entity = param_entity;
+        param_entity->is_param = true;
+        param_entity->entity_type = param_type;
         type_add_param(fn_type, param_type);
     }
 
@@ -336,9 +341,10 @@ Type* check_func_literal(mars_module* mod, AST func_literal, entity_table* scope
         }
 
         Type* return_type = ast_to_type(mod, returns.type);
-        new_entity(func_scope, returns.field.as_identifier->tok->text, returns.type);
-        func_scope->at[func_scope->len - 1]->is_return = true;
-        func_scope->at[func_scope->len - 1]->entity_type = return_type;
+        entity* return_entity = new_entity(func_scope, returns.field.as_identifier->tok->text, returns.type);
+        returns.field.as_identifier->entity = return_entity;
+        return_entity->is_return = true;
+        return_entity->entity_type = return_type;
         type_add_return(fn_type, return_type);
     }
     // type_canonicalize_graph();

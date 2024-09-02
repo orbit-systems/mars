@@ -602,3 +602,4 @@ enum {
 };
 
 #include "iron/passes/passes.h"
+#include "iron/codegen/mach.h"
