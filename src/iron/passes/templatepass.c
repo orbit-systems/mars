@@ -10,7 +10,7 @@ void run_pass_template(FeModule* mod) {
     /* code here! */
 }
 
-FePass air_pass_template = {
+FePass fe_pass_template = {
     .name = "template",
     .callback = run_pass_template,
 };

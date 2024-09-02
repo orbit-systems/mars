@@ -15,7 +15,6 @@ FeModule* fe_new_module(string name) {
     fe_typegraph_init(mod);
 
     da_init(&mod->pass_queue, 4);
-    fe_sched_pass(mod, &fe_pass_canon);
 
     return mod;
 }

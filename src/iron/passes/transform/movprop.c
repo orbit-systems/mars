@@ -6,7 +6,7 @@
 
 */
 
-static u64 air_set_usage(FeBasicBlock* bb, FeInst* source, u64 start_index, FeInst* dest) {
+static u64 set_usage(FeBasicBlock* bb, FeInst* source, u64 start_index, FeInst* dest) {
     for (u64 i = start_index; i < bb->len; i++) {
         if (bb->at[i]->kind == FE_INST_ELIMINATED) continue;
         // FIXME: kayla you're gonna be SO fucking mad at me for this
@@ -26,9 +26,9 @@ static void set_uses_of(FeFunction* f, FeInst* source, FeInst* dest) {
     // we probably dont need to search the whole function but whatever;
     for_urange(i, 0, f->blocks.len) {
         FeBasicBlock* bb = f->blocks.at[i];
-        u64 next_usage = air_set_usage(bb, source, 0, dest);
+        u64 next_usage = set_usage(bb, source, 0, dest);
         while (next_usage != UINT64_MAX) {
-            next_usage = air_set_usage(bb, source, next_usage+1, dest);
+            next_usage = set_usage(bb, source, next_usage+1, dest);
         }
     }
 }

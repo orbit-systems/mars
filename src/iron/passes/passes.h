@@ -2,12 +2,6 @@
 
 #include "iron/iron.h"
 
-/* REQUIRED PASSES
-    canon           general cleanup & canonicalization
-*/
-
-extern FePass fe_pass_canon;
-
 /* ANALYSIS PASSES
     cfg             populate and provide information about control flow graphs
 */

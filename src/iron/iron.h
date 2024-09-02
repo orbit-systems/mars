@@ -23,48 +23,6 @@ typedef struct FeData         FeData;
 typedef struct FeSymbol       FeSymbol;
 typedef struct FeBasicBlock   FeBasicBlock;
 
-typedef struct FeModule {
-    string name;
-
-    FeFunction** functions;
-    FeData** datas;
-
-    u32 functions_len;
-    u32 datas_len;
-
-    struct {
-        FeSymbol** at;
-        size_t len;
-        size_t cap;
-
-        Arena alloca;
-    } symtab; // symbol table
-
-    struct {
-        FeType** at;
-        size_t len;
-        size_t cap;
-
-        Arena alloca;
-    } typegraph;
-
-    struct {
-        FePass** at;
-        size_t len;
-        size_t cap;
-
-        bool cfg_up_to_date;
-    } pass_queue;
-
-    struct {
-        u16 arch;
-        u16 system;
-        void* arch_config;
-        void* system_config;
-    } target;
-
-} FeModule;
-
 typedef struct FePass {
     char* name;
     union {
@@ -600,6 +558,87 @@ enum {
     
     _FE_SYSTEM_END,
 };
+
+enum {
+    FE_MSG_KIND_NONE,
+    FE_MSG_KIND_IR,
+    FE_MSG_KIND_MACH_IR,
+};
+
+enum {
+    FE_MSG_SEVERITY_FATAL,
+    FE_MSG_SEVERITY_ERROR,
+    FE_MSG_SEVERITY_WARNING,
+    FE_MSG_SEVERITY_LOG,
+};
+
+typedef struct FeMessage {
+    u8 severity;
+    u8 kind;
+    
+    char* function_of_origin;
+    char* message;
+
+    union {
+        
+    };
+
+} FeMessage;
+
+typedef struct FeMessageQueue {
+    FeMessage* at;
+    size_t len;
+    size_t cap;
+} FeMessageQueue;
+
+// if the message is fatal, the error is immediately printed
+void fe_push_message(FeModule* m, FeMessage msg);
+FeMessage fe_pop_message(FeModule* m);
+void fe_clear_message_buffer(FeModule* m);
+void fe_print_message(FeMessage msg);
+
+typedef struct FeModule {
+    string name;
+
+    FeFunction** functions;
+    FeData** datas;
+
+    u32 functions_len;
+    u32 datas_len;
+
+    struct {
+        FeSymbol** at;
+        size_t len;
+        size_t cap;
+
+        Arena alloca;
+    } symtab; // symbol table
+
+    struct {
+        FeType** at;
+        size_t len;
+        size_t cap;
+
+        Arena alloca;
+    } typegraph;
+
+    struct {
+        FePass** at;
+        size_t len;
+        size_t cap;
+
+        bool cfg_up_to_date;
+    } pass_queue;
+
+    struct {
+        u16 arch;
+        u16 system;
+        void* arch_config;
+        void* system_config;
+    } target;
+
+    FeMessageQueue messages;
+} FeModule;
 
 #include "iron/passes/passes.h"
 #include "iron/codegen/mach.h"

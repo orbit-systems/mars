@@ -295,11 +295,34 @@ const size_t fe_inst_sizes[] = {
     [FE_INST_RETURN] = sizeof(FeInstReturn),
 };
 
+#define FE_FATAL(m, msg) fe_push_message(m, (FeMessage){ \
+    .function_of_origin = __func__,\
+    .message = (msg),\
+    .severity = FE_MSG_SEVERITY_FATAL, \
+})
+
 FeInst* fe_inst_binop(FeFunction* f, u8 type, FeInst* lhs, FeInst* rhs) {
     FeInstBinop* ir = (FeInstBinop*) fe_inst(f, type);
-    
-    ir->lhs = lhs;
-    ir->rhs = rhs;
+
+    // if (lhs->type == rhs->type) {
+    //     ir->base.type = lhs->type;
+    // }
+
+    switch (type) {
+    case FE_INST_ADD:
+    case FE_INST_UMUL:
+    case FE_INST_IMUL:
+        if (lhs->kind == FE_INST_CONST && rhs->kind != FE_INST_CONST) {
+            ir->lhs = rhs;
+            ir->rhs = lhs;
+            break;
+        }
+    default:
+        ir->lhs = lhs;
+        ir->rhs = rhs;
+        break;
+    }
+
     return (FeInst*) ir;
 }
 
