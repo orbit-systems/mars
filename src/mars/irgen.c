@@ -10,9 +10,11 @@ static PtrMap entity2stackoffset;
 
 static i64 _bb_uID;
 
+#define LOG(...) printf(__VA_ARGS__)
+
 string bb_uID() {
     char* buf = mars_alloc(sizeof(buf) * 16); //block1234567890\0
-    sprintf(buf, "block%d", _bb_uID++);
+    sprintf(buf, str_fmt"block%d", _bb_uID++);
     return str(buf);
 }
 
@@ -32,7 +34,6 @@ FeData* generate_ir_global_from_stmt_decl(FeModule* mod, AST ast) { //FIXME: add
 
     string identifier_text = ast.as_decl_stmt->lhs.at[0].as_identifier->tok->text;
 
-    FeSymbol* sym = fe_new_symbol(mod, identifier_text, FE_BIND_EXPORT);
 
     //we need to now figure out whats on the rhs, and parse correctly
     switch (ast.as_decl_stmt->rhs.type) {
@@ -40,16 +41,49 @@ FeData* generate_ir_global_from_stmt_decl(FeModule* mod, AST ast) { //FIXME: add
             //we obtain the type from the entity table
             entity* func_literal_ent = search_for_entity(mars_mod->entities, identifier_text);
             if (!func_literal_ent) crash("expected entity "str_fmt" to exist in global scope!", str_arg(identifier_text));
-            FeFunction* func = fe_new_function(mod, sym);
+
+            /*
+            module_name.function:
+                d64 module_name.function.code
+
+            module_name.function.code:
+            */
+            char* buf = mars_alloc(mars_mod->module_name.len + identifier_text.len + strlen("..code") + 1);
+            sprintf(buf, str_fmt"."str_fmt".code", str_arg(mars_mod->module_name), str_arg(identifier_text));
+            FeSymbol* code_sym = fe_new_symbol(mod, str(buf), FE_BIND_LOCAL);
+
+            buf = mars_alloc(mars_mod->module_name.len + identifier_text.len + strlen("..") + 1);
+            sprintf(buf, str_fmt"."str_fmt, str_arg(mars_mod->module_name), str_arg(identifier_text));
+            FeSymbol* data_sym = fe_new_symbol(mod, str(buf), FE_BIND_EXPORT);
+            FeData* datum = fe_new_data(mod, data_sym, true);
+            fe_set_data_symref(datum, code_sym);
+
+            FeFunction* func = fe_new_function(mod, code_sym);
             foreach(Type* param, func_literal_ent->entity_type->as_function.params)  
             fe_add_func_param(func, TEType_to_iron(mod, param));
             foreach(Type* ret, func_literal_ent->entity_type->as_function.returns) 
             fe_add_func_return(func, TEType_to_iron(mod, ret));
             //finished with the function now, we can now create BB
+
             FeBasicBlock* bb = fe_new_basic_block(func, bb_uID());
+
+            bb = generate_ir_stmt_block(mod, bb, ast.as_decl_stmt->rhs.as_func_literal_expr->code_block);
+
+            return datum;
             
         default:
             crash("unexpected rhs: %s\n", ast_type_str[ast.as_decl_stmt->rhs.type]);
+    }
+}
+
+FeBasicBlock* generate_ir_stmt_block(FeModule* mod, FeBasicBlock* bb, AST stmt_block) {
+    if (stmt_block.type != AST_stmt_block) crash("expected AST_stmt_block, got %s\n", ast_type_str[stmt_block.type]);
+
+    foreach(AST stmt, stmt_block.as_stmt_block->stmts) {
+        switch (stmt.type) {
+            default:
+                crash("unexpected ast type: %s\n", ast_type_str[stmt.type]);
+        }
     }
 }
 

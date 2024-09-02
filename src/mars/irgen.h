@@ -16,6 +16,6 @@ FeInst* generate_ir_expr_address(FeFunction* f, FeBasicBlock* bb, AST ast);
 void generate_ir_stmt_assign(FeFunction* f, FeBasicBlock* bb, AST ast);
 void generate_ir_stmt_return(FeFunction* f, FeBasicBlock* bb, AST ast);
 FeFunction* generate_ir_function(FeModule* mod, AST ast);
-FeType* TEType_to_iron(FeModule* mod, Type* t);
+FeBasicBlock* generate_ir_stmt_block(FeModule* mod, FeBasicBlock* bb, AST stmt_block);
 
-FeType* translate_type(FeModule* m, Type* t);
+FeType* TEType_to_iron(FeModule* mod, Type* t);
