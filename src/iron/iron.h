@@ -504,9 +504,9 @@ void fe_set_data_bytes(FeData* data, u8* bytes, u32 data_len, bool zeroed);
 void fe_set_data_symref(FeData* data, FeSymbol* symref);
 
 FeInst* fe_append(FeBasicBlock* bb, FeInst* ir);
-FeInst* fe_insert(FeBasicBlock* bb, FeInst* inst, i64 index);
-FeInst* fe_insert_before(FeBasicBlock* bb, FeInst* inst, FeInst* ref);
-FeInst* fe_insert_after(FeBasicBlock* bb, FeInst* inst, FeInst* ref);
+FeInst* fe_insert_inst(FeBasicBlock* bb, FeInst* inst, i64 index);
+FeInst* fe_insert_inst_before(FeBasicBlock* bb, FeInst* inst, FeInst* ref);
+FeInst* fe_insert_inst_after(FeBasicBlock* bb, FeInst* inst, FeInst* ref);
 i64     fe_index_of_inst(FeBasicBlock* bb, FeInst* inst);
 void    fe_move(FeBasicBlock* bb, u64 to, u64 from);
 void    fe_rewrite_uses(FeFunction* f, FeInst* source, FeInst* dest);

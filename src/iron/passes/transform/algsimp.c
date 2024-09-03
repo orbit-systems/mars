@@ -220,7 +220,7 @@ static bool strength_reduction(FeInst* inst) {
             FeInstConst* log2const = (FeInstConst*) fe_inst_const(binop->base.bb->function);
             log2const->base.type = binop->rhs->type;
             log2const->i64 = ((FeInstConst*)binop->rhs)->i64;
-            fe_insert_before(binop->base.bb, (FeInst*)log2const, inst);
+            fe_insert_inst_before(binop->base.bb, (FeInst*)log2const, inst);
             convert_to_log2((FeInst*)log2const);
             binop->rhs = (FeInst*)log2const;
             inst->kind = FE_INST_SHL;
@@ -267,12 +267,12 @@ void run_pass_algsimp(FeModule* mod) {
 
             bool needs_inserting = false;
             if (inst != (new_inst = identity_reduction(inst, &needs_inserting))){
-                if (needs_inserting) fe_insert_before(inst->bb, new_inst, inst);
+                if (needs_inserting) fe_insert_inst_before(inst->bb, new_inst, inst);
                 fe_rewrite_uses(f, inst, new_inst);
                 inst->kind = FE_INST_ELIMINATED;
                 fe_add_uses_to_worklist(f, new_inst, &worklist);
             } else if (inst != (new_inst = const_eval(f, inst))) {
-                fe_insert_before(inst->bb, new_inst, inst);
+                fe_insert_inst_before(inst->bb, new_inst, inst);
                 fe_rewrite_uses(f, inst, new_inst);
                 inst->kind = FE_INST_ELIMINATED;
                 fe_add_uses_to_worklist(f, new_inst, &worklist);

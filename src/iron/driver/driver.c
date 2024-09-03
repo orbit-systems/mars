@@ -23,11 +23,7 @@ int main() {
     FeInstParamVal* p1 = (FeInstParamVal*) fe_append(bb, fe_inst_paramval(f, 1));
 
     FeInst* add = fe_append(bb, fe_inst_binop(f, FE_INST_ADD, (FeInst*) p0, (FeInst*) p1)); 
-    add->type = fe_type(m, FE_TYPE_I64);
-
-
     FeInst* mul = fe_append(bb, fe_inst_binop(f, FE_INST_UMUL, (FeInst*) p0, (FeInst*) p1)); 
-    mul->type = fe_type(m, FE_TYPE_I64);
 
     FeInst* r0 = fe_append(bb, fe_inst_returnval(f, 0, (FeInst*) add));
     FeInst* r1 = fe_append(bb, fe_inst_returnval(f, 1, (FeInst*) mul));
@@ -35,5 +31,8 @@ int main() {
     fe_append(bb, fe_inst_return(f));
 
     fe_run_all_passes(m, true);
+
+    printf("\n// emit c\n");
+    printstr(fe_emit_c(m));
 
 }

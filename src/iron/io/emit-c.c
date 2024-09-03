@@ -312,8 +312,9 @@ string fe_emit_c(FeModule* m) {
 
     string out = string_alloc(sb_len(&sb));
     sb_write(&sb, out.raw);
-    printf("------------------- EMIT C -------------------\n");
-    printf(str_fmt, str_arg(out));
+    // printf("------------------- EMIT C -------------------\n");
+    // printf(str_fmt, str_arg(out));
 
+    sb_destroy(&sb);
     return out;
 }
