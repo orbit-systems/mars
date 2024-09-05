@@ -74,17 +74,87 @@ FeType* fe_type(FeModule* m, u8 kind) {
     case FE_TYPE_F64:
         return m->typegraph.at[kind - 1];
     case FE_TYPE_ARRAY:
-        // size = sizeof(FeType);
-        // break;
-        CRASH("use fe_type_array() to create an array type");
+        crash("use fe_type_array() to create an array type");
     case FE_TYPE_RECORD:
-        // size = sizeof(FeType) + sizeof(FeType*) * (len);
-        CRASH("use fe_type_aggregate() to create an aggregate type");
+        crash("use fe_type_record() to create an aggregate type");
         break;
     default:
         UNREACHABLE;
     }
 }
+
+bool fe_type_has_equivalence(FeType* t) {
+    switch (t->kind) {
+    case FE_TYPE_BOOL:
+    case FE_TYPE_PTR:
+    case FE_TYPE_I8:
+    case FE_TYPE_I16:
+    case FE_TYPE_I32:
+    case FE_TYPE_I64:
+    case FE_TYPE_F16:
+    case FE_TYPE_F32:
+    case FE_TYPE_F64:
+        return true;
+    default:
+        return false;
+    }
+}
+
+bool fe_type_is_scalar(FeType* t) {
+    switch (t->kind) {
+    case FE_TYPE_BOOL:
+    case FE_TYPE_PTR:
+    case FE_TYPE_I8:
+    case FE_TYPE_I16:
+    case FE_TYPE_I32:
+    case FE_TYPE_I64:
+    case FE_TYPE_F16:
+    case FE_TYPE_F32:
+    case FE_TYPE_F64:
+        return true;
+    default:
+        return false;
+    }
+}
+
+bool fe_type_has_ordering(FeType* t) {
+    switch (t->kind) {
+    case FE_TYPE_I8:
+    case FE_TYPE_I16:
+    case FE_TYPE_I32:
+    case FE_TYPE_I64:
+    case FE_TYPE_F16:
+    case FE_TYPE_F32:
+    case FE_TYPE_F64:
+        return true;
+    default:
+        return false;
+    }
+}
+
+bool fe_type_is_integer(FeType* t) {
+    switch (t->kind) {
+    case FE_TYPE_I8:
+    case FE_TYPE_I16:
+    case FE_TYPE_I32:
+    case FE_TYPE_I64:
+        return true;
+    default:
+        return false;
+    }
+}
+
+bool fe_type_is_float(FeType* t) {
+    switch (t->kind) {
+    case FE_TYPE_F16:
+    case FE_TYPE_F32:
+    case FE_TYPE_F64:
+        return true;
+    default:
+        return false;
+    }
+}
+
 
 FeType* fe_type_array(FeModule* m, FeType* subtype, u64 len) {
 
@@ -98,7 +168,7 @@ FeType* fe_type_array(FeModule* m, FeType* subtype, u64 len) {
     return t;
 }
 
-FeType* fe_type_aggregate(FeModule* m, u64 len) {
+FeType* fe_type_record(FeModule* m, u64 len) {
 
     FeType* t = arena_alloc(&m->typegraph.alloca, 
         sizeof(FeType) + sizeof(FeType*) * (len), 
@@ -107,7 +177,7 @@ FeType* fe_type_aggregate(FeModule* m, u64 len) {
 
     *t = (FeType){0};
     t->kind = FE_TYPE_RECORD;
-    t->aggregate.len = len;
+    t->record.len = len;
 
     return t;
 }

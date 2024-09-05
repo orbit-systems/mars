@@ -78,7 +78,7 @@ typedef struct FeType {
         struct {
             u64 len;
             FeType* fields[]; // flexible array member
-        } aggregate;
+        } record;
 
         struct {
             u64 len;
@@ -87,11 +87,21 @@ typedef struct FeType {
     };
 } FeType;
 
+FeType* fe_type(FeModule* m, u8 kind);
+FeType* fe_type_array(FeModule* m, FeType* subtype, u64 len);
+FeType* fe_type_record(FeModule* m, u64 len);
+
+bool fe_type_is_scalar(FeType* t);
+bool fe_type_has_equivalence(FeType* t);
+bool fe_type_has_ordering(FeType* t);
+bool fe_type_is_integer(FeType* t);
+bool fe_type_is_float(FeType* t);
+
 enum {
-    FE_BIND_IMPORT,
     FE_BIND_EXPORT,
-    FE_BIND_LOCAL,
     FE_BIND_EXPORT_WEAK,
+    FE_BIND_LOCAL,
+    FE_BIND_IMPORT,
 };
 
 typedef struct FeSymbol {
@@ -418,7 +428,8 @@ typedef struct FeInstPhi {
 
     FeInst** sources;
     FeBasicBlock** source_BBs;
-    u32 len;
+    u16 len;
+    u16 cap;
 } FeInstPhi;
 
 typedef struct FeInstJump {
@@ -479,9 +490,6 @@ typedef struct FeInstReturn {
 extern const size_t fe_inst_sizes[];
 
 FeModule*     fe_new_module(string name);
-FeType*       fe_type(FeModule* m, u8 kind);
-FeType*       fe_type_array(FeModule* m, FeType* subtype, u64 len);
-FeType*       fe_type_aggregate(FeModule* m, u64 len);
 FeFunction*   fe_new_function(FeModule* mod, FeSymbol* sym);
 FeBasicBlock* fe_new_basic_block(FeFunction* fn, string name);
 FeData*       fe_new_data(FeModule* mod, FeSymbol* sym, bool read_only);
@@ -518,14 +526,14 @@ FeInst* fe_inst_unop(FeFunction* f, u8 type, FeInst* source);
 FeInst* fe_inst_stackaddr(FeFunction* f, FeStackObject* obj);
 FeInst* fe_inst_getfieldptr(FeFunction* f, u32 index, FeInst* source);
 FeInst* fe_inst_getindexptr(FeFunction* f, FeInst* index, FeInst* source);
-FeInst* fe_inst_load(FeFunction* f, FeInst* location, bool is_vol);
-FeInst* fe_inst_store(FeFunction* f, FeInst* location, FeInst* value, bool is_vol);
+FeInst* fe_inst_load(FeFunction* f, FeInst* ptr, FeType* as, bool is_vol);
+FeInst* fe_inst_store(FeFunction* f, FeInst* ptr, FeInst* value, bool is_vol);
 FeInst* fe_inst_stack_load(FeFunction* f, FeStackObject* location);
 FeInst* fe_inst_stack_store(FeFunction* f, FeStackObject* location, FeInst* value);
-FeInst* fe_inst_const(FeFunction* f);
-FeInst* fe_inst_load_symbol(FeFunction* f, FeSymbol* symbol);
+FeInst* fe_inst_const(FeFunction* f, FeType* type);
+FeInst* fe_inst_load_symbol(FeFunction* f, FeType* type, FeSymbol* symbol);
 FeInst* fe_inst_mov(FeFunction* f, FeInst* source);
-FeInst* fe_inst_phi(FeFunction* f, u32 count, ...);
+FeInst* fe_inst_phi(FeFunction* f, u32 count, FeType* type);
 FeInst* fe_inst_jump(FeFunction* f, FeBasicBlock* dest);
 FeInst* fe_inst_branch(FeFunction* f, u8 cond, FeInst* lhs, FeInst* rhs, FeBasicBlock* if_true, FeBasicBlock* if_false);
 FeInst* fe_inst_paramval(FeFunction* f, u32 param);
@@ -559,18 +567,6 @@ enum {
     _FE_SYSTEM_END,
 };
 
-enum {
-    FE_MSG_KIND_NONE,
-    FE_MSG_KIND_IR,
-    FE_MSG_KIND_MACH_IR,
-};
-
-enum {
-    FE_MSG_SEVERITY_FATAL,
-    FE_MSG_SEVERITY_ERROR,
-    FE_MSG_SEVERITY_WARNING,
-    FE_MSG_SEVERITY_LOG,
-};
 
 typedef struct FeMessage {
     u8 severity;
@@ -590,6 +586,19 @@ typedef struct FeMessageQueue {
     size_t len;
     size_t cap;
 } FeMessageQueue;
+
+enum {
+    FE_MSG_KIND_NONE,
+    FE_MSG_KIND_IR,
+    FE_MSG_KIND_MACH_IR,
+};
+
+enum {
+    FE_MSG_SEVERITY_FATAL,
+    FE_MSG_SEVERITY_ERROR,
+    FE_MSG_SEVERITY_WARNING,
+    FE_MSG_SEVERITY_LOG,
+};
 
 // if the message is fatal, the error is immediately printed
 void fe_push_message(FeModule* m, FeMessage msg);

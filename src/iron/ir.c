@@ -311,90 +311,85 @@ FeInst* fe_inst_getindexptr(FeFunction* f, FeInst* index, FeInst* source) {
     return (FeInst*) ir;
 }
 
-FeInst* fe_inst_load(FeFunction* f, FeInst* location, bool is_vol) {
+FeInst* fe_inst_load(FeFunction* f, FeInst* ptr, FeType* as, bool is_vol) {
     FeInstLoad* ir = (FeInstLoad*) fe_inst(f, FE_INST_LOAD);
-
+    if (!fe_type_is_scalar(as)) {
+        FE_FATAL(f->mod, "cannot load/store non-scalar type");
+    }
     if (is_vol) ir->base.kind = FE_INST_VOL_LOAD;
-    ir->location = location;
+    ir->location = ptr;
+    ir->base.type = as;
     return (FeInst*) ir;
 }
 
-FeInst* fe_inst_store(FeFunction* f, FeInst* location, FeInst* value, bool is_vol) {
+FeInst* fe_inst_store(FeFunction* f, FeInst* ptr, FeInst* value, bool is_vol) {
     FeInstStore* ir = (FeInstStore*) fe_inst(f, FE_INST_STORE);
-    
+    if (!fe_type_is_scalar(value->type)) {
+        FE_FATAL(f->mod, "cannot load/store non-scalar type");
+    }
     if (is_vol) ir->base.kind = FE_INST_VOL_STORE;
-    ir->location = location;
+    ir->location = ptr;
     ir->value = value;
     return (FeInst*) ir;
 }
 
 FeInst* fe_inst_stack_load(FeFunction* f, FeStackObject* location) {
     FeInstStackLoad* ir = (FeInstStackLoad*) fe_inst(f, FE_INST_STACK_LOAD);
-
+    if (!fe_type_is_scalar(location->t)) {
+        FE_FATAL(f->mod, "cannot load/store non-scalar type");
+    }
+    ir->base.type = location->t;
     ir->location = location;
     return (FeInst*) ir;
 }
 
 FeInst* fe_inst_stack_store(FeFunction* f, FeStackObject* location, FeInst* value) {
     FeInstStackStore* ir = (FeInstStackStore*) fe_inst(f, FE_INST_STACK_STORE);
+    if (!fe_type_is_scalar(location->t)) {
+        FE_FATAL(f->mod, "cannot load/store non-scalar type");
+    }
+    if (location->t != value->type) {
+        FE_FATAL(f->mod, "value type != location type");
+    }
     ir->location = location;
     ir->value = value;
     return (FeInst*) ir;
 }
 
-FeInst* fe_inst_const(FeFunction* f) {
+FeInst* fe_inst_const(FeFunction* f, FeType* type) {
     FeInstConst* ir = (FeInstConst*) fe_inst(f, FE_INST_CONST);
+    ir->base.type = type;
     return (FeInst*) ir;
 }
 
-FeInst* fe_inst_load_symbol(FeFunction* f, FeSymbol* symbol) {
+FeInst* fe_inst_load_symbol(FeFunction* f, FeType* type, FeSymbol* symbol) {
     FeLoadSymbol* ir = (FeLoadSymbol*) fe_inst(f, FE_INST_LOAD_SYMBOL);
     ir->sym = symbol;
+    if (!fe_type_is_scalar(type)) {
+        FE_FATAL(f->mod, "cannot load symbol into non-scalar type");
+    }
     return (FeInst*) ir;
 }
 
 FeInst* fe_inst_mov(FeFunction* f, FeInst* source) {
     FeInstMov* ir = (FeInstMov*) fe_inst(f, FE_INST_MOV);
     ir->source = source;
+    ir->base.type = source->type;
     return (FeInst*) ir;
 }
 
-// use in the format (f, source_count, source_1, source_BB_1, source_2, source_BB_2, ...)
-FeInst* fe_inst_phi(FeFunction* f, u32 count, ...) {
+FeInst* fe_inst_phi(FeFunction* f, u32 count, FeType* type) {
     FeInstPhi* ir = (FeInstPhi*) fe_inst(f, FE_INST_PHI);
-    ir->len = count;
-
-    ir->sources    = mars_alloc(sizeof(*ir->sources) * count);
-    ir->source_BBs = mars_alloc(sizeof(*ir->source_BBs) * count);
-
-    va_list args;
-    va_start(args, count);
-    for_range(i, 0, count) {
-        ir->sources[i]    = va_arg(args, FeInst*);
-        ir->source_BBs[i] = va_arg(args, FeBasicBlock*);
-    }
-    va_end(args);
-
+    ir->base.type = type;
+    ir->len = 0;
+    ir->cap = count;
+    ir->source_BBs = mars_alloc(sizeof(*ir->source_BBs)*count);
+    ir->sources = mars_alloc(sizeof(*ir->sources)*count);
     return (FeInst*) ir;
 }
 
 void fe_add_phi_source(FeInstPhi* phi, FeInst* source, FeBasicBlock* source_block) {
-    // wrote this and then remembered mars_realloc exists. too late :3
-    FeInst** new_sources    = mars_alloc(sizeof(*phi->sources) * (phi->len + 1));
-    FeBasicBlock** new_source_BBs = mars_alloc(sizeof(*phi->source_BBs) * (phi->len + 1));
-
-    memcpy(new_sources, phi->sources, sizeof(*phi->sources) * phi->len);
-    memcpy(new_source_BBs, phi->source_BBs, sizeof(*phi->source_BBs) * phi->len);
-
-    new_sources[phi->len]    = source;
-    new_source_BBs[phi->len] = source_block;
-
-    mars_free(phi->sources);
-    mars_free(phi->source_BBs);
-
-    phi->sources = new_sources;
-    phi->source_BBs = new_source_BBs;
-    phi->len++;
+    TODO("finish this");
 }
 
 FeInst* fe_inst_jump(FeFunction* f, FeBasicBlock* dest) {
