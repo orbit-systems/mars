@@ -33,12 +33,12 @@ void parse_file(parser* p) {
     //<program> ::= <module_stmt> <import_stmt>* <stmts>
     p->module_decl = parse_module_decl(p);
 
-    general_warning("NOTE: this compiler is susceptible to just. falling into infinite loops");
-    general_warning("      this is because it fails to match, and cannot figure out how to  ");
-    general_warning("      escape safely. please report any you find!\n");
+    // general_warning("NOTE: this compiler is susceptible to just. falling into infinite loops");
+    // general_warning("      this is because it fails to match, and cannot figure out how to  ");
+    // general_warning("      escape safely. please report any you find!\n");
     
-    general_warning("CURRENTLY KNOWN INFINITE LOOPS:");
-    general_warning("please expand this list");
+    // general_warning("CURRENTLY KNOWN INFINITE LOOPS:");
+    // general_warning("please expand this list");
 
     da_init(&p->stmts, 1);
 

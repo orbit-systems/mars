@@ -40,7 +40,7 @@ let str_equal = fn(a, b: []let u8) -> bool {
     return equal(a.raw, b.raw, a.len);
 };
 
-let set = fn(dest: ^mut, len: uint, val: u8) -> bool {
+let set = fn(dest: ^mut, len: uint, val: u8) {
     mut cursor = cast(^mut u8) dest;
 
     let stop = cursor + cast(^mut u8) len;

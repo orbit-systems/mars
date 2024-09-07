@@ -2,4 +2,4 @@ module arena;
 
 let deref_a_pointer = fn(x: ^let int) -> int {
     return x^;
-}
+};

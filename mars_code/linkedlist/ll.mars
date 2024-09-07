@@ -2,7 +2,7 @@ module ll;
 
 import arena "../arena";
 
-type Node = struct {
+type Node = distinct struct {
     val: int,
     next: ^mut Node,
 };
