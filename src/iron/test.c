@@ -18,12 +18,12 @@ void test_algsimp_reassoc() {
     FeInstParamVal* p = (FeInstParamVal*) fe_append(bb, fe_inst_paramval(f, 0));
     
     FeInstConst* c1 = (FeInstConst*) fe_append(bb,
-        fe_inst_const(f)
-    ); c1->base.type = fe_type(m, FE_TYPE_I64); c1->i64 = 5;
+        fe_inst_const(f, fe_type(m, FE_TYPE_I64))
+    ); c1->i64 = 5;
 
     FeInstConst* c2 = (FeInstConst*) fe_append(bb,
-        fe_inst_const(f)
-    ); c2->base.type = fe_type(m, FE_TYPE_I64); c2->i64 = 9;
+        fe_inst_const(f, fe_type(m, FE_TYPE_I64))
+    ); c2->i64 = 9;
 
     FeInst* add = fe_append(bb, 
         fe_inst_binop(f, FE_INST_ADD, (FeInst*) p, (FeInst*) c1)
@@ -63,8 +63,8 @@ void test_algsimp_sr() {
     FeInstParamVal* p = (FeInstParamVal*) fe_append(bb, fe_inst_paramval(f, 0));
     
     FeInstConst* c1 = (FeInstConst*) fe_append(bb,
-        fe_inst_const(f)
-    ); c1->base.type = fe_type(m, FE_TYPE_I64); c1->i64 = 16;
+        fe_inst_const(f, fe_type(m, FE_TYPE_I64))
+    ); c1->i64 = 16;
 
     FeInst* mul = fe_append(bb, 
         fe_inst_binop(f, FE_INST_UMUL, (FeInst*) p, (FeInst*) c1)

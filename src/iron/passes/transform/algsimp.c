@@ -26,14 +26,14 @@
         x ^ 0      -> x
         x << 0     -> x
         x >> 0     -> x
-        sandwichman, note for you: what the FUCK does this mean?
-            x && false -> false         this should be false
-            x && true  -> true          this should be true only if x != 0, otherwise false
-            x || false -> x             this should be true if x != 0, otherwise false
-            x || true  -> true          this should be true, always
-            !(!x)      -> x             this should be true if x != 0, otherwise false. i assume here you meant ~(~x)?
-
+        ~(~x)      -> x
         -(-x)      -> x
+        
+        (these only applies to bool):
+            x && false -> false         
+            x && true  -> x
+            x || false -> x
+            x || true  -> true
 
     reassociation:
         (x + 1) + 2  ->  x + (1 + 2)
@@ -84,8 +84,7 @@ static FeInst* const_eval_binop(FeFunction* f, FeInst* inst) {
 
     FeInstConst* src1 = (FeInstConst*) binop->lhs;
     FeInstConst* src2 = (FeInstConst*) binop->rhs;
-    FeInstConst* lc   = (FeInstConst*) fe_inst_const(f);
-    lc->base.type = inst->type;
+    FeInstConst* lc   = (FeInstConst*) fe_inst_const(f, inst->type);
 
     switch (inst->kind) {
     case FE_INST_ADD:   int_operate(+, lc, src1, src2); break;
@@ -185,7 +184,7 @@ static FeInst* identity_reduction(FeInst* inst, bool* needs_inserting) {
     return inst;
 }
 
-bool is_const_power_of_two(FeInst* inst) {
+static bool is_const_power_of_two(FeInst* inst) {
     FeInstConst* lc = (FeInstConst*) inst;
     switch (lc->base.type->kind) {
     case FE_TYPE_I64: return lc->i64 != 0 && (lc->i64 & (lc->i64 - 1)) == 0;
@@ -197,7 +196,7 @@ bool is_const_power_of_two(FeInst* inst) {
     return false;
 }
 
-void convert_to_log2(FeInst* inst) {
+static void convert_to_log2(FeInst* inst) {
     FeInstConst* lc = (FeInstConst*) inst;
     switch (lc->base.type->kind) {
     case FE_TYPE_I64:lc->i64 = 8*sizeof(lc->i64) - __builtin_clzll(lc->i64) - 1; break;
@@ -217,8 +216,7 @@ static bool strength_reduction(FeInst* inst) {
 
         if (binop->rhs->kind == FE_INST_CONST && is_const_power_of_two(binop->rhs)) {
             // x * const = x << log2(const)
-            FeInstConst* log2const = (FeInstConst*) fe_inst_const(binop->base.bb->function);
-            log2const->base.type = binop->rhs->type;
+            FeInstConst* log2const = (FeInstConst*) fe_inst_const(binop->base.bb->function, binop->rhs->type);
             log2const->i64 = ((FeInstConst*)binop->rhs)->i64;
             fe_insert_inst_before(binop->base.bb, (FeInst*)log2const, inst);
             convert_to_log2((FeInst*)log2const);

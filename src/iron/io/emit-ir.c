@@ -53,9 +53,9 @@ static void emit_type(StringBuilder* sb, FeType* t) {
         sb_append_c(sb, simpletype2cstr(t));
     } else if (t->kind == FE_TYPE_RECORD) {
         sb_append_c(sb, "(rec ");
-        for_range(i, 0, t->aggregate.len) {
-            emit_type(sb, t->aggregate.fields[i]);
-            if (i != t->aggregate.len - 1) sb_append_c(sb, " ");
+        for_range(i, 0, t->record.len) {
+            emit_type(sb, t->record.fields[i]);
+            if (i != t->record.len - 1) sb_append_c(sb, " ");
         }
         sb_append_c(sb, ")");
     } else if (t->kind == FE_TYPE_ARRAY) {
