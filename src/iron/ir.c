@@ -202,8 +202,8 @@ FeInst* fe_inst(FeFunction* f, u8 type) {
 }
 
 const size_t fe_inst_sizes[] = {
-    [FE_INST_INVALID]    = 0,
-    [FE_INST_ELIMINATED] = 0,
+    [FE_INST_INVALID]    = sizeof(FeInst),
+    [FE_INST_ELIMINATED] = sizeof(FeInst),
 
     [FE_INST_ADD]  = sizeof(FeInstBinop),
     [FE_INST_SUB]  = sizeof(FeInstBinop),
@@ -230,7 +230,7 @@ const size_t fe_inst_sizes[] = {
 
     [FE_INST_LOAD]        = sizeof(FeInstLoad),
     [FE_INST_VOL_LOAD]    = sizeof(FeInstLoad),
-    [FE_INST_STACK_STORE] = sizeof(FeInstStackLoad),
+    [FE_INST_STACK_LOAD] = sizeof(FeInstStackLoad),
 
     [FE_INST_STORE]       = sizeof(FeInstStore),
     [FE_INST_VOL_STORE]   = sizeof(FeInstStore),

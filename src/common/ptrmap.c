@@ -1,5 +1,7 @@
 #include "common/ptrmap.h"
 
+#define MAX_SEARCH 30
+
 size_t hashfunc(void* key) {
     size_t hash = 5381;
     size_t k = (size_t) key;
@@ -39,8 +41,8 @@ void ptrmap_put(PtrMap* hm, void* key, void* val) {
     }
 
     // search for nearby mars_free slot
-    for (size_t i = (hash_index + 1) % hm->cap; i != hash_index; i++) {
-        if (i >= hm->cap) i = 0;
+    for_urange (index, 1, min(MAX_SEARCH, hm->cap)) {
+        size_t i = (index + hash_index) % hm->cap;
         if ((hm->keys[i] == NULL) || hm->keys[hash_index] == key) {
             hm->keys[i] = key;
             hm->vals[i] = val;
@@ -75,8 +77,8 @@ void* ptrmap_get(PtrMap* hm, void* key) {
     }
 
     // linear search next slots
-    for (size_t i = hash_index + 1; i != hash_index; i++) {
-        if (i >= hm->cap) i = 0;
+    for_urange (index, 1, min(MAX_SEARCH, hm->cap)) {
+        size_t i = (index + hash_index) % hm->cap;
         if (hm->keys[i] == NULL) return PTRMAP_NOT_FOUND;
         if (hm->keys[i] == key) return hm->vals[i];
     }
@@ -97,8 +99,8 @@ void ptrmap_remove(PtrMap* hm, void* key) {
     }
 
     // linear search next slots
-    for (size_t i = hash_index + 1; i != hash_index; i++) {
-        if (i >= hm->cap) i = 0;
+    for_urange (index, 1, min(MAX_SEARCH, hm->cap)) {
+        size_t i = (index + hash_index) % hm->cap;
         if (hm->keys[i] == NULL) return;
         if (hm->keys[hash_index] == key) {
             hm->keys[hash_index] = NULL;

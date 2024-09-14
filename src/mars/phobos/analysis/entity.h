@@ -44,42 +44,6 @@ typedef struct entity {
     bool visited : 1; // for cyclic dependency checking
 } entity;
 
-typedef struct entity2 {
-    bool visited : 1; // for cyclic dependency checking
-
-    string identifier;
-    bool is_const      : 1;
-    
-    AST decl; // If it's NULL_AST, it hasn't been declared yet.
-
-    bool is_used       : 1;
-
-    union {
-        Type* entity_type;
-        mars_module* module;
-    };
-
-    exact_value* const_val;
-    bool is_mutable    : 1;
-
-    entity_table* top; // scope in which it is declared
-    bool is_pointed_to : 1; // does its pointer ever get taken?
-    bool is_module     : 1;
-    bool is_extern     : 1;
-
-    union {
-        u16 param_idx;
-        u16 return_idx;
-    };
-
-    bool is_param : 1;
-    bool is_return : 1;
-
-    bool is_type       : 1;
-
-    bool checked : 1;
-} entity2;
-
 typedef struct entity_table_list {
     entity_table** at;
     size_t len;

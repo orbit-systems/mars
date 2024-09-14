@@ -320,6 +320,10 @@ Type* check_func_literal(mars_module* mod, AST func_literal, entity_table* scope
         }
     }
 
+    // (sandwich): initialize param list
+    func_literal.as_func_literal_expr->paramlen = func_literal.as_func_literal_expr->type.as_fn_type_expr->parameters.len;
+    func_literal.as_func_literal_expr->params = mars_alloc(sizeof(entity*) * func_literal.as_func_literal_expr->paramlen);
+    
     //now we create the entities inside the scope, and error if there is a duplicate
     foreach(AST_typed_field param, func_literal.as_func_literal_expr->type.as_fn_type_expr->parameters) {
         //this WILL be bad for perf.
@@ -335,7 +339,15 @@ Type* check_func_literal(mars_module* mod, AST func_literal, entity_table* scope
         param_entity->entity_type = param_type;
         param_entity->param_idx = count;
         type_add_param(fn_type, param_type);
+
+        // (sandwich): add the entities to the function definition
+        func_literal.as_func_literal_expr->params[count] = param_entity;
     }
+
+    // (sandwich): initialize return list
+    func_literal.as_func_literal_expr->returnlen = func_literal.as_func_literal_expr->type.as_fn_type_expr->returns.len;
+    func_literal.as_func_literal_expr->returns = mars_alloc(sizeof(entity*) * func_literal.as_func_literal_expr->returnlen);
+    
 
     foreach(AST_typed_field returns, func_literal.as_func_literal_expr->type.as_fn_type_expr->returns) {
         //this WILL be bad for perf.
@@ -351,6 +363,10 @@ Type* check_func_literal(mars_module* mod, AST func_literal, entity_table* scope
         return_entity->entity_type = return_type;
         return_entity->return_idx = count;
         type_add_return(fn_type, return_type);
+
+        
+        // (sandwich): add the entities to the function definition
+        func_literal.as_func_literal_expr->returns[count] = return_entity;
     }
     // type_canonicalize_graph();
     //the func literal has been parsed, now we continue down

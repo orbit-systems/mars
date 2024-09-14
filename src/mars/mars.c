@@ -15,9 +15,11 @@
 
 #include "iron/iron.h"
 
-#include "llta/lexer.h"
+#include "common/ptrmap.h"
 
 flag_set mars_flags;
+
+FeModule* generate_module(mars_module* mars);
 
 int main(int argc, char** argv) {
     #ifndef _WIN32
@@ -37,8 +39,12 @@ int main(int argc, char** argv) {
     
     printf("attempt IR generation\n");
 
-    FeModule* iron_module = fe_new_module(main_mod->module_name);
-    generate_ir_iron_from_mars(main_mod, iron_module);
+    // FeModule* iron_module = fe_new_module(main_mod->module_name);
+    // generate_ir_iron_from_mars(main_mod, iron_module);
+
+
+    FeModule* iron_module = generate_module(main_mod);
+    printstr(fe_emit_ir(iron_module));
 
     printf("IR generated\n");
 

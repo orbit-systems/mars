@@ -81,6 +81,7 @@ FeType* fe_type(FeModule* m, u8 kind) {
     default:
         UNREACHABLE;
     }
+    return NULL;
 }
 
 bool fe_type_has_equivalence(FeType* t) {

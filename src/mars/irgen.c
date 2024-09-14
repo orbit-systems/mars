@@ -79,7 +79,7 @@ FeData* generate_ir_global_from_stmt_decl(FeModule* mod, AST ast) { //FIXME: add
 
             bb = generate_ir_stmt_block(func, bb, ast.as_decl_stmt->rhs.as_func_literal_expr->code_block);
 
-            string s = fe_emit_ir(mod, true);
+            string s = fe_emit_ir(mod);
             printf(str_fmt, str_arg(s));
             return datum;
             

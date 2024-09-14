@@ -50,14 +50,14 @@ void fe_run_all_passes(FeModule* m, bool printout) {
     string text;
     while (m->pass_queue.len > 0) {
         if (printout) {
-            text = fe_emit_ir(m, true);
+            text = fe_emit_ir(m);
             printstr(text);
             string_free(text);
         }
         fe_run_next_pass(m, printout);
     }
     if (printout) {
-        text = fe_emit_ir(m, true);
+        text = fe_emit_ir(m);
         printstr(text);
         string_free(text);
     }
