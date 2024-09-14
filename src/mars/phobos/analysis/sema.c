@@ -94,7 +94,6 @@ Type* check_stmt(mars_module* mod, AST node, entity_table* scope) {
             foreach(AST ret, node.as_return_stmt->returns) {
                 check_expr(mod, ret, scope);
             }
-            general_warning("TODO: actually detect if the returns are used via assignment or not");
             return NULL;
         }
         case AST_if_stmt: {
@@ -146,6 +145,7 @@ Type* check_stmt(mars_module* mod, AST node, entity_table* scope) {
         default:
             error_at_node(mod, node, "[check_module] unexpected token type: %s", ast_type_str[node.type]);
     }
+    return NULL;
 }
 
 checked_expr check_expr(mars_module* mod, AST node, entity_table* scope) {
@@ -173,6 +173,7 @@ checked_expr check_expr(mars_module* mod, AST node, entity_table* scope) {
 
             if (ident_ent == NULL) error_at_node(mod, node, "undefined identifier: " str_fmt, str_arg(node.as_identifier->tok->text));
             
+            ident_ent->been_used = true;
             node.as_identifier->entity = ident_ent;
 
             return (checked_expr){
@@ -257,6 +258,7 @@ checked_expr check_expr(mars_module* mod, AST node, entity_table* scope) {
         default:
             error_at_node(mod, node, "[check_expr] unexpected ast type: %s", ast_type_str[node.type]);
     }
+    return (checked_expr){0};
 }
 
 checked_expr check_literal(mars_module* mod, AST literal) {
@@ -280,6 +282,7 @@ checked_expr check_literal(mars_module* mod, AST literal) {
         default:
             error_at_node(mod, literal, "[INTERNAL COMPILER ERROR] unable to check literal " str_fmt " with type %s", str_arg(literal.as_literal_expr->tok->text), token_type_str[literal.as_literal_expr->tok->type]);
     }
+    return (checked_expr){0};
 }
 
 Type* check_func_literal(mars_module* mod, AST func_literal, entity_table* scope) {
@@ -326,10 +329,11 @@ Type* check_func_literal(mars_module* mod, AST func_literal, entity_table* scope
         }
 
         Type* param_type = ast_to_type(mod, param.type);
-        entity* param_entity = new_entity(func_scope, param.field.as_identifier->tok->text, param.type);
+        entity* param_entity = new_entity(func_scope, param.field.as_identifier->tok->text, param.field);
         param.field.as_identifier->entity = param_entity;
         param_entity->is_param = true;
         param_entity->entity_type = param_type;
+        param_entity->param_idx = count;
         type_add_param(fn_type, param_type);
     }
 
@@ -341,10 +345,11 @@ Type* check_func_literal(mars_module* mod, AST func_literal, entity_table* scope
         }
 
         Type* return_type = ast_to_type(mod, returns.type);
-        entity* return_entity = new_entity(func_scope, returns.field.as_identifier->tok->text, returns.type);
+        entity* return_entity = new_entity(func_scope, returns.field.as_identifier->tok->text, returns.field);
         returns.field.as_identifier->entity = return_entity;
         return_entity->is_return = true;
         return_entity->entity_type = return_type;
+        return_entity->return_idx = count;
         type_add_return(fn_type, return_type);
     }
     // type_canonicalize_graph();
@@ -352,6 +357,14 @@ Type* check_func_literal(mars_module* mod, AST func_literal, entity_table* scope
     foreach (AST stmt, func_literal.as_func_literal_expr->code_block.as_stmt_block->stmts) {
         check_stmt(mod, stmt, func_scope);
     }
+
+    //now, we look through the scope, seeing if a param or a return has been used!
+    foreach(entity* ent, *func_scope) {
+        if (ent->declaration.type != AST_identifier) continue;
+        if (ent->is_param && !ent->been_used) warning_at_node(mod, ent->declaration, "unused param: "str_fmt, str_arg(ent->identifier));
+        else if (ent->is_return && !ent->been_used) warning_at_node(mod, ent->declaration, "unused return: "str_fmt, str_arg(ent->identifier));
+    }
+
     return fn_type;
 }
 

@@ -30,6 +30,7 @@ typedef struct entity {
 
     bool is_param : 1;
     bool is_return : 1;
+    bool been_used : 1;
 
     bool is_const      : 1;
     bool is_mutable    : 1;
