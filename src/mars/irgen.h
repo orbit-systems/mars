@@ -1,23 +1,30 @@
 #pragma once
-#define ATLAS_IRGEN_H
+#define IRGEN_H
 
-#include "iron/iron.h"
+#include "common/ptrmap.h"
 #include "phobos/analysis/sema.h"
+#include "iron/iron.h"
 
-void generate_ir_iron_from_mars(mars_module* mod, FeModule* femod);
+typedef struct IrBuilder {
+    mars_module* mars;
 
-FeData* generate_ir_global_from_stmt_decl(FeModule* mod, AST ast);
-FeInst* generate_ir_expr(FeFunction* func, FeBasicBlock* bb, AST ast);
-FeFunction* generate_ir_function(FeModule* mod, AST ast);
-FeBasicBlock* generate_ir_stmt_block(FeFunction* func, FeBasicBlock* bb, AST stmt_block);
+    FeModule* mod;
+    FeFunction* fn; // current function;
+    FeBasicBlock* bb; // current basic block
 
-FeInst* generate_ir_expr_literal(FeFunction* f, FeBasicBlock* bb, AST ast);
-FeInst* generate_ir_expr_value(FeFunction* f, FeBasicBlock* bb, AST ast);
-FeInst* generate_ir_expr_binop(FeFunction* f, FeBasicBlock* bb, AST ast);
-FeInst* generate_ir_expr_ident_load(FeFunction* f, FeBasicBlock* bb, AST ast);
-FeInst* generate_ir_expr_value(FeFunction* f, FeBasicBlock* bb, AST ast);
-FeInst* generate_ir_expr_address(FeFunction* f, FeBasicBlock* bb, AST ast);
-void generate_ir_stmt_assign(FeFunction* f, FeBasicBlock* bb, AST ast);
-void generate_ir_stmt_return(FeFunction* f, FeBasicBlock* bb, AST ast);
+    // for return statements, which need immediate access to the stack objects for return values
+    FeStackObject** fn_returns;
+    u64 fn_returns_len;
 
-FeType* TEType_to_iron(FeModule* mod, Type* t);
+    PtrMap entity2stackobj;
+} IrBuilder;
+
+FeModule* irgen_module(mars_module* mars);
+FeFunction* irgen_function(IrBuilder* builder, ast_func_literal_expr* fn_literal, FeSymbol* sym);
+void irgen_global(IrBuilder* builder, ast_decl_stmt* global_decl);
+void irgen_block(IrBuilder* builder, ast_stmt_block* block);
+FeInst* irgen_value_expr(IrBuilder* builder, AST expr);
+void irgen_stmt(IrBuilder* builder, AST stmt);
+
+FeType* irgen_mars_to_iron_type(IrBuilder* builder, Type* t);
+string irgen_mangle_identifer(IrBuilder* builder, string ident, bool code);

@@ -19,7 +19,7 @@
 
 flag_set mars_flags;
 
-FeModule* generate_module(mars_module* mars);
+FeModule* irgen_module(mars_module* mars);
 
 int main(int argc, char** argv) {
     #ifndef _WIN32
@@ -39,26 +39,13 @@ int main(int argc, char** argv) {
     
     printf("attempt IR generation\n");
 
-    // FeModule* iron_module = fe_new_module(main_mod->module_name);
-    // generate_ir_iron_from_mars(main_mod, iron_module);
 
-
-    FeModule* iron_module = generate_module(main_mod);
+    FeModule* iron_module = irgen_module(main_mod);
     printstr(fe_emit_ir(iron_module));
 
     printf("IR generated\n");
 
     return 0;
-    //TargetInfo* atlas_target;
-
-    /*switch (mars_flags.target_arch){
-    case TARGET_ARCH_APHELION: 
-        //atlas_target = &aphelion_target_info; 
-        break;
-    default:
-        CRASH("cannot select atlas target");
-       break;
-    }*/
 }
 
 void print_help() {
