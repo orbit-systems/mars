@@ -159,7 +159,7 @@ FeInst* irgen_value_expr(IrBuilder* builder, AST expr) {
         u8 kind = 0;
         switch (binop->op->type) {
         case TOK_ADD: kind = FE_INST_ADD; break;
-        case TOK_LESS_THAN: kind = FE_INST_ILE; break;
+        case TOK_LESS_THAN: kind = FE_INST_ILT; break;
         default: 
             crash("unhandled binop '%s'", token_type_str[binop->op->type]);
         }
@@ -216,10 +216,10 @@ void irgen_stmt(IrBuilder* builder, AST stmt) {
         
         FeInst* cond = irgen_value_expr(builder, ifstmt->condition);
 
-        FeBasicBlock* if_true = fe_new_basic_block(builder->fn, NULL_STR);
-        FeBasicBlock* if_false = fe_new_basic_block(builder->fn, NULL_STR);
+        FeBasicBlock* if_true = fe_new_basic_block(builder->fn, next_block_name());
+        FeBasicBlock* if_false = fe_new_basic_block(builder->fn, next_block_name());
 
-        FeInstBranch* branch = (FeInstBranch*) fe_inst_branch(builder->fn, cond, if_true, if_false);
+        FeInstBranch* branch = (FeInstBranch*) fe_append(builder->bb, fe_inst_branch(builder->fn, cond, if_true, if_false));
 
         FeBasicBlock* previous_backlink = builder->backlink; // save backlink
         builder->backlink = if_false;
@@ -230,6 +230,9 @@ void irgen_stmt(IrBuilder* builder, AST stmt) {
         builder->backlink = previous_backlink; // reset backlink
         builder->bb = if_false;
 
+        break;
+    case AST_stmt_block:
+        irgen_block(builder, stmt.as_stmt_block);
         break;
     default:
         crash("unhandled stmt '%s'", ast_type_str[stmt.type]);
@@ -242,9 +245,6 @@ void irgen_block(IrBuilder* builder, ast_stmt_block* block) {
         irgen_stmt(builder, stmt);
     }
 
-    foreach(FeInst* inst, *builder->bb) {
-        // printf("%p\n", inst);
-    }
 }
 
 FeType* irgen_mars_to_iron_type(IrBuilder* builder, Type* t) {

@@ -238,6 +238,8 @@ enum {
     FE_INST_FDIV,
     FE_INST_FMOD,
 
+    _FE_INST_CMP_START,
+
     // FeInstBinop
     FE_INST_ULT, // <
     FE_INST_UGT, // >
@@ -249,6 +251,8 @@ enum {
     FE_INST_IGE, // >=
     FE_INST_EQ, // ==
     FE_INST_NE, // !=
+
+    _FE_INST_CMP_END,
 
     // FeBinop
     FE_INST_AND,

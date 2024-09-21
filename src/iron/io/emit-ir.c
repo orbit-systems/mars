@@ -86,9 +86,9 @@ static u64 stack_object_index(FeFunction* f, FeStackObject* obj) {
 }
 
 static void emit_sym(StringBuilder* sb, FeSymbol* sym) {
-    sb_append_c(sb, "(sym \"");
+    sb_append_c(sb, "(sym \'");
     sb_append(sb, sym->name);
-    sb_append_c(sb, "\" ");
+    sb_append_c(sb, "\' ");
     switch (sym->binding) {
     case FE_BIND_LOCAL: sb_append_c(sb, "local"); break;
     case FE_BIND_IMPORT: sb_append_c(sb, "import"); break;
@@ -151,10 +151,21 @@ static void emit_inst(StringBuilder* sb, FeInst* inst) {
         [FE_INST_ASR]   = "asr ",
         [FE_INST_NEG]   = "neg ",
         [FE_INST_NOT]   = "not ",
+
+        [FE_INST_ULT]   = "ult ",
+        [FE_INST_UGT]   = "ugt ",
+        [FE_INST_ULE]   = "ule ",
+        [FE_INST_UGE]   = "uge ",
+        [FE_INST_ILT]   = "ilt ",
+        [FE_INST_IGT]   = "igt ",
+        [FE_INST_ILE]   = "ile ",
+        [FE_INST_IGE]   = "ige ",
+        [FE_INST_EQ]    = "eq ",
+        [FE_INST_NE]    = "ne ",
     };
 
     // sb_append_c(sb, "\n      (");
-    sb_printf(sb, "\n"COLOR_INST" % 9llu: "RESET"(", inst->number);
+    sb_printf(sb, "\n"COLOR_INST"     % 9llu: "RESET"(", inst->number);
     switch (inst->kind) {
     case FE_INST_PARAMVAL:
         FeInstParamVal* paramval = (FeInstParamVal*) inst;
@@ -184,6 +195,20 @@ static void emit_inst(StringBuilder* sb, FeInst* inst) {
         emit_type(sb, inst->type);
         sb_printf(sb, COLOR_INST" %u %u"RESET, binop->lhs->number, binop->rhs->number);
         break;
+    case FE_INST_ULT:
+    case FE_INST_UGT:
+    case FE_INST_ULE:
+    case FE_INST_UGE:
+    case FE_INST_ILT:
+    case FE_INST_IGT:
+    case FE_INST_ILE:
+    case FE_INST_IGE:
+    case FE_INST_EQ:
+    case FE_INST_NE:
+        FeInstBinop* cmp = (FeInstBinop*) inst;
+        sb_append_c(sb, opnames[inst->kind]);
+        sb_printf(sb, COLOR_INST"%u %u"RESET, cmp->lhs->number, cmp->rhs->number);
+        break;
     
     case FE_INST_CONST:
         FeInstConst* const_inst = (FeInstConst*) inst;
@@ -201,6 +226,14 @@ static void emit_inst(StringBuilder* sb, FeInst* inst) {
     case FE_INST_STACK_LOAD:
         FeInstStackLoad* stack_load = (FeInstStackLoad*) inst;
         sb_printf(sb, "stack_load "COLOR_STACK"%u"RESET, stack_object_index(inst->bb->function, stack_load->location));
+        break;
+
+    case FE_INST_BRANCH:
+        FeInstBranch* branch = (FeInstBranch*) inst;
+        sb_printf(sb, "branch "COLOR_INST"%u"RESET" \'"str_fmt"\' \'"str_fmt"\'", 
+            branch->cond->number, 
+            str_arg(branch->if_true->name),
+            str_arg(branch->if_false->name));
         break;
     default:
         sb_append_c(sb, "unknown");
@@ -248,14 +281,14 @@ static void emit_function(StringBuilder* sb, FeFunction* f) {
     }    
 
     foreach(FeBasicBlock* bb, f->blocks) {
-        sb_append_c(sb, "        (blk \"");
+        sb_append_c(sb, "        (blk \'");
         sb_append(sb, bb->name);
-        sb_append_c(sb, "\"");
+        sb_append_c(sb, "\'");
         foreach(FeInst* inst, *bb) {
             emit_inst(sb, inst);
         }
 
-        sb_append_c(sb, ")");
+        sb_append_c(sb, ")\n");
     }
 
     sb_append_c(sb, ")");
@@ -266,9 +299,9 @@ string fe_emit_ir(FeModule* m) {
     StringBuilder sb = {0};
     sb_init(&sb);
 
-    sb_append_c(&sb, "(mod \"");
+    sb_append_c(&sb, "(mod \'");
     sb_append(&sb, m->name);
-    sb_append_c(&sb, "\"");
+    sb_append_c(&sb, "\'");
     foreach(FeSymbol* sym, m->symtab) {
         // sb_append_c(&sb, "\n    ");COLOR_SYMBOL
         sb_printf(&sb, COLOR_SYMBOL"\n% 2llu: "RESET, symbol_index(m, sym));

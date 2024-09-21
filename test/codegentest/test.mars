@@ -1,8 +1,10 @@
+
+
 module codegentest;
 
-let relu = fn(x: int) -> int {
-    if (x < 0) {
-        return 0;
+let relu = fn(x, y: int) -> int {
+    if (x < y) {
+        return y;
     }
     return x;
 };

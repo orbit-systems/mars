@@ -28,8 +28,8 @@ void fe_print_message(FeMessage msg) {
     case FE_MSG_SEVERITY_FATAL: printf(STYLE_FG_Red STYLE_Bold "FATAL" STYLE_Reset); break;
     case FE_MSG_SEVERITY_ERROR: printf(STYLE_FG_Red "ERROR" STYLE_Reset); break;
     case FE_MSG_SEVERITY_WARNING: printf(STYLE_FG_Yellow "WARNING" STYLE_Reset); break;
-    case FE_MSG_SEVERITY_LOG: printf("LOG"); break;
+    case FE_MSG_SEVERITY_LOG: printf(STYLE_FG_Green "LOG" STYLE_Reset); break;
     }
-    printf(" from "STYLE_Bold"%s"STYLE_Reset"(): ", msg.function_of_origin);
+    printf(" in "STYLE_Bold"%s"STYLE_Reset"(): ", msg.function_of_origin);
     printf("%s\n", msg.message);
 }

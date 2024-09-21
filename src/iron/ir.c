@@ -276,6 +276,9 @@ FeInst* fe_inst_binop(FeFunction* f, u8 type, FeInst* lhs, FeInst* rhs) {
     } else {
         FE_FATAL(f->mod, "lhs type != rhs type");
     }
+    if (_FE_INST_CMP_START < type && type < _FE_INST_CMP_END) {
+        ir->base.type = fe_type(f->mod, FE_TYPE_BOOL);
+    }
 
     switch (type) {
     case FE_INST_ADD:
