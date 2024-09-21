@@ -1,0 +1,31 @@
+module mandlebrot;
+
+import syscalls "linux_syscalls";
+import enums "linux_enums";
+
+let main = fn(u8[][]: args) -> int {
+    mut x_0, y_0 : f32 = 0;
+    mut x, y: f32 = 0;
+    let palette = " .\'-+=%@#";
+    for (mut i = 0; i < 25; i+=1) {
+        for (mut j = 0; j < 80; j+=1) {
+            x_0 = map(j, 0, 80, -2, 2);
+            y_0 = map(i, 0, 25, -2, 2);
+            x = x_0;
+            y = y_0;
+            for (mut iter = 0; iter < 1000 && (x * x + y * y) < 4; iter+=1) {
+                let xtemp = x * x + y * y - x_0;
+                y = 2 * x * y;
+                x = xtemp;
+            }
+            iter /= 100;
+            syscalls::write(enums::LINUX_STDOUT, cast(mut^)&pallete[cast(int)iter], 1);
+        }
+        syscalls::write(enums::LINUX_STDOUT, cast(mut^)"\n", 1);
+    }
+    return 0;
+}
+
+let map = fn(x, in_min, in_max, out_min, out_max: f32) -> f32 {
+     return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+}
