@@ -221,7 +221,7 @@ enum {
     FE_INST_ELIMINATED, // an FeInst that has been "deleted".
 
     _FE_INST_NO_SIDE_EFFECTS_BEGIN,
-    // FeBinop
+    // FeInstBinop
     _FE_BINOP_BEGIN,
     FE_INST_ADD,
     FE_INST_SUB,
@@ -237,6 +237,18 @@ enum {
     FE_INST_FMUL,
     FE_INST_FDIV,
     FE_INST_FMOD,
+
+    // FeInstBinop
+    FE_INST_ULT, // <
+    FE_INST_UGT, // >
+    FE_INST_ULE, // <=
+    FE_INST_UGE, // >=
+    FE_INST_ILT, // <
+    FE_INST_IGT, // >
+    FE_INST_ILE, // <=
+    FE_INST_IGE, // >=
+    FE_INST_EQ, // ==
+    FE_INST_NE, // !=
 
     // FeBinop
     FE_INST_AND,
@@ -438,27 +450,10 @@ typedef struct FeInstJump {
     FeBasicBlock* dest;
 } FeInstJump;
 
-enum {
-    FE_COND_NONE,
-    FE_COND_ILT,   // signed <
-    FE_COND_IGT,   // signed >
-    FE_COND_ILE,   // signed >=
-    FE_COND_IGE,   // signed <=
-    FE_COND_ULT,   // unsigned <
-    FE_COND_UGT,   // unsigned >
-    FE_COND_ULE,   // unsigned >=
-    FE_COND_UGE,   // unsigned <=
-    FE_COND_EQ,    // ==
-    FE_COND_NE,    // !=
-};
-
 typedef struct FeInstBranch {
     FeInst base;
 
-    u8 cond;
-
-    FeInst* lhs;
-    FeInst* rhs;
+    FeInst* cond;
 
     FeBasicBlock* if_true;
     FeBasicBlock* if_false;
@@ -535,7 +530,7 @@ FeInst* fe_inst_load_symbol(FeFunction* f, FeType* type, FeSymbol* symbol);
 FeInst* fe_inst_mov(FeFunction* f, FeInst* source);
 FeInst* fe_inst_phi(FeFunction* f, u32 count, FeType* type);
 FeInst* fe_inst_jump(FeFunction* f, FeBasicBlock* dest);
-FeInst* fe_inst_branch(FeFunction* f, u8 cond, FeInst* lhs, FeInst* rhs, FeBasicBlock* if_true, FeBasicBlock* if_false);
+FeInst* fe_inst_branch(FeFunction* f, FeInst* cond, FeBasicBlock* if_true, FeBasicBlock* if_false);
 FeInst* fe_inst_paramval(FeFunction* f, u32 param);
 FeInst* fe_inst_returnval(FeFunction* f, u32 param, FeInst* source);
 FeInst* fe_inst_return(FeFunction* f);

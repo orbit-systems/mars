@@ -132,6 +132,18 @@ FeFunction* irgen_function(IrBuilder* builder, ast_func_literal_expr* fn_literal
     return fn;
 }
 
+static bool is_mars_type_unsigned(Type* t) {
+    switch (t->tag) {
+    case TYPE_U8:
+    case TYPE_U16:
+    case TYPE_U32:
+    case TYPE_U64:
+    case TYPE_POINTER:
+        return true;
+    }
+    return false;
+}
+
 // get the value of an expression.
 // this is different from generate_place_expr, which returns a pointer to load/store from.
 FeInst* irgen_value_expr(IrBuilder* builder, AST expr) {
@@ -139,17 +151,18 @@ FeInst* irgen_value_expr(IrBuilder* builder, AST expr) {
     case AST_binary_op_expr:
         ast_binary_op_expr* binop = expr.as_binary_op_expr;
 
+        // generate lhs and rhs
+        FeInst* lhs = irgen_value_expr(builder, binop->lhs);
+        FeInst* rhs = irgen_value_expr(builder, binop->rhs);
+
         // select binop kind
         u8 kind = 0;
         switch (binop->op->type) {
         case TOK_ADD: kind = FE_INST_ADD; break;
+        case TOK_LESS_THAN: kind = FE_INST_ILE; break;
         default: 
             crash("unhandled binop '%s'", token_type_str[binop->op->type]);
         }
-
-        // generate lhs and rhs
-        FeInst* lhs = irgen_value_expr(builder, binop->lhs);
-        FeInst* rhs = irgen_value_expr(builder, binop->rhs);
         // combine
         return fe_append(builder->bb, fe_inst_binop(builder->fn, kind, lhs, rhs));
 
@@ -163,7 +176,6 @@ FeInst* irgen_value_expr(IrBuilder* builder, AST expr) {
         if (obj == PTRMAP_NOT_FOUND) crash("ptrmap could not find stack object of entity");
         // load
         return fe_append(builder->bb, fe_inst_stack_load(builder->fn, obj));
-
     default:
         crash("unhandled expr '%s'", ast_type_str[expr.type]);
         return NULL;
@@ -186,18 +198,37 @@ void irgen_stmt(IrBuilder* builder, AST stmt) {
         // we get the values from the stack objects 
         // and put them in returnvals
 
-        FeInst** return_values = alloca(sizeof(FeInst*) * builder->fn_returns_len);
-
+        FeInst** return_values = mars_alloc(sizeof(FeInst*) * builder->fn_returns_len);
         for_urange (i, 0, builder->fn_returns_len) {
             return_values[i] = fe_append(builder->bb, fe_inst_stack_load(builder->fn, builder->fn_returns[i]));
         }
-
         for_urange (i, 0, builder->fn_returns_len) {
             fe_append(builder->bb, fe_inst_returnval(builder->fn, i, return_values[i]));
         }
-
+        mars_free(return_values);
         // return lmao
         fe_append(builder->bb, fe_inst_return(builder->fn));
+        break;
+    case AST_if_stmt:
+        ast_if_stmt* ifstmt = stmt.as_if_stmt;
+        
+        // TODO("on hold until i rework branches in iron");
+        
+        FeInst* cond = irgen_value_expr(builder, ifstmt->condition);
+
+        FeBasicBlock* if_true = fe_new_basic_block(builder->fn, NULL_STR);
+        FeBasicBlock* if_false = fe_new_basic_block(builder->fn, NULL_STR);
+
+        FeInstBranch* branch = (FeInstBranch*) fe_inst_branch(builder->fn, cond, if_true, if_false);
+
+        FeBasicBlock* previous_backlink = builder->backlink; // save backlink
+        builder->backlink = if_false;
+
+        builder->bb = if_true;        
+        irgen_stmt(builder, ifstmt->if_branch);
+        
+        builder->backlink = previous_backlink; // reset backlink
+        builder->bb = if_false;
 
         break;
     default:

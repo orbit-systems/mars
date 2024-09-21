@@ -211,13 +211,24 @@ const size_t fe_inst_sizes[] = {
     [FE_INST_UMUL] = sizeof(FeInstBinop),
     [FE_INST_IDIV] = sizeof(FeInstBinop),
     [FE_INST_UDIV] = sizeof(FeInstBinop),
-    
+
     [FE_INST_AND]  = sizeof(FeInstBinop),
     [FE_INST_OR]   = sizeof(FeInstBinop),
     [FE_INST_XOR]  = sizeof(FeInstBinop),
     [FE_INST_SHL]  = sizeof(FeInstBinop),
     [FE_INST_LSR]  = sizeof(FeInstBinop),
     [FE_INST_ASR]  = sizeof(FeInstBinop),
+    
+    [FE_INST_ULT]  = sizeof(FeInstBinop),
+    [FE_INST_UGT]  = sizeof(FeInstBinop),
+    [FE_INST_ULE]  = sizeof(FeInstBinop),
+    [FE_INST_UGE]  = sizeof(FeInstBinop),
+    [FE_INST_ILT]  = sizeof(FeInstBinop),
+    [FE_INST_IGT]  = sizeof(FeInstBinop),
+    [FE_INST_ILE]  = sizeof(FeInstBinop),
+    [FE_INST_IGE]  = sizeof(FeInstBinop),
+    [FE_INST_EQ]   = sizeof(FeInstBinop),
+    [FE_INST_NE]   = sizeof(FeInstBinop),
 
     [FE_INST_NOT]     = sizeof(FeInstUnop),
     [FE_INST_NEG]     = sizeof(FeInstUnop),
@@ -398,17 +409,12 @@ FeInst* fe_inst_jump(FeFunction* f, FeBasicBlock* dest) {
     return (FeInst*) ir;
 }
 
-FeInst* fe_inst_branch(FeFunction* f, u8 cond, FeInst* lhs, FeInst* rhs, FeBasicBlock* if_true, FeBasicBlock* if_false) {
+FeInst* fe_inst_branch(FeFunction* f, FeInst* cond, FeBasicBlock* if_true, FeBasicBlock* if_false) {
     FeInstBranch* ir = (FeInstBranch*) fe_inst(f, FE_INST_BRANCH);
     ir->cond = cond;
-    if (cond == 0 || cond > FE_COND_NE) {
-        FE_FATAL(f->mod, cstrprintf("invalid condition %d", cond));
+    if (cond->type->kind != FE_TYPE_BOOL) {
+        FE_FATAL(f->mod, "branch condition must be boolean");
     }
-    if (lhs->type != rhs->type) {
-        FE_FATAL(f->mod, cstrprintf("lhs type != rhs type", cond));
-    }
-    ir->lhs = lhs;
-    ir->rhs = rhs;
     ir->if_true  = if_true;
     ir->if_false = if_false;
     return (FeInst*) ir;
