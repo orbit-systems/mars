@@ -3,7 +3,7 @@ module mandlebrot;
 import syscalls "linux_syscalls";
 import enums "linux_enums";
 
-let main = fn(u8[][]: args) -> int {
+let main = fn([][]u8: args) -> int {
     mut x_0, y_0 : f32 = 0;
     mut x, y: f32 = 0;
     let palette = " .\'-+=%@#";
@@ -19,9 +19,9 @@ let main = fn(u8[][]: args) -> int {
                 x = xtemp;
             }
             iter /= 100;
-            syscalls::write(enums::LINUX_STDOUT, cast(mut^)&pallete[cast(int)iter], 1);
+            syscalls::write(enums::LINUX_STDOUT, cast(^mut)&pallete[cast(int)iter], 1);
         }
-        syscalls::write(enums::LINUX_STDOUT, cast(mut^)"\n", 1);
+        syscalls::write(enums::LINUX_STDOUT, cast(^mut)"\n", 1);
     }
     return 0;
 }
