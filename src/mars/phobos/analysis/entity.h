@@ -39,6 +39,7 @@ typedef struct entity {
     bool is_extern     : 1;
     bool is_used       : 1;
     bool is_pointed_to : 1; // does its pointer ever get taken?
+    bool is_global     : 1;
 
     bool checked : 1;
     bool visited : 1; // for cyclic dependency checking
