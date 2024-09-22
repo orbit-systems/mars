@@ -426,7 +426,19 @@ AST parse_type(parser* p) {
     switch (current_token(p).type) {
         //<identifier>
         case TOK_IDENTIFIER:
-            return parse_identifier(p); 
+            AST left = parse_identifier(p);
+            while (current_token(p).type == TOK_COLON_COLON) {
+                AST namespace_selector = new_ast_node(p, AST_selector_expr);
+                namespace_selector.as_selector_expr->lhs = left;
+                namespace_selector.as_selector_expr->op = &current_token(p);
+                namespace_selector.as_selector_expr->base.start = left.base->start;
+                advance_token(p);
+                AST ident = parse_identifier(p);
+                namespace_selector.as_selector_expr->rhs = ident;
+                namespace_selector.base->end = ident.base->start;
+                left = namespace_selector;
+            }
+            return left;
         //"i8" | "i16" | "i32" | "i64" | "int" |
         //"u8" | "u16" | "u32" | "u64" | "uint" |
         //"f16" | "f32" | "f64" | "float" | "bool" |

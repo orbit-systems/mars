@@ -2,15 +2,16 @@
 
 #include "iron/iron.h"
 
-typedef struct FeMachBuffer    FeMachBuffer;
-typedef struct FeMachVReg      FeMachVReg;
-typedef struct FeMachImmediate FeMachImmediate;
-typedef struct FeMachBase      FeMachBase;
-typedef struct FeMachInst      FeMachInst;
-
+typedef struct FeMachBuffer       FeMachBuffer;
+typedef struct FeMachVReg         FeMachVReg;
+typedef struct FeMachImmediate    FeMachImmediate;
+typedef struct FeMachBase         FeMachBase;
+typedef struct FeMachInst         FeMachInst;
+typedef struct FeMachInstTemplate FeMachInstTemplate;
 
 typedef u32 FeMachVregList;
-typedef u32 FeMachTemplateRef;
+typedef u32 FeMachImmediateList;
+typedef u32 FeMachInstTemplateRef;
 
 da_typedef(FeMachVReg);
 da_typedef(u32);
@@ -66,9 +67,10 @@ struct FeMachBase {
 struct FeMachInst {
     FeMachBase base;
 
-    FeMachTemplateRef template; // instruction template index
+    FeMachInstTemplateRef template; // instruction template index
     FeMachVregList uses;
     FeMachVregList defs;
+    FeMachImmediateList imms;
 };
 
 enum {
@@ -77,5 +79,10 @@ enum {
 };
 
 struct FeMachImmediate {
+
+};
+
+// template for a machine instruction.
+struct FeMachInstTemplate {
 
 };
