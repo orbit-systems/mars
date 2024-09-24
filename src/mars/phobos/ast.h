@@ -37,6 +37,7 @@ typedef struct {
     }) \
     AST_TYPE(func_literal_expr, "function literal", { \
         ast_base base; \
+        AST ident; /* only allowed in named function declarations */ \
         AST type; \
         AST code_block; \
         \

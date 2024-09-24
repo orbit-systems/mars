@@ -337,6 +337,9 @@ AST parse_stmt(parser* p) {
             n.as_type_decl_stmt->base.end = &current_token(p);
             advance_token(p);
             return n;
+        case TOK_KEYWORD_FN:
+            n = parse_fn(p, true);
+            return n;
         default:
             token* curr_tok = &current_token(p);
             AST expr = parse_expr(p);
@@ -469,7 +472,7 @@ AST parse_type(parser* p) {
         case TOK_KEYWORD_ENUM:
             return parse_enum(p);
         case TOK_KEYWORD_FN:
-            return parse_fn(p);
+            return parse_fn(p, false);
 
 /*
         case TOK_OPEN_BRACKET:
@@ -734,7 +737,7 @@ AST parse_atomic_expr_term(parser* p) {
             return n;
         //fn lit or fn ptr. who knows?
         case TOK_KEYWORD_FN:
-            return parse_fn(p);
+            return parse_fn(p, false);
         case TOK_OPEN_PAREN:
             advance_token(p);
             n = parse_expr(p);
@@ -868,7 +871,7 @@ int verify_type(parser* p) {
     }
 }
 
-AST parse_fn(parser* p) {
+AST parse_fn(parser* p, bool ident_expected) {
     debug_trace(p);
     /*<fn_literal> ::= "fn" "(" (<param_list> ("," | E) | E) ")" ("->" (<type> | "(" <param_list> ")") | E) <stmt_block>
 
@@ -886,6 +889,12 @@ AST parse_fn(parser* p) {
     da_init(&n.as_fn_type_expr->parameters, 1);
     da_init(&n.as_fn_type_expr->returns, 1);
     advance_token(p);
+    // skip identifier if allowed, it's already been noticed up the chain
+    AST literal_ident = NULL_AST;
+    if (ident_expected) {
+        if (current_token(p).type != TOK_IDENTIFIER) error_at_parser(p, "expected identifier");
+        literal_ident = parse_identifier(p);
+    }
     if (current_token(p).type != TOK_OPEN_PAREN) error_at_parser(p, "expected (");
     advance_token(p);
 
@@ -973,10 +982,10 @@ AST parse_fn(parser* p) {
     }
     n.as_fn_type_expr->base.end = &current_token(p);
 
-    if (n.as_fn_type_expr->is_literal == true) {
+    if (n.as_fn_type_expr->is_literal) {
         AST lit = new_ast_node(p, AST_func_literal_expr);
         lit.as_func_literal_expr->base.start = n.as_fn_type_expr->base.start;
-
+        lit.as_func_literal_expr->ident = literal_ident;
         lit.as_func_literal_expr->type = n;
         lit.as_func_literal_expr->code_block = parse_stmt_block(p);
         lit.as_func_literal_expr->base.end = &current_token(p);

@@ -31,7 +31,7 @@ int verify_binop(parser* p, token tok, bool error);
 AST parse_binop_recurse(parser* p, AST lhs, int precedence);
 AST parse_atomic_expr(parser* p);
 AST parse_atomic_expr_term(parser* p);
-AST parse_fn(parser* p);
+AST parse_fn(parser* p, bool ident_expected);
 AST parse_stmt_block(parser* p);
 AST parse_aggregate(parser* p);
 AST parse_enum(parser* p);
