@@ -26,3 +26,4 @@ extern FePass fe_pass_movprop;
 extern FePass fe_pass_elim;
 extern FePass fe_pass_tdce;
 extern FePass fe_pass_algsimp;
+extern FePass fe_pass_stackprom;

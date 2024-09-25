@@ -7,32 +7,72 @@
 
 int main() {
 
-    FeModule* m = fe_new_module(str("test"));
+    FeModule* m = fe_new_module(str("cfg"));
 
-    FeSymbol* sym = fe_new_symbol(m, str("add_mul"), FE_BIND_LOCAL);
-    FeFunction* f = fe_new_function(m, sym);
-    fe_init_func_params(f, 2);
-    fe_add_func_param(f, fe_type(m, FE_TYPE_I64));
-    fe_add_func_param(f, fe_type(m, FE_TYPE_I64));
-    fe_init_func_returns(f, 2);
-    fe_add_func_return(f, fe_type(m, FE_TYPE_I64));
-    fe_add_func_return(f, fe_type(m, FE_TYPE_I64));
+    FeSymbol* fn_sym = fe_new_symbol(m, str("foo"), FE_BIND_EXPORT);
+    FeFunction* fn = fe_new_function(m, fn_sym);
 
-    FeBasicBlock* bb = fe_new_basic_block(f, str("block1"));
-    FeInstParamVal* p0 = (FeInstParamVal*) fe_append(bb, fe_inst_paramval(f, 0));
-    FeInstParamVal* p1 = (FeInstParamVal*) fe_append(bb, fe_inst_paramval(f, 1));
+    fe_init_func_params(fn, 2);
+    fe_add_func_param(fn, fe_type(m, FE_TYPE_I64));
+    fe_add_func_param(fn, fe_type(m, FE_TYPE_I64));
 
-    FeInst* add = fe_append(bb, fe_inst_binop(f, FE_INST_ADD, (FeInst*) p0, (FeInst*) p1)); 
-    FeInst* mul = fe_append(bb, fe_inst_binop(f, FE_INST_UMUL, (FeInst*) p0, (FeInst*) p1)); 
+    fe_init_func_returns(fn, 1);
+    fe_add_func_return(fn, fe_type(m, FE_TYPE_I64));
 
-    FeInst* r0 = fe_append(bb, fe_inst_returnval(f, 0, (FeInst*) add));
-    FeInst* r1 = fe_append(bb, fe_inst_returnval(f, 1, (FeInst*) mul));
+    /*
+    fn foo(x: int) -> int {
+        mut y: int;
+        if x == 1 {
+            y = 3;
+        }
+        return y;
+    }
+    */
 
-    fe_append(bb, fe_inst_return(f));
+    FeStackObject* var_x = fe_new_stackobject(fn, fe_type(m, FE_TYPE_I64));
+    FeStackObject* var_y = fe_new_stackobject(fn, fe_type(m, FE_TYPE_I64));
+    
+    FeBasicBlock* entry_bb = fe_new_basic_block(fn, str("entry"));
+    FeBasicBlock* if_bb = fe_new_basic_block(fn, str("if_true"));
+    FeBasicBlock* return_bb = fe_new_basic_block(fn, str("return"));
 
-    fe_run_all_passes(m, true);
+    // entry bb
+    {
+        FeInstParamVal* x_paramval = (FeInstParamVal*) fe_append(entry_bb, fe_inst_paramval(fn, 0));
+        FeInstStackStore* x_init_store = (FeInstStackStore*) fe_append(entry_bb, fe_inst_stack_store(fn, var_x, (FeInst*)x_paramval));
 
-    printf("\n// emit c\n");
-    printstr(fe_emit_c(m));
+        FeInstConst* zero = (FeInstConst*) fe_append(entry_bb, fe_inst_const(fn, fe_type(m, FE_TYPE_I64)));
+        zero->i64 = 0ul;
 
+        FeInstStackStore* y_init_store = (FeInstStackStore*) fe_append(entry_bb, fe_inst_stack_store(fn, var_y, (FeInst*)zero));
+
+        // load and compare
+        FeInst* x_load = fe_append(entry_bb, fe_inst_stack_load(fn, var_x));
+
+        FeInstConst* one = (FeInstConst*) fe_append(entry_bb, fe_inst_const(fn, fe_type(m, FE_TYPE_I64)));
+        one->i64 = 1ul;
+
+        FeInst* compare_eq = fe_append(entry_bb, fe_inst_binop(fn, FE_INST_EQ, x_load, (FeInst*) one));
+        FeInst* branch = fe_append(entry_bb, fe_inst_branch(fn, compare_eq, if_bb, return_bb));
+    }
+
+    // if bb
+    {
+        FeInstConst* three = (FeInstConst*) fe_append(if_bb, fe_inst_const(fn, fe_type(m, FE_TYPE_I64)));
+        three->i64 = 3ul;
+
+        FeInstStackStore* y_store = (FeInstStackStore*) fe_append(if_bb, fe_inst_stack_store(fn, var_y, (FeInst*)three));
+        FeInst* jump = fe_append(if_bb, fe_inst_jump(fn, return_bb));
+
+    }
+
+    // return bb
+    {
+        FeInst* y_load = fe_append(return_bb, fe_inst_stack_load(fn, var_y));
+
+        FeInst* returnval = fe_append(return_bb, fe_inst_returnval(fn, 0, y_load));
+        FeInst* ret = fe_append(return_bb, fe_inst_return(fn));
+    }
+
+    printstr(fe_emit_ir(m));
 }

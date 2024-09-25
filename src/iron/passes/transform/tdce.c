@@ -159,7 +159,7 @@ static void tdce_on_function(FeFunction* f) {
     // if (elimd) tdce_on_function(f);
 }
 
-void run_pass_tdce(FeModule* mod) {
+static void run_pass_tdce(FeModule* mod) {
 
     for_urange(i, 0, mod->functions_len) {
         tdce_on_function(mod->functions[i]);

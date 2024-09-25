@@ -1,0 +1,9 @@
+module cfg;
+
+fn foo(a, b: int) -> int {
+    mut x: int = 1;
+    if a == b {
+        x = a;
+    }
+    return x;
+}

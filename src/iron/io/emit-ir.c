@@ -235,6 +235,11 @@ static void emit_inst(StringBuilder* sb, FeInst* inst) {
             str_arg(branch->if_true->name),
             str_arg(branch->if_false->name));
         break;
+    
+    case FE_INST_JUMP:
+        FeInstJump* jump = (FeInstJump*) inst;
+        sb_printf(sb, "jump \'"str_fmt"\'", str_arg(jump->dest->name));
+        break;
     default:
         sb_append_c(sb, "unknown");
         break;
