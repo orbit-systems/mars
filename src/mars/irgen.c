@@ -21,12 +21,25 @@ FeModule* irgen_module(mars_module* mars) {
     IrBuilder builder = new_builder(mars, mod);
 
     foreach(AST decl, mars->program_tree) {
-        if (decl.type == AST_decl_stmt) {
-            irgen_global(&builder, decl.as_decl_stmt);
+        switch (decl.type) {
+        case AST_decl_stmt:
+            irgen_global_decl(&builder, decl.as_decl_stmt);
+            break;
+        case AST_func_literal_expr:
+            irgen_global_fn_decl(&builder, decl.as_func_literal_expr);
+            break;
         }
     }
 
     return mod;
+}
+
+void irgen_global_fn_decl(IrBuilder* builder, ast_func_literal_expr* func) {
+    string mars_identifier = func->ident.as_identifier->tok->text;
+    string global_sym_str = irgen_mangle_identifer(builder, mars_identifier, false);
+    
+    FeSymbol* global_sym = fe_new_symbol(builder->mod, global_sym_str, FE_BIND_EXPORT);
+    irgen_function(builder, func, global_sym);
 }
 
 // makes turns a mars identifier into a mangled/transformed symbol name
@@ -46,7 +59,7 @@ string irgen_mangle_identifer(IrBuilder* builder, string ident, bool code) {
 }
 
 // generates a global declaration.
-void irgen_global(IrBuilder* builder, ast_decl_stmt* global_decl) {
+void irgen_global_decl(IrBuilder* builder, ast_decl_stmt* global_decl) {
     // assume lhs.len == 1, since multiple lhs requires function calls
     // which are illegal at the global scope
     // cause globals must be initialized to comptime constant vals

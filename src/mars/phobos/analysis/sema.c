@@ -23,6 +23,20 @@ void check_module(mars_module* mod) {
 
 Type* check_stmt(mars_module* mod, AST node, entity_table* scope) {
     switch(node.type) {
+        case AST_func_literal_expr: {
+            ast_func_literal_expr* fn = node.as_func_literal_expr;
+            string ident = fn->ident.base->start->text;
+
+            if (search_for_entity(scope, ident)) 
+                error_at_node(mod, fn->ident, "identifier already exists in scope");
+            
+            entity* fn_ent = new_entity(scope, ident, node);
+
+            fn_ent->entity_type = check_func_literal(mod, node, scope);
+            fn_ent->is_mutable = false;
+            fn->ident.as_identifier->entity = fn_ent;
+            return NULL;
+        } break;
         case AST_decl_stmt: {
             checked_expr rhs = check_expr(mod, node.as_decl_stmt->rhs, scope);
             // rhs.mutable = node.as_decl_stmt->is_mut;

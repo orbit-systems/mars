@@ -1,0 +1,11 @@
+
+
+module x;
+
+let add = fn(a, b: int) -> int {
+    return a + b;
+};
+
+fn add_new(a, b: int) -> int {
+    return a + b;
+}
