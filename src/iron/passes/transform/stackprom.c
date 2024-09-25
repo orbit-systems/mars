@@ -18,11 +18,21 @@
 // this is gonna be very inefficient, but it will work for now.
 
 static bool candidate_for_stackprom(FeStackObject* obj, FeFunction* f) {
+    
+    // only promote if you're storing a scalar.
+    if (!fe_type_is_scalar(obj->t)) {
+        return false;
+    }
+
+    // only promote if the scalar is only used through stack loads/stores
     foreach(FeBasicBlock* bb, f->blocks) {
         foreach(FeInst* inst, *bb) {
-
+            if (inst->kind == FE_INST_STACK_ADDR && ((FeInstStackAddr*)inst)->object == obj) {
+                return false;
+            }
         }
     }
+    return true;
 }
 
 static void per_function(FeFunction* f) {
@@ -31,11 +41,12 @@ static void per_function(FeFunction* f) {
 
 static void run_pass_stackprom(FeModule* m) {
     for_urange(i, 0, m->functions_len) {
-        per_function(m->functions[i]);
+        // per_function(m->functions[i]);
     }
 }
 
 FePass fe_pass_stackprom = {
     .name = "stackprom",
     .callback = run_pass_stackprom,
+    .requires_cfg = true,
 };

@@ -74,5 +74,9 @@ int main() {
         FeInst* ret = fe_append(return_bb, fe_inst_return(fn));
     }
 
+    fe_sched_pass(m, &fe_pass_stackprom);
+
+    fe_run_all_passes(m, true);
+
     printstr(fe_emit_ir(m));
 }

@@ -270,7 +270,7 @@ enum {
     FE_INST_BITCAST,
 
     // FeInstStackAddr
-    FE_INST_STACKADDR,
+    FE_INST_STACK_ADDR,
 
     // FeInstFieldPtr
     FE_INST_FIELDPTR,

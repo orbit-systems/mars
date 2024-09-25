@@ -235,7 +235,7 @@ const size_t fe_inst_sizes[] = {
     [FE_INST_CAST]    = sizeof(FeInstUnop),
     [FE_INST_BITCAST] = sizeof(FeInstUnop),
 
-    [FE_INST_STACKADDR] = sizeof(FeInstStackAddr),
+    [FE_INST_STACK_ADDR] = sizeof(FeInstStackAddr),
     [FE_INST_FIELDPTR]  = sizeof(FeInstFieldPtr),
     [FE_INST_INDEXPTR]  = sizeof(FeInstIndexPtr),
 
@@ -305,7 +305,7 @@ FeInst* fe_inst_unop(FeFunction* f, u8 type, FeInst* source) {
 }
 
 FeInst* fe_inst_stackaddr(FeFunction* f, FeStackObject* obj) {
-    FeInstStackAddr* ir = (FeInstStackAddr*) fe_inst(f, FE_INST_STACKADDR);
+    FeInstStackAddr* ir = (FeInstStackAddr*) fe_inst(f, FE_INST_STACK_ADDR);
 
     ir->object = obj;
     return (FeInst*) ir;
