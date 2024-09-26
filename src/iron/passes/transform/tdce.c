@@ -57,7 +57,6 @@ static void register_uses(FeInst* ir) {
         break;
 
     case FE_INST_INVALID:
-    case FE_INST_ELIMINATED:
     case FE_INST_CONST:
     case FE_INST_PARAMVAL:
     case FE_INST_STACK_ADDR:
@@ -71,16 +70,16 @@ static void register_uses(FeInst* ir) {
 
 static void reset_use_counts(FeFunction* f) {
     for_urange(i, 0, f->blocks.len) {
-        for_urange(j, 0, f->blocks.at[i]->len) {
-            f->blocks.at[i]->at[j]->use_count = 0;
+        for_inst(inst, *f->blocks.at[i]) {
+            inst->use_count = 0;
         }
     }
 }
 
 static void count_uses_func(FeFunction* f) {
     for_urange(i, 0, f->blocks.len) {
-        for_urange(j, 0, f->blocks.at[i]->len) {
-            register_uses(f->blocks.at[i]->at[j]);
+        for_inst(inst, *f->blocks.at[i]) {
+            register_uses(inst);
         }
     }
 }
@@ -132,7 +131,6 @@ static void try_eliminate(FeInst* ir) {
         try_eliminate(unop->source);
         break;
     case FE_INST_INVALID:
-    case FE_INST_ELIMINATED:
     case FE_INST_CONST:
     case FE_INST_PARAMVAL:
     case FE_INST_RETURN:
@@ -141,7 +139,8 @@ static void try_eliminate(FeInst* ir) {
         CRASH("unhandled inst type %d", ir->kind);
         break;
     }
-    ir->kind = FE_INST_ELIMINATED;
+    // ir->kind = FE_INST_ELIMINATED;
+    fe_remove(ir);
 }
 
 static void tdce_on_function(FeFunction* f) {
@@ -150,10 +149,8 @@ static void tdce_on_function(FeFunction* f) {
     count_uses_func(f);
 
     for_urange(i, 0, f->blocks.len) {
-        for_urange(j, 0, f->blocks.at[i]->len) {
-            FeInst* ir = f->blocks.at[i]->at[j];
-            if (ir->kind == FE_INST_ELIMINATED) continue;
-            try_eliminate(ir);
+        for_inst(inst, *f->blocks.at[i]) {
+            try_eliminate(inst);
         }
     }
     // if (elimd) tdce_on_function(f);

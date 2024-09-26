@@ -134,7 +134,7 @@ static void emit_type(StringBuilder* sb, FeType* t) {
     }
 }
 
-static void emit_inst(StringBuilder* sb, FeInst* inst) {
+static void emit_inst(StringBuilder* sb, FeFunction* fn, FeInst* inst) {
 
     static const char* opnames[] = {
         [FE_INST_ADD]   = "add ",
@@ -219,13 +219,13 @@ static void emit_inst(StringBuilder* sb, FeInst* inst) {
     case FE_INST_STACK_STORE:
         FeInstStackStore* stack_store = (FeInstStackStore*) inst;
         sb_printf(sb, "stack_store "COLOR_STACK"%u"COLOR_INST" %u"RESET, 
-            stack_object_index(inst->bb->function, stack_store->location),
+            stack_object_index(fn, stack_store->location),
             stack_store->value->number
         );
         break;
     case FE_INST_STACK_LOAD:
         FeInstStackLoad* stack_load = (FeInstStackLoad*) inst;
-        sb_printf(sb, "stack_load "COLOR_STACK"%u"RESET, stack_object_index(inst->bb->function, stack_load->location));
+        sb_printf(sb, "stack_load "COLOR_STACK"%u"RESET, stack_object_index(fn, stack_load->location));
         break;
 
     case FE_INST_BRANCH:
@@ -252,7 +252,7 @@ static void emit_function(StringBuilder* sb, FeFunction* f) {
     {
         int counter = 0;
         foreach(FeBasicBlock* bb, f->blocks) {
-            foreach(FeInst* inst, *bb) {
+            for_inst(inst, *bb) {
                 inst->number = counter++;
             }
         }
@@ -289,8 +289,8 @@ static void emit_function(StringBuilder* sb, FeFunction* f) {
         sb_append_c(sb, "        (blk \'");
         sb_append(sb, bb->name);
         sb_append_c(sb, "\'");
-        foreach(FeInst* inst, *bb) {
-            emit_inst(sb, inst);
+        for_inst(inst, *bb) {
+            emit_inst(sb, f, inst);
         }
 
         sb_append_c(sb, ")\n");

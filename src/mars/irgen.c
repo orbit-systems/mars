@@ -91,6 +91,8 @@ FeFunction* irgen_function(IrBuilder* builder, ast_func_literal_expr* fn_literal
     FeBasicBlock* entry_bb = fe_new_basic_block(fn, next_block_name());
     builder->bb = entry_bb;
 
+    FeInst** paramvals = mars_alloc(sizeof(FeInst*) * fn_literal->paramlen);
+
     // initialize FeFunction params and add the paramval instructions
     for_range (i, 0, fn_literal->paramlen) {
         entity* param_entity = fn_literal->params[i];
@@ -99,7 +101,7 @@ FeFunction* irgen_function(IrBuilder* builder, ast_func_literal_expr* fn_literal
         // add param to function definition
         fe_add_func_param(fn, param_fe_type);
         // add the paramval inst
-        fe_append(entry_bb, fe_inst_paramval(fn, i));
+        paramvals[i] = fe_append(entry_bb, fe_inst_paramval(fn, i));
     }
 
     // store all the params in stack objects.
@@ -112,8 +114,10 @@ FeFunction* irgen_function(IrBuilder* builder, ast_func_literal_expr* fn_literal
         // add it to the builder's ptrmap
         ptrmap_put(&builder->entity2stackobj, param_entity, param_stack_object);
         // store in stack object
-        fe_append(entry_bb, fe_inst_stack_store(fn, param_stack_object, entry_bb->at[i]));
+        fe_append(entry_bb, fe_inst_stack_store(fn, param_stack_object, paramvals[i]));
     }
+
+    mars_free(paramvals);
 
     // for kayla: the reason these are two different loops is because
     // irons needs the paramval instructions at the beginning of the

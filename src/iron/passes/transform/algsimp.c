@@ -207,7 +207,7 @@ static void convert_to_log2(FeInst* inst) {
     }
 }
 
-static bool strength_reduction(FeInst* inst) {
+static bool strength_reduction(FeFunction* fn, FeInst* inst) {
 
     FeInstBinop* binop = (FeInstBinop*) inst;
 
@@ -216,9 +216,9 @@ static bool strength_reduction(FeInst* inst) {
 
         if (binop->rhs->kind == FE_INST_CONST && is_const_power_of_two(binop->rhs)) {
             // x * const = x << log2(const)
-            FeInstConst* log2const = (FeInstConst*) fe_inst_const(binop->base.bb->function, binop->rhs->type);
+            FeInstConst* log2const = (FeInstConst*) fe_inst_const(fn, binop->rhs->type);
             log2const->i64 = ((FeInstConst*)binop->rhs)->i64;
-            fe_insert_inst_before(binop->base.bb, (FeInst*)log2const, inst);
+            fe_insert_inst_before((FeInst*)log2const, inst);
             convert_to_log2((FeInst*)log2const);
             binop->rhs = (FeInst*)log2const;
             inst->kind = FE_INST_SHL;
@@ -240,9 +240,8 @@ void run_pass_algsimp(FeModule* mod) {
 
         for_range(bi, 0, f->blocks.len) {
             FeBasicBlock* bb = f->blocks.at[bi];
-            for_range(ii, 0, bb->len) {
-                if (bb->at[ii]->kind != FE_INST_ELIMINATED);
-                da_append(&worklist, bb->at[ii]);
+            for_inst(inst, *bb) {
+                da_append(&worklist, inst);
             }
         }
 
@@ -265,16 +264,16 @@ void run_pass_algsimp(FeModule* mod) {
 
             bool needs_inserting = false;
             if (inst != (new_inst = identity_reduction(inst, &needs_inserting))){
-                if (needs_inserting) fe_insert_inst_before(inst->bb, new_inst, inst);
+                if (needs_inserting) fe_insert_inst_before(new_inst, inst);
                 fe_rewrite_uses(f, inst, new_inst);
-                inst->kind = FE_INST_ELIMINATED;
+                fe_remove(inst);
                 fe_add_uses_to_worklist(f, new_inst, &worklist);
             } else if (inst != (new_inst = const_eval(f, inst))) {
-                fe_insert_inst_before(inst->bb, new_inst, inst);
+                fe_insert_inst_before(new_inst, inst);
                 fe_rewrite_uses(f, inst, new_inst);
-                inst->kind = FE_INST_ELIMINATED;
+                fe_remove(inst);
                 fe_add_uses_to_worklist(f, new_inst, &worklist);
-            } else if (strength_reduction(inst)) {
+            } else if (strength_reduction(f, inst)) {
                 fe_add_uses_to_worklist(f, inst, &worklist);
             }
         }
