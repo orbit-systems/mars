@@ -222,44 +222,46 @@ enum {
 
     // FeInstBinop
     _FE_BINOP_BEGIN,
-    FE_INST_ADD,
-    FE_INST_SUB,
-    FE_INST_IMUL,
-    FE_INST_UMUL,
-    FE_INST_IDIV,
-    FE_INST_UDIV,
-    FE_INST_IMOD,
-    FE_INST_UMOD,
 
-    FE_INST_FADD,
-    FE_INST_FSUB,
-    FE_INST_FMUL,
-    FE_INST_FDIV,
-    FE_INST_FMOD,
+        FE_INST_ADD,
+        FE_INST_SUB,
+        FE_INST_IMUL,
+        FE_INST_UMUL,
+        FE_INST_IDIV,
+        FE_INST_UDIV,
+        FE_INST_IMOD,
+        FE_INST_UMOD,
 
-    _FE_INST_CMP_START,
+        FE_INST_FADD,
+        FE_INST_FSUB,
+        FE_INST_FMUL,
+        FE_INST_FDIV,
+        FE_INST_FMOD,
 
-    // FeInstBinop
-    FE_INST_ULT, // <
-    FE_INST_UGT, // >
-    FE_INST_ULE, // <=
-    FE_INST_UGE, // >=
-    FE_INST_ILT, // <
-    FE_INST_IGT, // >
-    FE_INST_ILE, // <=
-    FE_INST_IGE, // >=
-    FE_INST_EQ, // ==
-    FE_INST_NE, // !=
+        _FE_INST_CMP_START,
 
-    _FE_INST_CMP_END,
+            // FeInstBinop
+            FE_INST_ULT, // <
+            FE_INST_UGT, // >
+            FE_INST_ULE, // <=
+            FE_INST_UGE, // >=
+            FE_INST_ILT, // <
+            FE_INST_IGT, // >
+            FE_INST_ILE, // <=
+            FE_INST_IGE, // >=
+            FE_INST_EQ, // ==
+            FE_INST_NE, // !=
 
-    // FeBinop
-    FE_INST_AND,
-    FE_INST_OR,
-    FE_INST_XOR,
-    FE_INST_SHL,
-    FE_INST_ASR,
-    FE_INST_LSR,
+        _FE_INST_CMP_END,
+
+        // FeBinop
+        FE_INST_AND,
+        FE_INST_OR,
+        FE_INST_XOR,
+        FE_INST_SHL,
+        FE_INST_ASR,
+        FE_INST_LSR,
+
     _FE_BINOP_END,
 
     // FeInstUnop
@@ -524,9 +526,9 @@ FeInst* fe_insert_inst_after(FeInst* new, FeInst* ref);
 FeInst* fe_remove(FeInst* inst);
 FeInst* fe_move_before(FeInst* inst, FeInst* ref);
 FeInst* fe_move_after(FeInst* inst, FeInst* ref);
-
 void    fe_rewrite_uses(FeFunction* f, FeInst* source, FeInst* dest);
 void    fe_add_uses_to_worklist(FeFunction* f, FeInst* source, da(FeInstPTR)* worklist);
+bool    fe_inst_is_terminator(FeInst* inst);
 
 FeInst* fe_inst(FeFunction* f, u8 type);
 FeInst* fe_inst_binop(FeFunction* f, u8 type, FeInst* lhs, FeInst* rhs);

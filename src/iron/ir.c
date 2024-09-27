@@ -467,6 +467,18 @@ FeInst* fe_inst_return(FeFunction* f) {
     return fe_inst(f, FE_INST_RETURN);
 }
 
+// hasta la vista baby
+bool fe_inst_is_terminator(FeInst* inst) {
+    switch (inst->kind) {
+    case FE_INST_RETURN:
+    case FE_INST_BRANCH:
+    case FE_INST_JUMP:
+        return true;    
+    default:
+        return false;
+    }
+}
+
 // remove inst from its basic block
 FeInst* fe_remove(FeInst* inst) {
     inst->prev->next = inst->next;
