@@ -13,11 +13,11 @@ int main() {
     FeFunction* fn = fe_new_function(m, fn_sym);
 
     fe_init_func_params(fn, 2);
-    fe_add_func_param(fn, fe_type(m, FE_TYPE_I64));
-    fe_add_func_param(fn, fe_type(m, FE_TYPE_I64));
+    fe_add_func_param(fn, FE_TYPE_I64);
+    fe_add_func_param(fn, FE_TYPE_I64);
 
     fe_init_func_returns(fn, 1);
-    fe_add_func_return(fn, fe_type(m, FE_TYPE_I64));
+    fe_add_func_return(fn, FE_TYPE_I64);
 
     /*
     fn foo(x: int) -> int {
@@ -29,8 +29,8 @@ int main() {
     }
     */
 
-    FeStackObject* var_x = fe_new_stackobject(fn, fe_type(m, FE_TYPE_I64));
-    FeStackObject* var_y = fe_new_stackobject(fn, fe_type(m, FE_TYPE_I64));
+    FeStackObject* var_x = fe_new_stackobject(fn, FE_TYPE_I64);
+    FeStackObject* var_y = fe_new_stackobject(fn, FE_TYPE_I64);
     
     FeBasicBlock* entry_bb = fe_new_basic_block(fn, str("entry"));
     FeBasicBlock* if_bb = fe_new_basic_block(fn, str("if_true"));
@@ -41,7 +41,7 @@ int main() {
         FeInstParamVal* x_paramval = (FeInstParamVal*) fe_append(entry_bb, fe_inst_paramval(fn, 0));
         FeInstStackStore* x_init_store = (FeInstStackStore*) fe_append(entry_bb, fe_inst_stack_store(fn, var_x, (FeInst*)x_paramval));
 
-        FeInstConst* zero = (FeInstConst*) fe_append(entry_bb, fe_inst_const(fn, fe_type(m, FE_TYPE_I64)));
+        FeInstConst* zero = (FeInstConst*) fe_append(entry_bb, fe_inst_const(fn, FE_TYPE_I64));
         zero->i64 = 0ul;
 
         FeInstStackStore* y_init_store = (FeInstStackStore*) fe_append(entry_bb, fe_inst_stack_store(fn, var_y, (FeInst*)zero));
@@ -49,7 +49,7 @@ int main() {
         // load and compare
         FeInst* x_load = fe_append(entry_bb, fe_inst_stack_load(fn, var_x));
 
-        FeInstConst* one = (FeInstConst*) fe_append(entry_bb, fe_inst_const(fn, fe_type(m, FE_TYPE_I64)));
+        FeInstConst* one = (FeInstConst*) fe_append(entry_bb, fe_inst_const(fn, FE_TYPE_I64));
         one->i64 = 1ul;
 
         FeInst* compare_eq = fe_append(entry_bb, fe_inst_binop(fn, FE_INST_EQ, x_load, (FeInst*) one));
@@ -58,7 +58,7 @@ int main() {
 
     // if bb
     {
-        FeInstConst* three = (FeInstConst*) fe_append(if_bb, fe_inst_const(fn, fe_type(m, FE_TYPE_I64)));
+        FeInstConst* three = (FeInstConst*) fe_append(if_bb, fe_inst_const(fn, FE_TYPE_I64));
         three->i64 = 3ul;
 
         FeInstStackStore* y_store = (FeInstStackStore*) fe_append(if_bb, fe_inst_stack_store(fn, var_y, (FeInst*)three));

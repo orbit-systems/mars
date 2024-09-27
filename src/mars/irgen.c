@@ -96,7 +96,7 @@ FeFunction* irgen_function(IrBuilder* builder, ast_func_literal_expr* fn_literal
     // initialize FeFunction params and add the paramval instructions
     for_range (i, 0, fn_literal->paramlen) {
         entity* param_entity = fn_literal->params[i];
-        FeType* param_fe_type = irgen_mars_to_iron_type(builder, param_entity->entity_type);
+        FeType param_fe_type = irgen_mars_to_iron_type(builder, param_entity->entity_type);
     
         // add param to function definition
         fe_add_func_param(fn, param_fe_type);
@@ -128,7 +128,7 @@ FeFunction* irgen_function(IrBuilder* builder, ast_func_literal_expr* fn_literal
     builder->fn_returns_len = fn_literal->returnlen;
     for_range (i, 0, fn_literal->returnlen) {
         entity* return_entity = fn_literal->returns[i];
-        FeType* return_fe_type = irgen_mars_to_iron_type(builder, return_entity->entity_type);
+        FeType return_fe_type = irgen_mars_to_iron_type(builder, return_entity->entity_type);
     
         // add param to function definition
         fe_add_func_return(fn, return_fe_type);
@@ -264,25 +264,25 @@ void irgen_block(IrBuilder* builder, ast_stmt_block* block) {
 
 }
 
-FeType* irgen_mars_to_iron_type(IrBuilder* builder, Type* t) {
+FeType irgen_mars_to_iron_type(IrBuilder* builder, Type* t) {
     switch (t->tag) {
     case TYPE_I64:
     case TYPE_U64: 
-        return fe_type(builder->mod, FE_TYPE_I64);
+        return FE_TYPE_I64;
     case TYPE_I32:
     case TYPE_U32: 
-        return fe_type(builder->mod, FE_TYPE_I32);
+        return FE_TYPE_I32;
     case TYPE_I16:
     case TYPE_U16: 
-        return fe_type(builder->mod, FE_TYPE_I16);
+        return FE_TYPE_I16;
     case TYPE_I8:
     case TYPE_U8: 
-        return fe_type(builder->mod, FE_TYPE_I8);
+        return FE_TYPE_I8;
     case TYPE_POINTER:
     case TYPE_FUNCTION:
-        return fe_type(builder->mod, FE_TYPE_PTR);
+        return FE_TYPE_PTR;
     default:
         crash("can't convert mars type to iron type");
     }
-    return NULL;
+    return FE_TYPE_VOID;
 }

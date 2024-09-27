@@ -9,29 +9,29 @@ void test_algsimp_reassoc() {
     FeSymbol* sym = fe_new_symbol(m, str("algsimp_test"), FE_BIND_LOCAL);
     FeFunction* f = fe_new_function(m, sym);
     fe_init_func_params(f, 1);
-    fe_add_func_param(f, fe_type(m, FE_TYPE_I64));
+    fe_add_func_param(f, FE_TYPE_I64);
     fe_init_func_returns(f, 1);
-    fe_add_func_return(f, fe_type(m, FE_TYPE_I64));
+    fe_add_func_return(f, FE_TYPE_I64);
 
     FeBasicBlock* bb = fe_new_basic_block(f, str("block1"));
 
     FeInstParamVal* p = (FeInstParamVal*) fe_append(bb, fe_inst_paramval(f, 0));
     
     FeInstConst* c1 = (FeInstConst*) fe_append(bb,
-        fe_inst_const(f, fe_type(m, FE_TYPE_I64))
+        fe_inst_const(f, FE_TYPE_I64)
     ); c1->i64 = 5;
 
     FeInstConst* c2 = (FeInstConst*) fe_append(bb,
-        fe_inst_const(f, fe_type(m, FE_TYPE_I64))
+        fe_inst_const(f, FE_TYPE_I64)
     ); c2->i64 = 9;
 
     FeInst* add = fe_append(bb, 
         fe_inst_binop(f, FE_INST_ADD, (FeInst*) p, (FeInst*) c1)
-    ); add->type = fe_type(m, FE_TYPE_I64);
+    ); add->type = FE_TYPE_I64;
 
     FeInst* add2 = fe_append(bb, 
         fe_inst_binop(f, FE_INST_ADD, (FeInst*) add, (FeInst*) c2)
-    ); add2->type = fe_type(m, FE_TYPE_I64);
+    ); add2->type = FE_TYPE_I64;
 
     fe_append(bb, fe_inst_returnval(f, 0, (FeInst*) add2));
     fe_append(bb, fe_inst_return(f));
@@ -54,21 +54,21 @@ void test_algsimp_sr() {
     FeSymbol* sym = fe_new_symbol(m, str("algsimp_test"), FE_BIND_LOCAL);
     FeFunction* f = fe_new_function(m, sym);
     fe_init_func_params(f, 1);
-    fe_add_func_param(f, fe_type(m, FE_TYPE_I64));
+    fe_add_func_param(f, FE_TYPE_I64);
     fe_init_func_returns(f, 1);
-    fe_add_func_return(f, fe_type(m, FE_TYPE_I64));
+    fe_add_func_return(f, FE_TYPE_I64);
 
     FeBasicBlock* bb = fe_new_basic_block(f, str("block1"));
 
     FeInstParamVal* p = (FeInstParamVal*) fe_append(bb, fe_inst_paramval(f, 0));
     
     FeInstConst* c1 = (FeInstConst*) fe_append(bb,
-        fe_inst_const(f, fe_type(m, FE_TYPE_I64))
+        fe_inst_const(f, FE_TYPE_I64)
     ); c1->i64 = 16;
 
     FeInst* mul = fe_append(bb, 
         fe_inst_binop(f, FE_INST_UMUL, (FeInst*) p, (FeInst*) c1)
-    ); mul->type = fe_type(m, FE_TYPE_I64);
+    ); mul->type = FE_TYPE_I64;
 
     fe_append(bb, fe_inst_returnval(f, 0, (FeInst*) mul));
     fe_append(bb, fe_inst_return(f));
@@ -93,21 +93,21 @@ void test_c_gen() {
     FeSymbol* sym = fe_new_symbol(m, str("add_mul"), FE_BIND_LOCAL);
     FeFunction* f = fe_new_function(m, sym);
     fe_init_func_params(f, 2);
-    fe_add_func_param(f, fe_type(m, FE_TYPE_I64));
-    fe_add_func_param(f, fe_type(m, FE_TYPE_I64));
+    fe_add_func_param(f, FE_TYPE_I64);
+    fe_add_func_param(f, FE_TYPE_I64);
     fe_init_func_returns(f, 2);
-    fe_add_func_return(f, fe_type(m, FE_TYPE_I64));
-    fe_add_func_return(f, fe_type(m, FE_TYPE_I64));
+    fe_add_func_return(f, FE_TYPE_I64);
+    fe_add_func_return(f, FE_TYPE_I64);
 
     FeBasicBlock* bb = fe_new_basic_block(f, str("block1"));
     FeInstParamVal* p0 = (FeInstParamVal*) fe_append(bb, fe_inst_paramval(f, 0));
     FeInstParamVal* p1 = (FeInstParamVal*) fe_append(bb, fe_inst_paramval(f, 1));
 
     FeInst* add = fe_append(bb, fe_inst_binop(f, FE_INST_ADD, (FeInst*) p0, (FeInst*) p1)); 
-    add->type = fe_type(m, FE_TYPE_I64);
+    add->type = FE_TYPE_I64;
 
     FeInst* mul = fe_append(bb, fe_inst_binop(f, FE_INST_UMUL, (FeInst*) p0, (FeInst*) p1)); 
-    mul->type = fe_type(m, FE_TYPE_I64);
+    mul->type = FE_TYPE_I64;
 
     FeInst* r0 = fe_append(bb, fe_inst_returnval(f, 0, (FeInst*) add));
     FeInst* r1 = fe_append(bb, fe_inst_returnval(f, 1, (FeInst*) mul));

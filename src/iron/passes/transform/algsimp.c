@@ -55,7 +55,7 @@
 // }
 
 #define int_operate(op, dest, src1, src2) \
-    switch (dest->base.type->kind) {\
+    switch (dest->base.type) {\
     case FE_TYPE_I64:  dest->i64  = src1->i64  op src2->i64;  break;\
     case FE_TYPE_I32:  dest->i32  = src1->i32  op src2->i32;  break;\
     case FE_TYPE_I16:  dest->i16  = src1->i16  op src2->i16;  break;\
@@ -64,7 +64,7 @@
     }
 
 #define uint_operate(op, dest, src1, src2) \
-    switch (dest->base.type->kind) {\
+    switch (dest->base.type) {\
     case FE_TYPE_I64:  dest->i64  = (u64) src1->i64  op (u64) src2->i64;  break;\
     case FE_TYPE_I32:  dest->i32  = (u32) src1->i32  op (u32) src2->i32;  break;\
     case FE_TYPE_I16:  dest->i16  = (u16) src1->i16  op (u16) src2->i16;  break;\
@@ -115,7 +115,7 @@ static bool is_const_one(FeInst* inst) {
     if (inst->kind != FE_INST_CONST) return false;
 
     FeInstConst* lc = (FeInstConst*) inst;
-    switch (lc->base.type->kind) {
+    switch (lc->base.type) {
     case FE_TYPE_I64: return lc->i64 == (i64) 1;
     case FE_TYPE_I32: return lc->i32 == (i32) 1;
     case FE_TYPE_I16: return lc->i16 == (i16) 1;
@@ -132,7 +132,7 @@ static bool is_const_zero(FeInst* inst) {
     if (inst->kind != FE_INST_CONST) return false;
 
     FeInstConst* lc = (FeInstConst*) inst;
-    switch (lc->base.type->kind) {
+    switch (lc->base.type) {
     case FE_TYPE_I64: return lc->i64 == (i64) 0;
     case FE_TYPE_I32: return lc->i32 == (i32) 0;
     case FE_TYPE_I16: return lc->i16 == (i16) 0;
@@ -186,7 +186,7 @@ static FeInst* identity_reduction(FeInst* inst, bool* needs_inserting) {
 
 static bool is_const_power_of_two(FeInst* inst) {
     FeInstConst* lc = (FeInstConst*) inst;
-    switch (lc->base.type->kind) {
+    switch (lc->base.type) {
     case FE_TYPE_I64: return lc->i64 != 0 && (lc->i64 & (lc->i64 - 1)) == 0;
     case FE_TYPE_I32: return lc->i32 != 0 && (lc->i32 & (lc->i32 - 1)) == 0;
     case FE_TYPE_I16: return lc->i16 != 0 && (lc->i16 & (lc->i16 - 1)) == 0;
@@ -198,7 +198,7 @@ static bool is_const_power_of_two(FeInst* inst) {
 
 static void convert_to_log2(FeInst* inst) {
     FeInstConst* lc = (FeInstConst*) inst;
-    switch (lc->base.type->kind) {
+    switch (lc->base.type) {
     case FE_TYPE_I64:lc->i64 = 8*sizeof(lc->i64) - __builtin_clzll(lc->i64) - 1; break;
     case FE_TYPE_I32:lc->i32 = 8*sizeof(lc->i64) - __builtin_clzll(lc->i32) - 1; break;
     case FE_TYPE_I16:lc->i16 = 8*sizeof(lc->i64) - __builtin_clzll(lc->i16) - 1; break;

@@ -23,7 +23,7 @@ FeFunction* fe_new_function(FeModule* mod, FeSymbol* sym) {
     return fn;
 }
 
-FeStackObject* fe_new_stackobject(FeFunction* f, FeType* t) {
+FeStackObject* fe_new_stackobject(FeFunction* f, FeType t) {
     FeStackObject* obj = arena_alloc(&f->alloca, sizeof(*obj), alignof(*obj));
     obj->t = t;
     da_append(&f->stack, obj);
@@ -54,7 +54,7 @@ void fe_init_func_returns(FeFunction* f, u16 count) {
     f->returns.cap = count;
     f->returns.len = 0;
 }
-FeFunctionItem* fe_add_func_param(FeFunction* f, FeType* t) {
+FeFunctionItem* fe_add_func_param(FeFunction* f, FeType t) {
     if (f->params.at == NULL) {
         fe_init_func_params(f, 4);
     }
@@ -67,7 +67,7 @@ FeFunctionItem* fe_add_func_param(FeFunction* f, FeType* t) {
     f->params.at[f->params.len++] = p;
     return p;
 }
-FeFunctionItem* fe_add_func_return(FeFunction* f, FeType* t) {
+FeFunctionItem* fe_add_func_return(FeFunction* f, FeType t) {
     if (f->returns.at == NULL) {
         fe_init_func_params(f, 4);
     }
@@ -215,7 +215,7 @@ FeInst* fe_inst(FeFunction* f, u8 type) {
     if (type >= _FE_INST_MAX) type = FE_INST_INVALID;
     FeInst* ir = arena_alloc(&f->alloca, fe_inst_sizes[type], 8);
     ir->kind = type;
-    ir->type = fe_type(f->mod, FE_TYPE_VOID);
+    ir->type = FE_TYPE_VOID;
     ir->number = 0;
     return ir;
 }
@@ -296,7 +296,7 @@ FeInst* fe_inst_binop(FeFunction* f, u8 type, FeInst* lhs, FeInst* rhs) {
         FE_FATAL(f->mod, "lhs type != rhs type");
     }
     if (_FE_INST_CMP_START < type && type < _FE_INST_CMP_END) {
-        ir->base.type = fe_type(f->mod, FE_TYPE_BOOL);
+        ir->base.type = FE_TYPE_BOOL;
     }
 
     switch (type) {
@@ -344,7 +344,7 @@ FeInst* fe_inst_getindexptr(FeFunction* f, FeInst* index, FeInst* source) {
     return (FeInst*) ir;
 }
 
-FeInst* fe_inst_load(FeFunction* f, FeInst* ptr, FeType* as, bool is_vol) {
+FeInst* fe_inst_load(FeFunction* f, FeInst* ptr, FeType as, bool is_vol) {
     FeInstLoad* ir = (FeInstLoad*) fe_inst(f, FE_INST_LOAD);
     if (!fe_type_is_scalar(as)) {
         FE_FATAL(f->mod, "cannot load/store non-scalar type");
@@ -389,13 +389,13 @@ FeInst* fe_inst_stack_store(FeFunction* f, FeStackObject* location, FeInst* valu
     return (FeInst*) ir;
 }
 
-FeInst* fe_inst_const(FeFunction* f, FeType* type) {
+FeInst* fe_inst_const(FeFunction* f, FeType type) {
     FeInstConst* ir = (FeInstConst*) fe_inst(f, FE_INST_CONST);
     ir->base.type = type;
     return (FeInst*) ir;
 }
 
-FeInst* fe_inst_load_symbol(FeFunction* f, FeType* type, FeSymbol* symbol) {
+FeInst* fe_inst_load_symbol(FeFunction* f, FeType type, FeSymbol* symbol) {
     FeLoadSymbol* ir = (FeLoadSymbol*) fe_inst(f, FE_INST_LOAD_SYMBOL);
     ir->sym = symbol;
     if (!fe_type_is_scalar(type)) {
@@ -411,7 +411,7 @@ FeInst* fe_inst_mov(FeFunction* f, FeInst* source) {
     return (FeInst*) ir;
 }
 
-FeInst* fe_inst_phi(FeFunction* f, u32 count, FeType* type) {
+FeInst* fe_inst_phi(FeFunction* f, u32 count, FeType type) {
     FeInstPhi* ir = (FeInstPhi*) fe_inst(f, FE_INST_PHI);
     ir->base.type = type;
     ir->len = 0;
@@ -434,7 +434,7 @@ FeInst* fe_inst_jump(FeFunction* f, FeBasicBlock* dest) {
 FeInst* fe_inst_branch(FeFunction* f, FeInst* cond, FeBasicBlock* if_true, FeBasicBlock* if_false) {
     FeInstBranch* ir = (FeInstBranch*) fe_inst(f, FE_INST_BRANCH);
     ir->cond = cond;
-    if (cond->type->kind != FE_TYPE_BOOL) {
+    if (cond->type != FE_TYPE_BOOL) {
         FE_FATAL(f->mod, "branch condition must be boolean");
     }
     ir->if_true  = if_true;

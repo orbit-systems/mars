@@ -61,8 +61,8 @@
 #define COLOR_TYPE   STYLE_FG_Yellow
 #define RESET        STYLE_Reset
 
-static char* simpletype2cstr(FeType* t) {
-    switch (t->kind){
+static char* simpletype2cstr(FeType t) {
+    switch (t){
     case FE_TYPE_VOID: return COLOR_TYPE"void"RESET;
     case FE_TYPE_BOOL: return COLOR_TYPE"bool"RESET;
     case FE_TYPE_I8:   return COLOR_TYPE"i8"RESET;
@@ -114,20 +114,22 @@ static void emit_data(StringBuilder* sb, FeModule* m, FeData* data) {
     sb_append_c(sb, ")");
 }
 
-static void emit_type(StringBuilder* sb, FeType* t) {
-    if (_FE_TYPE_SIMPLE_BEGIN < t->kind && t->kind < _FE_TYPE_SIMPLE_END) {
+static void emit_type(StringBuilder* sb, FeModule* m, FeType t) {
+    FeComplexType* ct = fe_type_get_structure(m, t);
+    if (t < _FE_TYPE_SIMPLE_END) {
         sb_append_c(sb, simpletype2cstr(t));
-    } else if (t->kind == FE_TYPE_RECORD) {
+    // } else if (t->kind == FE_TYPE_RECORD) {
+    } else if (ct->kind == FE_TYPE_RECORD) {
         sb_append_c(sb, "(rec ");
-        for_range(i, 0, t->record.len) {
-            emit_type(sb, t->record.fields[i]);
-            if (i != t->record.len - 1) sb_append_c(sb, " ");
+        for_range(i, 0, ct->record.len) {
+            emit_type(sb, m, ct->record.fields[i]);
+            if (i != ct->record.len - 1) sb_append_c(sb, " ");
         }
         sb_append_c(sb, ")");
-    } else if (t->kind == FE_TYPE_ARRAY) {
+    } else if (ct->kind == FE_TYPE_ARRAY) {
         sb_append_c(sb, "(arr ");
-        sb_printf(sb, "%llx ", t->array.len);
-        emit_type(sb, t->array.sub);
+        sb_printf(sb, "%llx ", ct->array.len);
+        emit_type(sb, m, ct->array.sub);
         sb_append_c(sb, ")");
     } else {
         CRASH("invalid type");
@@ -192,7 +194,7 @@ static void emit_inst(StringBuilder* sb, FeFunction* fn, FeInst* inst) {
     case FE_INST_ASR:
         FeInstBinop* binop = (FeInstBinop*) inst;
         sb_append_c(sb, opnames[inst->kind]);
-        emit_type(sb, inst->type);
+        emit_type(sb, fn->mod, inst->type);
         sb_printf(sb, COLOR_INST" %u %u"RESET, binop->lhs->number, binop->rhs->number);
         break;
     case FE_INST_ULT:
@@ -213,7 +215,7 @@ static void emit_inst(StringBuilder* sb, FeFunction* fn, FeInst* inst) {
     case FE_INST_CONST:
         FeInstConst* const_inst = (FeInstConst*) inst;
         sb_append_c(sb, "const ");
-        emit_type(sb, inst->type);
+        emit_type(sb, fn->mod, inst->type);
         sb_printf(sb, " %llu", const_inst->i64);
         break;
     case FE_INST_STACK_STORE:
@@ -264,15 +266,15 @@ static void emit_function(StringBuilder* sb, FeFunction* f) {
     sb_append_c(sb, "(");
     for_range(i, 0, f->params.len) {
         if (f->params.at[i]->by_value) TODO("");
-        FeType* t = f->params.at[i]->type;
-        emit_type(sb, t);
+        FeType t = f->params.at[i]->type;
+        emit_type(sb, f->mod, t);
         if (i != f->params.len - 1) sb_append_c(sb, " ");
     }
     sb_append_c(sb, ") (");
     for_range(i, 0, f->returns.len) {
         if (f->returns.at[i]->by_value) TODO("");
-        FeType* t = f->returns.at[i]->type;
-        emit_type(sb, t);
+        FeType t = f->returns.at[i]->type;
+        emit_type(sb, f->mod, t);
         if (i != f->returns.len - 1) sb_append_c(sb, " ");
     }
     sb_append_c(sb, ") \n");
@@ -280,8 +282,8 @@ static void emit_function(StringBuilder* sb, FeFunction* f) {
     for_range(i, 0, f->stack.len) {
         sb_printf(sb, COLOR_STACK"% 6llu: "RESET, i);
         sb_append_c(sb, "(stk ");
-        FeType* t = f->stack.at[i]->t;
-        emit_type(sb, t);
+        FeType t = f->stack.at[i]->t;
+        emit_type(sb, f->mod, t);
         sb_append_c(sb, ") \n");
     }    
 

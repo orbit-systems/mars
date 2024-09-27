@@ -27,5 +27,5 @@ void irgen_block(IrBuilder* builder, ast_stmt_block* block);
 FeInst* irgen_value_expr(IrBuilder* builder, AST expr);
 void irgen_stmt(IrBuilder* builder, AST stmt);
 
-FeType* irgen_mars_to_iron_type(IrBuilder* builder, Type* t);
+FeType irgen_mars_to_iron_type(IrBuilder* builder, Type* t);
 string irgen_mangle_identifer(IrBuilder* builder, string ident, bool code);

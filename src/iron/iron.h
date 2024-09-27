@@ -11,7 +11,8 @@
 typedef struct FeModule FeModule;
 typedef struct FePass   FePass;
 
-typedef struct FeType  FeType;
+typedef u32 FeType;
+// typedef struct FeType  FeType;
 typedef struct FeInst  FeInst;
 typedef        FeInst* FeInstPTR;
 
@@ -66,7 +67,7 @@ enum {
     FE_TYPE_ARRAY,
 };
 
-typedef struct FeType {
+typedef struct FeComplexType {
     u8 kind;
     u32 number;
 
@@ -77,25 +78,27 @@ typedef struct FeType {
     
         struct {
             u64 len;
-            FeType* fields[]; // flexible array member
+            FeType fields[]; // flexible array member
         } record;
 
         struct {
             u64 len;
-            FeType* sub;
+            FeType sub;
         } array;
     };
-} FeType;
+} FeComplexType;
 
-FeType* fe_type(FeModule* m, u8 kind);
-FeType* fe_type_array(FeModule* m, FeType* subtype, u64 len);
-FeType* fe_type_record(FeModule* m, u64 len);
+FeType fe_type_array(FeModule* m, FeType subtype, u64 len);
+FeType fe_type_record(FeModule* m, u64 len);
 
-bool fe_type_is_scalar(FeType* t);
-bool fe_type_has_equivalence(FeType* t);
-bool fe_type_has_ordering(FeType* t);
-bool fe_type_is_integer(FeType* t);
-bool fe_type_is_float(FeType* t);
+bool fe_type_is_scalar(FeType t);
+bool fe_type_has_equivalence(FeType t);
+bool fe_type_has_ordering(FeType t);
+bool fe_type_is_integer(FeType t);
+bool fe_type_is_float(FeType t);
+
+// returns null for non_aggregate types
+FeComplexType* fe_type_get_structure(FeModule* m, FeType t);
 
 enum {
     FE_BIND_EXPORT,
@@ -152,7 +155,7 @@ typedef struct FeData {
 #define FE_FN_ALLOCA_BLOCK_SIZE 0x4000
 
 typedef struct FeStackObject {
-    FeType* t;
+    FeType t;
 } FeStackObject;
 
 typedef struct FeFunction {
@@ -188,11 +191,11 @@ typedef struct FeFunction {
 
 typedef struct FeFunctionItem {
 
-    FeType* type;
+    FeType type;
 
     // if its an aggregate, this is exposed as a pointer marked "by_val" so that
     // calling conventions work without needing target-specific information.
-    FeType* by_value;
+    FeType by_value;
 } FeFunctionItem;
 
 typedef struct FeBasicBlock {
@@ -316,7 +319,7 @@ enum {
 typedef struct FeInst {
     FeInst* next;
     FeInst* prev;
-    FeType* type; // TODO: FeType should not be a pointer.
+    FeType type;
     u32 number;
     u16 use_count;
     u8 kind;
@@ -506,11 +509,11 @@ void fe_destroy_function(FeFunction* f);
 void fe_destroy_basic_block(FeBasicBlock* bb);
 void fe_selftest();
 
-FeStackObject* fe_new_stackobject(FeFunction* f, FeType* t);
+FeStackObject* fe_new_stackobject(FeFunction* f, FeType t);
 void fe_init_func_params(FeFunction* f, u16 count);
 void fe_init_func_returns(FeFunction* f, u16 count);
-FeFunctionItem* fe_add_func_param(FeFunction* f, FeType* t);
-FeFunctionItem* fe_add_func_return(FeFunction* f, FeType* t);
+FeFunctionItem* fe_add_func_param(FeFunction* f, FeType t);
+FeFunctionItem* fe_add_func_return(FeFunction* f, FeType t);
 u32  fe_bb_index(FeFunction* fn, FeBasicBlock* bb);
 void fe_set_data_bytes(FeData* data, u8* bytes, u32 data_len, bool zeroed);
 void fe_set_data_symref(FeData* data, FeSymbol* symref);
@@ -531,14 +534,14 @@ FeInst* fe_inst_unop(FeFunction* f, u8 type, FeInst* source);
 FeInst* fe_inst_stackaddr(FeFunction* f, FeStackObject* obj);
 FeInst* fe_inst_getfieldptr(FeFunction* f, u32 index, FeInst* source);
 FeInst* fe_inst_getindexptr(FeFunction* f, FeInst* index, FeInst* source);
-FeInst* fe_inst_load(FeFunction* f, FeInst* ptr, FeType* as, bool is_vol);
+FeInst* fe_inst_load(FeFunction* f, FeInst* ptr, FeType as, bool is_vol);
 FeInst* fe_inst_store(FeFunction* f, FeInst* ptr, FeInst* value, bool is_vol);
 FeInst* fe_inst_stack_load(FeFunction* f, FeStackObject* location);
 FeInst* fe_inst_stack_store(FeFunction* f, FeStackObject* location, FeInst* value);
-FeInst* fe_inst_const(FeFunction* f, FeType* type);
-FeInst* fe_inst_load_symbol(FeFunction* f, FeType* type, FeSymbol* symbol);
+FeInst* fe_inst_const(FeFunction* f, FeType type);
+FeInst* fe_inst_load_symbol(FeFunction* f, FeType type, FeSymbol* symbol);
 FeInst* fe_inst_mov(FeFunction* f, FeInst* source);
-FeInst* fe_inst_phi(FeFunction* f, u32 count, FeType* type);
+FeInst* fe_inst_phi(FeFunction* f, u32 count, FeType type);
 FeInst* fe_inst_jump(FeFunction* f, FeBasicBlock* dest);
 FeInst* fe_inst_branch(FeFunction* f, FeInst* cond, FeBasicBlock* if_true, FeBasicBlock* if_false);
 FeInst* fe_inst_paramval(FeFunction* f, u32 param);
@@ -629,7 +632,7 @@ typedef struct FeModule {
     } symtab; // symbol table
 
     struct {
-        FeType** at;
+        FeComplexType** at;
         size_t len;
         size_t cap;
 
