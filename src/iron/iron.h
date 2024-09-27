@@ -493,8 +493,8 @@ typedef struct FeInstReturn {
     FeInst base;
 } FeInstReturn;
 
-#define for_inst(inst, basic_block) for(FeInst* inst = (basic_block).start; inst->kind != FE_INST_BOOKEND; inst = inst->next)
-#define for_inst_from(inst, start, basic_block) for(FeInst* inst = start; inst->kind != FE_INST_BOOKEND; inst = inst->next)
+#define for_fe_inst(inst, basic_block) for(FeInst* inst = (basic_block).start; inst->kind != FE_INST_BOOKEND; inst = inst->next)
+#define for_fe_inst_from(inst, start, basic_block) for(FeInst* inst = start; inst->kind != FE_INST_BOOKEND; inst = inst->next)
 
 extern const size_t fe_inst_sizes[];
 
@@ -658,6 +658,17 @@ typedef struct FeModule {
 
     FeMessageQueue messages;
 } FeModule;
+
+typedef struct FeAllocator {
+    void* (*malloc)(size_t);
+    void* (*realloc)(void*, size_t);
+    void  (*free)(void*);
+} FeAllocator;
+
+void  fe_set_allocator(FeAllocator alloc);
+void* fe_malloc(size_t size);
+void* fe_realloc(void* ptr, size_t size);
+void  fe_free(void* ptr);
 
 #include "iron/passes/passes.h"
 #include "iron/codegen/mach.h"

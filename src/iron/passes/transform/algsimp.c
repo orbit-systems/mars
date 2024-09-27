@@ -240,7 +240,7 @@ void run_pass_algsimp(FeModule* mod) {
 
         for_range(bi, 0, f->blocks.len) {
             FeBasicBlock* bb = f->blocks.at[bi];
-            for_inst(inst, *bb) {
+            for_fe_inst(inst, *bb) {
                 da_append(&worklist, inst);
             }
         }

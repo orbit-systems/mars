@@ -505,7 +505,7 @@ FeInst* fe_move_after(FeInst* inst, FeInst* ref) {
 // rewrite all uses of `from` to be uses of `to`
 
 static FeInst* set_usage(FeBasicBlock* bb, FeInst* source, FeInst* start, FeInst* dest) {
-    for_inst_from(inst, start, *bb) {
+    for_fe_inst_from(inst, start, *bb) {
         // FIXME: kayla you're gonna be SO fucking mad at me for this
         // searching the struct for a pointer :sobbing:
         FeInst** ir = (FeInst**)inst;
@@ -530,7 +530,7 @@ void fe_rewrite_uses(FeFunction* f, FeInst* source, FeInst* dest) {
 }
 
 static FeInst* get_usage(FeBasicBlock* bb, FeInst* source, FeInst* start) {
-    for_inst_from(inst, start, *bb) {
+    for_fe_inst_from(inst, start, *bb) {
         FeInst** ir = (FeInst**)inst;
         for (u64 j = sizeof(FeInst)/sizeof(FeInst*); j <= fe_inst_sizes[inst->kind]/sizeof(FeInst*); j++) {
             if (ir[j] == source) return inst;

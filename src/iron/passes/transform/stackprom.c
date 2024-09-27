@@ -26,7 +26,7 @@ static bool candidate_for_stackprom(FeStackObject* obj, FeFunction* f) {
 
     // only promote if the scalar is only used through stack loads/stores
     foreach(FeBasicBlock* bb, f->blocks) {
-        for_inst(inst, *bb) {
+        for_fe_inst(inst, *bb) {
             if (inst->kind == FE_INST_STACK_ADDR && ((FeInstStackAddr*)inst)->object == obj) {
                 return false;
             }

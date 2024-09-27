@@ -14,6 +14,10 @@ static void verify_basic_block(FeModule* m, FeBasicBlock* bb, bool entry) {
     if (!fe_inst_is_terminator(bb->end)) {
         FE_FATAL(m, "basic blocks must end with a terminator instruction");
     }
+
+    for_fe_inst(inst, *bb) {
+        
+    }
 }
 
 static void verify_function(FeModule* m, FeFunction* f) {

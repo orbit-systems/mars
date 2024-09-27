@@ -254,7 +254,7 @@ static void emit_function(StringBuilder* sb, FeFunction* f) {
     {
         int counter = 0;
         foreach(FeBasicBlock* bb, f->blocks) {
-            for_inst(inst, *bb) {
+            for_fe_inst(inst, *bb) {
                 inst->number = counter++;
             }
         }
@@ -291,7 +291,7 @@ static void emit_function(StringBuilder* sb, FeFunction* f) {
         sb_append_c(sb, "        (blk \'");
         sb_append(sb, bb->name);
         sb_append_c(sb, "\'");
-        for_inst(inst, *bb) {
+        for_fe_inst(inst, *bb) {
             emit_inst(sb, f, inst);
         }
 

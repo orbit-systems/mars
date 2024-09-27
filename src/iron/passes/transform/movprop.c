@@ -13,7 +13,7 @@ void run_pass_movprop(FeModule* mod) {
         for_urange(j, 0, fn->blocks.len) {
             FeBasicBlock* bb = fn->blocks.at[j];
 
-            for_inst(inst, *bb) {
+            for_fe_inst(inst, *bb) {
                 if (inst->kind != FE_INST_MOV) continue;
 
                 fe_rewrite_uses(fn, inst, ((FeInstMov*)inst)->source);
