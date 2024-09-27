@@ -141,7 +141,12 @@ FeBasicBlock* fe_new_basic_block(FeFunction* fn, string name) {
 
     bb->name = name;
     bb->function = fn;
-    da_init(bb, 4);
+
+    FeInstBookend* bk = (FeInstBookend*) fe_inst(fn, FE_INST_BOOKEND);
+    bk->bb = bb;
+
+    bb->start = (FeInst*) bk;
+    bb->end = (FeInst*) bk;
 
     da_append(&fn->blocks, bb);
     return bb;
@@ -150,46 +155,60 @@ FeBasicBlock* fe_new_basic_block(FeFunction* fn, string name) {
 u32 fe_bb_index(FeFunction* fn, FeBasicBlock* bb) {
     for_urange(i, 0, fn->blocks.len) {
         if (fn->blocks.at[i] != bb) continue;
-
         return i;
     }
-
     return UINT32_MAX;
 }
 
 FeInst* fe_append(FeBasicBlock* bb, FeInst* inst) {
-    inst->bb = bb;
-    da_append(bb, inst);
-    return inst;
-}
+    inst->prev = NULL;
+    inst->next = NULL;
 
-FeInst* fe_insert_inst(FeBasicBlock* bb, FeInst* inst, i64 index) {
-    inst->bb = bb;
-    if (bb->at[index]->kind == FE_INST_ELIMINATED) {
-        bb->at[index] = inst;
+    // this is the basic block's first instruction.
+    if (bb->start->kind == FE_INST_BOOKEND) {
+        FeInst* bookend = bb->start;
+        // set up the bookend
+        bookend->next = inst;
+        bookend->prev = inst;
+        inst->next = bookend;
+        inst->prev = bookend;
+
+        // retarget bb off of the bookend
+        bb->start = inst;
+        bb->end = inst;
     } else {
-        da_insert_at(bb, inst, index);
+        fe_insert_inst_after(inst, bb->end);
     }
+
     return inst;
 }
 
-i64 fe_index_of_inst(FeBasicBlock* bb, FeInst* inst) {
-    for_range(i, 0, bb->len) {
-        if (bb->at[i] == inst) {
-            return i;
-        }
+// inserts new before ref
+FeInst* fe_insert_inst_before(FeInst* new, FeInst* ref) {
+    if (ref->prev->kind == FE_INST_BOOKEND) {
+        FeInstBookend* bookend = (FeInstBookend*)ref->prev;
+        bookend->bb->start = new;
     }
-    return -1;
+    new->next = ref;
+    new->prev = ref->prev;
+    ref->prev->next = new;
+    ref->prev = new;
+    
+    return new;
 }
 
-// inserts inst before ref
-FeInst* fe_insert_inst_before(FeBasicBlock* bb, FeInst* inst, FeInst* ref) {
-    return fe_insert_inst(bb, inst, fe_index_of_inst(bb, ref));
-}
+// inserts new after ref
+FeInst* fe_insert_inst_after(FeInst* new, FeInst* ref) {
+    if (ref->next->kind == FE_INST_BOOKEND) {
+        FeInstBookend* bookend = (FeInstBookend*)ref->next;
+        bookend->bb->end = new;
+    }
+    new->prev = ref;
+    new->next = ref->next;
+    ref->next->prev = new;
+    ref->next = new;
 
-// inserts inst after ref
-FeInst* fe_insert_inst_after(FeBasicBlock* bb, FeInst* inst, FeInst* ref) {
-    return fe_insert_inst(bb, inst, fe_index_of_inst(bb, ref) + 1);
+    return new;
 }
 
 FeInst* fe_inst(FeFunction* f, u8 type) {
@@ -202,8 +221,8 @@ FeInst* fe_inst(FeFunction* f, u8 type) {
 }
 
 const size_t fe_inst_sizes[] = {
-    [FE_INST_INVALID]    = sizeof(FeInst),
-    [FE_INST_ELIMINATED] = sizeof(FeInst),
+    [FE_INST_INVALID] = sizeof(FeInst),
+    [FE_INST_BOOKEND] = sizeof(FeInstBookend),
 
     [FE_INST_ADD]  = sizeof(FeInstBinop),
     [FE_INST_SUB]  = sizeof(FeInstBinop),
@@ -448,64 +467,73 @@ FeInst* fe_inst_return(FeFunction* f) {
     return fe_inst(f, FE_INST_RETURN);
 }
 
-void fe_move(FeBasicBlock* bb, u64 to, u64 from) {
-    if (to == from) return;
+// remove inst from its basic block
+FeInst* fe_remove(FeInst* inst) {
+    inst->prev->next = inst->next;
+    inst->next->prev = inst->prev;
+    return inst;
+}
 
-    FeInst* from_elem = bb->at[from];
-    if (to < from) {
-        memmove(&bb->at[to+1], &bb->at[to], (from - to) * sizeof(FeInst*));
-    } else {
-        memmove(&bb->at[to], &bb->at[to+1], (to - from) * sizeof(FeInst*));
-    }
-    bb->at[to] = from_elem;
+// move inst to before ref
+FeInst* fe_move_before(FeInst* inst, FeInst* ref) {
+    if (inst == ref || ref->prev == inst) return inst;
+    fe_remove(inst);
+    fe_insert_inst_before(inst, ref);
+    return inst;
+}
+
+// move inst to before ref
+FeInst* fe_move_after(FeInst* inst, FeInst* ref) {
+    if (inst == ref || ref->next == inst) return inst;
+    fe_remove(inst);
+    fe_insert_inst_after(inst, ref);
+    return inst;
 }
 
 // rewrite all uses of `from` to be uses of `to`
 
-static u64 set_usage(FeBasicBlock* bb, FeInst* source, u64 start_index, FeInst* dest) {
-    for (u64 i = start_index; i < bb->len; i++) {
-        if (bb->at[i]->kind == FE_INST_ELIMINATED) continue;
+static FeInst* set_usage(FeBasicBlock* bb, FeInst* source, FeInst* start, FeInst* dest) {
+    for_inst_from(inst, start, *bb) {
         // FIXME: kayla you're gonna be SO fucking mad at me for this
         // searching the struct for a pointer :sobbing:
-        FeInst** ir = (FeInst**)bb->at[i];
-        for (u64 j = sizeof(FeInst)/sizeof(FeInst*); j <= fe_inst_sizes[bb->at[i]->kind]/sizeof(FeInst*); j++) {
+        FeInst** ir = (FeInst**)inst;
+        for (u64 j = sizeof(FeInst)/sizeof(FeInst*); j <= fe_inst_sizes[inst->kind]/sizeof(FeInst*); j++) {
             if (ir[j] == source) {
                 ir[j] = dest;
-                return i;
+                return start;
             }
         }
     }
-    return UINT64_MAX;
+    return NULL;
 }
 
 void fe_rewrite_uses(FeFunction* f, FeInst* source, FeInst* dest) {
     for_urange(i, 0, f->blocks.len) {
         FeBasicBlock* bb = f->blocks.at[i];
-        u64 next_usage = set_usage(bb, source, 0, dest);
-        while (next_usage != UINT64_MAX) {
-            next_usage = set_usage(bb, source, next_usage+1, dest);
+        FeInst* next_usage = set_usage(bb, source, 0, dest);
+        while (next_usage != NULL) {
+            next_usage = set_usage(bb, source, next_usage->next, dest);
         }
     }
 }
 
-static u64 get_usage(FeBasicBlock* bb, FeInst* source, u64 start_index) {
-    for (u64 i = start_index; i < bb->len; i++) {
-        if (bb->at[i]->kind == FE_INST_ELIMINATED) continue;
-        FeInst** ir = (FeInst**)bb->at[i];
-        for (u64 j = sizeof(FeInst)/sizeof(FeInst*); j <= fe_inst_sizes[bb->at[i]->kind]/sizeof(FeInst*); j++) {
-            if (ir[j] == source) return i;
+static FeInst* get_usage(FeBasicBlock* bb, FeInst* source, FeInst* start) {
+    for_inst_from(inst, start, *bb) {
+        FeInst** ir = (FeInst**)inst;
+        for (u64 j = sizeof(FeInst)/sizeof(FeInst*); j <= fe_inst_sizes[inst->kind]/sizeof(FeInst*); j++) {
+            if (ir[j] == source) return inst;
         }
     }
-    return UINT64_MAX;
+    return NULL;
 }
 
 void fe_add_uses_to_worklist(FeFunction* f, FeInst* source, da(FeInstPTR)* worklist) {
     for_urange(i, 0, f->blocks.len) {
         FeBasicBlock* bb = f->blocks.at[i];
-        u64 next_usage = get_usage(bb, source, 0);
-        while (next_usage != UINT64_MAX) {
-            da_append(worklist, bb->at[next_usage]);
-            next_usage = get_usage(bb, source, next_usage+1);
+        FeInst* next_usage = get_usage(bb, source, 0);
+        while (next_usage != NULL) {
+            da_append(worklist, next_usage);
+            next_usage = get_usage(bb, source, next_usage->next);
         }
     }
 }

@@ -52,10 +52,5 @@ void fe_destroy_function(FeFunction* f) {
 }
 
 void fe_destroy_basic_block(FeBasicBlock* bb) {
-    mars_free(bb->domset);
-    mars_free(bb->incoming);
-    mars_free(bb->outgoing);
-    da_destroy(bb);
-
     *bb = (FeBasicBlock){0};
 }

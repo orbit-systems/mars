@@ -10,7 +10,6 @@ extern FePass fe_pass_cfg;
 
 /* OPTIMIZATION PASSES
     movprop         mov propogation
-    elim            remove instructions marked eliminated
     tdce            trivial dead code elimination
     trme            trivial redundant memory op elimination
 
@@ -23,7 +22,6 @@ extern FePass fe_pass_cfg;
 */
 
 extern FePass fe_pass_movprop;
-extern FePass fe_pass_elim;
 extern FePass fe_pass_tdce;
 extern FePass fe_pass_algsimp;
 extern FePass fe_pass_stackprom;

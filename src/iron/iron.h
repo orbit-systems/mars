@@ -196,31 +196,27 @@ typedef struct FeFunctionItem {
 } FeFunctionItem;
 
 typedef struct FeBasicBlock {
-    FeInst** at;
-    u64 len;
-    u64 cap;
+    FeInst* start;
+    FeInst* end;
 
     string name;
 
     FeFunction* function;
-
-    FeBasicBlock* idom; // immediate dominator
-    FeBasicBlock** domset; // all blocks that this block dominates (including self)
-
-    FeBasicBlock** outgoing;
-    FeBasicBlock** incoming;
-    u16 out_len;
-    u16 in_len;
-    u32 domset_len;
 
     u64 flags; // for misc use
 } FeBasicBlock;
 
 enum {
     FE_INST_INVALID,
-    FE_INST_ELIMINATED, // an FeInst that has been "deleted".
+    
+    // that signals the ending of a basic block.
+    // contains a backlink to the basic block itself.
+    // basic block (.end) will ONLY point to this IF
+    // there are NO other instructions in the block.
+    FE_INST_BOOKEND,
 
     _FE_INST_NO_SIDE_EFFECTS_BEGIN,
+
     // FeInstBinop
     _FE_BINOP_BEGIN,
     FE_INST_ADD,
@@ -318,12 +314,18 @@ enum {
 
 // basic AIR structure
 typedef struct FeInst {
-    FeType* type;
-    FeBasicBlock* bb;
+    FeInst* next;
+    FeInst* prev;
+    FeType* type; // TODO: FeType should not be a pointer.
     u32 number;
     u16 use_count;
     u8 kind;
 } FeInst;
+
+typedef struct FeInstBookend {
+    FeInst base;
+    FeBasicBlock* bb;
+} FeInstBookend;
 
 typedef struct FeInstBinop {
     FeInst base;
@@ -486,6 +488,9 @@ typedef struct FeInstReturn {
     FeInst base;
 } FeInstReturn;
 
+#define for_inst(inst, basic_block) for(FeInst* inst = (basic_block).start; inst->kind != FE_INST_BOOKEND; inst = inst->next)
+#define for_inst_from(inst, start, basic_block) for(FeInst* inst = start; inst->kind != FE_INST_BOOKEND; inst = inst->next)
+
 extern const size_t fe_inst_sizes[];
 
 FeModule*     fe_new_module(string name);
@@ -511,11 +516,12 @@ void fe_set_data_bytes(FeData* data, u8* bytes, u32 data_len, bool zeroed);
 void fe_set_data_symref(FeData* data, FeSymbol* symref);
 
 FeInst* fe_append(FeBasicBlock* bb, FeInst* ir);
-FeInst* fe_insert_inst(FeBasicBlock* bb, FeInst* inst, i64 index);
-FeInst* fe_insert_inst_before(FeBasicBlock* bb, FeInst* inst, FeInst* ref);
-FeInst* fe_insert_inst_after(FeBasicBlock* bb, FeInst* inst, FeInst* ref);
-i64     fe_index_of_inst(FeBasicBlock* bb, FeInst* inst);
-void    fe_move(FeBasicBlock* bb, u64 to, u64 from);
+FeInst* fe_insert_inst_before(FeInst* new, FeInst* ref);
+FeInst* fe_insert_inst_after(FeInst* new, FeInst* ref);
+FeInst* fe_remove(FeInst* inst);
+FeInst* fe_move_before(FeInst* inst, FeInst* ref);
+FeInst* fe_move_after(FeInst* inst, FeInst* ref);
+
 void    fe_rewrite_uses(FeFunction* f, FeInst* source, FeInst* dest);
 void    fe_add_uses_to_worklist(FeFunction* f, FeInst* source, da(FeInstPTR)* worklist);
 

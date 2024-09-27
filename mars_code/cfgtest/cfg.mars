@@ -1,9 +1,10 @@
-module cfg;
+module cfgtest;
 
-fn foo(a, b: int) -> int {
-    mut x: int = 1;
-    if a == b {
-        x = a;
+fn relu(x: float) -> float {
+    mut result = x;
+    if x < 0 {
+        x = 0;
     }
     return x;
 }
+

@@ -218,7 +218,7 @@ static void emit_function(FeFunction* f, StringBuilder* sb) {
         sb_append_c(sb, "_returnval_0;\n");
     }
     foreach(FeBasicBlock* bb, f->blocks) {
-        foreach(FeInst* inst, *bb) {
+        for_inst(inst, *bb) {
             if (inst->type->kind != FE_TYPE_VOID) {
                 sb_append_c(sb, "        ");
                 emit_type_name(inst->type, sb);
@@ -233,10 +233,7 @@ static void emit_function(FeFunction* f, StringBuilder* sb) {
     foreach(FeBasicBlock* bb, f->blocks) {
         string label = normalized_identifier(f->mod, bb, bb->name);
         sb_printf(sb, "    _label_"str_fmt":\n", str_arg(label));
-        foreach(FeInst* inst, *bb) {
-            if (inst->kind == FE_INST_ELIMINATED) {
-                continue;
-            } 
+        for_inst(inst, *bb) {
             sb_append_c(sb, "\t");
             switch (inst->kind) {
             case FE_INST_PARAMVAL:
