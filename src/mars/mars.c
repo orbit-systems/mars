@@ -42,6 +42,7 @@ int main(int argc, char** argv) {
 
     FeModule* iron_module = irgen_module(main_mod);
 
+    fe_sched_pass(iron_module, &fe_pass_verify);
     fe_sched_pass(iron_module, &fe_pass_stackprom);
     fe_run_all_passes(iron_module, true);
 

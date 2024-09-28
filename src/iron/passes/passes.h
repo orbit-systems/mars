@@ -10,17 +10,17 @@ extern FePass fe_pass_cfg;
 
 /* OPTIMIZATION PASSES
     movprop         mov propogation
+    algsimp         algebraic simplification
     tdce            trivial dead code elimination
-    trme            trivial redundant memory op elimination
+    stackprom       promotion of memory to registers
 
 (TODO)
-    algsimp         algebraic simplification
     dce             dead code elimination
     gvn             global value numbering
-    stackpromote    promotion of memory to registers
     sroa            scalar replacement of aggregates
 */
 
+extern FePass fe_pass_verify;
 extern FePass fe_pass_movprop;
 extern FePass fe_pass_tdce;
 extern FePass fe_pass_algsimp;

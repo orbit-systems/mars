@@ -12,11 +12,34 @@ static void verify_basic_block(FeModule* m, FeBasicBlock* bb, bool entry) {
     }
 
     if (!fe_inst_is_terminator(bb->end)) {
-        FE_FATAL(m, "basic blocks must end with a terminator instruction");
+        FE_FATAL(m, "basic blocks must end with a terminator");
     }
 
     for_fe_inst(inst, *bb) {
+        switch (inst->kind){
+        case FE_INST_PARAMVAL:
+            if (!entry || (inst->prev->kind != FE_INST_BOOKEND && inst->prev->kind != FE_INST_PHI)) {
+                FE_FATAL(m, "paramval must be at the beginning of the entry block");
+            }
+            break;
+        case FE_INST_PHI:
+            if (inst->prev->kind != FE_INST_BOOKEND && inst->prev->kind != FE_INST_PHI) {
+                FE_FATAL(m, "phi must be at the beginning of a basic block");
+            }
+            FeInstPhi* phi = (FeInstPhi*) inst;
+            break;
         
+        case FE_INST_RETURN:
+        case FE_INST_JUMP:
+        case FE_INST_BRANCH:
+            if (inst->next->kind != FE_INST_BOOKEND) {
+                FE_FATAL(m, "terminator must be at the end of a basic block");
+                
+            }
+            break;
+        default:
+            break;
+        }
     }
 }
 
