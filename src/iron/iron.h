@@ -1,5 +1,6 @@
 #pragma once
 
+#define DONT_USE_MARS_ALLOC
 #include "common/orbit.h"
 #include "common/alloc.h"
 #include "common/arena.h"
@@ -12,7 +13,6 @@ typedef struct FeModule FeModule;
 typedef struct FePass   FePass;
 
 typedef u32 FeType;
-// typedef struct FeType  FeType;
 typedef struct FeInst  FeInst;
 typedef        FeInst* FeInstPTR;
 
@@ -33,7 +33,6 @@ typedef struct FePass {
 
     // make sure CFG info is up-to-date before this pass runs
     bool requires_cfg;
-    
     // mark the CFG information as out-of-date after this pass runs
     bool modifies_cfg;
 } FePass;
@@ -44,8 +43,6 @@ void fe_run_next_pass(FeModule* m, bool printout);
 void fe_run_all_passes(FeModule* m, bool printout);
 
 enum {
-    _FE_TYPE_SIMPLE_BEGIN,
-
     FE_TYPE_VOID,
 
     FE_TYPE_BOOL,
@@ -69,10 +66,6 @@ enum {
 
 typedef struct FeComplexType {
     u8 kind;
-    u32 number;
-
-    // u32 align;
-    // u64 size;
 
     union {
     
@@ -198,13 +191,30 @@ typedef struct FeFunctionItem {
     FeType by_value;
 } FeFunctionItem;
 
+typedef struct FeCFGNode FeCFGNode;
+typedef struct FeCFGNode {
+    FeBasicBlock* bb; // if null, this CFG node is invalid
+    FeCFGNode** incoming;
+    FeCFGNode** outgoing;
+
+    FeCFGNode* immediate_dominator;
+    FeCFGNode** dominates;
+    
+    u16 out_len;
+    u16 in_len;
+    u32 dominates_len;
+
+    u32 pre_order_number; // starts at 1 for the entry block
+} FeCFGNode;
+
 typedef struct FeBasicBlock {
+    FeFunction* function;
+
     FeInst* start;
     FeInst* end;
-
     string name;
 
-    FeFunction* function;
+    FeCFGNode* cfg_node;
 
     u64 flags; // for misc use
 } FeBasicBlock;
@@ -322,7 +332,6 @@ typedef struct FeInst {
     FeInst* next;
     FeInst* prev;
     FeType type;
-    u32 number;
     u16 use_count;
     u8 kind;
 } FeInst;

@@ -64,7 +64,7 @@ void fe_set_allocator(FeAllocator alloc) {
 }
 
 void* fe_malloc(size_t size) {
-    return fe_global_allocator.malloc(size);
+    return memset(fe_global_allocator.malloc(size), 0, size);
 }
 
 void* fe_realloc(void* ptr, size_t size) {

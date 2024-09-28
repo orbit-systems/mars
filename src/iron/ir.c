@@ -4,7 +4,7 @@
 
 // if (sym == NULL), create new symbol with no name
 FeFunction* fe_new_function(FeModule* mod, FeSymbol* sym) {
-    FeFunction* fn = mars_alloc(sizeof(FeFunction));
+    FeFunction* fn = fe_malloc(sizeof(FeFunction));
 
     fn->sym = sym ? sym : fe_new_symbol(mod, NULL_STR, FE_BIND_EXPORT);
     if (!sym) fn->sym->name = strprintf("symbol_%016llx", fn->sym);
@@ -45,12 +45,12 @@ static char* cstrprintf(char* fmt, ...) {
 }
 
 void fe_init_func_params(FeFunction* f, u16 count) {
-    f->params.at = mars_alloc(count * sizeof(f->params.at[0]));
+    f->params.at = fe_malloc(count * sizeof(f->params.at[0]));
     f->params.cap = count;
     f->params.len = 0;
 }
 void fe_init_func_returns(FeFunction* f, u16 count) {
-    f->returns.at = mars_alloc(count * sizeof(f->returns.at[0]));
+    f->returns.at = fe_malloc(count * sizeof(f->returns.at[0]));
     f->returns.cap = count;
     f->returns.len = 0;
 }
@@ -62,7 +62,7 @@ FeFunctionItem* fe_add_func_param(FeFunction* f, FeType t) {
         f->params.at = mars_realloc(f->params.at, f->params.cap * 2);
         f->params.cap *= 2;
     }
-    FeFunctionItem* p = mars_alloc(sizeof(*p));
+    FeFunctionItem* p = fe_malloc(sizeof(*p));
     p->type = t;
     f->params.at[f->params.len++] = p;
     return p;
@@ -75,14 +75,14 @@ FeFunctionItem* fe_add_func_return(FeFunction* f, FeType t) {
         f->returns.at = mars_realloc(f->returns.at, f->returns.cap * 2);
         f->returns.cap *= 2;
     }
-    FeFunctionItem* r = mars_alloc(sizeof(*r));
+    FeFunctionItem* r = fe_malloc(sizeof(*r));
     r->type = t;
     f->returns.at[f->returns.len++] = r;
     return r;
 }
 
 FeData* fe_new_data(FeModule* mod, FeSymbol* sym, bool read_only) {
-    FeData* data = mars_alloc(sizeof(FeData));
+    FeData* data = fe_malloc(sizeof(FeData));
 
     data->sym = sym;
     data->read_only = read_only;
@@ -113,7 +113,7 @@ void fe_set_data_numeric(FeData* data, u64 content, u8 kind) {
 
 // WARNING: does NOT check if a symbol already exists
 FeSymbol* fe_new_symbol(FeModule* mod, string name, u8 binding) {
-    FeSymbol* sym = mars_alloc(sizeof(FeSymbol));
+    FeSymbol* sym = fe_malloc(sizeof(FeSymbol));
     sym->name = name;
     sym->binding = binding;
 
@@ -137,7 +137,7 @@ FeSymbol* fe_find_symbol(FeModule* mod, string name) {
 }
 
 FeBasicBlock* fe_new_basic_block(FeFunction* fn, string name) {
-    FeBasicBlock* bb = mars_alloc(sizeof(FeBasicBlock));
+    FeBasicBlock* bb = fe_malloc(sizeof(FeBasicBlock));
 
     bb->name = name;
     bb->function = fn;
@@ -216,7 +216,6 @@ FeInst* fe_inst(FeFunction* f, u8 type) {
     FeInst* ir = arena_alloc(&f->alloca, fe_inst_sizes[type], 8);
     ir->kind = type;
     ir->type = FE_TYPE_VOID;
-    ir->number = 0;
     return ir;
 }
 
@@ -416,8 +415,8 @@ FeInst* fe_inst_phi(FeFunction* f, u32 count, FeType type) {
     ir->base.type = type;
     ir->len = 0;
     ir->cap = count;
-    ir->source_BBs = mars_alloc(sizeof(*ir->source_BBs)*count);
-    ir->sources = mars_alloc(sizeof(*ir->sources)*count);
+    ir->source_BBs = fe_malloc(sizeof(*ir->source_BBs)*count);
+    ir->sources = fe_malloc(sizeof(*ir->sources)*count);
     return (FeInst*) ir;
 }
 

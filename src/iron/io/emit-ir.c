@@ -1,5 +1,6 @@
 #include "iron/iron.h"
 #include "common/strbuilder.h"
+#include "common/ptrmap.h"
 
 #define COLORFUL
 
@@ -76,6 +77,10 @@ static char* simpletype2cstr(FeType t) {
     }
     return NULL;
 }
+
+PtrMap inst2num = {0};
+
+#define number(inst) ptrmap_get(&inst2num, (inst))
 
 static u64 stack_object_index(FeFunction* f, FeStackObject* obj) {
     for_urange(i, 0, f->stack.len) {
@@ -167,7 +172,7 @@ static void emit_inst(StringBuilder* sb, FeFunction* fn, FeInst* inst) {
     };
 
     // sb_append_c(sb, "\n      (");
-    sb_printf(sb, "\n"COLOR_INST"     % 9llu: "RESET"(", inst->number);
+    sb_printf(sb, "\n"COLOR_INST"     % 9llu: "RESET"(", number(inst));
     switch (inst->kind) {
     case FE_INST_PARAMVAL:
         FeInstParamVal* paramval = (FeInstParamVal*) inst;
@@ -175,7 +180,7 @@ static void emit_inst(StringBuilder* sb, FeFunction* fn, FeInst* inst) {
         break;
     case FE_INST_RETURNVAL:
         FeInstReturnval* returnval = (FeInstReturnval*) inst;
-        sb_printf(sb, "returnval %u"COLOR_INST" %u"RESET, returnval->return_idx, returnval->source->number);
+        sb_printf(sb, "returnval %u"COLOR_INST" %u"RESET, returnval->return_idx, number(returnval->source));
         break;
     case FE_INST_RETURN:
         sb_append_c(sb, "return");
@@ -195,7 +200,7 @@ static void emit_inst(StringBuilder* sb, FeFunction* fn, FeInst* inst) {
         FeInstBinop* binop = (FeInstBinop*) inst;
         sb_append_c(sb, opnames[inst->kind]);
         emit_type(sb, fn->mod, inst->type);
-        sb_printf(sb, COLOR_INST" %u %u"RESET, binop->lhs->number, binop->rhs->number);
+        sb_printf(sb, COLOR_INST" %u %u"RESET, number(binop->lhs), number(binop->rhs));
         break;
     case FE_INST_ULT:
     case FE_INST_UGT:
@@ -209,7 +214,7 @@ static void emit_inst(StringBuilder* sb, FeFunction* fn, FeInst* inst) {
     case FE_INST_NE:
         FeInstBinop* cmp = (FeInstBinop*) inst;
         sb_append_c(sb, opnames[inst->kind]);
-        sb_printf(sb, COLOR_INST"%u %u"RESET, cmp->lhs->number, cmp->rhs->number);
+        sb_printf(sb, COLOR_INST"%u %u"RESET, number(cmp->lhs), number(cmp->rhs));
         break;
     
     case FE_INST_CONST:
@@ -222,7 +227,7 @@ static void emit_inst(StringBuilder* sb, FeFunction* fn, FeInst* inst) {
         FeInstStackStore* stack_store = (FeInstStackStore*) inst;
         sb_printf(sb, "stack_store "COLOR_STACK"%u"COLOR_INST" %u"RESET, 
             stack_object_index(fn, stack_store->location),
-            stack_store->value->number
+            number(stack_store->value)
         );
         break;
     case FE_INST_STACK_LOAD:
@@ -233,7 +238,7 @@ static void emit_inst(StringBuilder* sb, FeFunction* fn, FeInst* inst) {
     case FE_INST_BRANCH:
         FeInstBranch* branch = (FeInstBranch*) inst;
         sb_printf(sb, "branch "COLOR_INST"%u"RESET" \'"str_fmt"\' \'"str_fmt"\'", 
-            branch->cond->number, 
+            number(branch->cond), 
             str_arg(branch->if_true->name),
             str_arg(branch->if_false->name));
         break;
@@ -252,10 +257,11 @@ static void emit_inst(StringBuilder* sb, FeFunction* fn, FeInst* inst) {
 static void emit_function(StringBuilder* sb, FeFunction* f) {
 
     {
-        int counter = 0;
+        ptrmap_init(&inst2num, 128);
+        u64 counter = 0;
         foreach(FeBasicBlock* bb, f->blocks) {
             for_fe_inst(inst, *bb) {
-                inst->number = counter++;
+                ptrmap_put(&inst2num, inst, (void*)counter++);
             }
         }
     }
