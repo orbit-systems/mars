@@ -83,10 +83,10 @@ bool fe_type_is_float(FeType t) {
 
 FeType fe_type_array(FeModule* m, FeType subtype, u64 len) {
 
-    FeComplexType* t = arena_alloc(&m->typegraph.alloca, sizeof(FeComplexType), alignof(FeComplexType));
+    FeAggregateType* t = arena_alloc(&m->typegraph.alloca, sizeof(FeAggregateType), alignof(FeAggregateType));
 
     da_append(&m->typegraph, t);
-    *t = (FeComplexType){0};
+    *t = (FeAggregateType){0};
     t->kind = FE_TYPE_ARRAY;
     t->array.sub = subtype;
     t->array.len = len;
@@ -96,13 +96,13 @@ FeType fe_type_array(FeModule* m, FeType subtype, u64 len) {
 
 FeType fe_type_record(FeModule* m, u64 len) {
 
-    FeComplexType* t = arena_alloc(&m->typegraph.alloca, 
-        sizeof(FeComplexType) + sizeof(FeType) * (len), 
-        alignof(FeComplexType)
+    FeAggregateType* t = arena_alloc(&m->typegraph.alloca, 
+        sizeof(FeAggregateType) + sizeof(FeType) * (len), 
+        alignof(FeAggregateType)
     );
     da_append(&m->typegraph, t);
 
-    *t = (FeComplexType){0};
+    *t = (FeAggregateType){0};
     t->kind = FE_TYPE_RECORD;
     t->record.len = len;
 
@@ -110,7 +110,7 @@ FeType fe_type_record(FeModule* m, u64 len) {
 }
 
 // return null if passed a simple type
-FeComplexType* fe_type_get_structure(FeModule* m, FeType t) {
+FeAggregateType* fe_type_get_structure(FeModule* m, FeType t) {
     if (t < _FE_TYPE_SIMPLE_END) return NULL;
     return m->typegraph.at[t - _FE_TYPE_SIMPLE_END];
 }

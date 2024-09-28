@@ -66,5 +66,5 @@ int main() {
 
     fe_run_all_passes(m, true);
 
-    printstr(fe_emit_ir(m));
+    // printstr(fe_emit_ir(m));
 }

@@ -80,7 +80,7 @@ static char* simpletype2cstr(FeType t) {
 
 PtrMap inst2num = {0};
 
-#define number(inst) ptrmap_get(&inst2num, (inst))
+#define number(inst) (((inst) != NULL) ? (u32)(u64)ptrmap_get(&inst2num, (inst)) : UINT32_MAX)
 
 static u64 stack_object_index(FeFunction* f, FeStackObject* obj) {
     for_urange(i, 0, f->stack.len) {
@@ -120,7 +120,7 @@ static void emit_data(StringBuilder* sb, FeModule* m, FeData* data) {
 }
 
 static void emit_type(StringBuilder* sb, FeModule* m, FeType t) {
-    FeComplexType* ct = fe_type_get_structure(m, t);
+    FeAggregateType* ct = fe_type_get_structure(m, t);
     if (t < _FE_TYPE_SIMPLE_END) {
         sb_append_c(sb, simpletype2cstr(t));
     // } else if (t->kind == FE_TYPE_RECORD) {
@@ -182,8 +182,17 @@ static void emit_inst(StringBuilder* sb, FeFunction* fn, FeInst* inst) {
         FeInstReturnval* returnval = (FeInstReturnval*) inst;
         sb_printf(sb, "returnval %u"COLOR_INST" %u"RESET, returnval->return_idx, number(returnval->source));
         break;
-    case FE_INST_RETURN:
-        sb_append_c(sb, "return");
+
+    case FE_INST_PHI:
+        FeInstPhi* phi = (FeInstPhi*) inst;
+        sb_append_c(sb, "phi ");
+        emit_type(sb, fn->mod, inst->type);
+        for_range(i, 0, phi->len) {
+            sb_printf(sb, COLOR_INST" %u "RESET, number(phi->sources[i]));
+            sb_printf(sb, "\'"str_fmt"\'", str_arg(phi->source_BBs[i]->name));
+        }
+
+
         break;
     case FE_INST_ADD:
     case FE_INST_SUB:
@@ -242,10 +251,12 @@ static void emit_inst(StringBuilder* sb, FeFunction* fn, FeInst* inst) {
             str_arg(branch->if_true->name),
             str_arg(branch->if_false->name));
         break;
-    
     case FE_INST_JUMP:
         FeInstJump* jump = (FeInstJump*) inst;
         sb_printf(sb, "jump \'"str_fmt"\'", str_arg(jump->dest->name));
+        break;
+    case FE_INST_RETURN:
+        sb_append_c(sb, "return");
         break;
     default:
         sb_append_c(sb, "unknown");

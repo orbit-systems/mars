@@ -21,7 +21,9 @@ static void verify_basic_block(FeModule* m, FeBasicBlock* bb, bool entry) {
 }
 
 static void verify_function(FeModule* m, FeFunction* f) {
-
+    if (f->blocks.len == 0) {
+        FE_FATAL(m, "functions must have at least one basic block");
+    }
 }
 
 static void verify_module(FeModule* m) {

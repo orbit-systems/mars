@@ -415,13 +415,24 @@ FeInst* fe_inst_phi(FeFunction* f, u32 count, FeType type) {
     ir->base.type = type;
     ir->len = 0;
     ir->cap = count;
-    ir->source_BBs = fe_malloc(sizeof(*ir->source_BBs)*count);
-    ir->sources = fe_malloc(sizeof(*ir->sources)*count);
+    ir->sources    = fe_malloc(sizeof(*ir->sources)    * count);
+    ir->source_BBs = fe_malloc(sizeof(*ir->source_BBs) * count);
     return (FeInst*) ir;
 }
 
-void fe_add_phi_source(FeInstPhi* phi, FeInst* source, FeBasicBlock* source_block) {
-    TODO("finish this");
+void fe_add_phi_source(FeFunction* f, FeInstPhi* phi, FeInst* source, FeBasicBlock* source_block) {
+    if (source->type != phi->base.type) {
+        FE_FATAL(f->mod, "phi source must match phi type");
+    }
+
+    if(phi->cap == phi->len) {
+        phi->cap *= 2;
+        phi->sources    = fe_realloc(phi->sources,    sizeof(*phi->sources)    * phi->cap);
+        phi->source_BBs = fe_realloc(phi->source_BBs, sizeof(*phi->source_BBs) * phi->cap);
+    }
+    phi->sources   [phi->len] = source;
+    phi->source_BBs[phi->len] = source_block;
+    phi->len++;
 }
 
 FeInst* fe_inst_jump(FeFunction* f, FeBasicBlock* dest) {
@@ -503,27 +514,75 @@ FeInst* fe_move_after(FeInst* inst, FeInst* ref) {
 
 // rewrite all uses of `from` to be uses of `to`
 
-static FeInst* set_usage(FeBasicBlock* bb, FeInst* source, FeInst* start, FeInst* dest) {
-    for_fe_inst_from(inst, start, *bb) {
-        // FIXME: kayla you're gonna be SO fucking mad at me for this
-        // searching the struct for a pointer :sobbing:
-        FeInst** ir = (FeInst**)inst;
-        for (u64 j = sizeof(FeInst)/sizeof(FeInst*); j <= fe_inst_sizes[inst->kind]/sizeof(FeInst*); j++) {
-            if (ir[j] == source) {
-                ir[j] = dest;
-                return start;
-            }
+#define rewrite_if_eq(inst, source, dest) if (inst == source) inst = dest
+
+void fe_rewrite_uses_in_inst(FeInst* inst, FeInst* source, FeInst* dest) {
+    switch (inst->kind) {
+    case FE_INST_ADD:
+    case FE_INST_SUB:
+    case FE_INST_IMUL:
+    case FE_INST_UMUL:
+    case FE_INST_IDIV:
+    case FE_INST_UDIV:
+    case FE_INST_AND:
+    case FE_INST_OR:
+    case FE_INST_XOR:
+    case FE_INST_SHL:
+    case FE_INST_LSR:
+    case FE_INST_ASR:
+    case FE_INST_ULT:
+    case FE_INST_UGT:
+    case FE_INST_ULE:
+    case FE_INST_UGE:
+    case FE_INST_ILT:
+    case FE_INST_IGT:
+    case FE_INST_ILE:
+    case FE_INST_IGE:
+    case FE_INST_EQ:
+    case FE_INST_NE:
+        FeInstBinop* binop = (FeInstBinop*) inst;
+        rewrite_if_eq(binop->lhs, source, dest);
+        rewrite_if_eq(binop->rhs, source, dest);
+        break;
+    case FE_INST_RETURNVAL:
+        FeInstReturnval* retval = (FeInstReturnval*) inst;
+        rewrite_if_eq(retval->source, source, dest);
+        break;
+    
+    case FE_INST_STACK_STORE:
+        FeInstStackStore* stack_store = (FeInstStackStore*) inst;
+        rewrite_if_eq(stack_store->value, source, dest);
+        break;
+    case FE_INST_BRANCH:
+        FeInstBranch* branch = (FeInstBranch*) inst;
+        rewrite_if_eq(branch->cond, source, dest);
+        break;
+
+    case FE_INST_PHI:
+        FeInstPhi* phi = (FeInstPhi*) inst;
+        for_range(i, 0, phi->len) {
+            rewrite_if_eq(phi->sources[i], source, dest);
         }
+        break;
+    case FE_INST_PARAMVAL:
+    case FE_INST_STACK_ADDR:
+    case FE_INST_STACK_LOAD:
+    case FE_INST_CONST:
+    case FE_INST_JUMP:
+    case FE_INST_RETURN:
+        break; // no inputs
+    default:
+        printf("---- %d\n", inst->kind);
+        CRASH("unhandled in rewrite_uses_in_inst");
+        break;
     }
-    return NULL;
 }
 
 void fe_rewrite_uses(FeFunction* f, FeInst* source, FeInst* dest) {
     for_urange(i, 0, f->blocks.len) {
         FeBasicBlock* bb = f->blocks.at[i];
-        FeInst* next_usage = set_usage(bb, source, 0, dest);
-        while (next_usage != NULL) {
-            next_usage = set_usage(bb, source, next_usage->next, dest);
+        for_fe_inst(inst, *bb) {
+            fe_rewrite_uses_in_inst(inst, source, dest);
         }
     }
 }

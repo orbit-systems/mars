@@ -64,7 +64,7 @@ enum {
     FE_TYPE_ARRAY,
 };
 
-typedef struct FeComplexType {
+typedef struct FeAggregateType {
     u8 kind;
 
     union {
@@ -79,7 +79,7 @@ typedef struct FeComplexType {
             FeType sub;
         } array;
     };
-} FeComplexType;
+} FeAggregateType;
 
 FeType fe_type_array(FeModule* m, FeType subtype, u64 len);
 FeType fe_type_record(FeModule* m, u64 len);
@@ -90,8 +90,8 @@ bool fe_type_has_ordering(FeType t);
 bool fe_type_is_integer(FeType t);
 bool fe_type_is_float(FeType t);
 
-// returns null for non_aggregate types
-FeComplexType* fe_type_get_structure(FeModule* m, FeType t);
+// returns null for non-aggregate types
+FeAggregateType* fe_type_get_structure(FeModule* m, FeType t);
 
 enum {
     FE_BIND_EXPORT,
@@ -198,13 +198,21 @@ typedef struct FeCFGNode {
     FeCFGNode** outgoing;
 
     FeCFGNode* immediate_dominator;
+    
+    // set of all nodes this node strictly dominates
     FeCFGNode** dominates;
     
+    // dominance frontier for this node
+    FeCFGNode** domfront;
+
     u16 out_len;
     u16 in_len;
     u32 dominates_len;
+    u32 domfront_len;
 
-    u32 pre_order_number; // starts at 1 for the entry block
+    u32 pre_order_index; // starts at 1 for the entry block
+
+    u64 flags; // misc flags, for storing any kind of extra data
 } FeCFGNode;
 
 typedef struct FeBasicBlock {
@@ -559,7 +567,7 @@ FeInst* fe_inst_paramval(FeFunction* f, u32 param);
 FeInst* fe_inst_returnval(FeFunction* f, u32 param, FeInst* source);
 FeInst* fe_inst_return(FeFunction* f);
 
-void   fe_add_phi_source(FeInstPhi* phi, FeInst* source, FeBasicBlock* source_block);
+void fe_add_phi_source(FeFunction* f, FeInstPhi* phi, FeInst* source, FeBasicBlock* source_block);
 
 string fe_emit_ir(FeModule* m);
 FeModule* fe_read_module(string text);
@@ -643,7 +651,7 @@ typedef struct FeModule {
     } symtab; // symbol table
 
     struct {
-        FeComplexType** at;
+        FeAggregateType** at;
         size_t len;
         size_t cap;
 

@@ -41,7 +41,11 @@ int main(int argc, char** argv) {
 
 
     FeModule* iron_module = irgen_module(main_mod);
-    printstr(fe_emit_ir(iron_module));
+
+    fe_sched_pass(iron_module, &fe_pass_stackprom);
+    fe_run_all_passes(iron_module, true);
+
+    // printstr(fe_emit_ir(iron_module));
 
     printf("IR generated\n");
 
