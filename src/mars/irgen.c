@@ -36,25 +36,38 @@ FeModule* irgen_module(mars_module* mars) {
 
 void irgen_global_fn_decl(IrBuilder* builder, ast_func_literal_expr* func) {
     string mars_identifier = func->ident.as_identifier->tok->text;
-    string global_sym_str = irgen_mangle_identifer(builder, mars_identifier, false);
+    string global_sym_str = irgen_mangle_identifer(builder, mars_identifier);
     
     FeSymbol* global_sym = fe_new_symbol(builder->mod, global_sym_str, FE_BIND_EXPORT);
     irgen_function(builder, func, global_sym);
 }
 
+string irgen_anonymous_fn_identifier(IrBuilder* builder) {
+    static u64 counter = 0;
+    string str = string_alloc(strlen("_anon_") + 16);
+    memcpy(str.raw, "_anon_", strlen("_anon_"));
+    
+    for_range(i, 1, 17) {
+        u8 digit = (counter >> (64 - i*4)) && 0x0Full;
+        if (digit < 10) {
+            str.raw[i + strlen("_anon_") - 1] = digit + '0';
+        } else {
+            str.raw[i + strlen("_anon_") - 1] = digit + 'A';
+        }
+    }
+
+    counter++;
+    return str;
+}
+
 // makes turns a mars identifier into a mangled/transformed symbol name
-string irgen_mangle_identifer(IrBuilder* builder, string ident, bool code) {
+string irgen_mangle_identifer(IrBuilder* builder, string ident) {
     string module_name = builder->mars->module_name;
     u64 len = ident.len + module_name.len + 1; // + 1 for the '.'
-    if (code) {
-        len += strlen(".code");
-    }
     string str = string_alloc(len);
-    if (code) {
-        sprintf(str.raw, str_fmt"."str_fmt".code", str_arg(module_name), str_arg(ident));
-    } else {
-        sprintf(str.raw, str_fmt"."str_fmt, str_arg(module_name), str_arg(ident));
-    }
+    memcpy(str.raw, module_name.raw, module_name.len);
+    str.raw[module_name.len] = '.';
+    memcpy(str.raw + module_name.len + 1, ident.raw, ident.len);
     return str;
 }
 
@@ -64,14 +77,14 @@ void irgen_global_decl(IrBuilder* builder, ast_decl_stmt* global_decl) {
     // which are illegal at the global scope
     // cause globals must be initialized to comptime constant vals
     string mars_identifier = global_decl->lhs.at[0].as_identifier->tok->text;
-    string global_sym_str = irgen_mangle_identifer(builder, mars_identifier, false);
+    string global_sym_str = irgen_mangle_identifer(builder, mars_identifier);
 
     FeSymbol* global_sym = fe_new_symbol(builder->mod, global_sym_str, FE_BIND_EXPORT);
     FeData* global_data = fe_new_data(builder->mod, global_sym, !global_decl->is_mut);
     
     switch (global_decl->rhs.type) {
     case AST_func_literal_expr:
-        FeSymbol* fn_sym = fe_new_symbol(builder->mod, irgen_mangle_identifer(builder, mars_identifier, true), FE_BIND_LOCAL);
+        FeSymbol* fn_sym = fe_new_symbol(builder->mod, irgen_anonymous_fn_identifier(builder), FE_BIND_LOCAL);
         FeFunction* fn = irgen_function(builder, global_decl->rhs.as_func_literal_expr, fn_sym);
         fe_set_data_symref(global_data, fn_sym);
         break;

@@ -1,5 +1,5 @@
 module add_test;
 
-let add = fn(a, b: u32) -> u32 {
+fn add(a, b: u64) -> u64 {
     return a + b;
-};
+}
