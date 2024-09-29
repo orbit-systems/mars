@@ -275,7 +275,7 @@ const size_t fe_inst_sizes[] = {
     [FE_INST_JUMP]   = sizeof(FeInstJump),
 
     [FE_INST_PARAMVAL]  = sizeof(FeInstParamVal),
-    [FE_INST_RETURNVAL] = sizeof(FeInstReturnval),
+    [FE_INST_RETURNVAL] = sizeof(FeInstReturnVal),
 
     [FE_INST_RETURN] = sizeof(FeInstReturn),
 };
@@ -464,7 +464,7 @@ FeInst* fe_inst_paramval(FeFunction* f, u32 param) {
 }
 
 FeInst* fe_inst_returnval(FeFunction* f, u32 ret, FeInst* source) {
-    FeInstReturnval* ir = (FeInstReturnval*) fe_inst(f, FE_INST_RETURNVAL);
+    FeInstReturnVal* ir = (FeInstReturnVal*) fe_inst(f, FE_INST_RETURNVAL);
     ir->return_idx = ret;
     if (ret >= f->returns.len) {
         FE_FATAL(f->mod, cstrprintf("returnval index %d is out of range [0, %d)", ret, f->returns.len));
@@ -545,7 +545,7 @@ void fe_rewrite_uses_in_inst(FeInst* inst, FeInst* source, FeInst* dest) {
         rewrite_if_eq(binop->rhs, source, dest);
         break;
     case FE_INST_RETURNVAL:
-        FeInstReturnval* retval = (FeInstReturnval*) inst;
+        FeInstReturnVal* retval = (FeInstReturnVal*) inst;
         rewrite_if_eq(retval->source, source, dest);
         break;
     

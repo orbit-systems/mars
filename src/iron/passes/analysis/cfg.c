@@ -313,8 +313,8 @@ static void per_function(FeFunction* fn) {
         compute_domfront(fn, bb->cfg_node);
     }
 
-    emit_cfg_dot(fn);
-    emit_domtree_dot(fn);
+    // emit_cfg_dot(fn);
+    // emit_domtree_dot(fn);
 }
 
 static void module(FeModule* m) {

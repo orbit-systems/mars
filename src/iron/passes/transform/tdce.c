@@ -42,7 +42,7 @@ static void register_uses(FeInst* ir) {
         store->value->use_count++;
         break;
     case FE_INST_RETURNVAL:
-        FeInstReturnval* retval = (FeInstReturnval*) ir;
+        FeInstReturnVal* retval = (FeInstReturnVal*) ir;
         if (retval->source) retval->source->use_count++;
         break;
     case FE_INST_MOV:
@@ -115,7 +115,7 @@ static void try_eliminate(FeInst* ir) {
         try_eliminate(store->value);
         break;
     case FE_INST_RETURNVAL:
-        FeInstReturnval* retval = (FeInstReturnval*) ir;
+        FeInstReturnVal* retval = (FeInstReturnVal*) ir;
         if (retval->source) retval->source->use_count--;
         try_eliminate(retval->source);
         break;

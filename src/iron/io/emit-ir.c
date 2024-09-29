@@ -179,7 +179,7 @@ static void emit_inst(StringBuilder* sb, FeFunction* fn, FeInst* inst) {
         sb_printf(sb, "paramval %u", paramval->param_idx);
         break;
     case FE_INST_RETURNVAL:
-        FeInstReturnval* returnval = (FeInstReturnval*) inst;
+        FeInstReturnVal* returnval = (FeInstReturnVal*) inst;
         sb_printf(sb, "returnval %u"COLOR_INST" %u"RESET, returnval->return_idx, number(returnval->source));
         break;
 

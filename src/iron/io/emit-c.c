@@ -264,7 +264,7 @@ static void emit_function(FeFunction* f, StringBuilder* sb) {
                     signed_to_unsigned_cast(binop->rhs->type), binop->rhs);
                 break;
             case FE_INST_RETURNVAL:
-                FeInstReturnval* retval = (FeInstReturnval*) inst;
+                FeInstReturnVal* retval = (FeInstReturnVal*) inst;
                 
                 if (retval->return_idx == 0) {
                     sb_printf(sb, "_returnval_%d =  _inst_%llx", retval->return_idx, retval->source);

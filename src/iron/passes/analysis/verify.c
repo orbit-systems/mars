@@ -6,7 +6,7 @@
     .severity = FE_MSG_SEVERITY_FATAL, \
 })
 
-static void verify_basic_block(FeModule* m, FeBasicBlock* bb, bool entry) {
+static void verify_basic_block(FeModule* m, FeFunction* fn, FeBasicBlock* bb, bool entry) {
     if (bb->start->kind == FE_INST_BOOKEND) {
         FE_FATAL(m, "basic blocks cannot be empty");
     }
@@ -18,9 +18,19 @@ static void verify_basic_block(FeModule* m, FeBasicBlock* bb, bool entry) {
     for_fe_inst(inst, *bb) {
         switch (inst->kind){
         case FE_INST_PARAMVAL:
-            if (!entry || (inst->prev->kind != FE_INST_BOOKEND && inst->prev->kind != FE_INST_PARAMVAL)) {
+            if (!entry || (inst->prev->kind != FE_INST_BOOKEND && inst->prev->kind != FE_INST_PARAMVAL))
                 FE_FATAL(m, "paramval must be at the beginning of the entry block");
-            }
+
+            FeInstParamVal* paramval = (FeInstParamVal*) inst;
+            if (paramval->param_idx >= fn->params.len) FE_FATAL(m, "paramval index out of range");
+            if (inst->type != fn->params.at[paramval->param_idx]->type) FE_FATAL(m, "paramval type != param type");
+            break;
+        case FE_INST_RETURNVAL:
+            if ((inst->next->kind != FE_INST_RETURN && inst->prev->kind != FE_INST_RETURNVAL))
+                FE_FATAL(m, "returnval must be before a return or another returnval");
+            FeInstReturnVal* returnval = (FeInstReturnVal*) inst;
+            if (returnval->return_idx >= fn->returns.len) FE_FATAL(m, "returnval index out of range");
+            if (returnval->source->type != fn->returns.at[returnval->return_idx]->type) FE_FATAL(m, "returnval source type != return type");
             break;
         case FE_INST_PHI:
             if (inst->prev->kind != FE_INST_BOOKEND && inst->prev->kind != FE_INST_PHI) {
@@ -48,7 +58,7 @@ static void verify_function(FeModule* m, FeFunction* f) {
         FE_FATAL(m, "functions must have at least one basic block");
     }
     foreach(FeBasicBlock* bb, f->blocks) {
-        verify_basic_block(m, bb, count == 0);
+        verify_basic_block(m, f, bb, count == 0);
     }
 }
 

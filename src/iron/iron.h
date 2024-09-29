@@ -24,22 +24,6 @@ typedef struct FeData         FeData;
 typedef struct FeSymbol       FeSymbol;
 typedef struct FeBasicBlock   FeBasicBlock;
 
-enum {
-    FE_PASS_MODE_MODULE,
-    FE_PASS_MODE_FUNCTION,
-    FE_PASS_MODE_BLOCK,
-};
-
-typedef struct FeScheduledPass {
-    FePass* ptr;
-    u8 mode;
-    union {
-        FeFunction*   fn;
-        FeBasicBlock* block;
-    };
-
-} FeScheduledPass;
-
 typedef struct FePass {
     char* name;
     union {
@@ -343,7 +327,7 @@ enum {
     // FeInstJump
     FE_INST_JUMP,
 
-    // FeInstReturnval
+    // FeInstReturnVal
     FE_INST_RETURNVAL,
     // FeInstReturn
     FE_INST_RETURN,
@@ -515,12 +499,12 @@ typedef struct FeInstParamVal {
 } FeInstParamVal;
 
 // set register return val
-typedef struct FeInstReturnval {
+typedef struct FeInstReturnVal {
     FeInst base;
     FeInst* source;
 
     u32 return_idx;
-} FeInstReturnval;
+} FeInstReturnVal;
 
 typedef struct FeInstReturn {
     FeInst base;
@@ -590,27 +574,6 @@ FeModule* fe_read_module(string text);
 
 string fe_emit_c(FeModule* m);
 
-enum {
-    _FE_ARCH_BEGIN,
-
-    FE_ARCH_APHELION, // aphelion 
-    FE_ARCH_XR17032,  // xr/17032
-    FE_ARCH_X86_64,   // x86-64
-    FE_ARCH_FOX32,    // fox32
-    FE_ARCH_ARM64,    // arm64
-
-    _FE_ARCH_END,
-};
-
-enum {
-    _FE_SYSTEM_BEGIN,
-
-    FE_SYSTEM_NONE,      // freestanding
-    
-    _FE_SYSTEM_END,
-};
-
-
 typedef struct FeMessage {
     u8 severity;
     u8 kind;
@@ -648,6 +611,26 @@ void fe_push_message(FeModule* m, FeMessage msg);
 FeMessage fe_pop_message(FeModule* m);
 void fe_clear_message_buffer(FeModule* m);
 void fe_print_message(FeMessage msg);
+
+enum {
+    _FE_ARCH_BEGIN,
+
+    FE_ARCH_X86_64,   // x86-64
+    FE_ARCH_APHELION, // aphelion 
+    FE_ARCH_ARM64,    // arm64
+    FE_ARCH_XR17032,  // xr/17032
+    FE_ARCH_FOX32,    // fox32
+
+    _FE_ARCH_END,
+};
+
+enum {
+    _FE_SYSTEM_BEGIN,
+
+    FE_SYSTEM_NONE,      // freestanding
+    
+    _FE_SYSTEM_END,
+};
 
 typedef struct FeModule {
     string name;
@@ -691,6 +674,10 @@ typedef struct FeModule {
 
     FeMessageQueue messages;
 } FeModule;
+
+FeType fe_arch_type_of_native_int(u16 arch);
+FeType fe_arch_type_of_native_float(u16 arch);
+bool   fe_arch_type_is_native(u16 arch, FeType t);
 
 typedef struct FeAllocator {
     void* (*malloc)(size_t);
