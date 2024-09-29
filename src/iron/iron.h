@@ -315,6 +315,7 @@ enum {
     // FeInstLoad
     FE_INST_LOAD,
     FE_INST_VOL_LOAD,
+    // FeInstStackLoad
     FE_INST_STACK_LOAD,
 
     // FeInstStore
@@ -332,16 +333,27 @@ enum {
     // FeInstReturn
     FE_INST_RETURN,
 
+    // FeInstProvide
+    FE_INST_PROVIDE,
+    // FeInstRetrieve
+    FE_INST_RETRIEVE,
+    // FeInstCall
+    FE_INST_CALL,
+    // FeInstIndirectCall
+    FE_INST_INDIRECT_CALL,
+    // FeInstAsm
+    FE_INST_ASM,
+
     _FE_INST_MAX,
 };
 
-// basic AIR structure
+// basic IR structure
 typedef struct FeInst {
-    FeInst* next;
-    FeInst* prev;
-    FeType type;
-    u16 use_count;
     u8 kind;
+    u16 use_count;
+    FeType type;
+    FeInst* next;
+    FeInst* prev;    
 } FeInst;
 
 typedef struct FeInstBookend {
@@ -422,8 +434,6 @@ typedef struct FeInstStackLoad {
     FeInst base;
 
     FeStackObject* location;
-
-    u8 align_offset;
 } FeInstStackLoad;
 
 typedef struct FeInstStackStore {
@@ -495,7 +505,7 @@ typedef struct FeInstBranch {
 typedef struct FeInstParamVal {
     FeInst base;
 
-    u32 param_idx;
+    u32 index;
 } FeInstParamVal;
 
 // set register return val
@@ -503,12 +513,59 @@ typedef struct FeInstReturnVal {
     FeInst base;
     FeInst* source;
 
-    u32 return_idx;
+    u32 index;
 } FeInstReturnVal;
 
 typedef struct FeInstReturn {
     FeInst base;
 } FeInstReturn;
+
+typedef struct FeInstProvide {
+    FeInst base;
+
+    FeInst* source;
+    u16 index;
+} FeInstProvide;
+
+typedef struct FeInstRetrieve {
+    FeInst base;
+
+    u16 index;
+} FeInstProvide;
+
+typedef struct FeInstCall {
+    FeInst base;
+
+    FeFunction* source;
+    // derives calling convention from source
+} FeInstCall;
+
+typedef struct FeInstIndirectCall {
+    FeInst base;
+    FeInst* source;
+
+    u16 callconv;
+} FeInstIndirectCall;
+
+typedef struct FeInstAsm {
+    FeInst base;
+
+    // assembly text
+    string text;
+} FeInstAsm;
+
+enum {
+    // C calling convention on the target platform
+    FE_CALLCONV_CDECL,
+    // force stdcall as defined by windows
+    FE_CALLCONV_STDCALL,
+    // force system v as defined on linux, etc.
+    FE_CALLCONV_SYSV
+
+    // parameters are not defined to be passed in any specific way, the backend can choose
+    // can only appear on functions with FE_BIND_LOCAL symbolic binding
+    // FE_CALLCONV_OPT,
+};
 
 #define for_fe_inst(inst, basic_block) for(FeInst* inst = (basic_block).start; inst->kind != FE_INST_BOOKEND; inst = inst->next)
 #define for_fe_inst_from(inst, start, basic_block) for(FeInst* inst = start; inst->kind != FE_INST_BOOKEND; inst = inst->next)
@@ -526,7 +583,6 @@ FeSymbol*     fe_find_or_new_symbol(FeModule* mod, string name, u8 binding);
 void fe_destroy_module(FeModule* m);
 void fe_destroy_function(FeFunction* f);
 void fe_destroy_basic_block(FeBasicBlock* bb);
-void fe_selftest();
 
 FeStackObject* fe_new_stackobject(FeFunction* f, FeType t);
 void fe_init_func_params(FeFunction* f, u16 count);

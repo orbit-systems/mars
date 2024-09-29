@@ -22,15 +22,15 @@ static void verify_basic_block(FeModule* m, FeFunction* fn, FeBasicBlock* bb, bo
                 FE_FATAL(m, "paramval must be at the beginning of the entry block");
 
             FeInstParamVal* paramval = (FeInstParamVal*) inst;
-            if (paramval->param_idx >= fn->params.len) FE_FATAL(m, "paramval index out of range");
-            if (inst->type != fn->params.at[paramval->param_idx]->type) FE_FATAL(m, "paramval type != param type");
+            if (paramval->index >= fn->params.len) FE_FATAL(m, "paramval index out of range");
+            if (inst->type != fn->params.at[paramval->index]->type) FE_FATAL(m, "paramval type != param type");
             break;
         case FE_INST_RETURNVAL:
             if ((inst->next->kind != FE_INST_RETURN && inst->prev->kind != FE_INST_RETURNVAL))
                 FE_FATAL(m, "returnval must be before a return or another returnval");
             FeInstReturnVal* returnval = (FeInstReturnVal*) inst;
-            if (returnval->return_idx >= fn->returns.len) FE_FATAL(m, "returnval index out of range");
-            if (returnval->source->type != fn->returns.at[returnval->return_idx]->type) FE_FATAL(m, "returnval source type != return type");
+            if (returnval->index >= fn->returns.len) FE_FATAL(m, "returnval index out of range");
+            if (returnval->source->type != fn->returns.at[returnval->index]->type) FE_FATAL(m, "returnval source type != return type");
             break;
         case FE_INST_PHI:
             if (inst->prev->kind != FE_INST_BOOKEND && inst->prev->kind != FE_INST_PHI) {

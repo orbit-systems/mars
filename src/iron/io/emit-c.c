@@ -232,7 +232,7 @@ static void emit_function(FeFunction* f, StringBuilder* sb) {
             sb_append_c(sb, "\t");
             switch (inst->kind) {
             case FE_INST_PARAMVAL:
-                sb_printf(sb, "_inst_%llx = _paramval_%d", inst, ((FeInstParamVal*)inst)->param_idx);
+                sb_printf(sb, "_inst_%llx = _paramval_%d", inst, ((FeInstParamVal*)inst)->index);
                 break;
             case FE_INST_CONST:
                 switch (inst->type) {
@@ -266,10 +266,10 @@ static void emit_function(FeFunction* f, StringBuilder* sb) {
             case FE_INST_RETURNVAL:
                 FeInstReturnVal* retval = (FeInstReturnVal*) inst;
                 
-                if (retval->return_idx == 0) {
-                    sb_printf(sb, "_returnval_%d =  _inst_%llx", retval->return_idx, retval->source);
+                if (retval->index == 0) {
+                    sb_printf(sb, "_returnval_%d =  _inst_%llx", retval->index, retval->source);
                 } else {
-                    sb_printf(sb, "*_returnval_%d = _inst_%llx", retval->return_idx, retval->source);
+                    sb_printf(sb, "*_returnval_%d = _inst_%llx", retval->index, retval->source);
                 }
                 break;
             case FE_INST_RETURN:

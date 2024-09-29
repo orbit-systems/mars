@@ -454,7 +454,7 @@ FeInst* fe_inst_branch(FeFunction* f, FeInst* cond, FeBasicBlock* if_true, FeBas
 
 FeInst* fe_inst_paramval(FeFunction* f, u32 param) {
     FeInstParamVal* ir = (FeInstParamVal*) fe_inst(f, FE_INST_PARAMVAL);
-    ir->param_idx = param;
+    ir->index = param;
     if (param >= f->params.len) {
         FE_FATAL(f->mod, cstrprintf("paramval index %d is out of range [0, %d)", param, f->params.len));
         // CRASH("paramval index %d is out of range", param);
@@ -465,7 +465,7 @@ FeInst* fe_inst_paramval(FeFunction* f, u32 param) {
 
 FeInst* fe_inst_returnval(FeFunction* f, u32 ret, FeInst* source) {
     FeInstReturnVal* ir = (FeInstReturnVal*) fe_inst(f, FE_INST_RETURNVAL);
-    ir->return_idx = ret;
+    ir->index = ret;
     if (ret >= f->returns.len) {
         FE_FATAL(f->mod, cstrprintf("returnval index %d is out of range [0, %d)", ret, f->returns.len));
     }
