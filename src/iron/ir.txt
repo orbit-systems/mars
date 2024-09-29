@@ -22,7 +22,7 @@ Let sandwichman know if you spot a place where this happens.
         `.binding` - The symbol's visiblity in the final code. See the next list for more information.
 
     Symbol bindings are:
-        `FE_BIND_EXPORT` - This symbol is defined in this module and is globally visible.
+        `FE_BIND_EXPORT` - This symbol is defined in this module and is globally visible. This is the default.
         `FE_BIND_EXPORT_WEAK` - This symbol is defined in this module and is globally visible, but a strongly-bound symbol in another compilation unit may override it.
         `FE_BIND_LOCAL` - This symbol is defined in this module, but is only locally visible.
         `FE_BIND_IMPORT` - This symbol is defined in another module/object.
@@ -30,6 +30,64 @@ Let sandwichman know if you spot a place where this happens.
 `FeFunction` - Functions
 
     Functions have parameters, returns, stack objects, and basic blocks.
+    TODO more here lol
 
+`FeType` - Types
+    `FeType` is an index into the module's typegraph. Indices below `_FE_TYPE_SIMPLE_END` are reserved.
+
+    `FE_TYPE_VOID` - Absence of a type. size 0, alignment 0
+    `FE_TYPE_BOOL` - `true` or `false`, like a 1-bit integer. size and alignment equivalent to `FE_TYPE_I8`.
+    `FE_TYPE_I8`   - 8-bit, two's complement integer
+    `FE_TYPE_I16`  - 16-bit, two's complement integer
+    `FE_TYPE_I32`  - 32-bit, two's complement integer
+    `FE_TYPE_I64`  - 64-bit, two's complement integer
+    `FE_TYPE_F16`  - 16-bit floating-point number, referred to in IEEE 754-2008 as 'binary16'
+    `FE_TYPE_F32`  - 32-bit floating-point number, referred to in IEEE 754-2008 as 'binary32'
+    `FE_TYPE_F64`  - 64-bit floating-point number, referred to in IEEE 754-2008 as 'binary64'
 
 `FeInst` - Instructions
+
+    The following only act on integer types.
+
+    `FE_INST_ADD`  - add two integers
+    `FE_INST_SUB`  - subtract two integers
+    `FE_INST_IMUL` - multiply two integers as if they are signed
+    `FE_INST_UMUL` - multiply two integers as if they are unsigned
+    `FE_INST_IDIV` - divide two integers as if they are signed
+    `FE_INST_UDIV` - divide two integers as if they are unsigned
+    `FE_INST_IMOD` - modulo two integers as if they are signed
+    `FE_INST_UMOD` - modulo two integers as if they are unsigned
+    `FE_INST_NEG`  - negation
+
+    `FE_INST_SHL` - bitwise shift left
+    `FE_INST_ASR` - bitwise arithmetic shift right (copy top bit)
+    `FE_INST_LSR` - bitwise logical shift right (zero top bit)
+
+        The following act on boolean values as well.
+
+        `FE_INST_AND` - bitwise and
+        `FE_INST_OR`  - bitwise or
+        `FE_INST_XOR` - bitwise xor
+        `FE_INST_NOT` - bitwise not
+
+    The following only act on floating-point types.
+
+        `FE_INST_FADD` - add two floating-point numbers.
+        `FE_INST_FSUB` - subtract two floating-point numbers.
+        `FE_INST_FMUL` - multiply two floating-point numbers.
+        `FE_INST_FDIV` - divide two floating-point numbers.
+        `FE_INST_FMOD` - modulo two floating-point numbers.
+
+    The following comparison instructions produce `FE_TYPE_BOOL`,
+
+        `FE_INST_ULT` - integer unsigned less than (a < b).
+        `FE_INST_UGT` - integer unsigned greater than (a > b).
+        `FE_INST_ULE` - integer unsigned less than or equal to (a <= b).
+        `FE_INST_UGE` - integer unsigned greater than or equal to (a >= b).
+        `FE_INST_ILT` - integer signed less than (a < b).
+        `FE_INST_IGT` - integer signed greater than (a > b).
+        `FE_INST_ILE` - integer signed less than or equal to (a <= b).
+        `FE_INST_IGE` - integer signed greater than or equal to (a >= b).
+        `FE_INST_EQ`  - integer equality (a == b)
+        `FE_INST_NE`  - integer inequality (a != b)
+    

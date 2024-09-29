@@ -160,7 +160,7 @@ static void init_cfg_nodes(FeFunction* fn) {
             branch->if_false->cfg_node->in_len++;
             break;
         default:
-            CRASH("invalid terminator"); // todo: replace this with an FeMessage
+            CRASH("invalid terminator"); // todo: replace this with an FeReport
             break;
         }
     }
@@ -192,7 +192,7 @@ static void init_cfg_nodes(FeFunction* fn) {
             false_target->incoming[false_target->in_len++] = node;
             break;
         default:
-            CRASH("invalid terminator"); // todo: replace this with an FeMessage
+            CRASH("invalid terminator"); // todo: replace this with an FeReport
             break;
         }
     }

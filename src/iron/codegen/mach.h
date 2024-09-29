@@ -5,7 +5,8 @@
 typedef struct FeMachBuffer       FeMachBuffer;
 typedef struct FeMachVReg         FeMachVReg;
 typedef struct FeMachImmediate    FeMachImmediate;
-typedef struct FeMachBase         FeMachBase;
+
+typedef struct FeMach             FeMach;
 typedef struct FeMachInst         FeMachInst;
 typedef struct FeMachInstTemplate FeMachInstTemplate;
 
@@ -18,15 +19,20 @@ da_typedef(u32);
 da_typedef(FeMachImmediate);
 
 typedef struct FeMachBuffer {
-    FeModule* module;
+    u16 arch;
+    u16 system;
 
     struct {
-
-    } yuh;
+        FeMach** at;
+        u64 len;
+        u64 cap;
+    } buf;
 
     da(u32) vreg_refs;
     da(FeMachVReg) vregs;
     da(FeMachImmediate) immediates;
+
+    Arena buf_alloca;
 } FeMachBuffer;
 
 #define FE_MACH_VREG_UNASSIGNED (UINT16_MAX)
@@ -43,6 +49,7 @@ enum {
     // artificially begin/end a vreg lifetime, as if an instruction had defined/used a value for it
     // useful for dictating saved registers across calls, making sure parameter and return registers
     // are correctly handled, anything to do with reservations and calling conventions really
+    // FeMachLifetimePoint
     FE_MACH_LIFETIME_BEGIN,
     FE_MACH_LIFETIME_END,
 
@@ -67,19 +74,25 @@ enum {
     FE_MACH_INST,
 };
 
-typedef struct FeMachBase {
+typedef struct FeMach {
     u8 kind;
-} FeMachBase;
+} FeMach;
+
+typedef struct FeMachSection {
+    FeMach base;
+
+    
+} FeMachSection;
 
 typedef struct FeMachLifetimePoint {
-    FeMachBase base;
+    FeMach base;
 
     u32 vreg;
 } FeMachLifetimePoint;
 
 // machine instruction
 typedef struct FeMachInst {
-    FeMachBase base;
+    FeMach base;
 
     FeMachInstTemplateRef template; // instruction template index
     FeMachVregList uses;
@@ -103,6 +116,11 @@ typedef struct FeMachImmediate {
 } FeMachImmediate;
 
 // template for a machine instruction.
-struct FeMachInstTemplate {
-
-};
+typedef struct FeMachInstTemplate {
+    u16 inst;
+    u8 uses_len;
+    u8 defs_len;
+    u8 imms_len;
+    u8 size;
+    bool side_effects;
+} FeMachInstTemplate;

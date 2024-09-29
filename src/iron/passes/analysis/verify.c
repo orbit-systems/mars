@@ -1,6 +1,6 @@
 #include "iron/iron.h"
 
-#define FE_FATAL(m, msg) fe_push_message(m, (FeMessage){ \
+#define FE_FATAL(m, msg) fe_push_message(m, (FeReport){ \
     .function_of_origin = __func__,\
     .message = (msg),\
     .severity = FE_MSG_SEVERITY_FATAL, \

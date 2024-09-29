@@ -230,10 +230,10 @@ typedef struct FeBasicBlock {
 enum {
     FE_INST_INVALID,
     
-    // that signals the ending of a basic block.
+    // that signals the beginning/ending of a basic block.
     // contains a backlink to the basic block itself.
-    // basic block (.end) will ONLY point to this IF
-    // there are NO other instructions in the block.
+    // basic block start/end will ONLY point to this if
+    // there are no other instructions in the block.
     FE_INST_BOOKEND,
 
     _FE_INST_NO_SIDE_EFFECTS_BEGIN,
@@ -285,8 +285,14 @@ enum {
     // FeInstUnop
     FE_INST_NOT,
     FE_INST_NEG,
-    FE_INST_CAST,
+
+    // bitcast between 
     FE_INST_BITCAST,
+
+    // integer casting
+    FE_INST_TRUNC,
+    FE_INST_SIGNEXT,
+    FE_INST_ZEROEXT,
 
     // FeInstStackAddr
     FE_INST_STACK_ADDR,
@@ -309,9 +315,6 @@ enum {
 
     // FeInstParamVal
     FE_INST_PARAMVAL,
-
-    // FeInstRetrieve
-    FE_INST_RETRIEVE,
 
     _FE_INST_NO_SIDE_EFFECTS_END,
 
@@ -336,6 +339,9 @@ enum {
     // FeInstReturn
     FE_INST_RETURN,
 
+
+    // FeInstRetrieve
+    FE_INST_RETRIEVE,
     // FeInstProvide
     FE_INST_PROVIDE,
     // FeInstCall
@@ -556,25 +562,19 @@ typedef struct FeInstAsm {
 } FeInstAsm;
 
 enum {
-    // mars calling convention, native multi-return support
-    FE_CALLCONV_MARS,
 
     // C calling convention on the target platform
     FE_CALLCONV_CDECL,
-    // force stdcall as defined by windows
+    // force windows stdcall
     FE_CALLCONV_STDCALL,
-    // force system v as defined on linux, etc.
+    // force system v
     FE_CALLCONV_SYSV,
 
-    // same as above, but functions with multiple return values
-    // pass them as pointers to modify.
-    // eg. 
-    //      fn () -> (i32 i64 f32)
-    // is transformed to
-    //      fn (ptr, ptr) -> (i32)
-    FE_CALLCONV_CDECL_MULTIRET_PTR,
-    FE_CALLCONV_STDCALL_MULTIRET_PTR,
-    FE_CALLCONV_SYSV_MULTIRET_PTR,
+    // none of the above calling conventions support multi-returns natively.
+    // a FeReport of FE_MSG_SEVERITY_ERROR severity will
+
+    // mars calling convention, native multi-return support
+    FE_CALLCONV_MARS,
 
     // parameters are not defined to be passed in any specific way, the backend can choose
     // can only appear on functions with FE_BIND_LOCAL symbolic binding
@@ -644,7 +644,7 @@ FeModule* fe_read_module(string text);
 
 string fe_emit_c(FeModule* m);
 
-typedef struct FeMessage {
+typedef struct FeReport {
     u8 severity;
     u8 kind;
     
@@ -655,13 +655,13 @@ typedef struct FeMessage {
         
     };
 
-} FeMessage;
+} FeReport;
 
-typedef struct FeMessageQueue {
-    FeMessage* at;
+typedef struct FeReportQueue {
+    FeReport* at;
     size_t len;
     size_t cap;
-} FeMessageQueue;
+} FeReportQueue;
 
 enum {
     FE_MSG_KIND_NONE,
@@ -676,16 +676,16 @@ enum {
     FE_MSG_SEVERITY_LOG,
 };
 
-// if the message is fatal, the error is immediately printed
-void fe_push_message(FeModule* m, FeMessage msg);
-FeMessage fe_pop_message(FeModule* m);
-void fe_clear_message_buffer(FeModule* m);
-void fe_print_message(FeMessage msg);
+// if the report is fatal, the error is immediately printed
+void fe_push_report(FeModule* m, FeReport msg);
+FeReport fe_pop_report(FeModule* m);
+void fe_clear_report_buffer(FeModule* m);
+void fe_print_report(FeReport msg);
 
 enum {
     _FE_ARCH_BEGIN,
 
-    FE_ARCH_X86_64,   // x86-64
+    FE_ARCH_X64,   // x86-64
     FE_ARCH_APHELION, // aphelion 
     FE_ARCH_ARM64,    // arm64
     FE_ARCH_XR17032,  // xr/17032
@@ -697,7 +697,9 @@ enum {
 enum {
     _FE_SYSTEM_BEGIN,
 
-    FE_SYSTEM_NONE,      // freestanding
+    FE_SYSTEM_NONE, // freestanding
+    FE_SYSTEM_LINUX,
+    FE_SYSTEM_WINDOWS,
     
     _FE_SYSTEM_END,
 };
@@ -742,7 +744,7 @@ typedef struct FeModule {
         void* system_config;
     } target;
 
-    FeMessageQueue messages;
+    FeReportQueue messages;
 } FeModule;
 
 FeType fe_arch_type_of_native_int(u16 arch);
