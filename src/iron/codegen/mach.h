@@ -43,8 +43,9 @@ enum {
     // artificially begin/end a vreg lifetime, as if an instruction had defined/used a value for it
     // useful for dictating saved registers across calls, making sure parameter and return registers
     // are correctly handled, anything to do with reservations and calling conventions really
-    FE_MACH_REGALLOC_LIFETIME_BEGIN,
-    FE_MACH_REGALLOC_LIFETIME_END,
+    FE_MACH_LIFETIME_BEGIN,
+    FE_MACH_LIFETIME_END,
+
     // usually at the start of a function, tells the register allocator to start working
     FE_MACH_REGALLOC_BEGIN,
     // usually at the end of a function, tells the register allocator to stop
@@ -70,7 +71,11 @@ typedef struct FeMachBase {
     u8 kind;
 } FeMachBase;
 
+typedef struct FeMachLifetimePoint {
+    FeMachBase base;
 
+    u32 vreg;
+} FeMachLifetimePoint;
 
 // machine instruction
 typedef struct FeMachInst {
