@@ -339,8 +339,8 @@ enum {
     FE_INST_RETRIEVE,
     // FeInstCall
     FE_INST_CALL,
-    // FeInstIndirectCall
-    FE_INST_INDIRECT_CALL,
+    // FeInstPtrCall
+    FE_INST_PTR_CALL,
     // FeInstAsm
     FE_INST_ASM,
 
@@ -540,12 +540,12 @@ typedef struct FeInstCall {
     // derives calling convention from source
 } FeInstCall;
 
-typedef struct FeInstIndirectCall {
+typedef struct FeInstPtrCall {
     FeInst base;
     FeInst* source;
 
     u16 callconv;
-} FeInstIndirectCall;
+} FeInstPtrCall;
 
 typedef struct FeInstAsm {
     FeInst base;
