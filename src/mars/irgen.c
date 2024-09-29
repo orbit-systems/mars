@@ -243,7 +243,7 @@ void irgen_stmt(IrBuilder* builder, AST stmt) {
 
         builder->bb = if_true;        
         irgen_stmt(builder, ifstmt->if_branch);
-        
+
         builder->backlink = previous_backlink; // reset backlink
         builder->bb = if_false;
 

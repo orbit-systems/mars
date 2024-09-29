@@ -44,6 +44,7 @@ int main(int argc, char** argv) {
 
     fe_sched_pass(iron_module, &fe_pass_verify);
     fe_sched_pass(iron_module, &fe_pass_stackprom);
+    fe_sched_pass(iron_module, &fe_pass_tdce);
     fe_run_all_passes(iron_module, true);
 
     // printstr(fe_emit_ir(iron_module));

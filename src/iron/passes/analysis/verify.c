@@ -18,7 +18,7 @@ static void verify_basic_block(FeModule* m, FeBasicBlock* bb, bool entry) {
     for_fe_inst(inst, *bb) {
         switch (inst->kind){
         case FE_INST_PARAMVAL:
-            if (!entry || (inst->prev->kind != FE_INST_BOOKEND && inst->prev->kind != FE_INST_PHI)) {
+            if (!entry || (inst->prev->kind != FE_INST_BOOKEND && inst->prev->kind != FE_INST_PARAMVAL)) {
                 FE_FATAL(m, "paramval must be at the beginning of the entry block");
             }
             break;
@@ -28,7 +28,7 @@ static void verify_basic_block(FeModule* m, FeBasicBlock* bb, bool entry) {
             }
             FeInstPhi* phi = (FeInstPhi*) inst;
             break;
-        
+
         case FE_INST_RETURN:
         case FE_INST_JUMP:
         case FE_INST_BRANCH:
@@ -47,10 +47,16 @@ static void verify_function(FeModule* m, FeFunction* f) {
     if (f->blocks.len == 0) {
         FE_FATAL(m, "functions must have at least one basic block");
     }
+    foreach(FeBasicBlock* bb, f->blocks) {
+        verify_basic_block(m, bb, count == 0);
+    }
 }
 
 static void verify_module(FeModule* m) {
-
+    for_range(i, 0, m->functions_len) {
+        FeFunction* f = m->functions[i];
+        verify_function(m, f);
+    }
 }
 
 // fails fatally if module is not valid.

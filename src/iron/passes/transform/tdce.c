@@ -60,6 +60,7 @@ static void register_uses(FeInst* ir) {
     case FE_INST_CONST:
     case FE_INST_PARAMVAL:
     case FE_INST_STACK_ADDR:
+    case FE_INST_RETURN:
         break;
     default:
         CRASH("unhandled inst type %d", ir->kind);

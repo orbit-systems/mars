@@ -24,6 +24,22 @@ typedef struct FeData         FeData;
 typedef struct FeSymbol       FeSymbol;
 typedef struct FeBasicBlock   FeBasicBlock;
 
+enum {
+    FE_PASS_MODE_MODULE,
+    FE_PASS_MODE_FUNCTION,
+    FE_PASS_MODE_BLOCK,
+};
+
+typedef struct FeScheduledPass {
+    FePass* ptr;
+    u8 mode;
+    union {
+        FeFunction*   fn;
+        FeBasicBlock* block;
+    };
+
+} FeScheduledPass;
+
 typedef struct FePass {
     char* name;
     union {

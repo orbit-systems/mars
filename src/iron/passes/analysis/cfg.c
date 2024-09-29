@@ -247,9 +247,7 @@ static void emit_cfg_dot(FeFunction* fn) {
         }
     }
 
-
     printf("}\n");
-    printf("--------\n");
 }
 
 static void emit_domtree_dot(FeFunction* fn) {
@@ -263,14 +261,12 @@ static void emit_domtree_dot(FeFunction* fn) {
         }
     }
 
-
     printf("}\n");
-    printf("--------\n");
 }
 
 // is N strictly dominated by D?
 static bool sdom(FeCFGNode* D, FeCFGNode* N) {
-    if (N == D) return false;
+    // if (N == D) return false;
     while (N->immediate_dominator != NULL) {
         if (N->immediate_dominator == D) return true;
         N = N->immediate_dominator;
@@ -316,6 +312,9 @@ static void per_function(FeFunction* fn) {
     foreach(FeBasicBlock* bb, fn->blocks) {
         compute_domfront(fn, bb->cfg_node);
     }
+
+    emit_cfg_dot(fn);
+    emit_domtree_dot(fn);
 }
 
 static void module(FeModule* m) {
