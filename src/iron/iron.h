@@ -567,7 +567,7 @@ enum {
     FE_CALLCONV_SYSV,
 
     // same as above, but functions with multiple return values
-    // are equivalent to passing pointers
+    // pass them as pointers to modify.
     // eg. 
     //      fn () -> (i32 i64 f32)
     // is transformed to
