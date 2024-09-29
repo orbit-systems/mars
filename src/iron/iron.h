@@ -186,9 +186,9 @@ typedef struct FeFunctionItem {
 
     FeType type;
 
-    // if its an aggregate, this is exposed as a pointer marked "by_val" so that
-    // calling conventions work without needing target-specific information.
-    FeType by_value;
+    // this is an aggregate passed by value and needs to be copied on the callee or caller side
+    // before modification.
+    FeType byval;
 } FeFunctionItem;
 
 typedef struct FeCFGNode FeCFGNode;
@@ -310,6 +310,9 @@ enum {
     // FeInstParamVal
     FE_INST_PARAMVAL,
 
+    // FeInstRetrieve
+    FE_INST_RETRIEVE,
+
     _FE_INST_NO_SIDE_EFFECTS_END,
 
     // FeInstLoad
@@ -335,8 +338,6 @@ enum {
 
     // FeInstProvide
     FE_INST_PROVIDE,
-    // FeInstRetrieve
-    FE_INST_RETRIEVE,
     // FeInstCall
     FE_INST_CALL,
     // FeInstPtrCall
@@ -555,12 +556,25 @@ typedef struct FeInstAsm {
 } FeInstAsm;
 
 enum {
+    // mars calling convention, native multi-return support
+    FE_CALLCONV_MARS,
+
     // C calling convention on the target platform
     FE_CALLCONV_CDECL,
     // force stdcall as defined by windows
     FE_CALLCONV_STDCALL,
     // force system v as defined on linux, etc.
-    FE_CALLCONV_SYSV
+    FE_CALLCONV_SYSV,
+
+    // same as above, but functions with multiple return values
+    // are equivalent to passing pointers
+    // eg. 
+    //      fn () -> (i32 i64 f32)
+    // is transformed to
+    //      fn (ptr, ptr) -> (i32)
+    FE_CALLCONV_CDECL_MULTIRET_PTR,
+    FE_CALLCONV_STDCALL_MULTIRET_PTR,
+    FE_CALLCONV_SYSV_MULTIRET_PTR,
 
     // parameters are not defined to be passed in any specific way, the backend can choose
     // can only appear on functions with FE_BIND_LOCAL symbolic binding

@@ -1,0 +1,35 @@
+IRON Intermediate Representation
+
+note: IR tends to change a lot, so this might be outdated in certain places as I forget to update it.
+Let sandwichman know if you spot a place where this happens.
+
+`FeModule` - Modules
+
+    Modules are single compilation units. They hold types, symbols, data (globals), and functions.
+    They also serve as contexts, allowing the user to schedule passes, etc.
+    IRON tries not to store data as global variables, so some API functions require you to pass 
+    the module pointer into them, even if nothing in the module is modified.
+
+`FeSymbol` - Symbols
+
+    Modules hold a symbol table. Symbols are used to identify functions and global data within the module.
+    Every function and datum has a symbol associated with it, and vice versa. No two functions/data can share
+    a symbol.
+
+    Each symbol has:
+        `.name` - The symbol's identifer. This identifier is never mangled and will be emitted as-is in the final code.
+        `.function/.data` - A backlink to the function or datum that this symbol is associated with.
+        `.binding` - The symbol's visiblity in the final code. See the next list for more information.
+
+    Symbol bindings are:
+        `FE_BIND_EXPORT` - This symbol is defined in this module and is globally visible.
+        `FE_BIND_EXPORT_WEAK` - This symbol is defined in this module and is globally visible, but a strongly-bound symbol in another compilation unit may override it.
+        `FE_BIND_LOCAL` - This symbol is defined in this module, but is only locally visible.
+        `FE_BIND_IMPORT` - This symbol is defined in another module/object.
+
+`FeFunction` - Functions
+
+    Functions have parameters, returns, stack objects, and basic blocks.
+
+
+`FeInst` - Instructions
