@@ -38,8 +38,8 @@ typedef struct FeMachBuffer {
 #define FE_MACH_VREG_UNASSIGNED (UINT16_MAX)
 
 typedef struct FeMachVReg {
-    u16 class;
-    u16 real;
+    u8 class;
+    u8 real;
 } FeMachVReg;
 
 enum {
@@ -72,6 +72,13 @@ enum {
     FE_MACH_DATA_BYTESTREAM,
 
     FE_MACH_INST,
+
+    // the following instruction will transfer control flow somewhere else.
+    FE_MACH_CFG_JUMP,
+    // the following instruction MIGHT transfer control flow somewhere else
+    FE_MACH_CFG_BRANCH,
+    // the following instruction is a target for 
+    FE_MACH_CFG_TARGET,
 };
 
 typedef struct FeMach {
@@ -81,7 +88,7 @@ typedef struct FeMach {
 typedef struct FeMachSection {
     FeMach base;
 
-    
+    string name;
 } FeMachSection;
 
 typedef struct FeMachLifetimePoint {
@@ -121,6 +128,5 @@ typedef struct FeMachInstTemplate {
     u8 uses_len;
     u8 defs_len;
     u8 imms_len;
-    u8 size;
     bool side_effects;
 } FeMachInstTemplate;

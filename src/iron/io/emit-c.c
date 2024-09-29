@@ -152,7 +152,7 @@ static void emit_function_signature(FeFunction* f, StringBuilder* sb) {
 
     for_range(i, 0, f->params.len) {
         FeFunctionItem* item = f->params.at[i];
-        if (item->by_value) TODO("");
+        if (item->byval) TODO("");
 
         emit_type_name(item->type, sb);
 
@@ -163,7 +163,7 @@ static void emit_function_signature(FeFunction* f, StringBuilder* sb) {
     }
     for_range(i, 1, f->returns.len) {
         FeFunctionItem* item = f->returns.at[i];
-        if (item->by_value) TODO("");
+        if (item->byval) TODO("");
 
         emit_type_ptr(item->type, sb);
 

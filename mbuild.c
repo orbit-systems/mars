@@ -64,6 +64,7 @@ char* iron_sources[] = {
     "src/iron/passes/analysis",
     "src/iron/passes/transform",
     "src/iron/codegen",
+    "src/iron/codegen/x64",
 };
 
 // char* opt = " -O3 -flto";

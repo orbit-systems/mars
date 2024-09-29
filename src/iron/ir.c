@@ -250,8 +250,10 @@ const size_t fe_inst_sizes[] = {
 
     [FE_INST_NOT]     = sizeof(FeInstUnop),
     [FE_INST_NEG]     = sizeof(FeInstUnop),
-    [FE_INST_CAST]    = sizeof(FeInstUnop),
     [FE_INST_BITCAST] = sizeof(FeInstUnop),
+    [FE_INST_TRUNC]   = sizeof(FeInstUnop),
+    [FE_INST_SIGNEXT] = sizeof(FeInstUnop),
+    [FE_INST_ZEROEXT] = sizeof(FeInstUnop),
 
     [FE_INST_STACK_ADDR] = sizeof(FeInstStackAddr),
     [FE_INST_FIELDPTR]  = sizeof(FeInstFieldPtr),
@@ -280,7 +282,7 @@ const size_t fe_inst_sizes[] = {
     [FE_INST_RETURN] = sizeof(FeInstReturn),
 };
 
-#define FE_FATAL(m, msg) fe_push_message(m, (FeReport){ \
+#define FE_FATAL(m, msg) fe_push_report(m, (FeReport){ \
     .function_of_origin = __func__,\
     .message = (msg),\
     .severity = FE_MSG_SEVERITY_FATAL, \

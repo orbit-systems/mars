@@ -51,11 +51,12 @@ static void register_uses(FeInst* ir) {
         break;
     case FE_INST_NOT:
     case FE_INST_NEG:
-    case FE_INST_CAST:
+    case FE_INST_SIGNEXT:
+    case FE_INST_ZEROEXT:
+    case FE_INST_TRUNC:
         FeInstUnop* unop = (FeInstUnop*) ir;
         if (unop->source) unop->source->use_count++;
         break;
-
     case FE_INST_INVALID:
     case FE_INST_CONST:
     case FE_INST_PARAMVAL:

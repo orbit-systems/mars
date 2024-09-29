@@ -538,7 +538,7 @@ typedef struct FeInstRetrieve {
     FeInst base;
 
     u16 index;
-} FeInstProvide;
+} FeInstRetrieve;
 
 typedef struct FeInstCall {
     FeInst base;

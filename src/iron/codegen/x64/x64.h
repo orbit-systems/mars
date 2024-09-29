@@ -29,6 +29,8 @@ enum {
     FE_X64_INST_UNKNOWN,
     FE_X64_INST_MOV_RR_64,   // mov r1, r2
     FE_X64_INST_LEA_RR_64,   // lea r1, [r2, r3]
+
+    _FE_X64_INST_MAX,
 };
 
-extern const FeMachInstTemplate fe_x64_inst_templates[];
+extern const FeMachInstTemplate fe_x64_inst_templates[_FE_X64_INST_MAX];

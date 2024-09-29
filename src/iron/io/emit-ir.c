@@ -282,14 +282,14 @@ static void emit_function(StringBuilder* sb, FeFunction* f) {
 
     sb_append_c(sb, "(");
     for_range(i, 0, f->params.len) {
-        if (f->params.at[i]->by_value) TODO("");
+        if (f->params.at[i]->byval) TODO("");
         FeType t = f->params.at[i]->type;
         emit_type(sb, f->mod, t);
         if (i != f->params.len - 1) sb_append_c(sb, " ");
     }
     sb_append_c(sb, ") (");
     for_range(i, 0, f->returns.len) {
-        if (f->returns.at[i]->by_value) TODO("");
+        if (f->returns.at[i]->byval) TODO("");
         FeType t = f->returns.at[i]->type;
         emit_type(sb, f->mod, t);
         if (i != f->returns.len - 1) sb_append_c(sb, " ");
