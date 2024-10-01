@@ -3,7 +3,7 @@
 // "native" (pointer-sized) integer type for an architecture.
 FeType fe_arch_type_of_native_int(u16 arch) {
     switch (arch) {
-    case FE_ARCH_X64:   return FE_TYPE_I64;
+    case FE_ARCH_X64:      return FE_TYPE_I64;
     case FE_ARCH_APHELION: return FE_TYPE_I64;
     case FE_ARCH_ARM64:    return FE_TYPE_I64;
     case FE_ARCH_XR17032:  return FE_TYPE_I32;
@@ -17,7 +17,7 @@ FeType fe_arch_type_of_native_int(u16 arch) {
 // returns FE_TYPE_VOID if there's no native floating-point
 FeType fe_arch_type_of_native_float(u16 arch) {
     switch (arch) {
-    case FE_ARCH_X64:   return FE_TYPE_F64;
+    case FE_ARCH_X64:      return FE_TYPE_F64;
     case FE_ARCH_APHELION: return FE_TYPE_F64;
     case FE_ARCH_ARM64:    return FE_TYPE_F64;
     case FE_ARCH_XR17032:  return FE_TYPE_VOID;

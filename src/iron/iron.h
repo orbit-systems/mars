@@ -762,5 +762,53 @@ void* fe_malloc(size_t size);
 void* fe_realloc(void* ptr, size_t size);
 void  fe_free(void* ptr);
 
+typedef struct FeDataBuffer {
+    u8* at;
+    size_t len;
+    size_t cap;
+} FeDataBuffer;
+
+FeDataBuffer fe_db_new(size_t initial_capacity);
+FeDataBuffer fe_db_clone(FeDataBuffer* buf);
+FeDataBuffer fe_db_new_from_file(FeDataBuffer* buf, string path);
+
+string fe_db_clone_to_string(FeDataBuffer* buf);
+char* fe_db_clone_to_cstring(FeDataBuffer* buf);
+
+// reserve bytes
+void fe_db_reserve(FeDataBuffer* buf, size_t more);
+
+// reserve until buf->cap == new_cap
+// does nothing when buf->cap > new_cap
+void fe_db_reserve_until(FeDataBuffer* buf, size_t new_cap);
+
+// append data to end of buffer
+size_t fe_db_write_string(FeDataBuffer* buf, string s);
+size_t fe_db_write_bytes(FeDataBuffer* buf, void* ptr, size_t len);
+size_t fe_db_write_cstring(FeDataBuffer* buf, char* s, bool NUL);
+size_t fe_db_write_format(FeDataBuffer* buf, char* fmt, ...);
+size_t fe_db_write_8(FeDataBuffer* buf, u8 data);
+size_t fe_db_write_16(FeDataBuffer* buf, u16 data);
+size_t fe_db_write_32(FeDataBuffer* buf, u32 data);
+size_t fe_db_write_64(FeDataBuffer* buf, u64 data);
+
+// insert data at a certain point, growing the buffer
+size_t fe_db_insert_string(FeDataBuffer* buf, size_t at, string s);
+size_t fe_db_insert_bytes(FeDataBuffer* buf, size_t at, void* ptr, size_t len);
+size_t fe_db_insert_cstring(FeDataBuffer* buf, size_t at, char* s);
+size_t fe_db_insert_8(FeDataBuffer* buf, size_t at, u8 data);
+size_t fe_db_insert_16(FeDataBuffer* buf, size_t at, u16 data);
+size_t fe_db_insert_32(FeDataBuffer* buf, size_t at, u32 data);
+size_t fe_db_insert_64(FeDataBuffer* buf, size_t at, u64 data);
+
+// overwrite data at a certain point, growing the buffer if needed
+size_t fe_db_overwrite_string(FeDataBuffer* buf, size_t at, string s);
+size_t fe_db_overwrite_bytes(FeDataBuffer* buf, size_t at, void* ptr, size_t len);
+size_t fe_db_overwrite_cstring(FeDataBuffer* buf, size_t at, char* s);
+size_t fe_db_overwrite_8(FeDataBuffer* buf, size_t at, u8 data);
+size_t fe_db_overwrite_16(FeDataBuffer* buf, size_t at, u16 data);
+size_t fe_db_overwrite_32(FeDataBuffer* buf, size_t at, u32 data);
+size_t fe_db_overwrite_64(FeDataBuffer* buf, size_t at, u64 data);
+
 #include "iron/passes/passes.h"
 #include "iron/codegen/mach.h"
