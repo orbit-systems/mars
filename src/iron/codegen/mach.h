@@ -12,21 +12,28 @@ typedef struct FeMachInstTemplate FeMachInstTemplate;
 
 typedef u32 FeMachVregList;
 typedef u32 FeMachImmediateList;
-typedef u32 FeMachInstTemplateRef;
+typedef u16 FeMachInstTemplateIndex;
 
 da_typedef(FeMachVReg);
 da_typedef(u32);
 da_typedef(FeMachImmediate);
 
 typedef struct FeMachBuffer {
-    u16 arch;
-    u16 system;
+    
+    struct {
+        u16 arch;
+        u16 system;
+        void* arch_config;
+        void* system_config;
+        FeMachInstTemplate* inst_templates;
+    } target;
 
     struct {
         FeMach** at;
         u64 len;
         u64 cap;
     } buf;
+
 
     da(u32) vreg_refs;
     da(FeMachVReg) vregs;
@@ -40,6 +47,7 @@ typedef struct FeMachBuffer {
 typedef struct FeMachVReg {
     u8 class;
     u8 real;
+    u8 hint; // 0 == no hint
 } FeMachVReg;
 
 enum {
@@ -73,11 +81,11 @@ enum {
 
     FE_MACH_INST,
 
-    // the following instruction will transfer control flow somewhere else.
+    // the following instruction WILL transfer control flow somewhere else.
     FE_MACH_CFG_JUMP,
     // the following instruction MIGHT transfer control flow somewhere else
     FE_MACH_CFG_BRANCH,
-    // the following instruction is a target for 
+    // the following instruction is a target for a CFG jump/branch
     FE_MACH_CFG_TARGET,
 };
 
@@ -101,9 +109,8 @@ typedef struct FeMachLifetimePoint {
 typedef struct FeMachInst {
     FeMach base;
 
-    FeMachInstTemplateRef template; // instruction template index
-    FeMachVregList uses;
-    FeMachVregList defs;
+    FeMachInstTemplateIndex template; // instruction template index
+    FeMachVregList regs;
     FeMachImmediateList imms;
 } FeMachInst;
 
@@ -123,10 +130,12 @@ typedef struct FeMachImmediate {
 } FeMachImmediate;
 
 // template for a machine instruction.
+// machine instructions can have a maximum of 16 registers (counting def and use)
 typedef struct FeMachInstTemplate {
-    u16 inst;
-    u8 uses_len;
-    u8 defs_len;
+    FeMachInstTemplateIndex template_index;
+    u16 defs; // defs bitmask
+    u16 uses; // uses bitmask
+    u8 regs_len;
     u8 imms_len;
-    bool side_effects;
+    bool side_effects : 1;
 } FeMachInstTemplate;

@@ -563,18 +563,22 @@ typedef struct FeInstAsm {
 
 enum {
 
-    // C calling convention on the target platform
+    // C calling convention on the target platform (sys-v/stdcall)
     FE_CALLCONV_CDECL,
+
     // force windows stdcall
     FE_CALLCONV_STDCALL,
     // force system v
     FE_CALLCONV_SYSV,
 
     // none of the above calling conventions support multi-returns natively.
-    // a FeReport of FE_MSG_SEVERITY_ERROR severity will
+    // a FeReport of FE_MSG_SEVERITY_ERROR severity will be generated at codegen.
 
     // mars calling convention, native multi-return support
     FE_CALLCONV_MARS,
+
+    // jackal calling convention, native multi-return support
+    FE_CALLCONV_JACKAL,
 
     // parameters are not defined to be passed in any specific way, the backend can choose
     // can only appear on functions with FE_BIND_LOCAL symbolic binding

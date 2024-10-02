@@ -18,6 +18,14 @@ FeMachVReg* fe_mach_get_vreg(FeMachBuffer* buf, FeMachVregList list, u32 index) 
     return &buf->vregs.at[vreg_index];
 }
 
+bool fe_mach_is_vreg_use(FeMachBuffer* buf, FeMachInstTemplateIndex template, u8 index) {
+    return (buf->target.inst_templates[template].defs & (1ull << index)) != 0;
+}
+
+bool fe_mach_is_vreg_def(FeMachBuffer* buf, FeMachInstTemplateIndex template, u8 index) {
+    return (buf->target.inst_templates[template].uses & (1ull << index)) != 0;
+}
+
 FeMachImmediate* fe_mach_get_immediate(FeMachBuffer* buf, FeMachImmediateList list, u32 index) {
     u32 imm_index = list + index;
     if (imm_index >= buf->immediates.len) return NULL;
@@ -36,16 +44,6 @@ u32 fe_mach_new_vreg(FeMachBuffer* buf, u16 regclass) {
     vreg.class = regclass;
     da_append(&buf->vregs, vreg);
     return buf->vregs.len - 1;
-}
-
-FeMachInstTemplate* fe_mach_get_inst_template(FeMachBuffer* buf, u16 inst_code) {
-    switch (buf->arch) {
-    case FE_ARCH_X64:
-        return (inst_code >= _FE_X64_INST_MAX) ? NULL : &fe_x64_inst_templates[inst_code];
-    default:
-        CRASH("");
-        break;
-    }
 }
 
 FeMach* fe_mach_get(FeMachBuffer* buf, u32 index) {
