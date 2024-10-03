@@ -5,6 +5,7 @@
 typedef struct FeMachBuffer       FeMachBuffer;
 typedef struct FeMachVReg         FeMachVReg;
 typedef struct FeMachImmediate    FeMachImmediate;
+typedef struct FeMachSymbol       FeMachSymbol;
 
 typedef struct FeMach             FeMach;
 typedef struct FeMachInst         FeMachInst;
@@ -12,7 +13,6 @@ typedef struct FeMachInstTemplate FeMachInstTemplate;
 
 typedef u32 FeMachVregList; // index to first vreg
 typedef u32 FeMachImmediateList; // index to first immediate
-typedef u16 FeMachInstTemplateIndex;
 
 da_typedef(FeMachVReg);
 da_typedef(FeMachImmediate);
@@ -32,6 +32,12 @@ typedef struct FeMachBuffer {
         u64 len;
         u64 cap;
     } buf;
+
+    struct {
+        FeMachSymbol* at;
+        u64 len;
+        u64 cap;
+    } symtab;
 
     da(FeMachVReg) vregs;
     da(FeMachImmediate) immediates;
@@ -66,8 +72,6 @@ enum {
     FE_MACH_LABEL_LOCAL,
     FE_MACH_LABEL_GLOBAL,
 
-    FE_MACH_DIRECTIVE_ALIGN,
-
     FE_MACH_DATA_ZERO,
     FE_MACH_DATA_FILL,
     FE_MACH_DATA_D8,
@@ -84,6 +88,8 @@ enum {
     FE_MACH_CFG_BRANCH,
     // the following instruction is a target for a CFG jump/branch
     FE_MACH_CFG_TARGET,
+
+    _FE_MACH_MAX,
 };
 
 typedef struct FeMach {
@@ -93,7 +99,7 @@ typedef struct FeMach {
 typedef struct FeMachLabel {
     FeMach base;
 
-    string name;
+    u32 symbol_index;
 } FeMachLabel;
 
 typedef struct FeMachSection {
@@ -112,7 +118,7 @@ typedef struct FeMachLifetimePoint {
 typedef struct FeMachInst {
     FeMach base;
 
-    FeMachInstTemplateIndex template; // instruction template index
+    u16 template; // instruction template index
     FeMachVregList regs;
     FeMachImmediateList imms;
 } FeMachInst;
@@ -135,10 +141,28 @@ typedef struct FeMachImmediate {
 // template for a machine instruction.
 // machine instructions can have a maximum of 16 registers (counting def and use)
 typedef struct FeMachInstTemplate {
-    FeMachInstTemplateIndex template_index;
+    u16 template_index;
     u16 defs; // defs bitmask
     u16 uses; // uses bitmask
     u8 regs_len;
     u8 imms_len;
     bool side_effects : 1;
 } FeMachInstTemplate;
+
+typedef struct FeMachSymbol {
+    char* name;
+    u16 name_len;
+
+    u8 binding;
+    u32 def; // index of definition instruction
+} FeMachSymbol;
+
+FeMachBuffer fe_mach_codegen(FeModule* m);
+
+FeType fe_mach_type_of_native_int(u16 arch);
+FeType fe_mach_type_of_native_float(u16 arch);
+bool   fe_mach_type_is_native(u16 arch, FeType t);
+
+FeMach* fe_mach_append(FeMachBuffer* buf, FeMach* inst);
+FeMach* fe_mach_new(FeMachBuffer* buf, u8 kind);
+FeMachInst* fe_mach_new_inst(FeMachBuffer* buf, u16 template_index);

@@ -83,33 +83,33 @@ static void emit_inst(FeDataBuffer* db, FeMachBuffer* buf, FeMach* m) {
     }
 }
 
-void fe_x64_assemble_text(FeDataBuffer* db, FeMachBuffer* machbuf) {
+void fe_x64_emit_text(FeDataBuffer* db, FeMachBuffer* machbuf) {
     for_range(i, 0, machbuf->buf.len) {
         FeMach* m = machbuf->buf.at[i];
         switch (m->kind) {
         case FE_MACH_CFG_BRANCH:
-            fe_db_write_cstring(db, "; CFG_BRANCH\n");
+            fe_db_write_cstring(db, "; (IRON) cfg branch\n");
             break;
         case FE_MACH_CFG_JUMP:
-            fe_db_write_cstring(db, "; CFG_JUMP\n");
+            fe_db_write_cstring(db, "; (IRON) cfg jump\n");
             break;
         case FE_MACH_CFG_TARGET:
-            fe_db_write_cstring(db, "; CFG_TARGET\n");
+            fe_db_write_cstring(db, "; (IRON) cfg target\n");
             break;
         case FE_MACH_REGALLOC_BEGIN:
-            fe_db_write_cstring(db, "; REGALLOC_BEGIN\n");
+            fe_db_write_cstring(db, "; (IRON) regalloc begin\n");
             break;
         case FE_MACH_REGALLOC_END:
-            fe_db_write_cstring(db, "; REGALLOC_END\n");
+            fe_db_write_cstring(db, "; (IRON) regalloc end\n");
             break;
         case FE_MACH_LIFETIME_BEGIN:
             FeMachLifetimePoint* ltp = (FeMachLifetimePoint*) m;
-            fe_db_write_cstring(db, "; LIFETIME_BEGIN ");
+            fe_db_write_cstring(db, "; (IRON) lifetime begin ");
             emit_register(db, machbuf, ltp->vreg, GPR_64);
             fe_db_write_cstring(db, "\n");
         case FE_MACH_LIFETIME_END:
             ltp = (FeMachLifetimePoint*) m;
-            fe_db_write_cstring(db, "; LIFETIME_END ");
+            fe_db_write_cstring(db, "; (IRON) lifetime end ");
             emit_register(db, machbuf, ltp->vreg, GPR_64);
             fe_db_write_8(db, '\n');
             break;
@@ -122,7 +122,8 @@ void fe_x64_assemble_text(FeDataBuffer* db, FeMachBuffer* machbuf) {
             fe_db_write_8(db, '.');
         case FE_MACH_LABEL_GLOBAL:
             FeMachLabel* label = (FeMachLabel*) m;
-            fe_db_write_string(db, label->name);
+            FeMachSymbol sym = machbuf->symtab.at[label->symbol_index];
+            fe_db_write_bytes(db, sym.name, sym.name_len);
             fe_db_write_cstring(db, ":\n");
             break;
         }

@@ -307,7 +307,7 @@ enum {
 
     // FeInstConst
     FE_INST_CONST,
-    // FeLoadSymbol
+    // FeInstLoadSymbol
     FE_INST_LOAD_SYMBOL,
 
     // FeInstMov
@@ -470,11 +470,11 @@ typedef struct FeInstConst {
     };
 } FeInstConst;
 
-typedef struct FeLoadSymbol {
+typedef struct FeInstLoadSymbol {
     FeInst base;
     
     FeSymbol* sym;
-} FeLoadSymbol;
+} FeInstLoadSymbol;
 
 typedef struct FeInstMov {
     FeInst base;
@@ -752,10 +752,6 @@ typedef struct FeModule {
 
     FeReportQueue messages;
 } FeModule;
-
-FeType fe_arch_type_of_native_int(u16 arch);
-FeType fe_arch_type_of_native_float(u16 arch);
-bool   fe_arch_type_is_native(u16 arch, FeType t);
 
 typedef struct FeAllocator {
     void* (*malloc)(size_t);

@@ -51,6 +51,21 @@ int main(int argc, char** argv) {
 
     printf("IR generated\n");
 
+    printf("attempt codegen\n");
+
+    iron_module->target.arch = FE_ARCH_X64;
+    iron_module->target.system = FE_SYSTEM_LINUX;
+
+    FeMachBuffer mb = fe_mach_codegen(iron_module);
+
+    FeDataBuffer db = fe_db_new(128);
+
+    fe_x64_emit_text(&db, &mb);
+
+    printf(";;; EMIT\n");
+    printf(fe_db_clone_to_cstring(&db));
+    printf(";;; DONE\n");
+
     return 0;
 }
 

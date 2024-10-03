@@ -11,7 +11,7 @@ int main() {
 
     {
         FeSymbol* fn_sym = fe_new_symbol(m, str("foo"), FE_BIND_EXPORT);
-        FeFunction* fn = fe_new_function(m, fn_sym, FE_CALLCONV_CDECL);
+        FeFunction* fn = fe_new_function(m, fn_sym, FE_CALLCONV_MARS);
 
         fe_init_func_params(fn, 1);
         fe_add_func_param(fn, FE_TYPE_BOOL);

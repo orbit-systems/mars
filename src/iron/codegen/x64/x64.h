@@ -39,3 +39,6 @@ enum {
 };
 
 extern const FeMachInstTemplate fe_x64_inst_templates[_FE_X64_INST_MAX];
+
+FeMachBuffer fe_x64_codegen(FeModule* mod);
+void fe_x64_emit_text(FeDataBuffer* db, FeMachBuffer* machbuf);

@@ -51,12 +51,14 @@
 } while (0)
 
 #define da_reserve(da_ptr, num_slots) do { \
-    (da_ptr)->cap += num_slots; \
-    (da_ptr)->at = realloc((da_ptr)->at, sizeof(*(da_ptr)->at) * (da_ptr)->cap); \
-    if ((da_ptr)->at == NULL) { \
-        printf("(%s:%d) da_reserve realloc failed for capacity %zu", (__FILE__), (__LINE__), (da_ptr)->cap); \
-        exit(1); \
-    } \
+    if ((da_ptr)->len + num_slots >= (da_ptr)->cap) {\
+        (da_ptr)->cap += (da_ptr)->len + num_slots; \
+        (da_ptr)->at = realloc((da_ptr)->at, sizeof(*(da_ptr)->at) * (da_ptr)->cap); \
+        if ((da_ptr)->at == NULL) { \
+            printf("(%s:%d) da_reserve realloc failed for capacity %zu", (__FILE__), (__LINE__), (da_ptr)->cap); \
+            exit(1); \
+        } \
+    }\
 } while (0)
 
 #define da_clear(da_ptr) do { \

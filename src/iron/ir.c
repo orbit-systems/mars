@@ -268,7 +268,7 @@ const size_t fe_inst_sizes[] = {
     [FE_INST_STACK_STORE] = sizeof(FeInstStackStore),
 
     [FE_INST_CONST]  = sizeof(FeInstConst),
-    [FE_INST_LOAD_SYMBOL] = sizeof(FeLoadSymbol),
+    [FE_INST_LOAD_SYMBOL] = sizeof(FeInstLoadSymbol),
 
     [FE_INST_MOV] = sizeof(FeInstMov),
     [FE_INST_PHI] = sizeof(FeInstPhi),
@@ -397,7 +397,7 @@ FeInst* fe_inst_const(FeFunction* f, FeType type) {
 }
 
 FeInst* fe_inst_load_symbol(FeFunction* f, FeType type, FeSymbol* symbol) {
-    FeLoadSymbol* ir = (FeLoadSymbol*) fe_inst(f, FE_INST_LOAD_SYMBOL);
+    FeInstLoadSymbol* ir = (FeInstLoadSymbol*) fe_inst(f, FE_INST_LOAD_SYMBOL);
     ir->sym = symbol;
     if (!fe_type_is_scalar(type)) {
         FE_FATAL(f->mod, "cannot load symbol into non-scalar type");
