@@ -10,12 +10,11 @@ typedef struct FeMach             FeMach;
 typedef struct FeMachInst         FeMachInst;
 typedef struct FeMachInstTemplate FeMachInstTemplate;
 
-typedef u32 FeMachVregList;
-typedef u32 FeMachImmediateList;
+typedef u32 FeMachVregList; // index to first vreg
+typedef u32 FeMachImmediateList; // index to first immediate
 typedef u16 FeMachInstTemplateIndex;
 
 da_typedef(FeMachVReg);
-da_typedef(u32);
 da_typedef(FeMachImmediate);
 
 typedef struct FeMachBuffer {
@@ -25,7 +24,7 @@ typedef struct FeMachBuffer {
         u16 system;
         void* arch_config;
         void* system_config;
-        FeMachInstTemplate* inst_templates;
+        const FeMachInstTemplate* inst_templates;
     } target;
 
     struct {
@@ -34,8 +33,6 @@ typedef struct FeMachBuffer {
         u64 cap;
     } buf;
 
-
-    da(u32) vreg_refs;
     da(FeMachVReg) vregs;
     da(FeMachImmediate) immediates;
 
@@ -47,7 +44,7 @@ typedef struct FeMachBuffer {
 typedef struct FeMachVReg {
     u8 class;
     u8 real;
-    u8 hint; // 0 == no hint
+    u8 hint;
 } FeMachVReg;
 
 enum {
@@ -66,8 +63,8 @@ enum {
     // usually at the end of a function, tells the register allocator to stop
     FE_MACH_REGALLOC_END,
 
-    FE_MACH_LOCAL_LABEL,
-    FE_MACH_SYMBOL_LABEL,
+    FE_MACH_LABEL_LOCAL,
+    FE_MACH_LABEL_GLOBAL,
 
     FE_MACH_DIRECTIVE_ALIGN,
 
@@ -92,6 +89,12 @@ enum {
 typedef struct FeMach {
     u8 kind;
 } FeMach;
+
+typedef struct FeMachLabel {
+    FeMach base;
+
+    string name;
+} FeMachLabel;
 
 typedef struct FeMachSection {
     FeMach base;

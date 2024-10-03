@@ -155,6 +155,8 @@ typedef struct FeFunction {
     FeModule* mod;
     FeSymbol* sym;
 
+    u8 cconv;
+
     struct {
         FeBasicBlock** at;
         u32 len;
@@ -591,7 +593,7 @@ enum {
 extern const size_t fe_inst_sizes[];
 
 FeModule*     fe_new_module(string name);
-FeFunction*   fe_new_function(FeModule* mod, FeSymbol* sym);
+FeFunction*   fe_new_function(FeModule* mod, FeSymbol* sym, u8 cconv);
 FeBasicBlock* fe_new_basic_block(FeFunction* fn, string name);
 FeData*       fe_new_data(FeModule* mod, FeSymbol* sym, bool read_only);
 FeSymbol*     fe_new_symbol(FeModule* mod, string name, u8 binding);
@@ -766,6 +768,7 @@ void* fe_malloc(size_t size);
 void* fe_realloc(void* ptr, size_t size);
 void  fe_free(void* ptr);
 
+// like stringbuilder but epic
 typedef struct FeDataBuffer {
     u8* at;
     size_t len;
@@ -789,7 +792,7 @@ void fe_db_reserve_until(FeDataBuffer* buf, size_t new_cap);
 // append data to end of buffer
 size_t fe_db_write_string(FeDataBuffer* buf, string s);
 size_t fe_db_write_bytes(FeDataBuffer* buf, void* ptr, size_t len);
-size_t fe_db_write_cstring(FeDataBuffer* buf, char* s, bool NUL);
+size_t fe_db_write_cstring(FeDataBuffer* buf, char* s);
 size_t fe_db_write_format(FeDataBuffer* buf, char* fmt, ...);
 size_t fe_db_write_8(FeDataBuffer* buf, u8 data);
 size_t fe_db_write_16(FeDataBuffer* buf, u16 data);

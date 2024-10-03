@@ -95,7 +95,7 @@ void irgen_global_decl(IrBuilder* builder, ast_decl_stmt* global_decl) {
 
 // this will overwrite the current function and basic block
 FeFunction* irgen_function(IrBuilder* builder, ast_func_literal_expr* fn_literal, FeSymbol* sym) {
-    FeFunction* fn = fe_new_function(builder->mod, sym);
+    FeFunction* fn = fe_new_function(builder->mod, sym, FE_CALLCONV_MARS);
     builder->fn = fn;
 
     fe_init_func_params(fn, fn_literal->paramlen);

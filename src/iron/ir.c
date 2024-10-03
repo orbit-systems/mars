@@ -3,7 +3,7 @@
 #include "iron/passes/passes.h"
 
 // if (sym == NULL), create new symbol with no name
-FeFunction* fe_new_function(FeModule* mod, FeSymbol* sym) {
+FeFunction* fe_new_function(FeModule* mod, FeSymbol* sym, u8 cconv) {
     FeFunction* fn = fe_malloc(sizeof(FeFunction));
 
     fn->sym = sym ? sym : fe_new_symbol(mod, NULL_STR, FE_BIND_EXPORT);

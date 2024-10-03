@@ -62,12 +62,11 @@ size_t fe_db_write_bytes(FeDataBuffer* buf, void* ptr, size_t len) {
     return len;
 }
 
-size_t fe_db_write_cstring(FeDataBuffer* buf, char* s, bool NUL) {
+size_t fe_db_write_cstring(FeDataBuffer* buf, char* s) {
     size_t slen = strlen(s);
-    fe_db_reserve(buf, slen + (u64)NUL);
+    fe_db_reserve(buf, slen);
     memcpy(buf->at + buf->len, s, slen);
-    buf->len += slen + (u64)NUL;
-    if (NUL) buf->at[buf->len - 1] = '\0';
+    buf->len += slen;
     return slen;
 }
 size_t fe_db_write_8(FeDataBuffer* buf, u8 data) {
@@ -105,7 +104,7 @@ size_t fe_db_write_format(FeDataBuffer* buf, char* fmt, ...) {
     memset(chars, 0, sizeof(chars));
 
     vsprintf(chars, fmt, varargs);
-    fe_db_write_cstring(buf, chars, false);
+    fe_db_write_cstring(buf, chars);
     return strlen(chars);
 }
 

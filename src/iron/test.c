@@ -7,7 +7,7 @@ void test_algsimp_reassoc() {
     FeModule* m = fe_new_module(str("test"));
 
     FeSymbol* sym = fe_new_symbol(m, str("algsimp_test"), FE_BIND_LOCAL);
-    FeFunction* f = fe_new_function(m, sym);
+    FeFunction* f = fe_new_function(m, sym, FE_CALLCONV_MARS);
     fe_init_func_params(f, 1);
     fe_add_func_param(f, FE_TYPE_I64);
     fe_init_func_returns(f, 1);
@@ -52,7 +52,7 @@ void test_algsimp_sr() {
     FeModule* m = fe_new_module(str("test"));
 
     FeSymbol* sym = fe_new_symbol(m, str("algsimp_test"), FE_BIND_LOCAL);
-    FeFunction* f = fe_new_function(m, sym);
+    FeFunction* f = fe_new_function(m, sym, FE_CALLCONV_MARS);
     fe_init_func_params(f, 1);
     fe_add_func_param(f, FE_TYPE_I64);
     fe_init_func_returns(f, 1);
@@ -91,7 +91,7 @@ void test_c_gen() {
     FeModule* m = fe_new_module(str("test"));
 
     FeSymbol* sym = fe_new_symbol(m, str("add_mul"), FE_BIND_LOCAL);
-    FeFunction* f = fe_new_function(m, sym);
+    FeFunction* f = fe_new_function(m, sym, FE_CALLCONV_MARS);
     fe_init_func_params(f, 2);
     fe_add_func_param(f, FE_TYPE_I64);
     fe_add_func_param(f, FE_TYPE_I64);
