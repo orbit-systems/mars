@@ -29,8 +29,9 @@ static void gen_symtab(FeModule* m, FeMachBuffer* mb) {
 PtrMap ir2vreg;
 
 static void gen_function(FeMachBuffer* buf, FeFunction* fn) {
+
+    // only support mars callconv rn
     if (fn->cconv != FE_CALLCONV_MARS) {
-        // only support mars callconv rn
         CRASH("only support mars callconv rn");
     }
 
