@@ -10,6 +10,7 @@ FeFunction* fe_new_function(FeModule* mod, FeSymbol* sym, u8 cconv) {
     if (!sym) fn->sym->name = strprintf("symbol_%016llx", fn->sym);
     fn->sym->is_function = true;
     fn->sym->function = fn;
+    fn->cconv = cconv;
 
     fn->alloca = arena_make(FE_FN_ALLOCA_BLOCK_SIZE);
     da_init(&fn->blocks, 1);

@@ -62,9 +62,7 @@ int main(int argc, char** argv) {
 
     fe_x64_emit_text(&db, &mb);
 
-    printf(";;; EMIT\n");
-    printf(fe_db_clone_to_cstring(&db));
-    printf(";;; DONE\n");
+    printf("\n%s\n", fe_db_clone_to_cstring(&db));
 
     return 0;
 }
