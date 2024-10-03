@@ -12,7 +12,7 @@ typedef struct parser parser;
 typedef struct {
     token* start;
     token* end;
-    // type* T; /* tentatively deleting this, it may be useful in the future but not now */
+    Type* T; 
 } ast_base;
 
 // define all the AST node macros
