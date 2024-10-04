@@ -1,6 +1,6 @@
 #include "iron/iron.h"
-
 #include "iron/passes/passes.h"
+#include "iron/codegen/x64/x64.h"
 
 // if (sym == NULL), create new symbol with no name
 FeFunction* fe_new_function(FeModule* mod, FeSymbol* sym, u8 cconv) {
@@ -213,8 +213,14 @@ FeIr* fe_insert_ir_after(FeIr* new, FeIr* ref) {
 }
 
 FeIr* fe_ir(FeFunction* f, u16 type) {
-    if (type >= _FE_IR_MAX) type = FE_IR_INVALID;
-    FeIr* ir = arena_alloc(&f->alloca, fe_inst_sizes[type], 8);
+    size_t extra = 0;
+    if (type >= _FE_IR_ARCH_SPECIFIC_START) {
+        if (f->mod->target.arch == 0) {
+            FE_FATAL("cannot create arch-specific ir without target arch");
+        }
+        TODO("");
+    }
+    FeIr* ir = arena_alloc(&f->alloca, fe_inst_sizes[type] + extra, 8);
     ir->kind = type;
     ir->type = FE_TYPE_VOID;
     return ir;
