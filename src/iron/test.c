@@ -126,3 +126,5 @@ void fe_selftest() {
     test_c_gen();
     
 }
+
+//TODO: change .reg_count to be calculated by log_2((.defs | .uses) + 1) - 1 (assumption is .defs | .uses is po2 - 1)

@@ -12,6 +12,12 @@ void check_module(mars_module* mod) {
         }
     }
 
+    //TODO:
+    /*
+        check assign expr operations
+        
+    */
+
     mod->entities = new_entity_table(NULL);
 
     //its Time.
@@ -168,6 +174,7 @@ checked_expr check_expr(mars_module* mod, AST node, entity_table* scope) {
     switch(node.type) {
         case AST_func_literal_expr:
             Type* fn_type = check_func_literal(mod, node, scope);
+            node.base->T = fn_type;
             return (checked_expr){.expr = node, .type = fn_type};
 
         case AST_binary_op_expr:
@@ -180,7 +187,7 @@ checked_expr check_expr(mars_module* mod, AST node, entity_table* scope) {
             if (ret_type == NULL && rhs_to_lhs && !lhs_to_rhs) ret_type = lhs.type;
             if (ret_type == NULL && lhs_to_rhs && !rhs_to_lhs) ret_type = rhs.type;
             if (ret_type == NULL && rhs_to_lhs && lhs_to_rhs)  ret_type = lhs.type;
-        
+            node.base->T = ret_type;
             return (checked_expr){.expr = node, .type = ret_type};
 
         case AST_identifier:
@@ -191,6 +198,7 @@ checked_expr check_expr(mars_module* mod, AST node, entity_table* scope) {
             ident_ent->been_used = true;
             node.as_identifier->entity = ident_ent;
 
+            node.base->T = ident_ent->entity_type;
             return (checked_expr){
                 .expr = node, 
                 .type = ident_ent->entity_type,
@@ -209,6 +217,7 @@ checked_expr check_expr(mars_module* mod, AST node, entity_table* scope) {
                 if (subexpr.type->as_reference.subtype->tag == TYPE_NONE) {
                     error_at_node(mod, node.as_unary_op_expr->inside, "cannot dereference typeless ^%s pointer", subexpr.type->as_reference.mutable == true ? "mut" : "let");
                 }
+                node.base->T = subexpr.type->as_reference.subtype;
                 return (checked_expr){
                     .expr = node, 
                     .type = subexpr.type->as_reference.subtype,
@@ -222,6 +231,7 @@ checked_expr check_expr(mars_module* mod, AST node, entity_table* scope) {
             Type* subtype = ast_to_type(mod, node.as_cast_expr->type);
             checked_expr subexpr = check_expr(mod, node.as_cast_expr->rhs, scope);
             if (!check_type_cast_explicit(subtype, subexpr.type)) error_at_node(mod, node.as_cast_expr->rhs, "cannot cast rhs to type");
+            node.base->T = type_unalias(subtype); //TODO: lazy
             return (checked_expr){.expr = node, .type = type_unalias(subtype)};
         }
 
@@ -253,6 +263,7 @@ checked_expr check_expr(mars_module* mod, AST node, entity_table* scope) {
 
                 if (!field_type) error_at_node(mod, node.as_selector_expr->rhs, "field "str_fmt" is not a field contained in this struct", str_arg(node.as_selector_expr->rhs.as_identifier->tok->text));
                 //we can return raw or len here
+                node.base->T = field_type;
                 return (checked_expr){.expr = node, .type = field_type};
             }
 
@@ -267,6 +278,7 @@ checked_expr check_expr(mars_module* mod, AST node, entity_table* scope) {
                 if (!check_type_cast_implicit(lhs.type->as_function.params.at[count], argument.type)) 
                     error_at_node(mod, rhs, "cannot implicitly cast argument to parameter");
             }
+            node.base->T = lhs.type;
             return (checked_expr){.expr = node, .type = lhs.type};
         }
 
@@ -285,14 +297,17 @@ checked_expr check_literal(mars_module* mod, AST literal) {
             Type* pointer = make_type(TYPE_POINTER);
             pointer->as_reference.subtype = make_type(TYPE_NONE);
             pointer->as_reference.mutable = true;
+            literal.base->T = pointer;
             return (checked_expr){.expr = literal, .ev = ev, .type = pointer};
         case TOK_LITERAL_INT:
             ev->as_i64 = string_strtol(literal.as_literal_expr->tok->text, 10);
             ev->kind = EV_I64;
+            literal.base->T = make_type(TYPE_UNTYPED_INT); //TODO: this will be optimised, but dont be a lazy fuck kayla
             return (checked_expr){.expr = literal, .ev = ev, .type = make_type(TYPE_UNTYPED_INT)};
         case TOK_LITERAL_BOOL:
             ev->as_bool = string_cmp(constr("true"), literal.as_literal_expr->tok->text) != 0 ? 1 : 0;
             ev->kind = EV_BOOL;
+            literal.base->T = make_type(TYPE_BOOL); //TODO: this will be optimised, but dont be a lazy fuck kayla
             return (checked_expr){.expr = literal, .ev = ev, .type = make_type(TYPE_BOOL)};
         default:
             error_at_node(mod, literal, "[INTERNAL COMPILER ERROR] unable to check literal " str_fmt " with type %s", str_arg(literal.as_literal_expr->tok->text), token_type_str[literal.as_literal_expr->tok->type]);
