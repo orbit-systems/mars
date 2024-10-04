@@ -104,7 +104,7 @@ FeFunction* irgen_function(IrBuilder* builder, ast_func_literal_expr* fn_literal
     FeBasicBlock* entry_bb = fe_new_basic_block(fn, next_block_name());
     builder->bb = entry_bb;
 
-    FeInst** paramvals = mars_alloc(sizeof(FeInst*) * fn_literal->paramlen);
+    FeIr** paramvals = mars_alloc(sizeof(FeIr*) * fn_literal->paramlen);
 
     // initialize FeFunction params and add the paramval instructions
     for_range (i, 0, fn_literal->paramlen) {
@@ -114,7 +114,7 @@ FeFunction* irgen_function(IrBuilder* builder, ast_func_literal_expr* fn_literal
         // add param to function definition
         fe_add_func_param(fn, param_fe_type);
         // add the paramval inst
-        paramvals[i] = fe_append(entry_bb, fe_inst_paramval(fn, i));
+        paramvals[i] = fe_append_ir(entry_bb, fe_ir_paramval(fn, i));
     }
 
     // store all the params in stack objects.
@@ -127,7 +127,7 @@ FeFunction* irgen_function(IrBuilder* builder, ast_func_literal_expr* fn_literal
         // add it to the builder's ptrmap
         ptrmap_put(&builder->entity2stackobj, param_entity, param_stack_object);
         // store in stack object
-        fe_append(entry_bb, fe_inst_stack_store(fn, param_stack_object, paramvals[i]));
+        fe_append_ir(entry_bb, fe_ir_stack_store(fn, param_stack_object, paramvals[i]));
     }
 
     mars_free(paramvals);
@@ -150,9 +150,9 @@ FeFunction* irgen_function(IrBuilder* builder, ast_func_literal_expr* fn_literal
         builder->fn_returns[i] = return_stack_object;
         
         // initialize to zero.
-        FeInstConst* initial_zero = (FeInstConst*) fe_append(entry_bb, fe_inst_const(fn, return_fe_type));
+        FeIrConst* initial_zero = (FeIrConst*) fe_append_ir(entry_bb, fe_ir_const(fn, return_fe_type));
         initial_zero->i64 = 0; // TODO this is probably safe since all the i8, i16, etc. occupy the same space?
-        fe_append(entry_bb, fe_inst_stack_store(fn, return_stack_object, (FeInst*)initial_zero));
+        fe_append_ir(entry_bb, fe_ir_stack_store(fn, return_stack_object, (FeIr*)initial_zero));
 
 
     }
@@ -176,25 +176,25 @@ static bool is_mars_type_unsigned(Type* t) {
 
 // get the value of an expression.
 // this is different from generate_place_expr, which returns a pointer to load/store from.
-FeInst* irgen_value_expr(IrBuilder* builder, AST expr) {
+FeIr* irgen_value_expr(IrBuilder* builder, AST expr) {
     switch (expr.type) {
     case AST_binary_op_expr:
         ast_binary_op_expr* binop = expr.as_binary_op_expr;
 
         // generate lhs and rhs
-        FeInst* lhs = irgen_value_expr(builder, binop->lhs);
-        FeInst* rhs = irgen_value_expr(builder, binop->rhs);
+        FeIr* lhs = irgen_value_expr(builder, binop->lhs);
+        FeIr* rhs = irgen_value_expr(builder, binop->rhs);
 
         // select binop kind
         u8 kind = 0;
         switch (binop->op->type) {
-        case TOK_ADD: kind = FE_INST_ADD; break;
-        case TOK_LESS_THAN: kind = FE_INST_ILT; break;
+        case TOK_ADD: kind = FE_IR_ADD; break;
+        case TOK_LESS_THAN: kind = FE_IR_ILT; break;
         default: 
             crash("unhandled binop '%s'", token_type_str[binop->op->type]);
         }
         // combine
-        return fe_append(builder->bb, fe_inst_binop(builder->fn, kind, lhs, rhs));
+        return fe_append_ir(builder->bb, fe_ir_binop(builder->fn, kind, lhs, rhs));
 
     case AST_identifier:
         ast_identifier* ident = expr.as_identifier;
@@ -205,7 +205,7 @@ FeInst* irgen_value_expr(IrBuilder* builder, AST expr) {
         FeStackObject* obj = ptrmap_get(&builder->entity2stackobj, ident->entity);
         if (obj == PTRMAP_NOT_FOUND) crash("ptrmap could not find stack object of entity");
         // load
-        return fe_append(builder->bb, fe_inst_stack_load(builder->fn, obj));
+        return fe_append_ir(builder->bb, fe_ir_stack_load(builder->fn, obj));
     default:
         crash("unhandled expr '%s'", ast_type_str[expr.type]);
         return NULL;
@@ -220,36 +220,36 @@ void irgen_stmt(IrBuilder* builder, AST stmt) {
         // if there are immediate return values,
         // we get them and store them into their stack objects
         foreach(AST expr, ret->returns) {
-            FeInst* value = irgen_value_expr(builder, expr);
-            fe_append(builder->bb, fe_inst_stack_store(builder->fn, builder->fn_returns[count], value));
+            FeIr* value = irgen_value_expr(builder, expr);
+            fe_append_ir(builder->bb, fe_ir_stack_store(builder->fn, builder->fn_returns[count], value));
         }
 
         // regardless of if there are immediate returns,
         // we get the values from the stack objects 
         // and put them in returnvals
 
-        FeInst** return_values = mars_alloc(sizeof(FeInst*) * builder->fn_returns_len);
+        FeIr** return_values = mars_alloc(sizeof(FeIr*) * builder->fn_returns_len);
         for_urange (i, 0, builder->fn_returns_len) {
-            return_values[i] = fe_append(builder->bb, fe_inst_stack_load(builder->fn, builder->fn_returns[i]));
+            return_values[i] = fe_append_ir(builder->bb, fe_ir_stack_load(builder->fn, builder->fn_returns[i]));
         }
         for_urange (i, 0, builder->fn_returns_len) {
-            fe_append(builder->bb, fe_inst_returnval(builder->fn, i, return_values[i]));
+            fe_append_ir(builder->bb, fe_ir_returnval(builder->fn, i, return_values[i]));
         }
         mars_free(return_values);
         // return lmao
-        fe_append(builder->bb, fe_inst_return(builder->fn));
+        fe_append_ir(builder->bb, fe_ir_return(builder->fn));
         break;
     case AST_if_stmt:
         ast_if_stmt* ifstmt = stmt.as_if_stmt;
         
         // TODO("on hold until i rework branches in iron");
         
-        FeInst* cond = irgen_value_expr(builder, ifstmt->condition);
+        FeIr* cond = irgen_value_expr(builder, ifstmt->condition);
 
         FeBasicBlock* if_true = fe_new_basic_block(builder->fn, next_block_name());
         FeBasicBlock* if_false = fe_new_basic_block(builder->fn, next_block_name());
 
-        FeInstBranch* branch = (FeInstBranch*) fe_append(builder->bb, fe_inst_branch(builder->fn, cond, if_true, if_false));
+        FeIrBranch* branch = (FeIrBranch*) fe_append_ir(builder->bb, fe_ir_branch(builder->fn, cond, if_true, if_false));
 
         FeBasicBlock* previous_backlink = builder->backlink; // save backlink
         builder->backlink = if_false;

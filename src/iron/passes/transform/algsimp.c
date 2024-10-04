@@ -44,7 +44,7 @@
 */
 
 // if possible, replace the contents of target with source.
-// static bool replace_with(FeInst* target, FeInst* source) {
+// static bool replace_with(FeIr* target, FeIr* source) {
 //     if (fe_inst_sizes[target->kind] < fe_inst_sizes[source->kind]) {
 //         // source node is too big, we cant stuff it in
 //         return false;
@@ -72,49 +72,49 @@
     case FE_TYPE_BOOL: dest->bool =       src1->bool op       src2->bool; break;\
     }
 
-static FeInst* const_eval_binop(FeFunction* f, FeInst* inst) {
-    if (!(_FE_BINOP_BEGIN < inst->kind && inst->kind < _FE_BINOP_END)) {
+static FeIr* const_eval_binop(FeFunction* f, FeIr* inst) {
+    if (!(_FE_IR_BINOP_BEGIN < inst->kind && inst->kind < _FE_BINOP_END)) {
         return inst;
     }
-    FeInstBinop* binop = (FeInstBinop*) inst;
+    FeIrBinop* binop = (FeIrBinop*) inst;
 
-    if (binop->lhs->kind != FE_INST_CONST || binop->rhs->kind != FE_INST_CONST) {
+    if (binop->lhs->kind != FE_IR_CONST || binop->rhs->kind != FE_IR_CONST) {
         return inst;
     }
 
-    FeInstConst* src1 = (FeInstConst*) binop->lhs;
-    FeInstConst* src2 = (FeInstConst*) binop->rhs;
-    FeInstConst* lc   = (FeInstConst*) fe_inst_const(f, inst->type);
+    FeIrConst* src1 = (FeIrConst*) binop->lhs;
+    FeIrConst* src2 = (FeIrConst*) binop->rhs;
+    FeIrConst* lc   = (FeIrConst*) fe_ir_const(f, inst->type);
 
     switch (inst->kind) {
-    case FE_INST_ADD:   int_operate(+, lc, src1, src2); break;
-    case FE_INST_SUB:   int_operate(-, lc, src1, src2); break;
-    case FE_INST_IMUL:  int_operate(*, lc, src1, src2); break;
-    case FE_INST_UMUL: uint_operate(*, lc, src1, src2); break;
-    case FE_INST_IDIV:  int_operate(/, lc, src1, src2); break;
-    case FE_INST_UDIV: uint_operate(/, lc, src1, src2); break;
-    case FE_INST_AND:  uint_operate(&, lc, src1, src2); break;
-    case FE_INST_OR:   uint_operate(|, lc, src1, src2); break;
-    case FE_INST_XOR:  uint_operate(^, lc, src1, src2); break;
-    case FE_INST_SHL:  uint_operate(<<, lc, src1, src2); break;
-    case FE_INST_ASR:   int_operate(>>, lc, src1, src2); break;
-    case FE_INST_LSR:  uint_operate(>>, lc, src1, src2); break;
+    case FE_IR_ADD:   int_operate(+, lc, src1, src2); break;
+    case FE_IR_SUB:   int_operate(-, lc, src1, src2); break;
+    case FE_IR_IMUL:  int_operate(*, lc, src1, src2); break;
+    case FE_IR_UMUL: uint_operate(*, lc, src1, src2); break;
+    case FE_IR_IDIV:  int_operate(/, lc, src1, src2); break;
+    case FE_IR_UDIV: uint_operate(/, lc, src1, src2); break;
+    case FE_IR_AND:  uint_operate(&, lc, src1, src2); break;
+    case FE_IR_OR:   uint_operate(|, lc, src1, src2); break;
+    case FE_IR_XOR:  uint_operate(^, lc, src1, src2); break;
+    case FE_IR_SHL:  uint_operate(<<, lc, src1, src2); break;
+    case FE_IR_ASR:   int_operate(>>, lc, src1, src2); break;
+    case FE_IR_LSR:  uint_operate(>>, lc, src1, src2); break;
     default:
         break;
     }
     
-    return (FeInst*) lc;
+    return (FeIr*) lc;
 }
 
 
-static FeInst* const_eval(FeFunction* f, FeInst* inst) {
+static FeIr* const_eval(FeFunction* f, FeIr* inst) {
     return const_eval_binop(f, inst);
 }
 
-static bool is_const_one(FeInst* inst) {
-    if (inst->kind != FE_INST_CONST) return false;
+static bool is_const_one(FeIr* inst) {
+    if (inst->kind != FE_IR_CONST) return false;
 
-    FeInstConst* lc = (FeInstConst*) inst;
+    FeIrConst* lc = (FeIrConst*) inst;
     switch (lc->base.type) {
     case FE_TYPE_I64: return lc->i64 == (i64) 1;
     case FE_TYPE_I32: return lc->i32 == (i32) 1;
@@ -128,10 +128,10 @@ static bool is_const_one(FeInst* inst) {
     return false;
 }
 
-static bool is_const_zero(FeInst* inst) {
-    if (inst->kind != FE_INST_CONST) return false;
+static bool is_const_zero(FeIr* inst) {
+    if (inst->kind != FE_IR_CONST) return false;
 
-    FeInstConst* lc = (FeInstConst*) inst;
+    FeIrConst* lc = (FeIrConst*) inst;
     switch (lc->base.type) {
     case FE_TYPE_I64: return lc->i64 == (i64) 0;
     case FE_TYPE_I32: return lc->i32 == (i32) 0;
@@ -145,25 +145,25 @@ static bool is_const_zero(FeInst* inst) {
     return false;
 }
 
-static FeInst* identity_reduction(FeInst* inst, bool* needs_inserting) {
+static FeIr* identity_reduction(FeIr* inst, bool* needs_inserting) {
 
-    FeInstBinop* binop = (FeInstBinop*) inst;
-    FeInstUnop* unop = (FeInstUnop*) inst;
+    FeIrBinop* binop = (FeIrBinop*) inst;
+    FeIrUnop* unop = (FeIrUnop*) inst;
 
     switch (inst->kind) {
-    case FE_INST_ADD: // x + 0  -> x
-    case FE_INST_SUB: // x - 0  -> x
-    case FE_INST_OR:  // x | 0  -> x
-    case FE_INST_XOR: // x ^ 0  -> x
-    case FE_INST_SHL: // x << 0 -> x
-    case FE_INST_LSR: // x >> 0 -> x
-    case FE_INST_ASR: // x >> 0 -> x
+    case FE_IR_ADD: // x + 0  -> x
+    case FE_IR_SUB: // x - 0  -> x
+    case FE_IR_OR:  // x | 0  -> x
+    case FE_IR_XOR: // x ^ 0  -> x
+    case FE_IR_SHL: // x << 0 -> x
+    case FE_IR_LSR: // x >> 0 -> x
+    case FE_IR_ASR: // x >> 0 -> x
         if (is_const_zero(binop->rhs)) {
             return binop->lhs;
         }
         break;
-    case FE_INST_UMUL:
-    case FE_INST_IMUL:
+    case FE_IR_UMUL:
+    case FE_IR_IMUL:
         if (is_const_zero(binop->rhs)) {
             return binop->rhs; // x * 0 -> 0
         }
@@ -171,12 +171,12 @@ static FeInst* identity_reduction(FeInst* inst, bool* needs_inserting) {
             return binop->lhs; // x * 1 -> x
         }
         break;
-    case FE_INST_NOT:
-    case FE_INST_NEG:
+    case FE_IR_NOT:
+    case FE_IR_NEG:
         if (unop->source->kind == inst->kind) {
             // !(!x) -> x
             // -(-x) -> x
-            return ((FeInstUnop*)unop->source)->source;
+            return ((FeIrUnop*)unop->source)->source;
         }
         break;
     default: break;
@@ -184,8 +184,8 @@ static FeInst* identity_reduction(FeInst* inst, bool* needs_inserting) {
     return inst;
 }
 
-static bool is_const_power_of_two(FeInst* inst) {
-    FeInstConst* lc = (FeInstConst*) inst;
+static bool is_const_power_of_two(FeIr* inst) {
+    FeIrConst* lc = (FeIrConst*) inst;
     switch (lc->base.type) {
     case FE_TYPE_I64: return lc->i64 != 0 && (lc->i64 & (lc->i64 - 1)) == 0;
     case FE_TYPE_I32: return lc->i32 != 0 && (lc->i32 & (lc->i32 - 1)) == 0;
@@ -196,8 +196,8 @@ static bool is_const_power_of_two(FeInst* inst) {
     return false;
 }
 
-static void convert_to_log2(FeInst* inst) {
-    FeInstConst* lc = (FeInstConst*) inst;
+static void convert_to_log2(FeIr* inst) {
+    FeIrConst* lc = (FeIrConst*) inst;
     switch (lc->base.type) {
     case FE_TYPE_I64:lc->i64 = 8*sizeof(lc->i64) - __builtin_clzll(lc->i64) - 1; break;
     case FE_TYPE_I32:lc->i32 = 8*sizeof(lc->i64) - __builtin_clzll(lc->i32) - 1; break;
@@ -207,21 +207,21 @@ static void convert_to_log2(FeInst* inst) {
     }
 }
 
-static bool strength_reduction(FeFunction* fn, FeInst* inst) {
+static bool strength_reduction(FeFunction* fn, FeIr* inst) {
 
-    FeInstBinop* binop = (FeInstBinop*) inst;
+    FeIrBinop* binop = (FeIrBinop*) inst;
 
     switch (inst->kind) {
-    case FE_INST_UMUL:
+    case FE_IR_UMUL:
 
-        if (binop->rhs->kind == FE_INST_CONST && is_const_power_of_two(binop->rhs)) {
+        if (binop->rhs->kind == FE_IR_CONST && is_const_power_of_two(binop->rhs)) {
             // x * const = x << log2(const)
-            FeInstConst* log2const = (FeInstConst*) fe_inst_const(fn, binop->rhs->type);
-            log2const->i64 = ((FeInstConst*)binop->rhs)->i64;
-            fe_insert_inst_before((FeInst*)log2const, inst);
-            convert_to_log2((FeInst*)log2const);
-            binop->rhs = (FeInst*)log2const;
-            inst->kind = FE_INST_SHL;
+            FeIrConst* log2const = (FeIrConst*) fe_ir_const(fn, binop->rhs->type);
+            log2const->i64 = ((FeIrConst*)binop->rhs)->i64;
+            fe_insert_ir_before((FeIr*)log2const, inst);
+            convert_to_log2((FeIr*)log2const);
+            binop->rhs = (FeIr*)log2const;
+            inst->kind = FE_IR_SHL;
             return true;
         }
     default:
@@ -231,7 +231,7 @@ static bool strength_reduction(FeFunction* fn, FeInst* inst) {
 }
 
 void run_pass_algsimp(FeModule* mod) {
-    da(FeInstPTR) worklist = {0};
+    da(FeIrPTR) worklist = {0};
     da_init(&worklist, 64);
 
     for_range(fi, 0, mod->functions_len) {
@@ -246,9 +246,9 @@ void run_pass_algsimp(FeModule* mod) {
         }
 
         while (worklist.len != 0) {
-            FeInst* inst = da_pop(&worklist);
+            FeIr* inst = da_pop(&worklist);
 
-            FeInst* new_inst;
+            FeIr* new_inst;
 
             // first try to identity-reduce
             // then try to constant-evaluate
@@ -256,7 +256,7 @@ void run_pass_algsimp(FeModule* mod) {
 
             // this is because identity reduction can catch some cases
             // that fall into constant evaluation. constant evaluation
-            // creates a new FeInst, where identity reduction generally
+            // creates a new FeIr, where identity reduction generally
             // does not. strength reduction is done last because some
             // strength reduction cases would also fall into constant 
             // evaluation so its better to const-eval it instead of 
@@ -264,17 +264,17 @@ void run_pass_algsimp(FeModule* mod) {
 
             bool needs_inserting = false;
             if (inst != (new_inst = identity_reduction(inst, &needs_inserting))){
-                if (needs_inserting) fe_insert_inst_before(new_inst, inst);
-                fe_rewrite_uses(f, inst, new_inst);
-                fe_remove(inst);
-                fe_add_uses_to_worklist(f, new_inst, &worklist);
+                if (needs_inserting) fe_insert_ir_before(new_inst, inst);
+                fe_rewrite_ir_uses(f, inst, new_inst);
+                fe_remove_ir(inst);
+                fe_add_ir_uses_to_worklist(f, new_inst, &worklist);
             } else if (inst != (new_inst = const_eval(f, inst))) {
-                fe_insert_inst_before(new_inst, inst);
-                fe_rewrite_uses(f, inst, new_inst);
-                fe_remove(inst);
-                fe_add_uses_to_worklist(f, new_inst, &worklist);
+                fe_insert_ir_before(new_inst, inst);
+                fe_rewrite_ir_uses(f, inst, new_inst);
+                fe_remove_ir(inst);
+                fe_add_ir_uses_to_worklist(f, new_inst, &worklist);
             } else if (strength_reduction(f, inst)) {
-                fe_add_uses_to_worklist(f, inst, &worklist);
+                fe_add_ir_uses_to_worklist(f, inst, &worklist);
             }
         }
     }

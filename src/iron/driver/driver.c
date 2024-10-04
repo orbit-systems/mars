@@ -35,32 +35,32 @@ int main() {
         FeBasicBlock* if_bb = fe_new_basic_block(fn, str("if_true"));
         FeBasicBlock* return_bb = fe_new_basic_block(fn, str("return"));
 
-        FeInst* x_paramval =  fe_append(entry_bb, fe_inst_paramval(fn, 0));
+        FeIr* x_paramval =  fe_append_ir(entry_bb, fe_ir_paramval(fn, 0));
 
         // entry bb
         {
-            FeInstConst* zero = (FeInstConst*) fe_append(entry_bb, fe_inst_const(fn, FE_TYPE_I64));
+            FeIrConst* zero = (FeIrConst*) fe_append_ir(entry_bb, fe_ir_const(fn, FE_TYPE_I64));
             zero->i64 = 0ul;
-            FeInstStackStore* y_init_store = (FeInstStackStore*) fe_append(entry_bb, fe_inst_stack_store(fn, var_y, (FeInst*)zero));
-            FeInst* branch = fe_append(entry_bb, fe_inst_branch(fn, x_paramval, if_bb, return_bb));
+            FeIrStackStore* y_init_store = (FeIrStackStore*) fe_append_ir(entry_bb, fe_ir_stack_store(fn, var_y, (FeIr*)zero));
+            FeIr* branch = fe_append_ir(entry_bb, fe_ir_branch(fn, x_paramval, if_bb, return_bb));
         }
 
         // if bb
         {
-            FeInstConst* three = (FeInstConst*) fe_append(if_bb, fe_inst_const(fn, FE_TYPE_I64));
+            FeIrConst* three = (FeIrConst*) fe_append_ir(if_bb, fe_ir_const(fn, FE_TYPE_I64));
             three->i64 = 3ul;
 
-            FeInstStackStore* y_store = (FeInstStackStore*) fe_append(if_bb, fe_inst_stack_store(fn, var_y, (FeInst*)three));
-            FeInst* jump = fe_append(if_bb, fe_inst_jump(fn, return_bb));
+            FeIrStackStore* y_store = (FeIrStackStore*) fe_append_ir(if_bb, fe_ir_stack_store(fn, var_y, (FeIr*)three));
+            FeIr* jump = fe_append_ir(if_bb, fe_ir_jump(fn, return_bb));
 
         }
 
         // return bb
         {
-            FeInst* y_load = fe_append(return_bb, fe_inst_stack_load(fn, var_y));
+            FeIr* y_load = fe_append_ir(return_bb, fe_ir_stack_load(fn, var_y));
 
-            FeInst* returnval = fe_append(return_bb, fe_inst_returnval(fn, 0, y_load));
-            FeInst* ret = fe_append(return_bb, fe_inst_return(fn));
+            FeIr* returnval = fe_append_ir(return_bb, fe_ir_returnval(fn, 0, y_load));
+            FeIr* ret = fe_append_ir(return_bb, fe_ir_return(fn));
         }
     }
 
@@ -87,13 +87,13 @@ int main() {
         fe_init_func_params(fn, 1);
         fe_add_func_param(fn, FE_TYPE_BOOL);
 
-        FeInst* cond = fe_append(A, fe_inst_paramval(fn, 0));
-        fe_append(A, fe_inst_branch(fn, cond, B, F));
-        fe_append(B, fe_inst_branch(fn, cond, C, D));
-        fe_append(C, fe_inst_jump(fn, E));
-        fe_append(D, fe_inst_jump(fn, E));
-        fe_append(E, fe_inst_jump(fn, F));
-        fe_append(F, fe_inst_return(fn));
+        FeIr* cond = fe_append_ir(A, fe_ir_paramval(fn, 0));
+        fe_append_ir(A, fe_ir_branch(fn, cond, B, F));
+        fe_append_ir(B, fe_ir_branch(fn, cond, C, D));
+        fe_append_ir(C, fe_ir_jump(fn, E));
+        fe_append_ir(D, fe_ir_jump(fn, E));
+        fe_append_ir(E, fe_ir_jump(fn, F));
+        fe_append_ir(F, fe_ir_return(fn));
     }
 
 

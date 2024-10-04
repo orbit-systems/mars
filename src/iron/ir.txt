@@ -45,49 +45,49 @@ Let sandwichman know if you spot a place where this happens.
     `FE_TYPE_F32`  - 32-bit floating-point number, referred to in IEEE 754-2008 as 'binary32'
     `FE_TYPE_F64`  - 64-bit floating-point number, referred to in IEEE 754-2008 as 'binary64'
 
-`FeInst` - Instructions
+`FeIr` - Instructions
 
     The following only act on integer types.
 
-    `FE_INST_ADD`  - add two integers
-    `FE_INST_SUB`  - subtract two integers
-    `FE_INST_IMUL` - multiply two integers as if they are signed
-    `FE_INST_UMUL` - multiply two integers as if they are unsigned
-    `FE_INST_IDIV` - divide two integers as if they are signed
-    `FE_INST_UDIV` - divide two integers as if they are unsigned
-    `FE_INST_IMOD` - modulo two integers as if they are signed
-    `FE_INST_UMOD` - modulo two integers as if they are unsigned
-    `FE_INST_NEG`  - negation
+    `FE_IR_ADD`  - add two integers
+    `FE_IR_SUB`  - subtract two integers
+    `FE_IR_IMUL` - multiply two integers as if they are signed
+    `FE_IR_UMUL` - multiply two integers as if they are unsigned
+    `FE_IR_IDIV` - divide two integers as if they are signed
+    `FE_IR_UDIV` - divide two integers as if they are unsigned
+    `FE_IR_IMOD` - modulo two integers as if they are signed
+    `FE_IR_UMOD` - modulo two integers as if they are unsigned
+    `FE_IR_NEG`  - negation
 
-    `FE_INST_SHL` - bitwise shift left
-    `FE_INST_ASR` - bitwise arithmetic shift right (copy top bit)
-    `FE_INST_LSR` - bitwise logical shift right (zero top bit)
+    `FE_IR_SHL` - bitwise shift left
+    `FE_IR_ASR` - bitwise arithmetic shift right (copy top bit)
+    `FE_IR_LSR` - bitwise logical shift right (zero top bit)
 
         The following act on boolean values as well.
 
-        `FE_INST_AND` - bitwise and
-        `FE_INST_OR`  - bitwise or
-        `FE_INST_XOR` - bitwise xor
-        `FE_INST_NOT` - bitwise not
+        `FE_IR_AND` - bitwise and
+        `FE_IR_OR`  - bitwise or
+        `FE_IR_XOR` - bitwise xor
+        `FE_IR_NOT` - bitwise not
 
     The following only act on floating-point types.
 
-        `FE_INST_FADD` - add two floating-point numbers.
-        `FE_INST_FSUB` - subtract two floating-point numbers.
-        `FE_INST_FMUL` - multiply two floating-point numbers.
-        `FE_INST_FDIV` - divide two floating-point numbers.
-        `FE_INST_FMOD` - modulo two floating-point numbers.
+        `FE_IR_FADD` - add two floating-point numbers.
+        `FE_IR_FSUB` - subtract two floating-point numbers.
+        `FE_IR_FMUL` - multiply two floating-point numbers.
+        `FE_IR_FDIV` - divide two floating-point numbers.
+        `FE_IR_FMOD` - modulo two floating-point numbers.
 
     The following comparison instructions produce `FE_TYPE_BOOL`,
 
-        `FE_INST_ULT` - integer unsigned less than (a < b).
-        `FE_INST_UGT` - integer unsigned greater than (a > b).
-        `FE_INST_ULE` - integer unsigned less than or equal to (a <= b).
-        `FE_INST_UGE` - integer unsigned greater than or equal to (a >= b).
-        `FE_INST_ILT` - integer signed less than (a < b).
-        `FE_INST_IGT` - integer signed greater than (a > b).
-        `FE_INST_ILE` - integer signed less than or equal to (a <= b).
-        `FE_INST_IGE` - integer signed greater than or equal to (a >= b).
-        `FE_INST_EQ`  - integer equality (a == b)
-        `FE_INST_NE`  - integer inequality (a != b)
+        `FE_IR_ULT` - integer unsigned less than (a < b).
+        `FE_IR_UGT` - integer unsigned greater than (a > b).
+        `FE_IR_ULE` - integer unsigned less than or equal to (a <= b).
+        `FE_IR_UGE` - integer unsigned greater than or equal to (a >= b).
+        `FE_IR_ILT` - integer signed less than (a < b).
+        `FE_IR_IGT` - integer signed greater than (a > b).
+        `FE_IR_ILE` - integer signed less than or equal to (a <= b).
+        `FE_IR_IGE` - integer signed greater than or equal to (a >= b).
+        `FE_IR_EQ`  - integer equality (a == b)
+        `FE_IR_NE`  - integer inequality (a != b)
     

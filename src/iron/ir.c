@@ -143,11 +143,11 @@ FeBasicBlock* fe_new_basic_block(FeFunction* fn, string name) {
     bb->name = name;
     bb->function = fn;
 
-    FeInstBookend* bk = (FeInstBookend*) fe_inst(fn, FE_INST_BOOKEND);
+    FeIrBookend* bk = (FeIrBookend*) fe_ir(fn, FE_IR_BOOKEND);
     bk->bb = bb;
 
-    bb->start = (FeInst*) bk;
-    bb->end = (FeInst*) bk;
+    bb->start = (FeIr*) bk;
+    bb->end = (FeIr*) bk;
 
     da_append(&fn->blocks, bb);
     return bb;
@@ -161,13 +161,13 @@ u32 fe_bb_index(FeFunction* fn, FeBasicBlock* bb) {
     return UINT32_MAX;
 }
 
-FeInst* fe_append(FeBasicBlock* bb, FeInst* inst) {
+FeIr* fe_append_ir(FeBasicBlock* bb, FeIr* inst) {
     inst->prev = NULL;
     inst->next = NULL;
 
     // this is the basic block's first instruction.
-    if (bb->start->kind == FE_INST_BOOKEND) {
-        FeInst* bookend = bb->start;
+    if (bb->start->kind == FE_IR_BOOKEND) {
+        FeIr* bookend = bb->start;
         // set up the bookend
         bookend->next = inst;
         bookend->prev = inst;
@@ -178,16 +178,16 @@ FeInst* fe_append(FeBasicBlock* bb, FeInst* inst) {
         bb->start = inst;
         bb->end = inst;
     } else {
-        fe_insert_inst_after(inst, bb->end);
+        fe_insert_ir_after(inst, bb->end);
     }
 
     return inst;
 }
 
 // inserts new before ref
-FeInst* fe_insert_inst_before(FeInst* new, FeInst* ref) {
-    if (ref->prev->kind == FE_INST_BOOKEND) {
-        FeInstBookend* bookend = (FeInstBookend*)ref->prev;
+FeIr* fe_insert_ir_before(FeIr* new, FeIr* ref) {
+    if (ref->prev->kind == FE_IR_BOOKEND) {
+        FeIrBookend* bookend = (FeIrBookend*)ref->prev;
         bookend->bb->start = new;
     }
     new->next = ref;
@@ -199,9 +199,9 @@ FeInst* fe_insert_inst_before(FeInst* new, FeInst* ref) {
 }
 
 // inserts new after ref
-FeInst* fe_insert_inst_after(FeInst* new, FeInst* ref) {
-    if (ref->next->kind == FE_INST_BOOKEND) {
-        FeInstBookend* bookend = (FeInstBookend*)ref->next;
+FeIr* fe_insert_ir_after(FeIr* new, FeIr* ref) {
+    if (ref->next->kind == FE_IR_BOOKEND) {
+        FeIrBookend* bookend = (FeIrBookend*)ref->next;
         bookend->bb->end = new;
     }
     new->prev = ref;
@@ -212,75 +212,75 @@ FeInst* fe_insert_inst_after(FeInst* new, FeInst* ref) {
     return new;
 }
 
-FeInst* fe_inst(FeFunction* f, u16 type) {
-    if (type >= _FE_INST_MAX) type = FE_INST_INVALID;
-    FeInst* ir = arena_alloc(&f->alloca, fe_inst_sizes[type], 8);
+FeIr* fe_ir(FeFunction* f, u16 type) {
+    if (type >= _FE_IR_MAX) type = FE_IR_INVALID;
+    FeIr* ir = arena_alloc(&f->alloca, fe_inst_sizes[type], 8);
     ir->kind = type;
     ir->type = FE_TYPE_VOID;
     return ir;
 }
 
 const size_t fe_inst_sizes[] = {
-    [FE_INST_INVALID] = sizeof(FeInst),
-    [FE_INST_BOOKEND] = sizeof(FeInstBookend),
+    [FE_IR_INVALID] = sizeof(FeIr),
+    [FE_IR_BOOKEND] = sizeof(FeIrBookend),
 
-    [FE_INST_ADD]  = sizeof(FeInstBinop),
-    [FE_INST_SUB]  = sizeof(FeInstBinop),
-    [FE_INST_IMUL] = sizeof(FeInstBinop),
-    [FE_INST_UMUL] = sizeof(FeInstBinop),
-    [FE_INST_IDIV] = sizeof(FeInstBinop),
-    [FE_INST_UDIV] = sizeof(FeInstBinop),
+    [FE_IR_ADD]  = sizeof(FeIrBinop),
+    [FE_IR_SUB]  = sizeof(FeIrBinop),
+    [FE_IR_IMUL] = sizeof(FeIrBinop),
+    [FE_IR_UMUL] = sizeof(FeIrBinop),
+    [FE_IR_IDIV] = sizeof(FeIrBinop),
+    [FE_IR_UDIV] = sizeof(FeIrBinop),
 
-    [FE_INST_AND]  = sizeof(FeInstBinop),
-    [FE_INST_OR]   = sizeof(FeInstBinop),
-    [FE_INST_XOR]  = sizeof(FeInstBinop),
-    [FE_INST_SHL]  = sizeof(FeInstBinop),
-    [FE_INST_LSR]  = sizeof(FeInstBinop),
-    [FE_INST_ASR]  = sizeof(FeInstBinop),
+    [FE_IR_AND]  = sizeof(FeIrBinop),
+    [FE_IR_OR]   = sizeof(FeIrBinop),
+    [FE_IR_XOR]  = sizeof(FeIrBinop),
+    [FE_IR_SHL]  = sizeof(FeIrBinop),
+    [FE_IR_LSR]  = sizeof(FeIrBinop),
+    [FE_IR_ASR]  = sizeof(FeIrBinop),
     
-    [FE_INST_ULT]  = sizeof(FeInstBinop),
-    [FE_INST_UGT]  = sizeof(FeInstBinop),
-    [FE_INST_ULE]  = sizeof(FeInstBinop),
-    [FE_INST_UGE]  = sizeof(FeInstBinop),
-    [FE_INST_ILT]  = sizeof(FeInstBinop),
-    [FE_INST_IGT]  = sizeof(FeInstBinop),
-    [FE_INST_ILE]  = sizeof(FeInstBinop),
-    [FE_INST_IGE]  = sizeof(FeInstBinop),
-    [FE_INST_EQ]   = sizeof(FeInstBinop),
-    [FE_INST_NE]   = sizeof(FeInstBinop),
+    [FE_IR_ULT]  = sizeof(FeIrBinop),
+    [FE_IR_UGT]  = sizeof(FeIrBinop),
+    [FE_IR_ULE]  = sizeof(FeIrBinop),
+    [FE_IR_UGE]  = sizeof(FeIrBinop),
+    [FE_IR_ILT]  = sizeof(FeIrBinop),
+    [FE_IR_IGT]  = sizeof(FeIrBinop),
+    [FE_IR_ILE]  = sizeof(FeIrBinop),
+    [FE_IR_IGE]  = sizeof(FeIrBinop),
+    [FE_IR_EQ]   = sizeof(FeIrBinop),
+    [FE_IR_NE]   = sizeof(FeIrBinop),
 
-    [FE_INST_NOT]     = sizeof(FeInstUnop),
-    [FE_INST_NEG]     = sizeof(FeInstUnop),
-    [FE_INST_BITCAST] = sizeof(FeInstUnop),
-    [FE_INST_TRUNC]   = sizeof(FeInstUnop),
-    [FE_INST_SIGNEXT] = sizeof(FeInstUnop),
-    [FE_INST_ZEROEXT] = sizeof(FeInstUnop),
+    [FE_IR_NOT]     = sizeof(FeIrUnop),
+    [FE_IR_NEG]     = sizeof(FeIrUnop),
+    [FE_IR_BITCAST] = sizeof(FeIrUnop),
+    [FE_IR_TRUNC]   = sizeof(FeIrUnop),
+    [FE_IR_SIGNEXT] = sizeof(FeIrUnop),
+    [FE_IR_ZEROEXT] = sizeof(FeIrUnop),
 
-    [FE_INST_STACK_ADDR] = sizeof(FeInstStackAddr),
-    [FE_INST_FIELDPTR]  = sizeof(FeInstFieldPtr),
-    [FE_INST_INDEXPTR]  = sizeof(FeInstIndexPtr),
+    [FE_IR_STACK_ADDR] = sizeof(FeIrStackAddr),
+    [FE_IR_FIELDPTR]  = sizeof(FeIrFieldPtr),
+    [FE_IR_INDEXPTR]  = sizeof(FeIrIndexPtr),
 
-    [FE_INST_LOAD]        = sizeof(FeInstLoad),
-    [FE_INST_VOL_LOAD]    = sizeof(FeInstLoad),
-    [FE_INST_STACK_LOAD] = sizeof(FeInstStackLoad),
+    [FE_IR_LOAD]        = sizeof(FeIrLoad),
+    [FE_IR_VOL_LOAD]    = sizeof(FeIrLoad),
+    [FE_IR_STACK_LOAD] = sizeof(FeIrStackLoad),
 
-    [FE_INST_STORE]       = sizeof(FeInstStore),
-    [FE_INST_VOL_STORE]   = sizeof(FeInstStore),
-    [FE_INST_STACK_STORE] = sizeof(FeInstStackStore),
+    [FE_IR_STORE]       = sizeof(FeIrStore),
+    [FE_IR_VOL_STORE]   = sizeof(FeIrStore),
+    [FE_IR_STACK_STORE] = sizeof(FeIrStackStore),
 
-    [FE_INST_CONST]  = sizeof(FeInstConst),
-    [FE_INST_LOAD_SYMBOL] = sizeof(FeInstLoadSymbol),
+    [FE_IR_CONST]  = sizeof(FeIrConst),
+    [FE_IR_LOAD_SYMBOL] = sizeof(FeIrLoadSymbol),
 
-    [FE_INST_MOV] = sizeof(FeInstMov),
-    [FE_INST_PHI] = sizeof(FeInstPhi),
+    [FE_IR_MOV] = sizeof(FeIrMov),
+    [FE_IR_PHI] = sizeof(FeIrPhi),
 
-    [FE_INST_BRANCH] = sizeof(FeInstBranch),
-    [FE_INST_JUMP]   = sizeof(FeInstJump),
+    [FE_IR_BRANCH] = sizeof(FeIrBranch),
+    [FE_IR_JUMP]   = sizeof(FeIrJump),
 
-    [FE_INST_PARAMVAL]  = sizeof(FeInstParamVal),
-    [FE_INST_RETURNVAL] = sizeof(FeInstReturnVal),
+    [FE_IR_PARAMVAL]  = sizeof(FeIrParamVal),
+    [FE_IR_RETURNVAL] = sizeof(FeIrReturnVal),
 
-    [FE_INST_RETURN] = sizeof(FeInstReturn),
+    [FE_IR_RETURN] = sizeof(FeIrReturn),
 };
 
 #define FE_FATAL(m, msg) fe_push_report(m, (FeReport){ \
@@ -289,23 +289,23 @@ const size_t fe_inst_sizes[] = {
     .severity = FE_MSG_SEVERITY_FATAL, \
 })
 
-FeInst* fe_inst_binop(FeFunction* f, u16 type, FeInst* lhs, FeInst* rhs) {
-    FeInstBinop* ir = (FeInstBinop*) fe_inst(f, type);
+FeIr* fe_ir_binop(FeFunction* f, u16 type, FeIr* lhs, FeIr* rhs) {
+    FeIrBinop* ir = (FeIrBinop*) fe_ir(f, type);
 
     if (lhs->type == rhs->type) {
         ir->base.type = lhs->type;
     } else {
         FE_FATAL(f->mod, "lhs type != rhs type");
     }
-    if (_FE_INST_CMP_START < type && type < _FE_INST_CMP_END) {
+    if (_FE_IR_CMP_START < type && type < _FE_IR_CMP_END) {
         ir->base.type = FE_TYPE_BOOL;
     }
 
     switch (type) {
-    case FE_INST_ADD:
-    case FE_INST_UMUL:
-    case FE_INST_IMUL:
-        if (lhs->kind == FE_INST_CONST && rhs->kind != FE_INST_CONST) {
+    case FE_IR_ADD:
+    case FE_IR_UMUL:
+    case FE_IR_IMUL:
+        if (lhs->kind == FE_IR_CONST && rhs->kind != FE_IR_CONST) {
             ir->lhs = rhs;
             ir->rhs = lhs;
             break;
@@ -316,70 +316,70 @@ FeInst* fe_inst_binop(FeFunction* f, u16 type, FeInst* lhs, FeInst* rhs) {
         break;
     }
 
-    return (FeInst*) ir;
+    return (FeIr*) ir;
 }
 
-FeInst* fe_inst_unop(FeFunction* f, u16 type, FeInst* source) {
-    FeInstUnop* ir = (FeInstUnop*) fe_inst(f, type);
+FeIr* fe_ir_unop(FeFunction* f, u16 type, FeIr* source) {
+    FeIrUnop* ir = (FeIrUnop*) fe_ir(f, type);
     ir->source = source;
-    return (FeInst*) ir;
+    return (FeIr*) ir;
 }
 
-FeInst* fe_inst_stackaddr(FeFunction* f, FeStackObject* obj) {
-    FeInstStackAddr* ir = (FeInstStackAddr*) fe_inst(f, FE_INST_STACK_ADDR);
+FeIr* fe_ir_stackaddr(FeFunction* f, FeStackObject* obj) {
+    FeIrStackAddr* ir = (FeIrStackAddr*) fe_ir(f, FE_IR_STACK_ADDR);
 
     ir->object = obj;
-    return (FeInst*) ir;
+    return (FeIr*) ir;
 }
 
-FeInst* fe_inst_getfieldptr(FeFunction* f, u32 index, FeInst* source) {
-    FeInstFieldPtr* ir = (FeInstFieldPtr*) fe_inst(f, FE_INST_FIELDPTR);
+FeIr* fe_ir_getfieldptr(FeFunction* f, u32 index, FeIr* source) {
+    FeIrFieldPtr* ir = (FeIrFieldPtr*) fe_ir(f, FE_IR_FIELDPTR);
     ir->index = index;
     ir->source = source;
-    return (FeInst*) ir;
+    return (FeIr*) ir;
 }
 
-FeInst* fe_inst_getindexptr(FeFunction* f, FeInst* index, FeInst* source) {
-    FeInstIndexPtr* ir = (FeInstIndexPtr*) fe_inst(f, FE_INST_INDEXPTR);
+FeIr* fe_ir_getindexptr(FeFunction* f, FeIr* index, FeIr* source) {
+    FeIrIndexPtr* ir = (FeIrIndexPtr*) fe_ir(f, FE_IR_INDEXPTR);
     ir->index = index;
     ir->source = source;
-    return (FeInst*) ir;
+    return (FeIr*) ir;
 }
 
-FeInst* fe_inst_load(FeFunction* f, FeInst* ptr, FeType as, bool is_vol) {
-    FeInstLoad* ir = (FeInstLoad*) fe_inst(f, FE_INST_LOAD);
+FeIr* fe_ir_load(FeFunction* f, FeIr* ptr, FeType as, bool is_vol) {
+    FeIrLoad* ir = (FeIrLoad*) fe_ir(f, FE_IR_LOAD);
     if (!fe_type_is_scalar(as)) {
         FE_FATAL(f->mod, "cannot load/store non-scalar type");
     }
-    if (is_vol) ir->base.kind = FE_INST_VOL_LOAD;
+    if (is_vol) ir->base.kind = FE_IR_VOL_LOAD;
     ir->location = ptr;
     ir->base.type = as;
-    return (FeInst*) ir;
+    return (FeIr*) ir;
 }
 
-FeInst* fe_inst_store(FeFunction* f, FeInst* ptr, FeInst* value, bool is_vol) {
-    FeInstStore* ir = (FeInstStore*) fe_inst(f, FE_INST_STORE);
+FeIr* fe_ir_store(FeFunction* f, FeIr* ptr, FeIr* value, bool is_vol) {
+    FeIrStore* ir = (FeIrStore*) fe_ir(f, FE_IR_STORE);
     if (!fe_type_is_scalar(value->type)) {
         FE_FATAL(f->mod, "cannot load/store non-scalar type");
     }
-    if (is_vol) ir->base.kind = FE_INST_VOL_STORE;
+    if (is_vol) ir->base.kind = FE_IR_VOL_STORE;
     ir->location = ptr;
     ir->value = value;
-    return (FeInst*) ir;
+    return (FeIr*) ir;
 }
 
-FeInst* fe_inst_stack_load(FeFunction* f, FeStackObject* location) {
-    FeInstStackLoad* ir = (FeInstStackLoad*) fe_inst(f, FE_INST_STACK_LOAD);
+FeIr* fe_ir_stack_load(FeFunction* f, FeStackObject* location) {
+    FeIrStackLoad* ir = (FeIrStackLoad*) fe_ir(f, FE_IR_STACK_LOAD);
     if (!fe_type_is_scalar(location->t)) {
         FE_FATAL(f->mod, "cannot load/store non-scalar type");
     }
     ir->base.type = location->t;
     ir->location = location;
-    return (FeInst*) ir;
+    return (FeIr*) ir;
 }
 
-FeInst* fe_inst_stack_store(FeFunction* f, FeStackObject* location, FeInst* value) {
-    FeInstStackStore* ir = (FeInstStackStore*) fe_inst(f, FE_INST_STACK_STORE);
+FeIr* fe_ir_stack_store(FeFunction* f, FeStackObject* location, FeIr* value) {
+    FeIrStackStore* ir = (FeIrStackStore*) fe_ir(f, FE_IR_STACK_STORE);
     if (!fe_type_is_scalar(location->t)) {
         FE_FATAL(f->mod, "cannot load/store non-scalar type");
     }
@@ -388,42 +388,42 @@ FeInst* fe_inst_stack_store(FeFunction* f, FeStackObject* location, FeInst* valu
     }
     ir->location = location;
     ir->value = value;
-    return (FeInst*) ir;
+    return (FeIr*) ir;
 }
 
-FeInst* fe_inst_const(FeFunction* f, FeType type) {
-    FeInstConst* ir = (FeInstConst*) fe_inst(f, FE_INST_CONST);
+FeIr* fe_ir_const(FeFunction* f, FeType type) {
+    FeIrConst* ir = (FeIrConst*) fe_ir(f, FE_IR_CONST);
     ir->base.type = type;
-    return (FeInst*) ir;
+    return (FeIr*) ir;
 }
 
-FeInst* fe_inst_load_symbol(FeFunction* f, FeType type, FeSymbol* symbol) {
-    FeInstLoadSymbol* ir = (FeInstLoadSymbol*) fe_inst(f, FE_INST_LOAD_SYMBOL);
+FeIr* fe_ir_load_symbol(FeFunction* f, FeType type, FeSymbol* symbol) {
+    FeIrLoadSymbol* ir = (FeIrLoadSymbol*) fe_ir(f, FE_IR_LOAD_SYMBOL);
     ir->sym = symbol;
     if (!fe_type_is_scalar(type)) {
         FE_FATAL(f->mod, "cannot load symbol into non-scalar type");
     }
-    return (FeInst*) ir;
+    return (FeIr*) ir;
 }
 
-FeInst* fe_inst_mov(FeFunction* f, FeInst* source) {
-    FeInstMov* ir = (FeInstMov*) fe_inst(f, FE_INST_MOV);
+FeIr* fe_ir_mov(FeFunction* f, FeIr* source) {
+    FeIrMov* ir = (FeIrMov*) fe_ir(f, FE_IR_MOV);
     ir->source = source;
     ir->base.type = source->type;
-    return (FeInst*) ir;
+    return (FeIr*) ir;
 }
 
-FeInst* fe_inst_phi(FeFunction* f, u32 count, FeType type) {
-    FeInstPhi* ir = (FeInstPhi*) fe_inst(f, FE_INST_PHI);
+FeIr* fe_ir_phi(FeFunction* f, u32 count, FeType type) {
+    FeIrPhi* ir = (FeIrPhi*) fe_ir(f, FE_IR_PHI);
     ir->base.type = type;
     ir->len = 0;
     ir->cap = count;
     ir->sources    = fe_malloc(sizeof(*ir->sources)    * count);
     ir->source_BBs = fe_malloc(sizeof(*ir->source_BBs) * count);
-    return (FeInst*) ir;
+    return (FeIr*) ir;
 }
 
-void fe_add_phi_source(FeFunction* f, FeInstPhi* phi, FeInst* source, FeBasicBlock* source_block) {
+void fe_add_phi_source(FeFunction* f, FeIrPhi* phi, FeIr* source, FeBasicBlock* source_block) {
     if (source->type != phi->base.type) {
         FE_FATAL(f->mod, "phi source must match phi type");
     }
@@ -438,54 +438,54 @@ void fe_add_phi_source(FeFunction* f, FeInstPhi* phi, FeInst* source, FeBasicBlo
     phi->len++;
 }
 
-FeInst* fe_inst_jump(FeFunction* f, FeBasicBlock* dest) {
-    FeInstJump* ir = (FeInstJump*) fe_inst(f, FE_INST_JUMP);
+FeIr* fe_ir_jump(FeFunction* f, FeBasicBlock* dest) {
+    FeIrJump* ir = (FeIrJump*) fe_ir(f, FE_IR_JUMP);
     ir->dest = dest;
-    return (FeInst*) ir;
+    return (FeIr*) ir;
 }
 
-FeInst* fe_inst_branch(FeFunction* f, FeInst* cond, FeBasicBlock* if_true, FeBasicBlock* if_false) {
-    FeInstBranch* ir = (FeInstBranch*) fe_inst(f, FE_INST_BRANCH);
+FeIr* fe_ir_branch(FeFunction* f, FeIr* cond, FeBasicBlock* if_true, FeBasicBlock* if_false) {
+    FeIrBranch* ir = (FeIrBranch*) fe_ir(f, FE_IR_BRANCH);
     ir->cond = cond;
     if (cond->type != FE_TYPE_BOOL) {
         FE_FATAL(f->mod, "branch condition must be boolean");
     }
     ir->if_true  = if_true;
     ir->if_false = if_false;
-    return (FeInst*) ir;
+    return (FeIr*) ir;
 }
 
-FeInst* fe_inst_paramval(FeFunction* f, u32 param) {
-    FeInstParamVal* ir = (FeInstParamVal*) fe_inst(f, FE_INST_PARAMVAL);
+FeIr* fe_ir_paramval(FeFunction* f, u32 param) {
+    FeIrParamVal* ir = (FeIrParamVal*) fe_ir(f, FE_IR_PARAMVAL);
     ir->index = param;
     if (param >= f->params.len) {
         FE_FATAL(f->mod, cstrprintf("paramval index %d is out of range [0, %d)", param, f->params.len));
         // CRASH("paramval index %d is out of range", param);
     }
     ir->base.type = f->params.at[param]->type;
-    return (FeInst*) ir;
+    return (FeIr*) ir;
 }
 
-FeInst* fe_inst_returnval(FeFunction* f, u32 ret, FeInst* source) {
-    FeInstReturnVal* ir = (FeInstReturnVal*) fe_inst(f, FE_INST_RETURNVAL);
+FeIr* fe_ir_returnval(FeFunction* f, u32 ret, FeIr* source) {
+    FeIrReturnVal* ir = (FeIrReturnVal*) fe_ir(f, FE_IR_RETURNVAL);
     ir->index = ret;
     if (ret >= f->returns.len) {
         FE_FATAL(f->mod, cstrprintf("returnval index %d is out of range [0, %d)", ret, f->returns.len));
     }
     ir->source = source;
-    return (FeInst*) ir;
+    return (FeIr*) ir;
 }
 
-FeInst* fe_inst_return(FeFunction* f) {
-    return fe_inst(f, FE_INST_RETURN);
+FeIr* fe_ir_return(FeFunction* f) {
+    return fe_ir(f, FE_IR_RETURN);
 }
 
 // hasta la vista baby
-bool fe_inst_is_terminator(FeInst* inst) {
+bool fe_is_ir_terminator(FeIr* inst) {
     switch (inst->kind) {
-    case FE_INST_RETURN:
-    case FE_INST_BRANCH:
-    case FE_INST_JUMP:
+    case FE_IR_RETURN:
+    case FE_IR_BRANCH:
+    case FE_IR_JUMP:
         return true;    
     default:
         return false;
@@ -493,25 +493,25 @@ bool fe_inst_is_terminator(FeInst* inst) {
 }
 
 // remove inst from its basic block
-FeInst* fe_remove(FeInst* inst) {
+FeIr* fe_remove_ir(FeIr* inst) {
     inst->prev->next = inst->next;
     inst->next->prev = inst->prev;
     return inst;
 }
 
 // move inst to before ref
-FeInst* fe_move_before(FeInst* inst, FeInst* ref) {
+FeIr* fe_move_ir_before(FeIr* inst, FeIr* ref) {
     if (inst == ref || ref->prev == inst) return inst;
-    fe_remove(inst);
-    fe_insert_inst_before(inst, ref);
+    fe_remove_ir(inst);
+    fe_insert_ir_before(inst, ref);
     return inst;
 }
 
 // move inst to before ref
-FeInst* fe_move_after(FeInst* inst, FeInst* ref) {
+FeIr* fe_move_ir_after(FeIr* inst, FeIr* ref) {
     if (inst == ref || ref->next == inst) return inst;
-    fe_remove(inst);
-    fe_insert_inst_after(inst, ref);
+    fe_remove_ir(inst);
+    fe_insert_ir_after(inst, ref);
     return inst;
 }
 
@@ -519,60 +519,60 @@ FeInst* fe_move_after(FeInst* inst, FeInst* ref) {
 
 #define rewrite_if_eq(inst, source, dest) if (inst == source) inst = dest
 
-void fe_rewrite_uses_in_inst(FeInst* inst, FeInst* source, FeInst* dest) {
+void fe_rewrite_uses_in_inst(FeIr* inst, FeIr* source, FeIr* dest) {
     switch (inst->kind) {
-    case FE_INST_ADD:
-    case FE_INST_SUB:
-    case FE_INST_IMUL:
-    case FE_INST_UMUL:
-    case FE_INST_IDIV:
-    case FE_INST_UDIV:
-    case FE_INST_AND:
-    case FE_INST_OR:
-    case FE_INST_XOR:
-    case FE_INST_SHL:
-    case FE_INST_LSR:
-    case FE_INST_ASR:
-    case FE_INST_ULT:
-    case FE_INST_UGT:
-    case FE_INST_ULE:
-    case FE_INST_UGE:
-    case FE_INST_ILT:
-    case FE_INST_IGT:
-    case FE_INST_ILE:
-    case FE_INST_IGE:
-    case FE_INST_EQ:
-    case FE_INST_NE:
-        FeInstBinop* binop = (FeInstBinop*) inst;
+    case FE_IR_ADD:
+    case FE_IR_SUB:
+    case FE_IR_IMUL:
+    case FE_IR_UMUL:
+    case FE_IR_IDIV:
+    case FE_IR_UDIV:
+    case FE_IR_AND:
+    case FE_IR_OR:
+    case FE_IR_XOR:
+    case FE_IR_SHL:
+    case FE_IR_LSR:
+    case FE_IR_ASR:
+    case FE_IR_ULT:
+    case FE_IR_UGT:
+    case FE_IR_ULE:
+    case FE_IR_UGE:
+    case FE_IR_ILT:
+    case FE_IR_IGT:
+    case FE_IR_ILE:
+    case FE_IR_IGE:
+    case FE_IR_EQ:
+    case FE_IR_NE:
+        FeIrBinop* binop = (FeIrBinop*) inst;
         rewrite_if_eq(binop->lhs, source, dest);
         rewrite_if_eq(binop->rhs, source, dest);
         break;
-    case FE_INST_RETURNVAL:
-        FeInstReturnVal* retval = (FeInstReturnVal*) inst;
+    case FE_IR_RETURNVAL:
+        FeIrReturnVal* retval = (FeIrReturnVal*) inst;
         rewrite_if_eq(retval->source, source, dest);
         break;
     
-    case FE_INST_STACK_STORE:
-        FeInstStackStore* stack_store = (FeInstStackStore*) inst;
+    case FE_IR_STACK_STORE:
+        FeIrStackStore* stack_store = (FeIrStackStore*) inst;
         rewrite_if_eq(stack_store->value, source, dest);
         break;
-    case FE_INST_BRANCH:
-        FeInstBranch* branch = (FeInstBranch*) inst;
+    case FE_IR_BRANCH:
+        FeIrBranch* branch = (FeIrBranch*) inst;
         rewrite_if_eq(branch->cond, source, dest);
         break;
 
-    case FE_INST_PHI:
-        FeInstPhi* phi = (FeInstPhi*) inst;
+    case FE_IR_PHI:
+        FeIrPhi* phi = (FeIrPhi*) inst;
         for_range(i, 0, phi->len) {
             rewrite_if_eq(phi->sources[i], source, dest);
         }
         break;
-    case FE_INST_PARAMVAL:
-    case FE_INST_STACK_ADDR:
-    case FE_INST_STACK_LOAD:
-    case FE_INST_CONST:
-    case FE_INST_JUMP:
-    case FE_INST_RETURN:
+    case FE_IR_PARAMVAL:
+    case FE_IR_STACK_ADDR:
+    case FE_IR_STACK_LOAD:
+    case FE_IR_CONST:
+    case FE_IR_JUMP:
+    case FE_IR_RETURN:
         break; // no inputs
     default:
         printf("---- %d\n", inst->kind);
@@ -581,7 +581,7 @@ void fe_rewrite_uses_in_inst(FeInst* inst, FeInst* source, FeInst* dest) {
     }
 }
 
-void fe_rewrite_uses(FeFunction* f, FeInst* source, FeInst* dest) {
+void fe_rewrite_ir_uses(FeFunction* f, FeIr* source, FeIr* dest) {
     for_urange(i, 0, f->blocks.len) {
         FeBasicBlock* bb = f->blocks.at[i];
         for_fe_inst(inst, *bb) {
@@ -590,20 +590,20 @@ void fe_rewrite_uses(FeFunction* f, FeInst* source, FeInst* dest) {
     }
 }
 
-static FeInst* get_usage(FeBasicBlock* bb, FeInst* source, FeInst* start) {
+static FeIr* get_usage(FeBasicBlock* bb, FeIr* source, FeIr* start) {
     for_fe_inst_from(inst, start, *bb) {
-        FeInst** ir = (FeInst**)inst;
-        for (u64 j = sizeof(FeInst)/sizeof(FeInst*); j <= fe_inst_sizes[inst->kind]/sizeof(FeInst*); j++) {
+        FeIr** ir = (FeIr**)inst;
+        for (u64 j = sizeof(FeIr)/sizeof(FeIr*); j <= fe_inst_sizes[inst->kind]/sizeof(FeIr*); j++) {
             if (ir[j] == source) return inst;
         }
     }
     return NULL;
 }
 
-void fe_add_uses_to_worklist(FeFunction* f, FeInst* source, da(FeInstPTR)* worklist) {
+void fe_add_ir_uses_to_worklist(FeFunction* f, FeIr* source, da(FeIrPTR)* worklist) {
     for_urange(i, 0, f->blocks.len) {
         FeBasicBlock* bb = f->blocks.at[i];
-        FeInst* next_usage = get_usage(bb, source, 0);
+        FeIr* next_usage = get_usage(bb, source, 0);
         while (next_usage != NULL) {
             da_append(worklist, next_usage);
             next_usage = get_usage(bb, source, next_usage->next);

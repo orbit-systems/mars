@@ -24,7 +24,7 @@ FeModule* irgen_module(mars_module* mars);
 FeFunction* irgen_function(IrBuilder* builder, ast_func_literal_expr* fn_literal, FeSymbol* sym);
 void irgen_global_decl(IrBuilder* builder, ast_decl_stmt* global_decl);
 void irgen_block(IrBuilder* builder, ast_stmt_block* block);
-FeInst* irgen_value_expr(IrBuilder* builder, AST expr);
+FeIr* irgen_value_expr(IrBuilder* builder, AST expr);
 void irgen_stmt(IrBuilder* builder, AST stmt);
 void irgen_global_fn_decl(IrBuilder* builder, ast_func_literal_expr* func);
 

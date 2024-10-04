@@ -13,10 +13,10 @@ typedef struct FeModule FeModule;
 typedef struct FePass   FePass;
 
 typedef u32 FeType;
-typedef struct FeInst  FeInst;
-typedef        FeInst* FeInstPTR;
+typedef struct FeIr  FeIr;
+typedef        FeIr* FeIrPTR;
 
-da_typedef(FeInstPTR);
+da_typedef(FeIrPTR);
 
 typedef struct FeFunction     FeFunction;
 typedef struct FeFunctionItem FeFunctionItem;
@@ -220,8 +220,8 @@ typedef struct FeCFGNode {
 typedef struct FeBasicBlock {
     FeFunction* function;
 
-    FeInst* start;
-    FeInst* end;
+    FeIr* start;
+    FeIr* end;
     string name;
 
     FeCFGNode* cfg_node;
@@ -230,198 +230,198 @@ typedef struct FeBasicBlock {
 } FeBasicBlock;
 
 enum {
-    FE_INST_INVALID,
+    FE_IR_INVALID,
     
     // that signals the beginning/ending of a basic block.
     // contains a backlink to the basic block itself.
     // basic block start/end will ONLY point to this if
     // there are no other instructions in the block.
-    FE_INST_BOOKEND,
+    FE_IR_BOOKEND,
 
-    _FE_INST_NO_SIDE_EFFECTS_BEGIN,
+    _FE_IR_NO_SIDE_EFFECTS_BEGIN,
 
-    // FeInstBinop
-    _FE_BINOP_BEGIN,
+    // FeIrBinop
+    _FE_IR_BINOP_BEGIN,
 
-        FE_INST_ADD,
-        FE_INST_SUB,
-        FE_INST_IMUL,
-        FE_INST_UMUL,
-        FE_INST_IDIV,
-        FE_INST_UDIV,
-        FE_INST_IMOD,
-        FE_INST_UMOD,
+        FE_IR_ADD,
+        FE_IR_SUB,
+        FE_IR_IMUL,
+        FE_IR_UMUL,
+        FE_IR_IDIV,
+        FE_IR_UDIV,
+        FE_IR_IMOD,
+        FE_IR_UMOD,
 
-        FE_INST_FADD,
-        FE_INST_FSUB,
-        FE_INST_FMUL,
-        FE_INST_FDIV,
-        FE_INST_FMOD,
+        FE_IR_FADD,
+        FE_IR_FSUB,
+        FE_IR_FMUL,
+        FE_IR_FDIV,
+        FE_IR_FMOD,
 
-        _FE_INST_CMP_START,
+        _FE_IR_CMP_START,
 
-            // FeInstBinop
-            FE_INST_ULT, // <
-            FE_INST_UGT, // >
-            FE_INST_ULE, // <=
-            FE_INST_UGE, // >=
-            FE_INST_ILT, // <
-            FE_INST_IGT, // >
-            FE_INST_ILE, // <=
-            FE_INST_IGE, // >=
-            FE_INST_EQ, // ==
-            FE_INST_NE, // !=
+            // FeIrBinop
+            FE_IR_ULT, // <
+            FE_IR_UGT, // >
+            FE_IR_ULE, // <=
+            FE_IR_UGE, // >=
+            FE_IR_ILT, // <
+            FE_IR_IGT, // >
+            FE_IR_ILE, // <=
+            FE_IR_IGE, // >=
+            FE_IR_EQ, // ==
+            FE_IR_NE, // !=
 
-        _FE_INST_CMP_END,
+        _FE_IR_CMP_END,
 
         // FeBinop
-        FE_INST_AND,
-        FE_INST_OR,
-        FE_INST_XOR,
-        FE_INST_SHL,
-        FE_INST_ASR,
-        FE_INST_LSR,
+        FE_IR_AND,
+        FE_IR_OR,
+        FE_IR_XOR,
+        FE_IR_SHL,
+        FE_IR_ASR,
+        FE_IR_LSR,
 
     _FE_BINOP_END,
 
-    // FeInstUnop
-    FE_INST_NOT,
-    FE_INST_NEG,
+    // FeIrUnop
+    FE_IR_NOT,
+    FE_IR_NEG,
 
     // bitcast between 
-    FE_INST_BITCAST,
+    FE_IR_BITCAST,
 
     // integer casting
-    FE_INST_TRUNC,
-    FE_INST_SIGNEXT,
-    FE_INST_ZEROEXT,
+    FE_IR_TRUNC,
+    FE_IR_SIGNEXT,
+    FE_IR_ZEROEXT,
 
-    // FeInstStackAddr
-    FE_INST_STACK_ADDR,
+    // FeIrStackAddr
+    FE_IR_STACK_ADDR,
 
-    // FeInstFieldPtr
-    FE_INST_FIELDPTR,
+    // FeIrFieldPtr
+    FE_IR_FIELDPTR,
 
-    // FeInstIndexPtr
-    FE_INST_INDEXPTR,
+    // FeIrIndexPtr
+    FE_IR_INDEXPTR,
 
-    // FeInstConst
-    FE_INST_CONST,
-    // FeInstLoadSymbol
-    FE_INST_LOAD_SYMBOL,
+    // FeIrConst
+    FE_IR_CONST,
+    // FeIrLoadSymbol
+    FE_IR_LOAD_SYMBOL,
 
-    // FeInstMov
-    FE_INST_MOV,
-    // FeInstPhi
-    FE_INST_PHI,
+    // FeIrMov
+    FE_IR_MOV,
+    // FeIrPhi
+    FE_IR_PHI,
 
-    // FeInstParamVal
-    FE_INST_PARAMVAL,
+    // FeIrParamVal
+    FE_IR_PARAMVAL,
 
-    _FE_INST_NO_SIDE_EFFECTS_END,
+    _FE_IR_NO_SIDE_EFFECTS_END,
 
-    // FeInstLoad
-    FE_INST_LOAD,
-    FE_INST_VOL_LOAD,
-    // FeInstStackLoad
-    FE_INST_STACK_LOAD,
+    // FeIrLoad
+    FE_IR_LOAD,
+    FE_IR_VOL_LOAD,
+    // FeIrStackLoad
+    FE_IR_STACK_LOAD,
 
-    // FeInstStore
-    FE_INST_STORE,
-    FE_INST_VOL_STORE,
-    FE_INST_STACK_STORE,
+    // FeIrStore
+    FE_IR_STORE,
+    FE_IR_VOL_STORE,
+    FE_IR_STACK_STORE,
 
-    // FeInstBranch
-    FE_INST_BRANCH,
-    // FeInstJump
-    FE_INST_JUMP,
+    // FeIrBranch
+    FE_IR_BRANCH,
+    // FeIrJump
+    FE_IR_JUMP,
 
-    // FeInstReturnVal
-    FE_INST_RETURNVAL,
-    // FeInstReturn
-    FE_INST_RETURN,
+    // FeIrReturnVal
+    FE_IR_RETURNVAL,
+    // FeIrReturn
+    FE_IR_RETURN,
 
 
-    // FeInstRetrieve
-    FE_INST_RETRIEVE,
-    // FeInstProvide
-    FE_INST_PROVIDE,
-    // FeInstCall
-    FE_INST_CALL,
-    // FeInstPtrCall
-    FE_INST_PTR_CALL,
-    // FeInstAsm
-    FE_INST_ASM,
+    // FeIrRetrieve
+    FE_IR_RETRIEVE,
+    // FeIrProvide
+    FE_IR_PROVIDE,
+    // FeIrCall
+    FE_IR_CALL,
+    // FeIrPtrCall
+    FE_IR_PTR_CALL,
+    // FeIrAsm
+    FE_IR_ASM,
 
-    _FE_INST_MAX,
+    _FE_IR_MAX,
 
-    _FE_INST_ARCH_SPECIFIC_START,
+    _FE_IR_ARCH_SPECIFIC_START,
 };
 
 // basic IR structure
-typedef struct FeInst {
+typedef struct FeIr {
     u16 kind;
     u16 use_count;
     FeType type;
-    FeInst* next;
-    FeInst* prev;    
-} FeInst;
+    FeIr* next;
+    FeIr* prev;    
+} FeIr;
 
-typedef struct FeInstArchInst {
-    FeInst base;
-    FeInst* sources[]; // variable length field
-} FeInstArchInst;
+typedef struct FeIrArchInst {
+    FeIr base;
+    FeIr* sources[]; // variable length field
+} FeIrArchInst;
 
 // information about an arch inst
-typedef struct FeInstArchInstInfo {
+typedef struct FeIrArchInstInfo {
     const char* name;
     u16 sources_len;
-} FeInstArchInstInfo;
+} FeIrArchInstInfo;
 
-typedef struct FeInstBookend {
-    FeInst base;
+typedef struct FeIrBookend {
+    FeIr base;
     FeBasicBlock* bb;
-} FeInstBookend;
+} FeIrBookend;
 
-typedef struct FeInstBinop {
-    FeInst base;
+typedef struct FeIrBinop {
+    FeIr base;
 
-    FeInst* lhs;
-    FeInst* rhs;
-} FeInstBinop;
+    FeIr* lhs;
+    FeIr* rhs;
+} FeIrBinop;
 
-typedef struct FeInstUnop {
-    FeInst base;
+typedef struct FeIrUnop {
+    FeIr base;
 
-    FeInst* source;
-} FeInstUnop;
+    FeIr* source;
+} FeIrUnop;
 
-typedef struct FeInstStackAddr {
-    FeInst base;
+typedef struct FeIrStackAddr {
+    FeIr base;
 
     FeStackObject* object;
-} FeInstStackAddr;
+} FeIrStackAddr;
 
 // used for struct accesses
-typedef struct FeInstFieldPtr {
-    FeInst base;
+typedef struct FeIrFieldPtr {
+    FeIr base;
 
-    FeInst* source;
+    FeIr* source;
     u32 index;
-} FeInstFieldPtr;
+} FeIrFieldPtr;
 
 // used for array accesses
-typedef struct FeInstIndexPtr {
-    FeInst base;
+typedef struct FeIrIndexPtr {
+    FeIr base;
 
-    FeInst* source;
-    FeInst* index;
-} FeInstIndexPtr;
+    FeIr* source;
+    FeIr* index;
+} FeIrIndexPtr;
 
 /*
     load/store alignment
 
-    the .align_offset field on FeInstLoad and FeInstStore indicates how misaligned
+    the .align_offset field on FeIrLoad and FeIrStore indicates how misaligned
     the pointer is from the type's natural alignment. if align_offset is greater or 
     equal to the types natural alignment (a good catch-all is 255), the pointer's 
     alignment is treated as unknown.
@@ -434,39 +434,39 @@ typedef struct FeInstIndexPtr {
 
 #define FE_MEMOP_UNKNOWN_ALIGNMENT 255
 
-typedef struct FeInstLoad {
-    FeInst base;
+typedef struct FeIrLoad {
+    FeIr base;
 
-    FeInst* location;
-
-    u8 align_offset;
-} FeInstLoad;
-
-typedef struct FeInstStore {
-    FeInst base;
-
-    FeInst* location;
-    FeInst* value;
+    FeIr* location;
 
     u8 align_offset;
-} FeInstStore;
+} FeIrLoad;
 
-typedef struct FeInstStackLoad {
-    FeInst base;
+typedef struct FeIrStore {
+    FeIr base;
+
+    FeIr* location;
+    FeIr* value;
+
+    u8 align_offset;
+} FeIrStore;
+
+typedef struct FeIrStackLoad {
+    FeIr base;
 
     FeStackObject* location;
-} FeInstStackLoad;
+} FeIrStackLoad;
 
-typedef struct FeInstStackStore {
-    FeInst base;
+typedef struct FeIrStackStore {
+    FeIr base;
 
     FeStackObject* location;
-    FeInst* value;
+    FeIr* value;
 
-} FeInstStackStore;
+} FeIrStackStore;
 
-typedef struct FeInstConst {
-    FeInst base;
+typedef struct FeIrConst {
+    FeIr base;
 
     union {
         bool bool : 1;
@@ -480,100 +480,100 @@ typedef struct FeInstConst {
         f32 f32;
         f64 f64;
     };
-} FeInstConst;
+} FeIrConst;
 
-typedef struct FeInstLoadSymbol {
-    FeInst base;
+typedef struct FeIrLoadSymbol {
+    FeIr base;
     
     FeSymbol* sym;
-} FeInstLoadSymbol;
+} FeIrLoadSymbol;
 
-typedef struct FeInstMov {
-    FeInst base;
+typedef struct FeIrMov {
+    FeIr base;
 
-    FeInst* source;
-} FeInstMov;
+    FeIr* source;
+} FeIrMov;
 
-typedef struct FeInstPhi {
-    FeInst base;
+typedef struct FeIrPhi {
+    FeIr base;
 
-    FeInst** sources;
+    FeIr** sources;
     FeBasicBlock** source_BBs;
     u16 len;
     u16 cap;
-} FeInstPhi;
+} FeIrPhi;
 
-typedef struct FeInstJump {
-    FeInst base;
+typedef struct FeIrJump {
+    FeIr base;
 
     FeBasicBlock* dest;
-} FeInstJump;
+} FeIrJump;
 
-typedef struct FeInstBranch {
-    FeInst base;
+typedef struct FeIrBranch {
+    FeIr base;
 
-    FeInst* cond;
+    FeIr* cond;
 
     FeBasicBlock* if_true;
     FeBasicBlock* if_false;
-} FeInstBranch;
+} FeIrBranch;
 
 // get value from register parameter OR the pointer to a stack parameter.
 // if register, lifetime of the register starts from the start of the entry 
 // basic block and continues to this node.
 // MUST BE THE FIRST INSTRUCTION IN THE ENTRY BLOCK OR IN A SEQUENCE OF 
-// OTHER FeInstParamVal INSTRUCTIONS
-typedef struct FeInstParamVal {
-    FeInst base;
+// OTHER FeIrParamVal INSTRUCTIONS
+typedef struct FeIrParamVal {
+    FeIr base;
 
     u32 index;
-} FeInstParamVal;
+} FeIrParamVal;
 
 // set register return val
-typedef struct FeInstReturnVal {
-    FeInst base;
-    FeInst* source;
+typedef struct FeIrReturnVal {
+    FeIr base;
+    FeIr* source;
 
     u32 index;
-} FeInstReturnVal;
+} FeIrReturnVal;
 
-typedef struct FeInstReturn {
-    FeInst base;
-} FeInstReturn;
+typedef struct FeIrReturn {
+    FeIr base;
+} FeIrReturn;
 
-typedef struct FeInstProvide {
-    FeInst base;
+typedef struct FeIrProvide {
+    FeIr base;
 
-    FeInst* source;
+    FeIr* source;
     u16 index;
-} FeInstProvide;
+} FeIrProvide;
 
-typedef struct FeInstRetrieve {
-    FeInst base;
+typedef struct FeIrRetrieve {
+    FeIr base;
 
     u16 index;
-} FeInstRetrieve;
+} FeIrRetrieve;
 
-typedef struct FeInstCall {
-    FeInst base;
+typedef struct FeIrCall {
+    FeIr base;
 
     FeFunction* source;
     // derives calling convention from source
-} FeInstCall;
+} FeIrCall;
 
-typedef struct FeInstPtrCall {
-    FeInst base;
-    FeInst* source;
+typedef struct FeIrPtrCall {
+    FeIr base;
+    FeIr* source;
 
     u16 callconv;
-} FeInstPtrCall;
+} FeIrPtrCall;
 
-typedef struct FeInstAsm {
-    FeInst base;
+typedef struct FeIrAsm {
+    FeIr base;
 
     // assembly text
     string text;
-} FeInstAsm;
+} FeIrAsm;
 
 enum {
 
@@ -599,8 +599,8 @@ enum {
     // FE_CALLCONV_OPT,
 };
 
-#define for_fe_inst(inst, basic_block) for(FeInst* inst = (basic_block).start; inst->kind != FE_INST_BOOKEND; inst = inst->next)
-#define for_fe_inst_from(inst, start, basic_block) for(FeInst* inst = start; inst->kind != FE_INST_BOOKEND; inst = inst->next)
+#define for_fe_inst(inst, basic_block) for(FeIr* inst = (basic_block).start; inst->kind != FE_IR_BOOKEND; inst = inst->next)
+#define for_fe_inst_from(inst, start, basic_block) for(FeIr* inst = start; inst->kind != FE_IR_BOOKEND; inst = inst->next)
 
 extern const size_t fe_inst_sizes[];
 
@@ -625,37 +625,37 @@ u32  fe_bb_index(FeFunction* fn, FeBasicBlock* bb);
 void fe_set_data_bytes(FeData* data, u8* bytes, u32 data_len, bool zeroed);
 void fe_set_data_symref(FeData* data, FeSymbol* symref);
 
-FeInst* fe_append(FeBasicBlock* bb, FeInst* ir);
-FeInst* fe_insert_inst_before(FeInst* new, FeInst* ref);
-FeInst* fe_insert_inst_after(FeInst* new, FeInst* ref);
-FeInst* fe_remove(FeInst* inst);
-FeInst* fe_move_before(FeInst* inst, FeInst* ref);
-FeInst* fe_move_after(FeInst* inst, FeInst* ref);
-void    fe_rewrite_uses(FeFunction* f, FeInst* source, FeInst* dest);
-void    fe_add_uses_to_worklist(FeFunction* f, FeInst* source, da(FeInstPTR)* worklist);
-bool    fe_inst_is_terminator(FeInst* inst);
+FeIr* fe_append_ir(FeBasicBlock* bb, FeIr* ir);
+FeIr* fe_insert_ir_before(FeIr* new, FeIr* ref);
+FeIr* fe_insert_ir_after(FeIr* new, FeIr* ref);
+FeIr* fe_remove_ir(FeIr* inst);
+FeIr* fe_move_ir_before(FeIr* inst, FeIr* ref);
+FeIr* fe_move_ir_after(FeIr* inst, FeIr* ref);
+void    fe_rewrite_ir_uses(FeFunction* f, FeIr* source, FeIr* dest);
+void    fe_add_ir_uses_to_worklist(FeFunction* f, FeIr* source, da(FeIrPTR)* worklist);
+bool    fe_is_ir_terminator(FeIr* inst);
 
-FeInst* fe_inst(FeFunction* f, u16 type);
-FeInst* fe_inst_binop(FeFunction* f, u16 type, FeInst* lhs, FeInst* rhs);
-FeInst* fe_inst_unop(FeFunction* f, u16 type, FeInst* source);
-FeInst* fe_inst_stackaddr(FeFunction* f, FeStackObject* obj);
-FeInst* fe_inst_getfieldptr(FeFunction* f, u32 index, FeInst* source);
-FeInst* fe_inst_getindexptr(FeFunction* f, FeInst* index, FeInst* source);
-FeInst* fe_inst_load(FeFunction* f, FeInst* ptr, FeType as, bool is_vol);
-FeInst* fe_inst_store(FeFunction* f, FeInst* ptr, FeInst* value, bool is_vol);
-FeInst* fe_inst_stack_load(FeFunction* f, FeStackObject* location);
-FeInst* fe_inst_stack_store(FeFunction* f, FeStackObject* location, FeInst* value);
-FeInst* fe_inst_const(FeFunction* f, FeType type);
-FeInst* fe_inst_load_symbol(FeFunction* f, FeType type, FeSymbol* symbol);
-FeInst* fe_inst_mov(FeFunction* f, FeInst* source);
-FeInst* fe_inst_phi(FeFunction* f, u32 count, FeType type);
-FeInst* fe_inst_jump(FeFunction* f, FeBasicBlock* dest);
-FeInst* fe_inst_branch(FeFunction* f, FeInst* cond, FeBasicBlock* if_true, FeBasicBlock* if_false);
-FeInst* fe_inst_paramval(FeFunction* f, u32 param);
-FeInst* fe_inst_returnval(FeFunction* f, u32 param, FeInst* source);
-FeInst* fe_inst_return(FeFunction* f);
+FeIr* fe_ir(FeFunction* f, u16 type);
+FeIr* fe_ir_binop(FeFunction* f, u16 type, FeIr* lhs, FeIr* rhs);
+FeIr* fe_ir_unop(FeFunction* f, u16 type, FeIr* source);
+FeIr* fe_ir_stackaddr(FeFunction* f, FeStackObject* obj);
+FeIr* fe_ir_getfieldptr(FeFunction* f, u32 index, FeIr* source);
+FeIr* fe_ir_getindexptr(FeFunction* f, FeIr* index, FeIr* source);
+FeIr* fe_ir_load(FeFunction* f, FeIr* ptr, FeType as, bool is_vol);
+FeIr* fe_ir_store(FeFunction* f, FeIr* ptr, FeIr* value, bool is_vol);
+FeIr* fe_ir_stack_load(FeFunction* f, FeStackObject* location);
+FeIr* fe_ir_stack_store(FeFunction* f, FeStackObject* location, FeIr* value);
+FeIr* fe_ir_const(FeFunction* f, FeType type);
+FeIr* fe_ir_load_symbol(FeFunction* f, FeType type, FeSymbol* symbol);
+FeIr* fe_ir_mov(FeFunction* f, FeIr* source);
+FeIr* fe_ir_phi(FeFunction* f, u32 count, FeType type);
+FeIr* fe_ir_jump(FeFunction* f, FeBasicBlock* dest);
+FeIr* fe_ir_branch(FeFunction* f, FeIr* cond, FeBasicBlock* if_true, FeBasicBlock* if_false);
+FeIr* fe_ir_paramval(FeFunction* f, u32 param);
+FeIr* fe_ir_returnval(FeFunction* f, u32 param, FeIr* source);
+FeIr* fe_ir_return(FeFunction* f);
 
-void fe_add_phi_source(FeFunction* f, FeInstPhi* phi, FeInst* source, FeBasicBlock* source_block);
+void fe_add_phi_source(FeFunction* f, FeIrPhi* phi, FeIr* source, FeBasicBlock* source_block);
 
 string fe_emit_ir(FeModule* m);
 FeModule* fe_read_module(string text);

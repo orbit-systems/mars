@@ -45,5 +45,5 @@ void fe_x64_emit_text(FeDataBuffer* db, FeMachBuffer* machbuf);
 
 // x64-specific instructions
 enum {
-    _FE_INST_X64_START = _FE_INST_ARCH_SPECIFIC_START,
+    _FE_IR_X64_START = _FE_IR_ARCH_SPECIFIC_START,
 };

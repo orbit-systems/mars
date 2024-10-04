@@ -37,11 +37,11 @@ static const u8 mars_paramregs[] = {
     FE_X64_GPR_R9,
 };
 
-static void put_ir_vreg(FeInst* inst, u32 vreg) {
+static void put_ir_vreg(FeIr* inst, u32 vreg) {
     ptrmap_put(&ir2vreg, inst, (void*)(u64)vreg);
 }
 
-static u32 get_ir_vreg(FeInst* inst) {
+static u32 get_ir_vreg(FeIr* inst) {
     return (u32)(u64) ptrmap_get(&ir2vreg, inst);
 }
 
@@ -52,9 +52,9 @@ static void gen_basic_block(FeMachBuffer* buf, FeFunction* fn, FeBasicBlock* bb,
 
         assert(numparams <= 6);
 
-        FeInst* inst = bb->start;
-        while (inst->kind == FE_INST_PARAMVAL) {
-            FeInstParamVal* pv = (FeInstParamVal*) inst;
+        FeIr* inst = bb->start;
+        while (inst->kind == FE_IR_PARAMVAL) {
+            FeIrParamVal* pv = (FeIrParamVal*) inst;
             u32 param_reg = fe_mach_new_vreg(buf, FE_X64_REGCLASS_GPR);
             buf->vregs.at[param_reg].real = mars_paramregs[pv->index];
             param_vregs[pv->index] = param_reg;
@@ -65,8 +65,8 @@ static void gen_basic_block(FeMachBuffer* buf, FeFunction* fn, FeBasicBlock* bb,
         }
 
         inst = bb->start;
-        while (inst->kind == FE_INST_PARAMVAL) {
-            FeInstParamVal* pv = (FeInstParamVal*) inst;
+        while (inst->kind == FE_IR_PARAMVAL) {
+            FeIrParamVal* pv = (FeIrParamVal*) inst;
 
             u32 paramval_out_reg = fe_mach_new_vreg(buf, FE_X64_REGCLASS_GPR);
             put_ir_vreg(inst, paramval_out_reg);

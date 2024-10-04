@@ -136,11 +136,11 @@ static void init_cfg_nodes(FeFunction* fn) {
         FeCFGNode* node = bb->cfg_node;
 
         switch (bb->end->kind){
-        case FE_INST_RETURN:
+        case FE_IR_RETURN:
             node->out_len = 0;
             break;
-        case FE_INST_JUMP:
-            FeInstJump* jump = (FeInstJump*)bb->end;
+        case FE_IR_JUMP:
+            FeIrJump* jump = (FeIrJump*)bb->end;
             // set outgoing
             node->out_len = 1;
             node->outgoing = arena_alloc(&cfg_nodes, sizeof(FeCFGNode) * node->out_len, alignof(FeCFGNode));
@@ -148,8 +148,8 @@ static void init_cfg_nodes(FeFunction* fn) {
             // increment incoming len of target node
             jump->dest->cfg_node->in_len++;
             break;
-        case FE_INST_BRANCH:
-            FeInstBranch* branch = (FeInstBranch*)bb->end;
+        case FE_IR_BRANCH:
+            FeIrBranch* branch = (FeIrBranch*)bb->end;
             // set outgoing
             node->out_len = 2;
             node->outgoing = arena_alloc(&cfg_nodes, sizeof(FeCFGNode) * node->out_len, alignof(FeCFGNode));
@@ -177,15 +177,15 @@ static void init_cfg_nodes(FeFunction* fn) {
         FeCFGNode* node = bb->cfg_node;
 
         switch (bb->end->kind){
-        case FE_INST_RETURN:
+        case FE_IR_RETURN:
             break;
-        case FE_INST_JUMP:
-            FeInstJump* jump = (FeInstJump*)bb->end;
+        case FE_IR_JUMP:
+            FeIrJump* jump = (FeIrJump*)bb->end;
             FeCFGNode* jump_target = node->outgoing[0];
             jump_target->incoming[jump_target->in_len++] = node;
             break;
-        case FE_INST_BRANCH:
-            FeInstBranch* branch = (FeInstBranch*)bb->end;
+        case FE_IR_BRANCH:
+            FeIrBranch* branch = (FeIrBranch*)bb->end;
             FeCFGNode* true_target = node->outgoing[0];
             FeCFGNode* false_target = node->outgoing[1];
             true_target->incoming[true_target->in_len++] = node;

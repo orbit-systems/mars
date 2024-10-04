@@ -17,7 +17,7 @@ static bool candidate_for_stackprom(FeStackObject* obj, FeFunction* f) {
     // only promote if the scalar is only used through stack loads/stores
     foreach(FeBasicBlock* bb, f->blocks) {
         for_fe_inst(inst, *bb) {
-            if (inst->kind == FE_INST_STACK_ADDR && ((FeInstStackAddr*)inst)->object == obj) {
+            if (inst->kind == FE_IR_STACK_ADDR && ((FeIrStackAddr*)inst)->object == obj) {
                 return false;
             }
         }
@@ -27,10 +27,10 @@ static bool candidate_for_stackprom(FeStackObject* obj, FeFunction* f) {
 
 static bool block_contains_store_to(FeBasicBlock* bb, FeStackObject* obj) {
     for_fe_inst(inst, *bb) {
-        if (inst->kind != FE_INST_STACK_STORE) {
+        if (inst->kind != FE_IR_STACK_STORE) {
             continue;
         }
-        FeInstStackStore* store = (FeInstStackStore*) inst;
+        FeIrStackStore* store = (FeIrStackStore*) inst;
         if (store->location == obj) {
             return true;
         }
@@ -51,8 +51,8 @@ static void mark_and_place_phis(FeFunction* f, FeStackObject* obj) {
             FeBasicBlock* domfront_block = domfront_node->bb;
 
             if (domfront_block->flags != (u64)obj) {
-                FeInst* phi = fe_inst_phi(f, domfront_node->in_len, obj->t);
-                fe_insert_inst_before(phi, domfront_block->start);
+                FeIr* phi = fe_ir_phi(f, domfront_node->in_len, obj->t);
+                fe_insert_ir_before(phi, domfront_block->start);
                 domfront_block->flags = (u64)obj;
                 ptrmap_put(&phi2obj, phi, obj);
             }
@@ -64,14 +64,14 @@ struct {
     FeStackObject* obj;
 
     struct {
-        FeInst* inst;
+        FeIr* inst;
         FeBasicBlock* block;
     }* at;
     u32 len;
     u32 cap;
 } def_stack;
 
-static FeInst* def_current_inst() {
+static FeIr* def_current_inst() {
     return def_stack.at[def_stack.len-1].inst;
 }
 
@@ -79,7 +79,7 @@ static FeBasicBlock* def_current_block() {
     return def_stack.at[def_stack.len-1].block;
 }
 
-static void def_set_current_inst(FeInst* inst) {
+static void def_set_current_inst(FeIr* inst) {
     def_stack.at[def_stack.len-1].inst = inst;
 }
 
@@ -87,7 +87,7 @@ static void def_set_current_block(FeBasicBlock* block) {
     def_stack.at[def_stack.len-1].block = block;
 }
 
-static void def_push(FeBasicBlock* block, FeInst* inst) {
+static void def_push(FeBasicBlock* block, FeIr* inst) {
     if (def_stack.len == def_stack.cap) {
         def_stack.cap *= 2;
         def_stack.at = fe_realloc(def_stack.at, def_stack.cap);
@@ -112,14 +112,14 @@ static void def_pop() {
 static void rename_defs(FeBasicBlock* block) {
 
     // find phi and add sources
-    for (FeInstPhi* phi = (FeInstPhi*)block->start; phi->base.kind == FE_INST_PHI; phi = (FeInstPhi*)phi->base.next) {
+    for (FeIrPhi* phi = (FeIrPhi*)block->start; phi->base.kind == FE_IR_PHI; phi = (FeIrPhi*)phi->base.next) {
         if (ptrmap_get(&phi2obj, phi) != def_stack.obj) {
             continue;
         }
         // get the current values
         fe_add_phi_source(block->function, phi, def_current_inst(), def_current_block());
         def_set_current_block(block);
-        def_set_current_inst((FeInst*)phi);
+        def_set_current_inst((FeIr*)phi);
         break;
     }
 
@@ -132,30 +132,30 @@ static void rename_defs(FeBasicBlock* block) {
 
     for_fe_inst(inst, *block) {
         switch (inst->kind) {
-        case FE_INST_STACK_LOAD:
-            FeInstStackLoad* load = (FeInstStackLoad*) inst;
+        case FE_IR_STACK_LOAD:
+            FeIrStackLoad* load = (FeIrStackLoad*) inst;
             if (load->location != def_stack.obj) break;
 
-            FeInst* load_value = def_current_inst();
+            FeIr* load_value = def_current_inst();
 
-            fe_rewrite_uses(block->function, inst, load_value);
+            fe_rewrite_ir_uses(block->function, inst, load_value);
 
-            fe_remove(inst);
+            fe_remove_ir(inst);
             break;
-        case FE_INST_STACK_STORE:
-            FeInstStackStore* store = (FeInstStackStore*) inst;
+        case FE_IR_STACK_STORE:
+            FeIrStackStore* store = (FeIrStackStore*) inst;
             if (store->location != def_stack.obj) break;
             
             def_set_current_inst(store->value);
             def_set_current_block(block);
-            fe_remove(inst);
+            fe_remove_ir(inst);
             break;
-        case FE_INST_JUMP:
-            FeInstJump* jump = (FeInstJump*) inst;
+        case FE_IR_JUMP:
+            FeIrJump* jump = (FeIrJump*) inst;
             rename_defs(jump->dest);
             break;
-        case FE_INST_BRANCH:
-            FeInstBranch* branch = (FeInstBranch*) inst;
+        case FE_IR_BRANCH:
+            FeIrBranch* branch = (FeIrBranch*) inst;
             def_push_copy();
             rename_defs(branch->if_true);
             def_pop();

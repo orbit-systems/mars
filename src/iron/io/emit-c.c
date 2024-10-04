@@ -194,11 +194,11 @@ static void emit_symbol_defs(FeModule* m, StringBuilder* sb) {
 }
 
 static const char* opstrings[] = {
-    [FE_INST_SHL] = "<<",
-    [FE_INST_ADD] = "+",
-    [FE_INST_SUB] = "-",
-    [FE_INST_IMUL] = "*",
-    [FE_INST_UMUL] = "*",
+    [FE_IR_SHL] = "<<",
+    [FE_IR_ADD] = "+",
+    [FE_IR_SUB] = "-",
+    [FE_IR_IMUL] = "*",
+    [FE_IR_UMUL] = "*",
 };
 
 static void emit_function(FeFunction* f, StringBuilder* sb) {
@@ -231,40 +231,40 @@ static void emit_function(FeFunction* f, StringBuilder* sb) {
         for_fe_inst(inst, *bb) {
             sb_append_c(sb, "\t");
             switch (inst->kind) {
-            case FE_INST_PARAMVAL:
-                sb_printf(sb, "_inst_%llx = _paramval_%d", inst, ((FeInstParamVal*)inst)->index);
+            case FE_IR_PARAMVAL:
+                sb_printf(sb, "_inst_%llx = _paramval_%d", inst, ((FeIrParamVal*)inst)->index);
                 break;
-            case FE_INST_CONST:
+            case FE_IR_CONST:
                 switch (inst->type) {
-                case FE_TYPE_I64: sb_printf(sb, "_inst_%llx = (i64) %lldll", inst, (i64) ((FeInstConst*)inst)->i64); break;
-                case FE_TYPE_I32: sb_printf(sb, "_inst_%llx = (i32) %lld", inst, (i64) ((FeInstConst*)inst)->i32); break;
-                case FE_TYPE_I16: sb_printf(sb, "_inst_%llx = (i16) %lld", inst, (i64) ((FeInstConst*)inst)->i16); break;
-                case FE_TYPE_I8:  sb_printf(sb, "_inst_%llx = (i8)  %lld", inst, (i64) ((FeInstConst*)inst)->i8);  break;
-                case FE_TYPE_F64: sb_printf(sb, "_inst_%llx = (f64) %lf",  inst, (double) ((FeInstConst*)inst)->f64); break;
-                case FE_TYPE_F32: sb_printf(sb, "_inst_%llx = (f32) %lf",  inst, (double) ((FeInstConst*)inst)->f32); break;
-                case FE_TYPE_F16: sb_printf(sb, "_inst_%llx = (f16) %lf",  inst, (double) ((FeInstConst*)inst)->f16); break;
+                case FE_TYPE_I64: sb_printf(sb, "_inst_%llx = (i64) %lldll", inst, (i64) ((FeIrConst*)inst)->i64); break;
+                case FE_TYPE_I32: sb_printf(sb, "_inst_%llx = (i32) %lld", inst, (i64) ((FeIrConst*)inst)->i32); break;
+                case FE_TYPE_I16: sb_printf(sb, "_inst_%llx = (i16) %lld", inst, (i64) ((FeIrConst*)inst)->i16); break;
+                case FE_TYPE_I8:  sb_printf(sb, "_inst_%llx = (i8)  %lld", inst, (i64) ((FeIrConst*)inst)->i8);  break;
+                case FE_TYPE_F64: sb_printf(sb, "_inst_%llx = (f64) %lf",  inst, (double) ((FeIrConst*)inst)->f64); break;
+                case FE_TYPE_F32: sb_printf(sb, "_inst_%llx = (f32) %lf",  inst, (double) ((FeIrConst*)inst)->f32); break;
+                case FE_TYPE_F16: sb_printf(sb, "_inst_%llx = (f16) %lf",  inst, (double) ((FeIrConst*)inst)->f16); break;
                 default: break;
                 }
                 break;
-            case FE_INST_SHL:
-            case FE_INST_ASR:
-            case FE_INST_ADD:
-            case FE_INST_IMUL:
-                FeInstBinop* binop = (FeInstBinop*) inst;
+            case FE_IR_SHL:
+            case FE_IR_ASR:
+            case FE_IR_ADD:
+            case FE_IR_IMUL:
+                FeIrBinop* binop = (FeIrBinop*) inst;
 
                 sb_printf(sb, "_inst_%llx = _inst_%llx %s _inst_%llx", inst, binop->lhs, opstrings[inst->kind], binop->rhs);
                 break;
-            case FE_INST_UMUL:
-            case FE_INST_UDIV:
-            case FE_INST_LSR:
-                binop = (FeInstBinop*) inst;
+            case FE_IR_UMUL:
+            case FE_IR_UDIV:
+            case FE_IR_LSR:
+                binop = (FeIrBinop*) inst;
                 
                 sb_printf(sb, "_inst_%llx = %s _inst_%llx %s %s _inst_%llx", inst, 
                     signed_to_unsigned_cast(binop->lhs->type), binop->lhs, opstrings[inst->kind], 
                     signed_to_unsigned_cast(binop->rhs->type), binop->rhs);
                 break;
-            case FE_INST_RETURNVAL:
-                FeInstReturnVal* retval = (FeInstReturnVal*) inst;
+            case FE_IR_RETURNVAL:
+                FeIrReturnVal* retval = (FeIrReturnVal*) inst;
                 
                 if (retval->index == 0) {
                     sb_printf(sb, "_returnval_%d =  _inst_%llx", retval->index, retval->source);
@@ -272,7 +272,7 @@ static void emit_function(FeFunction* f, StringBuilder* sb) {
                     sb_printf(sb, "*_returnval_%d = _inst_%llx", retval->index, retval->source);
                 }
                 break;
-            case FE_INST_RETURN:
+            case FE_IR_RETURN:
                 if (f->params.len > 0) {
                     sb_append_c(sb, "return _returnval_0");
                 } else {

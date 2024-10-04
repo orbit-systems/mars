@@ -141,50 +141,50 @@ static void emit_type(StringBuilder* sb, FeModule* m, FeType t) {
     }
 }
 
-static void emit_inst(StringBuilder* sb, FeFunction* fn, FeInst* inst) {
+static void emit_inst(StringBuilder* sb, FeFunction* fn, FeIr* inst) {
 
     static const char* opnames[] = {
-        [FE_INST_ADD]   = "add ",
-        [FE_INST_SUB]   = "sub ",
-        [FE_INST_IMUL]  = "imul ",
-        [FE_INST_UMUL]  = "umul ",
-        [FE_INST_IDIV]  = "idiv ",
-        [FE_INST_UDIV]  = "udiv ",
-        [FE_INST_AND]   = "and ",
-        [FE_INST_OR]    = "or ",
-        [FE_INST_XOR]   = "xor ",
-        [FE_INST_SHL]   = "shl ",
-        [FE_INST_LSR]   = "lsr ",
-        [FE_INST_ASR]   = "asr ",
-        [FE_INST_NEG]   = "neg ",
-        [FE_INST_NOT]   = "not ",
+        [FE_IR_ADD]   = "add ",
+        [FE_IR_SUB]   = "sub ",
+        [FE_IR_IMUL]  = "imul ",
+        [FE_IR_UMUL]  = "umul ",
+        [FE_IR_IDIV]  = "idiv ",
+        [FE_IR_UDIV]  = "udiv ",
+        [FE_IR_AND]   = "and ",
+        [FE_IR_OR]    = "or ",
+        [FE_IR_XOR]   = "xor ",
+        [FE_IR_SHL]   = "shl ",
+        [FE_IR_LSR]   = "lsr ",
+        [FE_IR_ASR]   = "asr ",
+        [FE_IR_NEG]   = "neg ",
+        [FE_IR_NOT]   = "not ",
 
-        [FE_INST_ULT]   = "ult ",
-        [FE_INST_UGT]   = "ugt ",
-        [FE_INST_ULE]   = "ule ",
-        [FE_INST_UGE]   = "uge ",
-        [FE_INST_ILT]   = "ilt ",
-        [FE_INST_IGT]   = "igt ",
-        [FE_INST_ILE]   = "ile ",
-        [FE_INST_IGE]   = "ige ",
-        [FE_INST_EQ]    = "eq ",
-        [FE_INST_NE]    = "ne ",
+        [FE_IR_ULT]   = "ult ",
+        [FE_IR_UGT]   = "ugt ",
+        [FE_IR_ULE]   = "ule ",
+        [FE_IR_UGE]   = "uge ",
+        [FE_IR_ILT]   = "ilt ",
+        [FE_IR_IGT]   = "igt ",
+        [FE_IR_ILE]   = "ile ",
+        [FE_IR_IGE]   = "ige ",
+        [FE_IR_EQ]    = "eq ",
+        [FE_IR_NE]    = "ne ",
     };
 
     // sb_append_c(sb, "\n      (");
     sb_printf(sb, "\n"COLOR_INST"     % 9llu: "RESET"(", number(inst));
     switch (inst->kind) {
-    case FE_INST_PARAMVAL:
-        FeInstParamVal* paramval = (FeInstParamVal*) inst;
+    case FE_IR_PARAMVAL:
+        FeIrParamVal* paramval = (FeIrParamVal*) inst;
         sb_printf(sb, "paramval %u", paramval->index);
         break;
-    case FE_INST_RETURNVAL:
-        FeInstReturnVal* returnval = (FeInstReturnVal*) inst;
+    case FE_IR_RETURNVAL:
+        FeIrReturnVal* returnval = (FeIrReturnVal*) inst;
         sb_printf(sb, "returnval %u"COLOR_INST" %u"RESET, returnval->index, number(returnval->source));
         break;
 
-    case FE_INST_PHI:
-        FeInstPhi* phi = (FeInstPhi*) inst;
+    case FE_IR_PHI:
+        FeIrPhi* phi = (FeIrPhi*) inst;
         sb_append_c(sb, "phi ");
         emit_type(sb, fn->mod, inst->type);
         for_range(i, 0, phi->len) {
@@ -194,68 +194,68 @@ static void emit_inst(StringBuilder* sb, FeFunction* fn, FeInst* inst) {
 
 
         break;
-    case FE_INST_ADD:
-    case FE_INST_SUB:
-    case FE_INST_IMUL:
-    case FE_INST_UMUL:
-    case FE_INST_IDIV:
-    case FE_INST_UDIV:
-    case FE_INST_AND:
-    case FE_INST_OR:
-    case FE_INST_XOR:
-    case FE_INST_SHL:
-    case FE_INST_LSR:
-    case FE_INST_ASR:
-        FeInstBinop* binop = (FeInstBinop*) inst;
+    case FE_IR_ADD:
+    case FE_IR_SUB:
+    case FE_IR_IMUL:
+    case FE_IR_UMUL:
+    case FE_IR_IDIV:
+    case FE_IR_UDIV:
+    case FE_IR_AND:
+    case FE_IR_OR:
+    case FE_IR_XOR:
+    case FE_IR_SHL:
+    case FE_IR_LSR:
+    case FE_IR_ASR:
+        FeIrBinop* binop = (FeIrBinop*) inst;
         sb_append_c(sb, opnames[inst->kind]);
         emit_type(sb, fn->mod, inst->type);
         sb_printf(sb, COLOR_INST" %u %u"RESET, number(binop->lhs), number(binop->rhs));
         break;
-    case FE_INST_ULT:
-    case FE_INST_UGT:
-    case FE_INST_ULE:
-    case FE_INST_UGE:
-    case FE_INST_ILT:
-    case FE_INST_IGT:
-    case FE_INST_ILE:
-    case FE_INST_IGE:
-    case FE_INST_EQ:
-    case FE_INST_NE:
-        FeInstBinop* cmp = (FeInstBinop*) inst;
+    case FE_IR_ULT:
+    case FE_IR_UGT:
+    case FE_IR_ULE:
+    case FE_IR_UGE:
+    case FE_IR_ILT:
+    case FE_IR_IGT:
+    case FE_IR_ILE:
+    case FE_IR_IGE:
+    case FE_IR_EQ:
+    case FE_IR_NE:
+        FeIrBinop* cmp = (FeIrBinop*) inst;
         sb_append_c(sb, opnames[inst->kind]);
         sb_printf(sb, COLOR_INST"%u %u"RESET, number(cmp->lhs), number(cmp->rhs));
         break;
     
-    case FE_INST_CONST:
-        FeInstConst* const_inst = (FeInstConst*) inst;
+    case FE_IR_CONST:
+        FeIrConst* const_inst = (FeIrConst*) inst;
         sb_append_c(sb, "const ");
         emit_type(sb, fn->mod, inst->type);
         sb_printf(sb, " %llu", const_inst->i64);
         break;
-    case FE_INST_STACK_STORE:
-        FeInstStackStore* stack_store = (FeInstStackStore*) inst;
+    case FE_IR_STACK_STORE:
+        FeIrStackStore* stack_store = (FeIrStackStore*) inst;
         sb_printf(sb, "stack_store "COLOR_STACK"%u"COLOR_INST" %u"RESET, 
             stack_object_index(fn, stack_store->location),
             number(stack_store->value)
         );
         break;
-    case FE_INST_STACK_LOAD:
-        FeInstStackLoad* stack_load = (FeInstStackLoad*) inst;
+    case FE_IR_STACK_LOAD:
+        FeIrStackLoad* stack_load = (FeIrStackLoad*) inst;
         sb_printf(sb, "stack_load "COLOR_STACK"%u"RESET, stack_object_index(fn, stack_load->location));
         break;
 
-    case FE_INST_BRANCH:
-        FeInstBranch* branch = (FeInstBranch*) inst;
+    case FE_IR_BRANCH:
+        FeIrBranch* branch = (FeIrBranch*) inst;
         sb_printf(sb, "branch "COLOR_INST"%u"RESET" \'"str_fmt"\' \'"str_fmt"\'", 
             number(branch->cond), 
             str_arg(branch->if_true->name),
             str_arg(branch->if_false->name));
         break;
-    case FE_INST_JUMP:
-        FeInstJump* jump = (FeInstJump*) inst;
+    case FE_IR_JUMP:
+        FeIrJump* jump = (FeIrJump*) inst;
         sb_printf(sb, "jump \'"str_fmt"\'", str_arg(jump->dest->name));
         break;
-    case FE_INST_RETURN:
+    case FE_IR_RETURN:
         sb_append_c(sb, "return");
         break;
     default:

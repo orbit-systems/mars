@@ -14,10 +14,10 @@ void run_pass_movprop(FeModule* mod) {
             FeBasicBlock* bb = fn->blocks.at[j];
 
             for_fe_inst(inst, *bb) {
-                if (inst->kind != FE_INST_MOV) continue;
+                if (inst->kind != FE_IR_MOV) continue;
 
-                fe_rewrite_uses(fn, inst, ((FeInstMov*)inst)->source);
-                fe_remove(inst);
+                fe_rewrite_ir_uses(fn, inst, ((FeIrMov*)inst)->source);
+                fe_remove_ir(inst);
             }
 
         }
