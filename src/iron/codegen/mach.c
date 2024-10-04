@@ -8,6 +8,14 @@
     .severity = FE_MSG_SEVERITY_FATAL, \
 })
 
+u32 fe_mach_get_vreg(FeMachBuffer* buf, FeMachInst* inst, u8 index) {
+    return buf->vreg_lists.at[inst->regs + index];
+}
+
+void fe_mach_set_vreg(FeMachBuffer* buf, FeMachInst* inst, u8 index, u32 vreg) {
+    buf->vreg_lists.at[inst->regs + index] = vreg;
+}
+
 static size_t mach_sizes[] = {
     [FE_MACH_SECTION]        = sizeof(FeMachSection),
     [FE_MACH_LIFETIME_BEGIN] = sizeof(FeMachLifetimePoint),
@@ -38,15 +46,27 @@ FeMach* fe_mach_append(FeMachBuffer* buf, FeMach* inst) {
     return inst;
 }
 
+FeMach* fe_mach_new_lifetime_begin(FeMachBuffer* buf, u32 vreg) {
+    FeMachLifetimePoint* m = (FeMachLifetimePoint*) fe_mach_new(buf, FE_MACH_LIFETIME_BEGIN);
+    m->vreg = vreg;
+    return (FeMach*) m;
+}
+
+FeMach* fe_mach_new_lifetime_end(FeMachBuffer* buf, u32 vreg) {
+    FeMachLifetimePoint* m = (FeMachLifetimePoint*) fe_mach_new(buf, FE_MACH_LIFETIME_END);
+    m->vreg = vreg;
+    return (FeMach*) m;
+}
+
 FeMachInst* fe_mach_new_inst(FeMachBuffer* buf, u16 template_index) {
     FeMachInst* inst = (FeMachInst*) fe_mach_new(buf, FE_MACH_INST);
     FeMachInstTemplate* templ = &buf->target.inst_templates[template_index];
     inst->template = template_index;
-    inst->regs = buf->vregs.len;
+    inst->regs = buf->vreg_lists.len;
     inst->imms = buf->immediates.len;
     if (templ->regs_len != 0) {
-        da_reserve(&buf->vregs, templ->regs_len); // reserve space for our reglist
-        buf->vregs.len += templ->regs_len;
+        da_reserve(&buf->vreg_lists, templ->regs_len);
+        buf->vreg_lists.len += templ->regs_len;
     }
     if (templ->imms_len != 0) {
         da_reserve(&buf->immediates, templ->imms_len);

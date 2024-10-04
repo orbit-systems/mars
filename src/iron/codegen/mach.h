@@ -11,10 +11,11 @@ typedef struct FeMach             FeMach;
 typedef struct FeMachInst         FeMachInst;
 typedef struct FeMachInstTemplate FeMachInstTemplate;
 
-typedef u32 FeMachVregList; // index to first vreg
+typedef u32 FeMachVregList;
 typedef u32 FeMachImmediateList; // index to first immediate
 
 da_typedef(FeMachVReg);
+da_typedef(u32);
 da_typedef(FeMachImmediate);
 
 typedef struct FeMachBuffer {
@@ -40,6 +41,7 @@ typedef struct FeMachBuffer {
     } symtab;
 
     da(FeMachVReg) vregs;
+    da(u32) vreg_lists;
     da(FeMachImmediate) immediates;
 
     Arena buf_alloca;
@@ -163,7 +165,14 @@ FeType fe_mach_type_of_native_int(u16 arch);
 FeType fe_mach_type_of_native_float(u16 arch);
 bool   fe_mach_type_is_native(u16 arch, FeType t);
 
-FeMach* fe_mach_append(FeMachBuffer* buf, FeMach* inst);
-FeMach* fe_mach_new(FeMachBuffer* buf, u8 kind);
+
+FeMach*     fe_mach_new(FeMachBuffer* buf, u8 kind);
 FeMachInst* fe_mach_new_inst(FeMachBuffer* buf, u16 template_index);
+FeMach*     fe_mach_new_lifetime_begin(FeMachBuffer* buf, u32 vreg);
+FeMach*     fe_mach_new_lifetime_end(FeMachBuffer* buf, u32 vreg);
+
+FeMach* fe_mach_append(FeMachBuffer* buf, FeMach* inst);
+
 u32 fe_mach_new_vreg(FeMachBuffer* buf, u8 regclass);
+u32 fe_mach_get_vreg(FeMachBuffer* buf, FeMachInst* inst, u8 index);
+void fe_mach_set_vreg(FeMachBuffer* buf, FeMachInst* inst, u8 index, u32 vreg);

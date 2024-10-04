@@ -28,7 +28,7 @@ static void gen_symtab(FeModule* m, FeMachBuffer* mb) {
 
 PtrMap ir2vreg;
 
-static u8 paramregs[] = {
+static const u8 mars_paramregs[] = {
     FE_X64_GPR_RDI,
     FE_X64_GPR_RSI,
     FE_X64_GPR_RDX,
@@ -37,20 +37,52 @@ static u8 paramregs[] = {
     FE_X64_GPR_R9,
 };
 
+static void put_ir_vreg(FeInst* inst, u32 vreg) {
+    ptrmap_put(&ir2vreg, inst, (void*)(u64)vreg);
+}
+
+static u32 get_ir_vreg(FeInst* inst) {
+    return (u32)(u64) ptrmap_get(&ir2vreg, inst);
+}
+
 static void gen_basic_block(FeMachBuffer* buf, FeFunction* fn, FeBasicBlock* bb, bool entry) {
     if (entry) {
         size_t numparams = bb->function->params.len;
         u32* param_vregs = fe_malloc(sizeof(param_vregs[0]) * numparams);
-        
+
         assert(numparams <= 6);
 
         FeInst* inst = bb->start;
         while (inst->kind == FE_INST_PARAMVAL) {
             FeInstParamVal* pv = (FeInstParamVal*) inst;
             u32 param_reg = fe_mach_new_vreg(buf, FE_X64_REGCLASS_GPR);
+            buf->vregs.at[param_reg].real = mars_paramregs[pv->index];
             param_vregs[pv->index] = param_reg;
-            // TODOOOO
+            
+            // add register lifetimes
+            fe_mach_append(buf, fe_mach_new_lifetime_begin(buf, param_reg));
+            inst = inst->next;
         }
+
+        inst = bb->start;
+        while (inst->kind == FE_INST_PARAMVAL) {
+            FeInstParamVal* pv = (FeInstParamVal*) inst;
+
+            u32 paramval_out_reg = fe_mach_new_vreg(buf, FE_X64_REGCLASS_GPR);
+            put_ir_vreg(inst, paramval_out_reg);
+            buf->vregs.at[paramval_out_reg].hint = mars_paramregs[pv->index];
+
+            FeMachInst* mov = fe_mach_new_inst(buf, FE_X64_INST_MOV_RR_64);
+            fe_mach_set_vreg(buf, mov, 0, paramval_out_reg);
+            fe_mach_set_vreg(buf, mov, 1, param_vregs[pv->index]);
+
+            fe_mach_append(buf, (FeMach*) mov);
+
+            inst = inst->next;
+        }
+
+
+        fe_free(param_vregs);
     }
 }
 
@@ -94,6 +126,8 @@ FeMachBuffer fe_x64_codegen(FeModule* mod) {
     da_init(&mb.buf, 256);
     da_init(&mb.immediates, 128);
     da_init(&mb.symtab, mod->symtab.len);
+    da_init(&mb.vregs, 512);
+    da_init(&mb.vreg_lists, 512);
     mb.buf_alloca = arena_make(1024);
 
     gen_symtab(mod, &mb);

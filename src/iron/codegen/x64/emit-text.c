@@ -45,11 +45,13 @@ static void emit_register(FeDataBuffer* db, FeMachBuffer* buf, u32 vreg, u8 bits
             fe_db_write_cstring(db, gpr_names[reg.real][bits]);
             break;
         default:
-            fe_db_write_cstring(db, "?unknown_regclass");
+            fe_db_write_format(db, "?regclass_%d", reg.class);
             break;
         }
     }
 }
+
+#define vr_index(reglist, index) buf->vreg_lists.at[reglist + index]
 
 static void emit_inst(FeDataBuffer* db, FeMachBuffer* buf, FeMach* m) {
     FeMachInst* i = (FeMachInst*) m;
@@ -59,25 +61,25 @@ static void emit_inst(FeDataBuffer* db, FeMachBuffer* buf, FeMach* m) {
     case FE_X64_INST_ADD_RR_64:
         // add r1, r2
         fe_db_write_cstring(db, "add ");
-        emit_register(db, buf, i->regs + 0, GPR_64);
+        emit_register(db, buf, vr_index(i->regs, 0), GPR_64);
         fe_db_write_cstring(db, ", ");
-        emit_register(db, buf, i->regs + 1, GPR_64);
+        emit_register(db, buf, vr_index(i->regs, 1), GPR_64);
         break;
     case FE_X64_INST_MOV_RR_64:
         // mov r1, r2
         fe_db_write_cstring(db, "mov ");
-        emit_register(db, buf, i->regs + 0, GPR_64);
+        emit_register(db, buf, vr_index(i->regs, 0), GPR_64);
         fe_db_write_cstring(db, ", ");
-        emit_register(db, buf, i->regs + 1, GPR_64);
+        emit_register(db, buf, vr_index(i->regs, 1), GPR_64);
         break;
     case FE_X64_INST_LEA_RR_64:
         // lea r1, [r2 + r3]
         fe_db_write_cstring(db, "lea");
-        emit_register(db, buf, i->regs + 0, GPR_64);
+        emit_register(db, buf, vr_index(i->regs, 0), GPR_64);
         fe_db_write_cstring(db, ", [");
-        emit_register(db, buf, i->regs + 1, GPR_64);
+        emit_register(db, buf, vr_index(i->regs, 1), GPR_64);
         fe_db_write_cstring(db, " + ");
-        emit_register(db, buf, i->regs + 2, GPR_64);
+        emit_register(db, buf, vr_index(i->regs, 2), GPR_64);
         fe_db_write_cstring(db, "]");
         break;
     }
@@ -107,6 +109,7 @@ void fe_x64_emit_text(FeDataBuffer* db, FeMachBuffer* machbuf) {
             fe_db_write_cstring(db, "; (IRON) lifetime begin ");
             emit_register(db, machbuf, ltp->vreg, GPR_64);
             fe_db_write_cstring(db, "\n");
+            break;
         case FE_MACH_LIFETIME_END:
             ltp = (FeMachLifetimePoint*) m;
             fe_db_write_cstring(db, "; (IRON) lifetime end ");
