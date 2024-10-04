@@ -71,7 +71,7 @@ static void register_uses(FeIr* ir) {
 
 static void reset_use_counts(FeFunction* f) {
     for_urange(i, 0, f->blocks.len) {
-        for_fe_inst(inst, *f->blocks.at[i]) {
+        for_fe_ir(inst, *f->blocks.at[i]) {
             inst->use_count = 0;
         }
     }
@@ -79,7 +79,7 @@ static void reset_use_counts(FeFunction* f) {
 
 static void count_uses_func(FeFunction* f) {
     for_urange(i, 0, f->blocks.len) {
-        for_fe_inst(inst, *f->blocks.at[i]) {
+        for_fe_ir(inst, *f->blocks.at[i]) {
             register_uses(inst);
         }
     }
@@ -149,7 +149,7 @@ static void tdce_on_function(FeFunction* f) {
     count_uses_func(f);
 
     for_urange(i, 0, f->blocks.len) {
-        for_fe_inst(inst, *f->blocks.at[i]) {
+        for_fe_ir(inst, *f->blocks.at[i]) {
             try_eliminate(inst);
         }
     }
@@ -157,7 +157,6 @@ static void tdce_on_function(FeFunction* f) {
 }
 
 static void run_pass_tdce(FeModule* mod) {
-
     for_urange(i, 0, mod->functions_len) {
         tdce_on_function(mod->functions[i]);
     }

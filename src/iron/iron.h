@@ -490,7 +490,6 @@ typedef struct FeIrLoadSymbol {
 
 typedef struct FeIrMov {
     FeIr base;
-
     FeIr* source;
 } FeIrMov;
 
@@ -578,29 +577,29 @@ typedef struct FeIrAsm {
 enum {
 
     // C calling convention on the target platform (sys-v/stdcall)
-    FE_CALLCONV_CDECL,
+    FE_CCONV_CDECL,
 
     // force windows stdcall
-    FE_CALLCONV_STDCALL,
+    FE_CCONV_STDCALL,
     // force system v
-    FE_CALLCONV_SYSV,
+    FE_CCONV_SYSV,
 
     // none of the above calling conventions support multi-returns natively.
     // a FeReport of FE_MSG_SEVERITY_ERROR severity will be generated at codegen.
 
     // mars calling convention, native multi-return support
-    FE_CALLCONV_MARS,
+    FE_CCONV_MARS,
 
     // jackal calling convention, native multi-return support
-    FE_CALLCONV_JACKAL,
+    FE_CCONV_JACKAL,
 
     // parameters are not defined to be passed in any specific way, the backend can choose
     // can only appear on functions with FE_BIND_LOCAL symbolic binding
-    // FE_CALLCONV_OPT,
+    // FE_CCONV_OPT,
 };
 
-#define for_fe_inst(inst, basic_block) for(FeIr* inst = (basic_block).start; inst->kind != FE_IR_BOOKEND; inst = inst->next)
-#define for_fe_inst_from(inst, start, basic_block) for(FeIr* inst = start; inst->kind != FE_IR_BOOKEND; inst = inst->next)
+#define for_fe_ir(inst, basic_block) for(FeIr* inst = (basic_block).start; inst->kind != FE_IR_BOOKEND; inst = inst->next)
+#define for_fe_ir_from(inst, start, basic_block) for(FeIr* inst = start; inst->kind != FE_IR_BOOKEND; inst = inst->next)
 
 extern const size_t fe_inst_sizes[];
 

@@ -29,6 +29,10 @@ static const char* gpr_names[_FE_X64_GPR_MAX][_GPR_LEVEL_MAX] = {
 };
 
 static void emit_register(FeDataBuffer* db, FeMachBuffer* buf, u32 vreg, u8 bits) {
+    if (vreg == 0) {
+        fe_db_write_cstring(db, "---");
+        return;
+    }
     FeMachVReg reg = buf->vregs.at[vreg];
     if (reg.real == 0) { // still virtual
         fe_db_write_format(db, "v%u", vreg);
@@ -82,6 +86,9 @@ static void emit_inst(FeDataBuffer* db, FeMachBuffer* buf, FeMach* m) {
         emit_register(db, buf, vr_index(i->regs, 2), GPR_64);
         fe_db_write_cstring(db, "]");
         break;
+    case FE_X64_INST_RET:
+        fe_db_write_cstring(db, "ret");
+        break;
     }
 }
 
@@ -123,8 +130,12 @@ void fe_x64_emit_text(FeDataBuffer* db, FeMachBuffer* machbuf) {
             break;
         case FE_MACH_LABEL_LOCAL:
             fe_db_write_8(db, '.');
+            FeMachLocalLabel* local = (FeMachLocalLabel*) m;
+            fe_db_write_string(db, local->name);
+            fe_db_write_cstring(db, ":\n");
+            break;
         case FE_MACH_LABEL_GLOBAL:
-            FeMachLabel* label = (FeMachLabel*) m;
+            FeMachGlobalLabel* label = (FeMachGlobalLabel*) m;
             FeMachSymbol sym = machbuf->symtab.at[label->symbol_index];
             fe_db_write_bytes(db, sym.name, sym.name_len);
             fe_db_write_cstring(db, ":\n");

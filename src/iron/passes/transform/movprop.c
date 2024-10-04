@@ -6,14 +6,13 @@
 
 */
 
-
-void run_pass_movprop(FeModule* mod) {
+static void run_pass_movprop(FeModule* mod) {
     for_urange(i, 0, mod->functions_len) {
         FeFunction* fn = mod->functions[i];
         for_urange(j, 0, fn->blocks.len) {
             FeBasicBlock* bb = fn->blocks.at[j];
 
-            for_fe_inst(inst, *bb) {
+            for_fe_ir(inst, *bb) {
                 if (inst->kind != FE_IR_MOV) continue;
 
                 fe_rewrite_ir_uses(fn, inst, ((FeIrMov*)inst)->source);

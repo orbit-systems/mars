@@ -16,7 +16,7 @@ static bool candidate_for_stackprom(FeStackObject* obj, FeFunction* f) {
 
     // only promote if the scalar is only used through stack loads/stores
     foreach(FeBasicBlock* bb, f->blocks) {
-        for_fe_inst(inst, *bb) {
+        for_fe_ir(inst, *bb) {
             if (inst->kind == FE_IR_STACK_ADDR && ((FeIrStackAddr*)inst)->object == obj) {
                 return false;
             }
@@ -26,7 +26,7 @@ static bool candidate_for_stackprom(FeStackObject* obj, FeFunction* f) {
 }
 
 static bool block_contains_store_to(FeBasicBlock* bb, FeStackObject* obj) {
-    for_fe_inst(inst, *bb) {
+    for_fe_ir(inst, *bb) {
         if (inst->kind != FE_IR_STACK_STORE) {
             continue;
         }
@@ -130,7 +130,7 @@ static void rename_defs(FeBasicBlock* block) {
     block->flags = DFS_VISITED;
 
 
-    for_fe_inst(inst, *block) {
+    for_fe_ir(inst, *block) {
         switch (inst->kind) {
         case FE_IR_STACK_LOAD:
             FeIrStackLoad* load = (FeIrStackLoad*) inst;

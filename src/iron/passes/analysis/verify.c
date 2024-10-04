@@ -15,7 +15,7 @@ static void verify_basic_block(FeModule* m, FeFunction* fn, FeBasicBlock* bb, bo
         FE_FATAL(m, "basic blocks must end with a terminator");
     }
 
-    for_fe_inst(inst, *bb) {
+    for_fe_ir(inst, *bb) {
         switch (inst->kind){
         case FE_IR_PARAMVAL:
             if (!entry || (inst->prev->kind != FE_IR_BOOKEND && inst->prev->kind != FE_IR_PARAMVAL))

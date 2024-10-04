@@ -34,6 +34,7 @@ enum {
     FE_X64_INST_MOV_RR_64,   // mov def, use
     FE_X64_INST_ADD_RR_64,   // add def/use, use
     FE_X64_INST_LEA_RR_64,   // lea def, [use + use]
+    FE_X64_INST_RET,         // ret
 
     _FE_X64_INST_MAX,
 };

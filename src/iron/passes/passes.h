@@ -21,6 +21,7 @@ extern FePass fe_pass_cfg;
 */
 
 extern FePass fe_pass_verify;
+extern FePass fe_pass_moviphi;
 extern FePass fe_pass_movprop;
 extern FePass fe_pass_tdce;
 extern FePass fe_pass_algsimp;

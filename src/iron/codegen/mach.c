@@ -24,8 +24,8 @@ static size_t mach_sizes[] = {
     [FE_MACH_REGALLOC_BEGIN] = sizeof(FeMach),
     [FE_MACH_REGALLOC_END]   = sizeof(FeMach),
 
-    [FE_MACH_LABEL_LOCAL]    = sizeof(FeMachLabel),
-    [FE_MACH_LABEL_GLOBAL]   = sizeof(FeMachLabel),
+    [FE_MACH_LABEL_LOCAL]    = sizeof(FeMachLocalLabel),
+    [FE_MACH_LABEL_GLOBAL]   = sizeof(FeMachGlobalLabel),
 
     [FE_MACH_INST]           = sizeof(FeMachInst),
 

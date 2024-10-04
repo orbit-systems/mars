@@ -191,8 +191,11 @@ static void emit_inst(StringBuilder* sb, FeFunction* fn, FeIr* inst) {
             sb_printf(sb, COLOR_INST" %u "RESET, number(phi->sources[i]));
             sb_printf(sb, "\'"str_fmt"\'", str_arg(phi->source_BBs[i]->name));
         }
+        break;
 
-
+    case FE_IR_MOV:
+        FeIrMov* mov = (FeIrMov*) inst;
+        sb_printf(sb, "mov %u", number(mov->source));
         break;
     case FE_IR_ADD:
     case FE_IR_SUB:
@@ -271,7 +274,7 @@ static void emit_function(StringBuilder* sb, FeFunction* f) {
         ptrmap_init(&inst2num, 128);
         u64 counter = 0;
         foreach(FeBasicBlock* bb, f->blocks) {
-            for_fe_inst(inst, *bb) {
+            for_fe_ir(inst, *bb) {
                 ptrmap_put(&inst2num, inst, (void*)counter++);
             }
         }
@@ -308,7 +311,7 @@ static void emit_function(StringBuilder* sb, FeFunction* f) {
         sb_append_c(sb, "        (blk \'");
         sb_append(sb, bb->name);
         sb_append_c(sb, "\'");
-        for_fe_inst(inst, *bb) {
+        for_fe_ir(inst, *bb) {
             emit_inst(sb, f, inst);
         }
 

@@ -2,6 +2,12 @@
 #include "iron/passes/passes.h"
 #include "iron/codegen/x64/x64.h"
 
+#define FE_FATAL(m, msg) fe_push_report(m, (FeReport){ \
+    .function_of_origin = __func__,\
+    .message = (msg),\
+    .severity = FE_MSG_SEVERITY_FATAL, \
+})
+
 // if (sym == NULL), create new symbol with no name
 FeFunction* fe_new_function(FeModule* mod, FeSymbol* sym, u8 cconv) {
     FeFunction* fn = fe_malloc(sizeof(FeFunction));
@@ -216,7 +222,7 @@ FeIr* fe_ir(FeFunction* f, u16 type) {
     size_t extra = 0;
     if (type >= _FE_IR_ARCH_SPECIFIC_START) {
         if (f->mod->target.arch == 0) {
-            FE_FATAL("cannot create arch-specific ir without target arch");
+            FE_FATAL(f->mod, "cannot create arch-specific ir without target arch");
         }
         TODO("");
     }
@@ -288,12 +294,6 @@ const size_t fe_inst_sizes[] = {
 
     [FE_IR_RETURN] = sizeof(FeIrReturn),
 };
-
-#define FE_FATAL(m, msg) fe_push_report(m, (FeReport){ \
-    .function_of_origin = __func__,\
-    .message = (msg),\
-    .severity = FE_MSG_SEVERITY_FATAL, \
-})
 
 FeIr* fe_ir_binop(FeFunction* f, u16 type, FeIr* lhs, FeIr* rhs) {
     FeIrBinop* ir = (FeIrBinop*) fe_ir(f, type);
@@ -590,14 +590,14 @@ void fe_rewrite_uses_in_inst(FeIr* inst, FeIr* source, FeIr* dest) {
 void fe_rewrite_ir_uses(FeFunction* f, FeIr* source, FeIr* dest) {
     for_urange(i, 0, f->blocks.len) {
         FeBasicBlock* bb = f->blocks.at[i];
-        for_fe_inst(inst, *bb) {
+        for_fe_ir(inst, *bb) {
             fe_rewrite_uses_in_inst(inst, source, dest);
         }
     }
 }
 
 static FeIr* get_usage(FeBasicBlock* bb, FeIr* source, FeIr* start) {
-    for_fe_inst_from(inst, start, *bb) {
+    for_fe_ir_from(inst, start, *bb) {
         FeIr** ir = (FeIr**)inst;
         for (u64 j = sizeof(FeIr)/sizeof(FeIr*); j <= fe_inst_sizes[inst->kind]/sizeof(FeIr*); j++) {
             if (ir[j] == source) return inst;

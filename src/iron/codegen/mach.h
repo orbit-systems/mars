@@ -98,11 +98,17 @@ typedef struct FeMach {
     u8 kind;
 } FeMach;
 
-typedef struct FeMachLabel {
+typedef struct FeMachGlobalLabel {
     FeMach base;
 
     u32 symbol_index;
-} FeMachLabel;
+} FeMachGlobalLabel;
+
+typedef struct FeMachLocalLabel {
+    FeMach base;
+
+    string name;
+} FeMachLocalLabel;
 
 typedef struct FeMachSection {
     FeMach base;
