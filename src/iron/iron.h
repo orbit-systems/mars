@@ -354,16 +354,29 @@ enum {
     FE_INST_ASM,
 
     _FE_INST_MAX,
+
+    _FE_INST_ARCH_SPECIFIC_START,
 };
 
 // basic IR structure
 typedef struct FeInst {
-    u8 kind;
+    u16 kind;
     u16 use_count;
     FeType type;
     FeInst* next;
     FeInst* prev;    
 } FeInst;
+
+typedef struct FeInstArchInst {
+    FeInst base;
+    FeInst* sources[]; // variable length field
+} FeInstArchInst;
+
+// information about an arch inst
+typedef struct FeInstArchInstInfo {
+    const char* name;
+    u16 sources_len;
+} FeInstArchInstInfo;
 
 typedef struct FeInstBookend {
     FeInst base;
@@ -382,7 +395,6 @@ typedef struct FeInstUnop {
 
     FeInst* source;
 } FeInstUnop;
-
 
 typedef struct FeInstStackAddr {
     FeInst base;
@@ -623,9 +635,9 @@ void    fe_rewrite_uses(FeFunction* f, FeInst* source, FeInst* dest);
 void    fe_add_uses_to_worklist(FeFunction* f, FeInst* source, da(FeInstPTR)* worklist);
 bool    fe_inst_is_terminator(FeInst* inst);
 
-FeInst* fe_inst(FeFunction* f, u8 type);
-FeInst* fe_inst_binop(FeFunction* f, u8 type, FeInst* lhs, FeInst* rhs);
-FeInst* fe_inst_unop(FeFunction* f, u8 type, FeInst* source);
+FeInst* fe_inst(FeFunction* f, u16 type);
+FeInst* fe_inst_binop(FeFunction* f, u16 type, FeInst* lhs, FeInst* rhs);
+FeInst* fe_inst_unop(FeFunction* f, u16 type, FeInst* source);
 FeInst* fe_inst_stackaddr(FeFunction* f, FeStackObject* obj);
 FeInst* fe_inst_getfieldptr(FeFunction* f, u32 index, FeInst* source);
 FeInst* fe_inst_getindexptr(FeFunction* f, FeInst* index, FeInst* source);

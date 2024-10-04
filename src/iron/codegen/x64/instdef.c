@@ -19,3 +19,7 @@ const FeMachInstTemplate fe_x64_inst_templates[_FE_X64_INST_MAX] = {{
         .uses = 0b00000110,
         .imms_len = 0,
 }};
+
+const FeInstArchInfo fe_x64_inst_arch_info[] = {
+    
+};

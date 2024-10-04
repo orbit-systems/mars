@@ -42,3 +42,8 @@ extern const FeMachInstTemplate fe_x64_inst_templates[_FE_X64_INST_MAX];
 
 FeMachBuffer fe_x64_codegen(FeModule* mod);
 void fe_x64_emit_text(FeDataBuffer* db, FeMachBuffer* machbuf);
+
+// x64-specific instructions
+enum {
+    _FE_INST_X64_START = _FE_INST_ARCH_SPECIFIC_START,
+};

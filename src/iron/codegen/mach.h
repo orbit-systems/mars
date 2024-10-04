@@ -165,7 +165,6 @@ FeType fe_mach_type_of_native_int(u16 arch);
 FeType fe_mach_type_of_native_float(u16 arch);
 bool   fe_mach_type_is_native(u16 arch, FeType t);
 
-
 FeMach*     fe_mach_new(FeMachBuffer* buf, u8 kind);
 FeMachInst* fe_mach_new_inst(FeMachBuffer* buf, u16 template_index);
 FeMach*     fe_mach_new_lifetime_begin(FeMachBuffer* buf, u32 vreg);

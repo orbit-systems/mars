@@ -212,7 +212,7 @@ FeInst* fe_insert_inst_after(FeInst* new, FeInst* ref) {
     return new;
 }
 
-FeInst* fe_inst(FeFunction* f, u8 type) {
+FeInst* fe_inst(FeFunction* f, u16 type) {
     if (type >= _FE_INST_MAX) type = FE_INST_INVALID;
     FeInst* ir = arena_alloc(&f->alloca, fe_inst_sizes[type], 8);
     ir->kind = type;
@@ -289,7 +289,7 @@ const size_t fe_inst_sizes[] = {
     .severity = FE_MSG_SEVERITY_FATAL, \
 })
 
-FeInst* fe_inst_binop(FeFunction* f, u8 type, FeInst* lhs, FeInst* rhs) {
+FeInst* fe_inst_binop(FeFunction* f, u16 type, FeInst* lhs, FeInst* rhs) {
     FeInstBinop* ir = (FeInstBinop*) fe_inst(f, type);
 
     if (lhs->type == rhs->type) {
@@ -319,7 +319,7 @@ FeInst* fe_inst_binop(FeFunction* f, u8 type, FeInst* lhs, FeInst* rhs) {
     return (FeInst*) ir;
 }
 
-FeInst* fe_inst_unop(FeFunction* f, u8 type, FeInst* source) {
+FeInst* fe_inst_unop(FeFunction* f, u16 type, FeInst* source) {
     FeInstUnop* ir = (FeInstUnop*) fe_inst(f, type);
     ir->source = source;
     return (FeInst*) ir;
