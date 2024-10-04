@@ -28,12 +28,39 @@ static void gen_symtab(FeModule* m, FeMachBuffer* mb) {
 
 PtrMap ir2vreg;
 
+static u8 paramregs[] = {
+    FE_X64_GPR_RDI,
+    FE_X64_GPR_RSI,
+    FE_X64_GPR_RDX,
+    FE_X64_GPR_RCX,
+    FE_X64_GPR_R8,
+    FE_X64_GPR_R9,
+};
+
+static void gen_basic_block(FeMachBuffer* buf, FeFunction* fn, FeBasicBlock* bb, bool entry) {
+    if (entry) {
+        size_t numparams = bb->function->params.len;
+        u32* param_vregs = fe_malloc(sizeof(param_vregs[0]) * numparams);
+        
+        assert(numparams <= 6);
+
+        FeInst* inst = bb->start;
+        while (inst->kind == FE_INST_PARAMVAL) {
+            FeInstParamVal* pv = (FeInstParamVal*) inst;
+            u32 param_reg = fe_mach_new_vreg(buf, FE_X64_REGCLASS_GPR);
+            param_vregs[pv->index] = param_reg;
+            // TODOOOO
+        }
+    }
+}
+
 static void gen_function(FeMachBuffer* buf, FeFunction* fn) {
 
     // only support mars callconv rn
     if (fn->cconv != FE_CALLCONV_MARS) {
         CRASH("only support mars callconv rn");
     }
+
 
     if (ir2vreg.keys == NULL) {
         ptrmap_init(&ir2vreg, 512);
@@ -45,6 +72,9 @@ static void gen_function(FeMachBuffer* buf, FeFunction* fn) {
     head_label->symbol_index = mach_symbol(fn->sym);
 
     fe_mach_append(buf, fe_mach_new(buf, FE_MACH_REGALLOC_BEGIN));
+
+    assert(fn->blocks.len == 1);
+    gen_basic_block(buf, fn, fn->blocks.at[0], true);
 
     fe_mach_append(buf, fe_mach_new(buf, FE_MACH_REGALLOC_END));
 }

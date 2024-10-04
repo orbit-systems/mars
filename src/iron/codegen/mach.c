@@ -86,7 +86,7 @@ FeMachBuffer fe_mach_codegen(FeModule* m) {
     return mb;
 }
 
-u32 fe_mach_new_vreg(FeMachBuffer* buf, u16 regclass) {
+u32 fe_mach_new_vreg(FeMachBuffer* buf, u8 regclass) {
     FeMachVReg vreg = {0};
     vreg.class = regclass;
     da_append(&buf->vregs, vreg);

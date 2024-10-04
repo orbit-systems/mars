@@ -166,3 +166,4 @@ bool   fe_mach_type_is_native(u16 arch, FeType t);
 FeMach* fe_mach_append(FeMachBuffer* buf, FeMach* inst);
 FeMach* fe_mach_new(FeMachBuffer* buf, u8 kind);
 FeMachInst* fe_mach_new_inst(FeMachBuffer* buf, u16 template_index);
+u32 fe_mach_new_vreg(FeMachBuffer* buf, u8 regclass);
