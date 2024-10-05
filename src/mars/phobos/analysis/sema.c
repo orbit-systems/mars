@@ -140,7 +140,7 @@ Type* check_stmt(mars_module* mod, AST node, entity_table* scope) {
                     error_at_node(mod, assignee, "cannot assign to immutable expression");
                 }
                 da_append(&lhs_exprs, checked_assignee);
-                check_assign_op(node.as_assign_stmt->op, rhs.type, checked_assignee.type);
+                if (!check_assign_op(node.as_assign_stmt->op, checked_assignee.type, rhs.type)) error_at_node(mod, node, "cannot do operation "str_fmt" to lhs with rhs as param", str_arg(node.as_assign_stmt->op->text));
             }
 
             if (rhs.expr.type == AST_call_expr) {
@@ -152,7 +152,7 @@ Type* check_stmt(mars_module* mod, AST node, entity_table* scope) {
                 foreach(checked_expr cexpr, lhs_exprs) {
                     if (!check_type_cast_implicit(cexpr.type, rhs.type->as_function.returns.at[count])) 
                         error_at_node(mod, cexpr.expr, "type mismatch: return %d cannot be cast to lhs", count);
-                    check_assign_op(node.as_assign_stmt->op, rhs.type->as_function.returns.at[count], cexpr.type);
+                    if (!check_assign_op(node.as_assign_stmt->op, rhs.type->as_function.returns.at[count], cexpr.type)) error_at_node(mod, node, "cannot do operation "str_fmt" to lhs with rhs as param", str_arg(node.as_assign_stmt->op->text));
                 }
 
                 return NULL;
@@ -488,12 +488,13 @@ Type* operation_to_type(token* tok) {
 }
 
 bool check_assign_op(token* op, Type* lhs, Type* rhs) {
-    //all assign ops behave like operations, except inline
-    //and so we can duplicate what we do for binary ops
+    //all assign ops behave like operations, except we're inline
+    //and so we can duplicate what we do for binary ops sort of
     lhs = type_unalias(lhs);
     rhs = type_unalias(rhs);
     if (op->type == TOK_EQUAL && check_type_cast_implicit(lhs, rhs)) return true;
-    else if (lhs->tag > TYPE_META_INTEGRAL && lhs->tag != TYPE_POINTER && lhs->tag != TYPE_NONE && check_type_cast_implicit(lhs, rhs)) return true;
+    else if (lhs->tag > TYPE_META_INTEGRAL && lhs->tag == TYPE_POINTER && check_type_cast_implicit(lhs, rhs)) return true;
+    else if (TYPE_NONE < lhs->tag && lhs->tag < TYPE_META_INTEGRAL && check_type_cast_implicit(lhs, rhs)) return true;
     else return false;
 }
 
