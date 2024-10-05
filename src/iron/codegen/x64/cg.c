@@ -81,7 +81,7 @@ static FeIr* emit_epilogue(FeMachBuffer* buf, FeFunction* fn, FeIr* ir) {
         // generate the lifetime endpoints
         fe_mach_append(buf, fe_mach_new_lifetime_end(buf, callconv_vregs[rv->index]));
     }
-    ir = (FeIr*) rv;
+    ir = rv->base.prev;
 
     fe_free(callconv_vregs);
     return ir;
