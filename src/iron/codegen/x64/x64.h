@@ -25,7 +25,7 @@ enum {
     FE_X64_GPR_R14,
     FE_X64_GPR_R15,
 
-    _FE_X64_GPR_MAX,
+    _FE_X64_GPR_COUNT,
 };
 
 enum {

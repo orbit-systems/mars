@@ -61,6 +61,39 @@ static const u8 mars_cconv_returnregs[] = {
 
 #define new_inst(b, kind) (FeMachInst*) fe_mach_append(buf, (FeMach*) fe_mach_new_inst(buf, kind))
 
+static FeIr* emit_prologue(FeMachBuffer* buf, FeFunction* fn, FeIr* ir) {
+    u32* callconv_vregs = fe_malloc(sizeof(u32) * fn->params.len);
+    switch (fn->cconv) {
+    case FE_CCONV_MARS:
+        assert(fn->params.len <= 6); // preparation passes should have made this never fail
+        for (FeIrParamVal* pv = (FeIrParamVal*) ir; pv->base.kind == FE_IR_PARAMVAL; pv = (FeIrParamVal*) pv->base.next) {
+            // create the vreg for the callconv register
+            u32 cconv_vreg = fe_mach_new_vreg(buf, FE_X64_REGCLASS_GPR);
+            callconv_vregs[pv->index] = cconv_vreg;
+            buf->vregs.at[cconv_vreg].real = mars_cconv_paramregs[pv->index];
+            // begin its lifetime
+            fe_mach_append(buf, fe_mach_new_lifetime_begin(buf, cconv_vreg));
+        }
+        for (FeIrParamVal* pv = (FeIrParamVal*) ir; pv->base.kind == FE_IR_PARAMVAL; pv = (FeIrParamVal*) pv->base.next) {
+            // create the mov
+            FeMachInst* mov = new_inst(buf, FE_X64_INST_MOV_RR_64);
+            fe_mach_set_vreg(buf, mov, 1, callconv_vregs[pv->index]);
+
+            u32 mov_out = fe_mach_new_vreg(buf, FE_X64_REGCLASS_GPR);
+            buf->vregs.at[mov_out].hint = mars_cconv_paramregs[pv->index];
+            fe_mach_set_vreg(buf, mov, 0, mov_out);
+            put_ir_vreg((FeIr*) pv, mov_out);
+            ir = (FeIr*) pv;
+        }
+        break;
+    default:
+        TODO("non-mars cconvs not supported yet");
+        break;
+    }
+    fe_free(callconv_vregs);
+    return ir;
+}
+
 static FeIr* emit_epilogue(FeMachBuffer* buf, FeFunction* fn, FeIr* ir) {
     u32* callconv_vregs = fe_malloc(sizeof(u32) * fn->returns.len);
 
@@ -83,38 +116,6 @@ static FeIr* emit_epilogue(FeMachBuffer* buf, FeFunction* fn, FeIr* ir) {
     }
     ir = rv->base.prev;
 
-    fe_free(callconv_vregs);
-    return ir;
-}
-
-static FeIr* emit_prologue(FeMachBuffer* buf, FeFunction* fn, FeIr* ir) {
-    u32* callconv_vregs = fe_malloc(sizeof(u32) * fn->params.len);
-    switch (fn->cconv) {
-    case FE_CCONV_MARS:
-        assert(fn->params.len <= 6); // preparation passes should have made this never fail
-        for (FeIrParamVal* pv = (FeIrParamVal*) ir; pv->base.kind == FE_IR_PARAMVAL; pv = (FeIrParamVal*) pv->base.next) {
-            // create the vreg for the callconv register
-            u32 cconv_vreg = fe_mach_new_vreg(buf, FE_X64_REGCLASS_GPR);
-            callconv_vregs[pv->index] = cconv_vreg;
-            buf->vregs.at[cconv_vreg].real = mars_cconv_paramregs[pv->index];
-            // begin its lifetime
-            fe_mach_append(buf, fe_mach_new_lifetime_begin(buf, cconv_vreg));
-        }
-        for (FeIrParamVal* pv = (FeIrParamVal*) ir; pv->base.kind == FE_IR_PARAMVAL; pv = (FeIrParamVal*) pv->base.next) {
-            // create the mov
-            FeMachInst* mov = new_inst(buf, FE_X64_INST_MOV_RR_64);
-            fe_mach_set_vreg(buf, mov, 1, callconv_vregs[pv->index]);
-
-            u32 mov_out = fe_mach_new_vreg(buf, FE_X64_REGCLASS_GPR);
-            fe_mach_set_vreg(buf, mov, 0, mov_out);
-            put_ir_vreg((FeIr*) pv, mov_out);
-            ir = (FeIr*) pv;
-        }
-        break;
-    default:
-        TODO("non-mars cconvs not supported yet");
-        break;
-    }
     fe_free(callconv_vregs);
     return ir;
 }
@@ -215,6 +216,7 @@ FeMachBuffer fe_x64_codegen(FeModule* mod) {
     }
 
     // TODO("");
+    fe_mach_regalloc(&mb);
 
     return mb;
 }

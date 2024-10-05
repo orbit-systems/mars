@@ -37,7 +37,7 @@ Type* check_stmt(mars_module* mod, AST node, entity_table* scope) {
                 error_at_node(mod, fn->ident, "identifier already exists in scope");
             
             entity* fn_ent = new_entity(scope, ident, node);
-            if (scope == mod.entities) fn_ent.is_global = true;
+            if (scope == mod->entities) fn_ent->is_global = true;
 
             fn_ent->entity_type = check_func_literal(mod, node, scope);
             fn_ent->is_mutable = false;
@@ -91,7 +91,7 @@ Type* check_stmt(mars_module* mod, AST node, entity_table* scope) {
                 if (search_for_entity(scope, lhs.as_identifier->tok->text)) error_at_node(mod, lhs, "identifier already exists in scope");
 
                 entity* lhs_item_entity = new_entity(scope, lhs.as_identifier->tok->text, lhs);
-                if (scope == mod.entities) lhs_item_entity.is_global = true;
+                if (scope == mod->entities) lhs_item_entity->is_global = true;
                 lhs_item_entity->is_mutable = node.as_decl_stmt->is_mut;
                 lhs.as_identifier->entity = lhs_item_entity;
 

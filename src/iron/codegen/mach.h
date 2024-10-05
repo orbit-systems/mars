@@ -56,6 +56,9 @@ typedef struct FeMachVReg {
 } FeMachVReg;
 
 enum {
+    // JUST NOTHING LOL
+    FE_MACH_NONE = 0,
+
     // define a section
     FE_MACH_SECTION = 1,
 
@@ -71,6 +74,13 @@ enum {
     // usually at the end of a function, tells the register allocator to stop
     FE_MACH_REGALLOC_END,
 
+    // the following instruction WILL transfer control flow somewhere else.
+    FE_MACH_CFG_JUMP,
+    // the following instruction MIGHT transfer control flow somewhere else
+    FE_MACH_CFG_BRANCH,
+    // the following instruction is a target for a CFG jump/branch
+    FE_MACH_CFG_TARGET,
+
     FE_MACH_LABEL_LOCAL,
     FE_MACH_LABEL_GLOBAL,
 
@@ -83,13 +93,6 @@ enum {
     FE_MACH_DATA_BYTESTREAM,
 
     FE_MACH_INST,
-
-    // the following instruction WILL transfer control flow somewhere else.
-    FE_MACH_CFG_JUMP,
-    // the following instruction MIGHT transfer control flow somewhere else
-    FE_MACH_CFG_BRANCH,
-    // the following instruction is a target for a CFG jump/branch
-    FE_MACH_CFG_TARGET,
 
     _FE_MACH_MAX,
 };
@@ -181,3 +184,5 @@ FeMach* fe_mach_append(FeMachBuffer* buf, FeMach* inst);
 u32 fe_mach_new_vreg(FeMachBuffer* buf, u8 regclass);
 u32 fe_mach_get_vreg(FeMachBuffer* buf, FeMachInst* inst, u8 index);
 void fe_mach_set_vreg(FeMachBuffer* buf, FeMachInst* inst, u8 index, u32 vreg);
+
+void fe_mach_regalloc(FeMachBuffer* buf);

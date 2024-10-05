@@ -9,7 +9,7 @@ enum {
     _GPR_LEVEL_MAX
 };
 
-static const char* gpr_names[_FE_X64_GPR_MAX][_GPR_LEVEL_MAX] = {
+static const char* gpr_names[_FE_X64_GPR_COUNT][_GPR_LEVEL_MAX] = {
     [FE_X64_GPR_RAX] = {"rax", "eax",  "ax",   "al"},
     [FE_X64_GPR_RBX] = {"rbx", "ebx",  "bx",   "bl"},
     [FE_X64_GPR_RCX] = {"rcx", "ecx",  "cx",   "cl"},
@@ -95,6 +95,8 @@ static void emit_inst(FeDataBuffer* db, FeMachBuffer* buf, FeMach* m) {
 void fe_x64_emit_text(FeDataBuffer* db, FeMachBuffer* machbuf) {
     for_range(i, 0, machbuf->buf.len) {
         FeMach* m = machbuf->buf.at[i];
+        if (m->kind == 0) continue;
+        fe_db_write_format(db, "% 3d |   ", i);
         switch (m->kind) {
         case FE_MACH_CFG_BRANCH:
             fe_db_write_cstring(db, "; (IRON) cfg branch\n");
