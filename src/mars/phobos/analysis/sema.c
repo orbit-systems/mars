@@ -130,7 +130,6 @@ Type* check_stmt(mars_module* mod, AST node, entity_table* scope) {
             return NULL;
         }
         case AST_assign_stmt:
-            general_warning("TODO: add integral type checking to assign stmt ops, since = is the only supported right meow");
             checked_expr rhs = check_expr(mod, node.as_assign_stmt->rhs, scope);
 
             da(checked_expr) lhs_exprs;
@@ -141,6 +140,7 @@ Type* check_stmt(mars_module* mod, AST node, entity_table* scope) {
                     error_at_node(mod, assignee, "cannot assign to immutable expression");
                 }
                 da_append(&lhs_exprs, checked_assignee);
+                check_assign_op(node.as_assign_stmt->op, rhs.type, checked_assignee.type);
             }
 
             if (rhs.expr.type == AST_call_expr) {
@@ -152,6 +152,7 @@ Type* check_stmt(mars_module* mod, AST node, entity_table* scope) {
                 foreach(checked_expr cexpr, lhs_exprs) {
                     if (!check_type_cast_implicit(cexpr.type, rhs.type->as_function.returns.at[count])) 
                         error_at_node(mod, cexpr.expr, "type mismatch: return %d cannot be cast to lhs", count);
+                    check_assign_op(node.as_assign_stmt->op, rhs.type->as_function.returns.at[count], cexpr.type);
                 }
 
                 return NULL;
@@ -484,6 +485,16 @@ Type* operation_to_type(token* tok) {
             general_error("[INTERNAL COMPILER ERROR] unknown token %s found when converting operation "str_fmt" to type", token_type_str[tok->type], str_arg(tok->text));
     }
     return NULL;
+}
+
+bool check_assign_op(token* op, Type* lhs, Type* rhs) {
+    //all assign ops behave like operations, except inline
+    //and so we can duplicate what we do for binary ops
+    lhs = type_unalias(lhs);
+    rhs = type_unalias(rhs);
+    if (op->type == TOK_EQUAL && check_type_cast_implicit(lhs, rhs)) return true;
+    else if (lhs->tag > TYPE_META_INTEGRAL && lhs->tag != TYPE_POINTER && lhs->tag != TYPE_NONE && check_type_cast_implicit(lhs, rhs)) return true;
+    else return false;
 }
 
 bool check_type_cast_implicit(Type* lhs, Type* rhs) {

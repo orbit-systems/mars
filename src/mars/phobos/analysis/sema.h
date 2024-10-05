@@ -51,6 +51,7 @@ Type* ast_to_type(mars_module* mod, AST node);
 Type* operation_to_type(token* tok);
 bool check_type_cast_implicit(Type* lhs, Type* rhs);
 bool check_type_cast_explicit(Type* lhs, Type* rhs);
+bool check_assign_op(token* op, Type* lhs, Type* rhs);
 
 
 /*
