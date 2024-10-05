@@ -14,7 +14,7 @@
 
 #define current_char(lex) (lex->current_char)
 #define advance_char(lex) ((lex->cursor) < lex->src.len ? (lex->current_char = lex->src.raw[++lex->cursor]) : '\0')
-#define advance_char_n(lex, n) (lex->cursor + (n) < lex->src.len ? (lex->current_char = lex->src.raw[lex->cursor += (n)]) : '\0')
+#define advance_char_n(lex, n) (lex->cursor + (n) < lex->src.len ? (lex->current_char = lex->src.raw[lex->cursor += (n)]) : lex->src.raw[lex->src.len - 1])
 #define peek_char(lex, n) ((lex->cursor + (n)) < lex->src.len ? lex->src.raw[lex->cursor + (n)] : '\0')
 
 int skip_block_comment(lexer* lex);
@@ -33,7 +33,6 @@ char* token_type_str[] = {
 };
 
 lexer new_lexer(string path, string src) {
-    general_warning("FIXME: using advance_char_n should terminate on lex->src.len, rather than failing silently");
     lexer lex = {0};
     lex.path = path;
     lex.src = src;
