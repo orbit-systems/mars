@@ -263,6 +263,7 @@ static void assign_concrete(FeMachBuffer* buf) {
                 reg->real = reg->hint;
                 continue;
             }
+            CRASH("cannot select a real register");
         }
 
         // look through and see if we can put a real reg to these bitches
