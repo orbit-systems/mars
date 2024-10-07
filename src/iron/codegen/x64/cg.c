@@ -193,7 +193,8 @@ static void mov_reduce(FeMachBuffer* buf) {
         if (inst->template != FE_X64_INST_MOV_RR_64) 
             continue;
         
-        if (get_vreg(buf, inst, 0)->real == get_vreg(buf, inst, 1)->real) {
+        u8 real0 = get_vreg(buf, inst, 0)->real;
+        if (real0 != 0 && real0 == get_vreg(buf, inst, 1)->real) {
             inst->base.kind = FE_MACH_NONE;
         }
     }
