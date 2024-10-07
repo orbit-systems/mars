@@ -230,16 +230,14 @@ static bool strength_reduction(FeFunction* fn, FeIr* inst) {
     return false;
 }
 
-void run_pass_algsimp(FeModule* mod) {
-    da(FeIrPTR) worklist = {0};
-    da_init(&worklist, 64);
+da(FeIrPTR) worklist = {0};
 
-    for_range(fi, 0, mod->functions_len) {
-        FeFunction* f = mod->functions[fi];
-        da_clear(&worklist);
+static void function_algsimp(FeFunction* fn) {
+    if (worklist.at == NULL) da_init(&worklist, 128);
+    da_clear(&worklist);
 
-        for_range(bi, 0, f->blocks.len) {
-            FeBasicBlock* bb = f->blocks.at[bi];
+    for_range(bi, 0, fn->blocks.len) {
+            FeBasicBlock* bb = fn->blocks.at[bi];
             for_fe_ir(inst, *bb) {
                 da_append(&worklist, inst);
             }
@@ -265,23 +263,29 @@ void run_pass_algsimp(FeModule* mod) {
             bool needs_inserting = false;
             if (inst != (new_inst = identity_reduction(inst, &needs_inserting))){
                 if (needs_inserting) fe_insert_ir_before(new_inst, inst);
-                fe_rewrite_ir_uses(f, inst, new_inst);
+                fe_rewrite_ir_uses(fn, inst, new_inst);
                 fe_remove_ir(inst);
-                fe_add_ir_uses_to_worklist(f, new_inst, &worklist);
-            } else if (inst != (new_inst = const_eval(f, inst))) {
+                fe_add_ir_uses_to_worklist(fn, new_inst, &worklist);
+            } else if (inst != (new_inst = const_eval(fn, inst))) {
                 fe_insert_ir_before(new_inst, inst);
-                fe_rewrite_ir_uses(f, inst, new_inst);
+                fe_rewrite_ir_uses(fn, inst, new_inst);
                 fe_remove_ir(inst);
-                fe_add_ir_uses_to_worklist(f, new_inst, &worklist);
-            } else if (strength_reduction(f, inst)) {
-                fe_add_ir_uses_to_worklist(f, inst, &worklist);
+                fe_add_ir_uses_to_worklist(fn, new_inst, &worklist);
+            } else if (strength_reduction(fn, inst)) {
+                fe_add_ir_uses_to_worklist(fn, inst, &worklist);
             }
         }
+}
+
+static void module_algsimp(FeModule* mod) {
+    for_range(fi, 0, mod->functions_len) {
+        FeFunction* fn = mod->functions[fi];
+        function_algsimp(fn);
     }
-    da_destroy(&worklist);
 }
 
 FePass fe_pass_algsimp = {
     .name = "algsimp",
-    .callback = run_pass_algsimp,
+    .module = module_algsimp,
+    .function = function_algsimp,
 };

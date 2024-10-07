@@ -6,11 +6,16 @@
 
 */
 
-void run_pass_template(FeModule* mod) {
+static void function_template(FeFunction* fn) {
+    /* code here! */
+}
+
+static void module_template(FeModule* mod) {
     /* code here! */
 }
 
 FePass fe_pass_template = {
     .name = "template",
-    .callback = run_pass_template,
+    .module = module_template,
+    .function = function_template,
 };

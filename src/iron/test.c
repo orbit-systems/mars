@@ -36,8 +36,8 @@ void test_algsimp_reassoc() {
     fe_append_ir(bb, fe_ir_returnval(f, 0, (FeIr*) add2));
     fe_append_ir(bb, fe_ir_return(f));
 
-    fe_sched_pass(m, &fe_pass_algsimp);
-    fe_sched_pass(m, &fe_pass_tdce);
+    fe_sched_module_pass(m, &fe_pass_algsimp);
+    fe_sched_module_pass(m, &fe_pass_tdce);
     fe_run_all_passes(m, true);
 
     fe_emit_c(m);
@@ -73,8 +73,8 @@ void test_algsimp_sr() {
     fe_append_ir(bb, fe_ir_returnval(f, 0, (FeIr*) mul));
     fe_append_ir(bb, fe_ir_return(f));
 
-    fe_sched_pass(m, &fe_pass_algsimp);
-    fe_sched_pass(m, &fe_pass_tdce);
+    fe_sched_module_pass(m, &fe_pass_algsimp);
+    fe_sched_module_pass(m, &fe_pass_tdce);
     fe_run_all_passes(m, true);
 
     // string s = fe_emit_ir(m);

@@ -34,9 +34,6 @@ static struct {
     u32 array_len;
 } LT;
 
-// cfg information arena.
-static Arena cfg_nodes;
-
 static u32 pre_order_index;
 static void populate_pre_order(FeCFGNode* v, FeCFGNode* parent) {
     v->pre_order_index = ++pre_order_index;
@@ -124,7 +121,7 @@ static void init_cfg_nodes(FeFunction* fn) {
 
     // give every basic block a CFG node
     foreach(FeBasicBlock* bb, fn->blocks) {
-        FeCFGNode* node = arena_alloc(&cfg_nodes, sizeof(FeCFGNode), alignof(FeCFGNode));
+        FeCFGNode* node = arena_alloc(&fn->cfg, sizeof(FeCFGNode), alignof(FeCFGNode));
         *node = (FeCFGNode){0};
         node->bb = bb;
         bb->cfg_node = node;
@@ -143,7 +140,7 @@ static void init_cfg_nodes(FeFunction* fn) {
             FeIrJump* jump = (FeIrJump*)bb->end;
             // set outgoing
             node->out_len = 1;
-            node->outgoing = arena_alloc(&cfg_nodes, sizeof(FeCFGNode) * node->out_len, alignof(FeCFGNode));
+            node->outgoing = arena_alloc(&fn->cfg, sizeof(FeCFGNode) * node->out_len, alignof(FeCFGNode));
             node->outgoing[0] = jump->dest->cfg_node;
             // increment incoming len of target node
             jump->dest->cfg_node->in_len++;
@@ -152,7 +149,7 @@ static void init_cfg_nodes(FeFunction* fn) {
             FeIrBranch* branch = (FeIrBranch*)bb->end;
             // set outgoing
             node->out_len = 2;
-            node->outgoing = arena_alloc(&cfg_nodes, sizeof(FeCFGNode) * node->out_len, alignof(FeCFGNode));
+            node->outgoing = arena_alloc(&fn->cfg, sizeof(FeCFGNode) * node->out_len, alignof(FeCFGNode));
             node->outgoing[0] = branch->if_true->cfg_node;
             node->outgoing[1] = branch->if_false->cfg_node;
             // increment incoming len of target nodes
@@ -168,7 +165,7 @@ static void init_cfg_nodes(FeFunction* fn) {
     // allocate incoming
     foreach(FeBasicBlock* bb, fn->blocks) {
         FeCFGNode* node = bb->cfg_node;
-        node->incoming = arena_alloc(&cfg_nodes, sizeof(FeCFGNode) * node->in_len, alignof(FeCFGNode));
+        node->incoming = arena_alloc(&fn->cfg, sizeof(FeCFGNode) * node->in_len, alignof(FeCFGNode));
         node->in_len = 0;
     }
 
@@ -285,7 +282,7 @@ static bool dom(FeCFGNode* D, FeCFGNode* N) {
 
 static void compute_domfront(FeFunction* fn, FeCFGNode* N) {
     // domfront(node N) = set of all blocks that are immediate successors to blocks dominated by N, but not dominated by N themselves
-    N->domfront = arena_alloc(&cfg_nodes, sizeof(FeCFGNode*) * fn->blocks.len, alignof(FeCFGNode*));
+    N->domfront = arena_alloc(&fn->cfg, sizeof(FeCFGNode*) * fn->blocks.len, alignof(FeCFGNode*));
     N->domfront_len = 0;
 
     foreach(FeBasicBlock* bb, fn->blocks) {
@@ -304,7 +301,12 @@ static void compute_domfront(FeFunction* fn, FeCFGNode* N) {
     }
 }
 
-static void per_function(FeFunction* fn) {
+static void function_cfg(FeFunction* fn) {
+    if (fn->cfg_up_to_date) return;
+
+    if (fn->cfg.list.at != NULL) arena_delete(&fn->cfg);
+    fn->cfg = arena_make(sizeof(FeCFGNode)*(fn->blocks.len) + 10000);
+
     init_cfg_nodes(fn);
 
     lt_deinit(fn);
@@ -313,24 +315,20 @@ static void per_function(FeFunction* fn) {
         compute_domfront(fn, bb->cfg_node);
     }
 
+    fn->cfg_up_to_date = true;
     // emit_cfg_dot(fn);
     // emit_domtree_dot(fn);
 }
 
-static void module(FeModule* m) {
-
-    // if cfg info already exists, destroy it
-    if (cfg_nodes.arena_size != 0) arena_delete(&cfg_nodes);
-    cfg_nodes = arena_make(256*sizeof(FeCFGNode));
-    
+static void module_cfg(FeModule* m) {
     for_range(i, 0, m->functions_len) {
-        per_function(m->functions[i]);
+        FeFunction* fn = m->functions[i];
+        function_cfg(fn);
     }
-
-    m->pass_queue.cfg_up_to_date = true;
 }
 
 FePass fe_pass_cfg = {
     .name = "cfg",
-    .callback = module,
+    .module = module_cfg,
+    .function = function_cfg,
 };

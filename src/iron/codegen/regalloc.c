@@ -12,7 +12,6 @@
 
 */
 
-
 typedef struct LiveRange {
     u32 from; // inclusive
     u32 to;  // exclusive

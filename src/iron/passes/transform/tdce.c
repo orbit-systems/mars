@@ -164,5 +164,6 @@ static void run_pass_tdce(FeModule* mod) {
 
 FePass fe_pass_tdce = {
     .name = "tdce",
-    .callback = run_pass_tdce,
+    .module = run_pass_tdce,
+    .function = tdce_on_function,
 };

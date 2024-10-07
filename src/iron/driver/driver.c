@@ -99,7 +99,7 @@ int main() {
 
 
 
-    fe_sched_pass(m, &fe_pass_stackprom);
+    fe_sched_module_pass(m, &fe_pass_stackprom);
 
     fe_run_all_passes(m, true);
 

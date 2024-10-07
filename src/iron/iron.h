@@ -10,7 +10,11 @@
 #define FE_VERSION_PATCH 0
 
 typedef struct FeModule FeModule;
-typedef struct FePass   FePass;
+typedef struct FeFunction     FeFunction;
+typedef struct FeFunctionItem FeFunctionItem;
+typedef struct FeData         FeData;
+typedef struct FeSymbol       FeSymbol;
+typedef struct FeBasicBlock   FeBasicBlock;
 
 typedef u32 FeType;
 typedef struct FeIr  FeIr;
@@ -18,22 +22,10 @@ typedef        FeIr* FeIrPTR;
 
 da_typedef(FeIrPTR);
 
-typedef struct FeFunction     FeFunction;
-typedef struct FeFunctionItem FeFunctionItem;
-typedef struct FeData         FeData;
-typedef struct FeSymbol       FeSymbol;
-typedef struct FeBasicBlock   FeBasicBlock;
-
 typedef struct FePass {
     char* name;
-    union {
-        void (*module)(FeModule*); // run on the entire module.
-        void (*function)(FeFunction* fn); // run on a function.
-    };
-
-    struct {
-        bool cfg;
-    } require;
+    void (*module)(FeModule*); // run on the entire module.
+    void (*function)(FeFunction* fn); // run on a function.
 } FePass;
 
 enum {
@@ -45,7 +37,7 @@ typedef struct FeSchedPass {
     FePass* pass;
     union {
         FeFunction* fn;
-    };
+    } bind;
     u8 sched_kind;
 } FeSchedPass;
 
@@ -53,7 +45,7 @@ void fe_sched_func_pass(FeModule* m, FePass* p, FeFunction* fn);
 void fe_sched_module_pass(FeModule* m, FePass* p);
 void fe_sched_func_pass_at(FeModule* m, FePass* p, FeFunction* fn, u64 index);
 void fe_sched_module_pass_at(FeModule* m, FePass* p, u64 index);
-void fe_run_next_pass(FeModule* m, bool printout);
+void fe_run_next_pass(FeModule* m);
 void fe_run_all_passes(FeModule* m, bool printout);
 
 enum {
@@ -197,6 +189,7 @@ typedef struct FeFunction {
         u16 cap;
     } returns;
 
+    Arena cfg;
     Arena alloca;
 } FeFunction;
 
@@ -763,7 +756,7 @@ typedef struct FeModule {
     } typegraph;
 
     struct {
-        FeSchedPass** at;
+        FeSchedPass* at;
         size_t len;
         size_t cap;
     } pass_queue;

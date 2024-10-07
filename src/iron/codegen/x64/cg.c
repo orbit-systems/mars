@@ -203,8 +203,8 @@ FeMachBuffer fe_x64_codegen(FeModule* mod) {
     mod->pass_queue.len = 0; // clear pass queue
 
     // run preparation passes
-    fe_sched_pass(mod, &fe_pass_moviphi);
-    fe_sched_pass(mod, &fe_pass_tdce);
+    fe_sched_module_pass(mod, &fe_pass_moviphi);
+    fe_sched_module_pass(mod, &fe_pass_tdce);
     fe_run_all_passes(mod, false);
 
     FeMachBuffer mb = {0};

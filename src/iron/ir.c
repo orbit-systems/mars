@@ -17,13 +17,13 @@ FeFunction* fe_new_function(FeModule* mod, FeSymbol* sym, u8 cconv) {
     fn->sym->is_function = true;
     fn->sym->function = fn;
     fn->cconv = cconv;
-
+    fn->cfg_up_to_date = false;
     fn->alloca = arena_make(FE_FN_ALLOCA_BLOCK_SIZE);
-    da_init(&fn->blocks, 1);
-    da_init(&fn->stack, 1);
     fn->params.at = NULL;
     fn->returns.at = NULL;
     fn->mod = mod;
+    da_init(&fn->blocks, 1);
+    da_init(&fn->stack, 1);
 
     mod->functions = mars_realloc(mod->functions, sizeof(*mod->functions) * (mod->functions_len+1));
     mod->functions[mod->functions_len++] = fn;
@@ -145,6 +145,7 @@ FeSymbol* fe_find_symbol(FeModule* mod, string name) {
 
 FeBasicBlock* fe_new_basic_block(FeFunction* fn, string name) {
     FeBasicBlock* bb = fe_malloc(sizeof(FeBasicBlock));
+    fn->cfg_up_to_date = false;
 
     bb->name = name;
     bb->function = fn;
@@ -209,6 +210,7 @@ FeIr* fe_insert_ir_after(FeIr* new, FeIr* ref) {
     if (ref->next->kind == FE_IR_BOOKEND) {
         FeIrBookend* bookend = (FeIrBookend*)ref->next;
         bookend->bb->end = new;
+        bookend->bb->function->cfg_up_to_date = false;
     }
     new->prev = ref;
     new->next = ref->next;

@@ -169,7 +169,9 @@ static void rename_defs(FeBasicBlock* block) {
 
 }
 
-static void per_function(FeFunction* f) {
+static void function_stackprom(FeFunction* f) {
+
+    fe_pass_cfg.function(f);
 
     if (def_stack.at == NULL) {
         def_stack.cap = 16;
@@ -205,14 +207,14 @@ static void per_function(FeFunction* f) {
     }
 }
 
-static void run_pass_stackprom(FeModule* m) {
+static void module_stackprom(FeModule* m) {
     for_urange(i, 0, m->functions_len) {
-        per_function(m->functions[i]);
+        function_stackprom(m->functions[i]);
     }
 }
 
 FePass fe_pass_stackprom = {
     .name = "stackprom",
-    .callback = run_pass_stackprom,
-    .requires_cfg = true,
+    .module = module_stackprom,
+    .function = function_stackprom,
 };

@@ -53,24 +53,25 @@ static void verify_basic_block(FeModule* m, FeFunction* fn, FeBasicBlock* bb, bo
     }
 }
 
-static void verify_function(FeModule* m, FeFunction* f) {
+static void verify_function(FeFunction* f) {
     if (f->blocks.len == 0) {
-        FE_FATAL(m, "functions must have at least one basic block");
+        FE_FATAL(f->mod, "functions must have at least one basic block");
     }
     foreach(FeBasicBlock* bb, f->blocks) {
-        verify_basic_block(m, f, bb, count == 0);
+        verify_basic_block(f->mod, f, bb, count == 0);
     }
 }
 
 static void verify_module(FeModule* m) {
     for_range(i, 0, m->functions_len) {
         FeFunction* f = m->functions[i];
-        verify_function(m, f);
+        verify_function(f);
     }
 }
 
 // fails fatally if module is not valid.
 FePass fe_pass_verify = {
     .name = "verify",
-    .callback = verify_module,
+    .module = verify_module,
+    .function = verify_function,
 };
