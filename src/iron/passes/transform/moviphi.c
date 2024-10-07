@@ -1,10 +1,10 @@
 #include "iron/iron.h"
 
 /* pass "moviphi" - insert movs between phis and their sources
-    was originally "movify" but this is funnier
 
     this pass is usually invoked by targets before codegen
     makes phi translation easier
+    
 */
 
 static void run_pass_moviphi(FeModule* mod) {

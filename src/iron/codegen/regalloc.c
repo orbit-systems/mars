@@ -2,11 +2,13 @@
 #include "x64/x64.h"
 
 /*
-    the register allocator assumes well-formed programs.
+    the liveness analyzer assumes well-formed programs.
     this means that for every use, there must be a preceding definition along all control flow paths that lead to it.
     you cannot use a regiser that is only defined in some, but not all, predecessors.
 
     valid IR will never generate ill-formed programs
+
+    I could design a more complicated analyzer that detects this, but the overhead is kinda horrendous
 
 */
 
@@ -268,8 +270,6 @@ static void assign_concrete(FeMachBuffer* buf) {
 
         // look through and see if we can put a real reg to these bitches
         
-
-        // TODO("last step!!");
     }
 }
 

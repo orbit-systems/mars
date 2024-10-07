@@ -46,7 +46,7 @@ static char* cstrprintf(char* fmt, ...) {
     memset(buf, 0, sizeof(buf));
 
     vsprintf(buf, fmt, varargs);
-    char* out = malloc(strlen(buf));
+    char* out = malloc(strlen(buf) + 1);
     strcpy(out, buf);
     return out;
 }

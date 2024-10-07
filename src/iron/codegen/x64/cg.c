@@ -181,6 +181,24 @@ static void gen_function(FeMachBuffer* buf, FeFunction* fn) {
     fe_mach_append(buf, fe_mach_new(buf, FE_MACH_REGALLOC_END));
 }
 
+static FeMachVReg* get_vreg(FeMachBuffer* buf, FeMachInst* inst, u32 i) {
+    return &buf->vregs.at[buf->vreg_lists.at[inst->regs + i]];
+}
+
+static void mov_reduce(FeMachBuffer* buf) {
+    for_range(i, 0, buf->buf.len) {
+        if (buf->buf.at[i]->kind != FE_MACH_INST) 
+            continue;
+        FeMachInst* inst = (FeMachInst*) buf->buf.at[i];
+        if (inst->template != FE_X64_INST_MOV_RR_64) 
+            continue;
+        
+        if (get_vreg(buf, inst, 0)->real == get_vreg(buf, inst, 1)->real) {
+            inst->base.kind = FE_MACH_NONE;
+        }
+    }
+}
+
 FeMachBuffer fe_x64_codegen(FeModule* mod) {
     mod->pass_queue.len = 0; // clear pass queue
 
@@ -217,6 +235,8 @@ FeMachBuffer fe_x64_codegen(FeModule* mod) {
 
     // TODO("");
     fe_mach_regalloc(&mb);
+
+    mov_reduce(&mb);
 
     return mb;
 }

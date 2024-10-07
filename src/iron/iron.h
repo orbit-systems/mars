@@ -27,18 +27,32 @@ typedef struct FeBasicBlock   FeBasicBlock;
 typedef struct FePass {
     char* name;
     union {
-        void* raw_callback;
-        void (*callback)(FeModule*);
+        void (*module)(FeModule*); // run on the entire module.
+        void (*function)(FeFunction* fn); // run on a function.
     };
 
-    // make sure CFG info is up-to-date before this pass runs
-    bool requires_cfg;
-    // mark the CFG information as out-of-date after this pass runs
-    bool modifies_cfg;
+    struct {
+        bool cfg;
+    } require;
 } FePass;
 
-void fe_sched_pass(FeModule* m, FePass* p);
-void fe_sched_pass_at(FeModule* m, FePass* p, int index);
+enum {
+    FE_SCHED_MODULE,
+    FE_SCHED_FUNCTION,
+};
+
+typedef struct FeSchedPass {
+    FePass* pass;
+    union {
+        FeFunction* fn;
+    };
+    u8 sched_kind;
+} FeSchedPass;
+
+void fe_sched_func_pass(FeModule* m, FePass* p, FeFunction* fn);
+void fe_sched_module_pass(FeModule* m, FePass* p);
+void fe_sched_func_pass_at(FeModule* m, FePass* p, FeFunction* fn, u64 index);
+void fe_sched_module_pass_at(FeModule* m, FePass* p, u64 index);
 void fe_run_next_pass(FeModule* m, bool printout);
 void fe_run_all_passes(FeModule* m, bool printout);
 
@@ -156,6 +170,8 @@ typedef struct FeFunction {
     FeSymbol* sym;
 
     u8 cconv;
+    
+    bool cfg_up_to_date;
 
     struct {
         FeBasicBlock** at;
@@ -747,11 +763,9 @@ typedef struct FeModule {
     } typegraph;
 
     struct {
-        FePass** at;
+        FeSchedPass** at;
         size_t len;
         size_t cap;
-
-        bool cfg_up_to_date;
     } pass_queue;
 
     struct {

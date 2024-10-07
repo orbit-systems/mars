@@ -80,6 +80,8 @@ enum {
     FE_MACH_CFG_BRANCH,
     // the following instruction is a target for a CFG jump/branch
     FE_MACH_CFG_TARGET,
+    // the following instruction terminates a CFG branch
+    FE_MACH_CFG_END,
 
     FE_MACH_LABEL_LOCAL,
     FE_MACH_LABEL_GLOBAL,
