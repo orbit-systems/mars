@@ -6,6 +6,8 @@ Mars focuses on low-level control, with emphasis on code configuration.
 This repository is also home to Iron, a lightweight and low-level compiler backend. Iron is 
 developed alongside Mars, but can be built and used separately in other projects.
 
+NOTE: Mars and Iron are still VERY WORK-IN-PROGRESS at the moment. the compiler may work on some basic functions, but is subject to TODOs, crashes, and assertion failures as we build functionality up over time.
+
 ## Why?
 
 Mars was born out of the desire for a language that *feels* like C (no hidden mechanics, minimal runtime), but without all the legacy baggage that C comes with today (obtuse syntax, incompatible standards, 
