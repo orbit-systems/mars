@@ -10,6 +10,9 @@ typedef int32_t  i32;
 typedef int16_t  i16;
 typedef int8_t   i8;
 
+typedef intptr_t  isize;
+typedef uintptr_t usize;
+
 typedef double   f64;
 typedef float    f32;
 typedef _Float16 f16;

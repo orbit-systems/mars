@@ -109,14 +109,14 @@ static void liveness_analysis(FeMachBuffer* buf) {
     for_range(here, 0, buf->buf.len) {
         FeMach* elem = buf->buf.at[here];
 
-        if (!regalloc_enabled && elem->kind != FE_MACH_REGALLOC_BEGIN)
+        if (!regalloc_enabled && elem->kind != FE_MACH_CFG_BEGIN)
             continue;
         
         switch (elem->kind) {
-        case FE_MACH_REGALLOC_BEGIN:
+        case FE_MACH_CFG_BEGIN:
             regalloc_enabled = true;
             break;
-        case FE_MACH_REGALLOC_END:
+        case FE_MACH_CFG_END:
             // push pending ranges
             for_range(r, 0, buf->vregs.len) {
                 if (pending[r].to != 0) {

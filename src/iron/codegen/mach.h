@@ -70,9 +70,9 @@ enum {
     FE_MACH_LIFETIME_END,
 
     // usually at the start of a function, tells the register allocator to start working
-    FE_MACH_REGALLOC_BEGIN,
+    FE_MACH_CFG_BEGIN,
     // usually at the end of a function, tells the register allocator to stop
-    FE_MACH_REGALLOC_END,
+    FE_MACH_CFG_END,
 
     // the following instruction WILL transfer control flow somewhere else.
     FE_MACH_CFG_JUMP,

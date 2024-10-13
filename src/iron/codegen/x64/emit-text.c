@@ -96,32 +96,32 @@ void fe_x64_emit_text(FeDataBuffer* db, FeMachBuffer* machbuf) {
     for_range(i, 0, machbuf->buf.len) {
         FeMach* m = machbuf->buf.at[i];
         if (m->kind == 0) continue;
-        fe_db_write_format(db, "% 3d |   ", i);
+        // fe_db_write_format(db, "% 3d |   ", i);
         switch (m->kind) {
         case FE_MACH_CFG_BRANCH:
-            fe_db_write_cstring(db, "; (IRON) cfg branch\n");
+            fe_db_write_cstring(db, "; cfg branch\n");
             break;
         case FE_MACH_CFG_JUMP:
-            fe_db_write_cstring(db, "; (IRON) cfg jump\n");
+            fe_db_write_cstring(db, "; cfg jump\n");
             break;
         case FE_MACH_CFG_TARGET:
-            fe_db_write_cstring(db, "; (IRON) cfg target\n");
+            fe_db_write_cstring(db, "; cfg target\n");
             break;
-        case FE_MACH_REGALLOC_BEGIN:
-            fe_db_write_cstring(db, "; (IRON) regalloc begin\n");
+        case FE_MACH_CFG_BEGIN:
+            fe_db_write_cstring(db, "; regalloc begin\n");
             break;
-        case FE_MACH_REGALLOC_END:
-            fe_db_write_cstring(db, "; (IRON) regalloc end\n");
+        case FE_MACH_CFG_END:
+            fe_db_write_cstring(db, "; regalloc end\n");
             break;
         case FE_MACH_LIFETIME_BEGIN:
             FeMachLifetimePoint* ltp = (FeMachLifetimePoint*) m;
-            fe_db_write_cstring(db, "; (IRON) lifetime begin ");
+            fe_db_write_cstring(db, "; lifetime begin ");
             emit_register(db, machbuf, ltp->vreg, GPR_64);
             fe_db_write_cstring(db, "\n");
             break;
         case FE_MACH_LIFETIME_END:
             ltp = (FeMachLifetimePoint*) m;
-            fe_db_write_cstring(db, "; (IRON) lifetime end ");
+            fe_db_write_cstring(db, "; lifetime end ");
             emit_register(db, machbuf, ltp->vreg, GPR_64);
             fe_db_write_8(db, '\n');
             break;

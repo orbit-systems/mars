@@ -21,8 +21,8 @@ static size_t mach_sizes[] = {
     [FE_MACH_LIFETIME_BEGIN] = sizeof(FeMachLifetimePoint),
     [FE_MACH_LIFETIME_END]   = sizeof(FeMachLifetimePoint),
 
-    [FE_MACH_REGALLOC_BEGIN] = sizeof(FeMach),
-    [FE_MACH_REGALLOC_END]   = sizeof(FeMach),
+    [FE_MACH_CFG_BEGIN] = sizeof(FeMach),
+    [FE_MACH_CFG_END]   = sizeof(FeMach),
 
     [FE_MACH_LABEL_LOCAL]    = sizeof(FeMachLocalLabel),
     [FE_MACH_LABEL_GLOBAL]   = sizeof(FeMachGlobalLabel),

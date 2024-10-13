@@ -172,13 +172,13 @@ static void gen_function(FeMachBuffer* buf, FeFunction* fn) {
     // generate function header
     FeMachGlobalLabel* head_label = (FeMachGlobalLabel*) fe_mach_append(buf, fe_mach_new(buf, FE_MACH_LABEL_GLOBAL));
     head_label->symbol_index = mach_symbol(fn->sym);
-    fe_mach_append(buf, fe_mach_new(buf, FE_MACH_REGALLOC_BEGIN));
+    fe_mach_append(buf, fe_mach_new(buf, FE_MACH_CFG_BEGIN));
 
     foreach(FeBasicBlock* bb, fn->blocks) {
         gen_basic_block(buf, bb);
     }
 
-    fe_mach_append(buf, fe_mach_new(buf, FE_MACH_REGALLOC_END));
+    fe_mach_append(buf, fe_mach_new(buf, FE_MACH_CFG_END));
 }
 
 static FeMachVReg* get_vreg(FeMachBuffer* buf, FeMachInst* inst, u32 i) {
