@@ -196,7 +196,7 @@ mars_module* parse_module(string input_path) {
         if (module->program_tree.at[i].type == AST_import_stmt) {
             string importpath = search_for_module(
                 module, 
-                module->program_tree.at[i].as_import_stmt->path.as_literal_expr->value.as_string
+                module->program_tree.at[i].as_import_stmt->path.as_literal_expr->tok->text
             );
 
             // does module exist?

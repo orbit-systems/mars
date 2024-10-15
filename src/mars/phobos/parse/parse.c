@@ -697,6 +697,12 @@ AST parse_atomic_expr_term(parser* p) {
         case TOK_LITERAL_NULL:
             n = new_ast_node(p, AST_literal_expr);
             n.as_literal_expr->base.start = &current_token(p);
+            //if TOK_LITERAL_STRING, we trim out ""
+            if (current_token(p).type == TOK_LITERAL_STRING) {
+                current_token(p).text.raw += 1;
+                current_token(p).text.len -= 2;
+                printf("str len: %d\n", current_token(p).text.len);
+            }
             n.as_literal_expr->tok = &current_token(p);
             n.as_literal_expr->base.end = &current_token(p);
             advance_token(p);
@@ -1206,9 +1212,9 @@ AST parse_import_decl(parser* p) {
     }
 
     if (current_token(p).type != TOK_LITERAL_STRING) error_at_parser(p, "expected string literal");
-    n.as_import_stmt->path = new_ast_node(p, AST_literal_expr);
-    n.as_import_stmt->path.as_literal_expr->tok = &current_token(p);
-    advance_token(p);
+    n.as_import_stmt->path = parse_atomic_expr_term(p);
+    //n.as_import_stmt->path.as_literal_expr->tok = &current_token(p);
+    //advance_token(p);
     if (current_token(p).type != TOK_SEMICOLON) error_at_parser(p, "expected semicolon");
     n.as_import_stmt->base.end = &current_token(p);
     advance_token(p);

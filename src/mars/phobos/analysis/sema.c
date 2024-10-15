@@ -14,7 +14,6 @@ void check_module(mars_module* mod) {
 
     //TODO:
     /*
-        add global marks to entities
         
     */
 

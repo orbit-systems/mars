@@ -14,6 +14,8 @@
 #include "common/crash.h"
 
 #include "iron/iron.h"
+#include "iron/codegen/x64/x64.h"
+
 
 #include "common/ptrmap.h"
 
