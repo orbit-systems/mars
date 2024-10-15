@@ -20,7 +20,7 @@ void check_module(mars_module* mod) {
 
     mod->entities = new_entity_table(NULL);
 
-    strmap_init(name_to_type, 1);
+    name_to_type = strmap_init(name_to_type, 1);
 
     //its Time.
     foreach(AST trunk, mod->program_tree) {
@@ -185,7 +185,11 @@ Type* check_stmt(mars_module* mod, AST node, entity_table* scope) {
 
             Type* rhs = ast_to_type(mod, node.as_type_decl_stmt->rhs);
             struct_alias->as_reference.subtype = rhs;
-            crash("not done yet :)\n");
+            //we can now go through and unalias all the types in this type
+            foreach(TypeStructField field, type_unalias(struct_alias)->as_aggregate.fields) {
+                field.subtype = type_unalias(field.subtype);
+            }
+            return type_unalias(struct_alias);
         default:
             error_at_node(mod, node, "[check_module] unexpected ast type: %s", ast_type_str[node.type]);
     }
@@ -485,6 +489,10 @@ Type* ast_to_type(mars_module* mod, AST node) {
             Type* distinct = make_type(TYPE_DISTINCT);
             distinct->as_reference.subtype = ast_to_type(mod, node.as_distinct_type_expr->subexpr);
             return distinct;
+        case AST_identifier:
+            Type* T = strmap_get(name_to_type, node.as_identifier->tok->text);
+            if (T == STRMAP_NOT_FOUND) error_at_node(mod, node, "Unknown type "str_fmt"\n", str_arg(node.as_identifier->tok->text));
+            return T;
         default:
             error_at_node(mod, node, "[INTERNAL COMPILER ERROR] found unknown node \"%s\" when converting AST to Type*", ast_type_str[node.type]);
     }
