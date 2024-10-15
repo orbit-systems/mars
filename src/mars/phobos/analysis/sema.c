@@ -17,8 +17,7 @@ void check_module(mars_module* mod) {
     /*
         
     */
-
-    mod->entities = new_entity_table(NULL);
+    if (mod->entities == NULL) mod->entities = new_entity_table(NULL);
 
     name_to_type = strmap_init(name_to_type, 1);
 

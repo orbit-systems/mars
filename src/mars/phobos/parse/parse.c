@@ -1205,10 +1205,7 @@ AST parse_import_decl(parser* p) {
     AST n = new_ast_node(p, AST_import_stmt);
     n.as_import_stmt->base.start = &current_token(p);
     advance_token(p);
-    if (current_token(p).type == TOK_IDENTIFIER) {
-        n.as_import_stmt->name = parse_identifier(p);
-
-    }
+    if (current_token(p).type == TOK_IDENTIFIER) n.as_import_stmt->name = parse_identifier(p);
 
     if (current_token(p).type != TOK_LITERAL_STRING) error_at_parser(p, "expected string literal");
     n.as_import_stmt->path = parse_atomic_expr_term(p);
