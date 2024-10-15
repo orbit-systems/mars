@@ -7,13 +7,16 @@
 void set_target_triple(string target, flag_set* fl);
 
 #define SUPPORTED_ARCH \
-    X(APHELION, "aphelion")
+    X(APHELION, "aphelion") \
+    X(X86_64,   "x86_64")
 
 #define SUPPORTED_SYS \
-    X(NONE, "none")
-    
+    X(NONE, "unknown") \
+    X(LINUX, "linux")
+
 #define SUPPORTED_PRODUCT \
-    X(ASM, "asm")
+    X(ASM, "asm") \
+    X(ELF, "elf")
 
 enum {
     #define X(variant, str) TARGET_ARCH_##variant,

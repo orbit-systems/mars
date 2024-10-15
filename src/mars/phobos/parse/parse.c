@@ -700,8 +700,7 @@ AST parse_atomic_expr_term(parser* p) {
             //if TOK_LITERAL_STRING, we trim out ""
             if (current_token(p).type == TOK_LITERAL_STRING) {
                 current_token(p).text.raw += 1;
-                current_token(p).text.len -= 2;
-                printf("str len: %d\n", current_token(p).text.len);
+                current_token(p).text.len -= 2; //FIXME: is this correct? i think so, but it feels bad.
             }
             n.as_literal_expr->tok = &current_token(p);
             n.as_literal_expr->base.end = &current_token(p);
