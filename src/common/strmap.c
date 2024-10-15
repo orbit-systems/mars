@@ -15,6 +15,7 @@ static u64 FNV_1a(string key) {
 }
 
 StrMap* strmap_init(StrMap* hm, size_t capacity) {
+    if (hm == NULL) hm = malloc(sizeof(StrMap));
     hm->cap = capacity;
     hm->vals = malloc(sizeof(hm->vals[0])*hm->cap);
     hm->keys = malloc(sizeof(hm->keys[0])*hm->cap);
@@ -30,6 +31,7 @@ void strmap_destroy(StrMap* hm) {
 }
 
 void strmap_put(StrMap* hm, string key, void* val) {
+    if (hm == NULL) return;
     if (is_null_str(key)) return;
     size_t hash_index = FNV_1a(key) % hm->cap;
 

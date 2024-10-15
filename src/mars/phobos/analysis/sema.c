@@ -1,8 +1,9 @@
 #include "sema.h"
 #include "common/crash.h"
-
+#include "common/strmap.h"
 // #define LOG(...) printf(__VA_ARGS__)
 #define LOG(...)
+StrMap* name_to_type = NULL;
 
 void check_module(mars_module* mod) {
     LOG("checking: "str_fmt "\n", str_arg(mod->module_name));
@@ -19,12 +20,15 @@ void check_module(mars_module* mod) {
 
     mod->entities = new_entity_table(NULL);
 
+    strmap_init(name_to_type, 1);
+
     //its Time.
     foreach(AST trunk, mod->program_tree) {
         check_stmt(mod, trunk, mod->entities);
     }
     mod->checked = true;
 }
+
 
 Type* check_stmt(mars_module* mod, AST node, entity_table* scope) {
     switch(node.type) {
@@ -130,7 +134,7 @@ Type* check_stmt(mars_module* mod, AST node, entity_table* scope) {
             foreach(AST stmt, node.as_while_stmt->block.as_stmt_block->stmts) check_stmt(mod, stmt, while_stmt_scope);
             return NULL;
         }
-        case AST_assign_stmt:
+        case AST_assign_stmt: {
             checked_expr rhs = check_expr(mod, node.as_assign_stmt->rhs, scope);
 
             da(checked_expr) lhs_exprs;
@@ -165,8 +169,25 @@ Type* check_stmt(mars_module* mod, AST node, entity_table* scope) {
             }  
 
             crash("unexpected environment in case AST_assign_stmt!\n");
+        }
+
+        case AST_import_stmt:
+            //this can be safely ignored.
+            return NULL;
+
+        case AST_type_decl_stmt:
+            //we now need to create a type.
+            //what is it? who knows.
+
+            Type* struct_alias = make_type(TYPE_ALIAS);
+
+            strmap_put(name_to_type, node.as_type_decl_stmt->lhs.as_identifier->tok->text, struct_alias);
+
+            Type* rhs = ast_to_type(mod, node.as_type_decl_stmt->rhs);
+            struct_alias->as_reference.subtype = rhs;
+            crash("not done yet :)\n");
         default:
-            error_at_node(mod, node, "[check_module] unexpected token type: %s", ast_type_str[node.type]);
+            error_at_node(mod, node, "[check_module] unexpected ast type: %s", ast_type_str[node.type]);
     }
     return NULL;
 }
@@ -451,6 +472,19 @@ Type* ast_to_type(mars_module* mod, AST node) {
             if (is_null_AST(node.as_slice_type_expr->subexpr)) slice->as_reference.subtype = make_type(TYPE_NONE);
             else slice->as_reference.subtype = ast_to_type(mod, node.as_slice_type_expr->subexpr);
             return slice;
+        case AST_struct_type_expr:
+            //we create the type, and add it to the strmap.
+
+            Type* aggregate = make_type((node.as_struct_type_expr->is_union == true) ? TYPE_UNION : TYPE_STRUCT);
+
+            foreach(AST_typed_field field, node.as_struct_type_expr->fields) {
+                type_add_field(aggregate, field.field.as_identifier->tok->text, ast_to_type(mod, field.type));
+            }
+            return aggregate;
+        case AST_distinct_type_expr:
+            Type* distinct = make_type(TYPE_DISTINCT);
+            distinct->as_reference.subtype = ast_to_type(mod, node.as_distinct_type_expr->subexpr);
+            return distinct;
         default:
             error_at_node(mod, node, "[INTERNAL COMPILER ERROR] found unknown node \"%s\" when converting AST to Type*", ast_type_str[node.type]);
     }

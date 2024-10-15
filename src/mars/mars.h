@@ -5,7 +5,7 @@
 #include "common/alloc.h"
 #include "mars/term.h"
 
-#define DEFAULT_TARGET str("aphelion-none-asm")
+#define DEFAULT_TARGET str("aphelion-unknown-asm")
 
 typedef struct cmd_arg_s {
     string key;
