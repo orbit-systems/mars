@@ -90,4 +90,3 @@ Let sandwichman know if you spot a place where this happens.
         `FE_IR_IGE` - integer signed greater than or equal to (a >= b).
         `FE_IR_EQ`  - integer equality (a == b)
         `FE_IR_NE`  - integer inequality (a != b)
-    
