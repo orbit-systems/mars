@@ -16,7 +16,7 @@ typedef struct PtrMap {
 
 size_t hashfunc(void* str);
 
-PtrMap* ptrmap_init(PtrMap* hm, size_t capacity);
+void  ptrmap_init(PtrMap* hm, size_t capacity);
 void  ptrmap_reset(PtrMap* hm);
 void  ptrmap_destroy(PtrMap* hm);
 void  ptrmap_put(PtrMap* hm, void* key, void* val);

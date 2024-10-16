@@ -3,7 +3,7 @@
 #include "common/strmap.h"
 // #define LOG(...) printf(__VA_ARGS__)
 #define LOG(...)
-StrMap* name_to_type = NULL;
+StrMap name_to_type;
 
 void check_module(mars_module* mod) {
     LOG("checking: "str_fmt "\n", str_arg(mod->module_name));
@@ -19,7 +19,7 @@ void check_module(mars_module* mod) {
     */
     if (mod->entities == NULL) mod->entities = new_entity_table(NULL);
 
-    name_to_type = strmap_init(name_to_type, 1);
+    strmap_init(&name_to_type, 1);
 
     //its Time.
     foreach(AST trunk, mod->program_tree) {
@@ -180,7 +180,7 @@ Type* check_stmt(mars_module* mod, AST node, entity_table* scope) {
 
             Type* struct_alias = make_type(TYPE_ALIAS);
 
-            strmap_put(name_to_type, node.as_type_decl_stmt->lhs.as_identifier->tok->text, struct_alias);
+            strmap_put(&name_to_type, node.as_type_decl_stmt->lhs.as_identifier->tok->text, struct_alias);
 
             Type* rhs = ast_to_type(mod, node.as_type_decl_stmt->rhs);
             struct_alias->as_reference.subtype = rhs;
@@ -489,7 +489,7 @@ Type* ast_to_type(mars_module* mod, AST node) {
             distinct->as_reference.subtype = ast_to_type(mod, node.as_distinct_type_expr->subexpr);
             return distinct;
         case AST_identifier:
-            Type* T = strmap_get(name_to_type, node.as_identifier->tok->text);
+            Type* T = strmap_get(&name_to_type, node.as_identifier->tok->text);
             if (T == STRMAP_NOT_FOUND) error_at_node(mod, node, "Unknown type "str_fmt"\n", str_arg(node.as_identifier->tok->text));
             return T;
         default:

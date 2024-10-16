@@ -16,11 +16,10 @@ size_t hashfunc(void* key) {
     return hash;
 }
 
-PtrMap* ptrmap_init(PtrMap* hm, size_t capacity) {
+void ptrmap_init(PtrMap* hm, size_t capacity) {
     hm->cap = capacity;
     hm->vals = mars_alloc(sizeof(hm->vals[0])*hm->cap);
     hm->keys = mars_alloc(sizeof(hm->keys[0])*hm->cap);
-    return hm;
 }
 
 void ptrmap_destroy(PtrMap* hm) {

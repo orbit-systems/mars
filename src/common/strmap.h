@@ -12,9 +12,9 @@ typedef struct StrMap {
 
 #define STRMAP_NOT_FOUND ((void*)0xDEADBEEF)
 
-StrMap* strmap_init(StrMap* sm, size_t capacity);
-void    strmap_reset(StrMap* sm);
-void    strmap_destroy(StrMap* sm);
-void    strmap_put(StrMap* sm, string key, void* val);
-void    strmap_remove(StrMap* sm, string key);
-void*   strmap_get(StrMap* sm, string key);
+void  strmap_init(StrMap* sm, size_t capacity);
+void  strmap_reset(StrMap* sm);
+void  strmap_destroy(StrMap* sm);
+void  strmap_put(StrMap* sm, string key, void* val);
+void  strmap_remove(StrMap* sm, string key);
+void* strmap_get(StrMap* sm, string key);

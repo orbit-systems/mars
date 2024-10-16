@@ -14,14 +14,12 @@ static u64 FNV_1a(string key) {
     return hash;
 }
 
-StrMap* strmap_init(StrMap* hm, size_t capacity) {
-    if (hm == NULL) hm = malloc(sizeof(StrMap));
+void strmap_init(StrMap* hm, size_t capacity) {
     hm->cap = capacity;
     hm->vals = malloc(sizeof(hm->vals[0])*hm->cap);
     hm->keys = malloc(sizeof(hm->keys[0])*hm->cap);
     memset(hm->vals, 0, sizeof(hm->vals[0])*hm->cap);
     memset(hm->keys, 0, sizeof(hm->keys[0])*hm->cap);
-    return hm;
 }
 
 void strmap_destroy(StrMap* hm) {
