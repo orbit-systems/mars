@@ -19,9 +19,9 @@
 
 #ifndef DONT_USE_MARS_ALLOC
 
-#include "../common/alloc.h"
+#    include "../common/alloc.h"
 
-#define malloc mars_alloc
+#    define malloc mars_alloc
 
 #endif
 
@@ -33,5 +33,5 @@
 #include "orbit/orbit_fs.h"
 
 #ifndef DONT_USE_MARS_ALLOC
-#undef malloc
+#    undef malloc
 #endif

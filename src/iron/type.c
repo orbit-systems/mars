@@ -80,7 +80,6 @@ bool fe_type_is_float(FeType t) {
     }
 }
 
-
 FeType fe_type_array(FeModule* m, FeType subtype, u64 len) {
 
     FeAggregateType* t = arena_alloc(&m->typegraph.alloca, sizeof(FeAggregateType), alignof(FeAggregateType));
@@ -96,10 +95,7 @@ FeType fe_type_array(FeModule* m, FeType subtype, u64 len) {
 
 FeType fe_type_record(FeModule* m, u64 len) {
 
-    FeAggregateType* t = arena_alloc(&m->typegraph.alloca, 
-        sizeof(FeAggregateType) + sizeof(FeType) * (len), 
-        alignof(FeAggregateType)
-    );
+    FeAggregateType* t = arena_alloc(&m->typegraph.alloca, sizeof(FeAggregateType) + sizeof(FeType) * (len), alignof(FeAggregateType));
     da_append(&m->typegraph, t);
 
     *t = (FeAggregateType){0};

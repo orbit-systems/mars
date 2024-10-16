@@ -2,13 +2,13 @@
 
 #include "iron/iron.h"
 
-typedef struct FeMachBuffer       FeMachBuffer;
-typedef struct FeMachVReg         FeMachVReg;
-typedef struct FeMachImmediate    FeMachImmediate;
-typedef struct FeMachSymbol       FeMachSymbol;
+typedef struct FeMachBuffer FeMachBuffer;
+typedef struct FeMachVReg FeMachVReg;
+typedef struct FeMachImmediate FeMachImmediate;
+typedef struct FeMachSymbol FeMachSymbol;
 
-typedef struct FeMach             FeMach;
-typedef struct FeMachInst         FeMachInst;
+typedef struct FeMach FeMach;
+typedef struct FeMachInst FeMachInst;
 typedef struct FeMachInstTemplate FeMachInstTemplate;
 
 typedef u32 FeMachVregList;
@@ -19,7 +19,7 @@ da_typedef(u32);
 da_typedef(FeMachImmediate);
 
 typedef struct FeMachBuffer {
-    
+
     struct {
         u16 arch;
         u16 system;
@@ -72,7 +72,6 @@ enum {
     // usually at the start of a function, tells the register allocator to start working
     FE_MACH_CFG_BEGIN,
     // usually at the end of a function, tells the register allocator to stop
-    
 
     // the following instruction WILL transfer control flow somewhere else.
     FE_MACH_CFG_JUMP,
@@ -147,7 +146,7 @@ typedef struct FeMachImmediate {
         u64 d64;
         u32 d32;
         u16 d16;
-        u8  d8;
+        u8 d8;
     };
 } FeMachImmediate;
 
@@ -174,12 +173,12 @@ FeMachBuffer fe_mach_codegen(FeModule* m);
 
 FeType fe_mach_type_of_native_int(u16 arch);
 FeType fe_mach_type_of_native_float(u16 arch);
-bool   fe_mach_type_is_native(u16 arch, FeType t);
+bool fe_mach_type_is_native(u16 arch, FeType t);
 
-FeMach*     fe_mach_new(FeMachBuffer* buf, u8 kind);
+FeMach* fe_mach_new(FeMachBuffer* buf, u8 kind);
 FeMachInst* fe_mach_new_inst(FeMachBuffer* buf, u16 template_index);
-FeMach*     fe_mach_new_lifetime_begin(FeMachBuffer* buf, u32 vreg);
-FeMach*     fe_mach_new_lifetime_end(FeMachBuffer* buf, u32 vreg);
+FeMach* fe_mach_new_lifetime_begin(FeMachBuffer* buf, u32 vreg);
+FeMach* fe_mach_new_lifetime_end(FeMachBuffer* buf, u32 vreg);
 
 FeMach* fe_mach_append(FeMachBuffer* buf, FeMach* inst);
 

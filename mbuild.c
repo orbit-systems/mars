@@ -322,6 +322,17 @@ int main(int argc, char** argv) {
     }
     add_source_collection(&source_folders, iron_sources, sizeof(iron_sources)/sizeof(iron_sources[0]));
 
+    if (build_mode == BUILD_MODE_FORMAT) {
+        foreach (char* src_folder, source_folders) {
+            // printf("%s -\n", src_folder);
+            string format_command = strprintf("clang-format -i %s/*.c %s/*.h", src_folder, src_folder);
+            // printf(str_fmt"\n", str_arg(format_command));
+            int return_code = system(clone_to_cstring(format_command));
+            // if (return_code != 0) return return_code;
+        }
+        return 0;
+    }
+
     da_typedef(string);
     da(string) files_to_compile = {0};
     da_init(&files_to_compile, 16);
@@ -366,15 +377,15 @@ int main(int argc, char** argv) {
     }
     chdir(saved_cwd);
 
-    if (build_mode == BUILD_MODE_FORMAT) {
-        foreach (string src_path, files_to_compile) {
-            string format_command = strprintf("clang-format -i "str_fmt, str_arg(src_path));
-            int return_code = system(clone_to_cstring(format_command));
-            if (return_code != 0) return return_code;
-        }
-        return 0;
-    }
-    
+    // if (build_mode == BUILD_MODE_FORMAT) {
+    //     foreach (string src_path, files_to_compile) {
+    //         string format_command = strprintf("clang-format -i "str_fmt, str_arg(src_path));
+    //         int return_code = system(clone_to_cstring(format_command));
+    //         if (return_code != 0) return return_code;
+    //     }
+    //     return 0;
+    // }
+
     if (!fs_exists(constr("build"))) {
         mkdir("build");
     }

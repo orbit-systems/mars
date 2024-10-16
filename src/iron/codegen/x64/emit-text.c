@@ -10,16 +10,16 @@ enum {
 };
 
 static const char* gpr_names[_FE_X64_GPR_COUNT][_GPR_LEVEL_MAX] = {
-    [FE_X64_GPR_RAX] = {"rax", "eax",  "ax",   "al"},
-    [FE_X64_GPR_RBX] = {"rbx", "ebx",  "bx",   "bl"},
-    [FE_X64_GPR_RCX] = {"rcx", "ecx",  "cx",   "cl"},
-    [FE_X64_GPR_RDX] = {"rdx", "edx",  "dx",   "dl"},
-    [FE_X64_GPR_RSI] = {"rsi", "esi",  "si",   "sl"},
-    [FE_X64_GPR_RDI] = {"rdi", "edi",  "di",   "dl"},
-    [FE_X64_GPR_RBP] = {"rbp", "ebp",  "bp",   "bpl"},
-    [FE_X64_GPR_RSP] = {"rsp", "esp",  "sp",   "spl"},
-    [FE_X64_GPR_R8]  = {"r8",  "r8d",  "r8w",  "r8b"},
-    [FE_X64_GPR_R9]  = {"r9",  "r9d",  "r9w",  "r9b"},
+    [FE_X64_GPR_RAX] = {"rax", "eax",  "ax",   "al"  },
+    [FE_X64_GPR_RBX] = {"rbx", "ebx",  "bx",   "bl"  },
+    [FE_X64_GPR_RCX] = {"rcx", "ecx",  "cx",   "cl"  },
+    [FE_X64_GPR_RDX] = {"rdx", "edx",  "dx",   "dl"  },
+    [FE_X64_GPR_RSI] = {"rsi", "esi",  "si",   "sl"  },
+    [FE_X64_GPR_RDI] = {"rdi", "edi",  "di",   "dl"  },
+    [FE_X64_GPR_RBP] = {"rbp", "ebp",  "bp",   "bpl" },
+    [FE_X64_GPR_RSP] = {"rsp", "esp",  "sp",   "spl" },
+    [FE_X64_GPR_R8] = {"r8",  "r8d",  "r8w",  "r8b" },
+    [FE_X64_GPR_R9] = {"r9",  "r9d",  "r9w",  "r9b" },
     [FE_X64_GPR_R10] = {"r10", "r10d", "r10w", "r10b"},
     [FE_X64_GPR_R11] = {"r11", "r11d", "r11w", "r11b"},
     [FE_X64_GPR_R12] = {"r12", "r12d", "r12w", "r12b"},
@@ -40,8 +40,8 @@ static void emit_register(FeDataBuffer* db, FeMachBuffer* buf, u32 vreg, u8 bits
         case GPR_64: fe_db_write_8(db, 'q'); break;
         case GPR_32: fe_db_write_8(db, 'd'); break;
         case GPR_16: fe_db_write_8(db, 'w'); break;
-        case GPR_8:  fe_db_write_8(db, 'b'); break;
-        default:     fe_db_write_8(db, '?'); break;
+        case GPR_8: fe_db_write_8(db, 'b'); break;
+        default: fe_db_write_8(db, '?'); break;
         }
     } else {
         switch (reg.class) {
@@ -58,9 +58,9 @@ static void emit_register(FeDataBuffer* db, FeMachBuffer* buf, u32 vreg, u8 bits
 #define vr_index(reglist, index) buf->vreg_lists.at[reglist + index]
 
 static void emit_inst(FeDataBuffer* db, FeMachBuffer* buf, FeMach* m) {
-    FeMachInst* i = (FeMachInst*) m;
+    FeMachInst* i = (FeMachInst*)m;
     const FeMachInstTemplate* templ = &buf->target.inst_templates[i->template];
-         
+
     switch (i->template) {
     case FE_X64_INST_ADD_RR_64:
         // add r1, r2
@@ -114,13 +114,13 @@ void fe_x64_emit_text(FeDataBuffer* db, FeMachBuffer* machbuf) {
             fe_db_write_cstring(db, "; regalloc end\n");
             break;
         case FE_MACH_LIFETIME_BEGIN:
-            FeMachLifetimePoint* ltp = (FeMachLifetimePoint*) m;
+            FeMachLifetimePoint* ltp = (FeMachLifetimePoint*)m;
             fe_db_write_cstring(db, "; lifetime begin ");
             emit_register(db, machbuf, ltp->vreg, GPR_64);
             fe_db_write_cstring(db, "\n");
             break;
         case FE_MACH_LIFETIME_END:
-            ltp = (FeMachLifetimePoint*) m;
+            ltp = (FeMachLifetimePoint*)m;
             fe_db_write_cstring(db, "; lifetime end ");
             emit_register(db, machbuf, ltp->vreg, GPR_64);
             fe_db_write_8(db, '\n');
@@ -132,18 +132,16 @@ void fe_x64_emit_text(FeDataBuffer* db, FeMachBuffer* machbuf) {
             break;
         case FE_MACH_LABEL_LOCAL:
             fe_db_write_8(db, '.');
-            FeMachLocalLabel* local = (FeMachLocalLabel*) m;
+            FeMachLocalLabel* local = (FeMachLocalLabel*)m;
             fe_db_write_string(db, local->name);
             fe_db_write_cstring(db, ":\n");
             break;
         case FE_MACH_LABEL_GLOBAL:
-            FeMachGlobalLabel* label = (FeMachGlobalLabel*) m;
+            FeMachGlobalLabel* label = (FeMachGlobalLabel*)m;
             FeMachSymbol sym = machbuf->symtab.at[label->symbol_index];
             fe_db_write_bytes(db, sym.name, sym.name_len);
             fe_db_write_cstring(db, ":\n");
             break;
         }
     }
-
-    
 }

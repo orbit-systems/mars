@@ -13,7 +13,7 @@ void sb_destroy(StringBuilder* sb) {
 
 void sb_append(StringBuilder* sb, string s) {
     if (sb->len + s.len > sb->cap) {
-        sb->buffer = realloc(sb->buffer, sb->cap*2);
+        sb->buffer = realloc(sb->buffer, sb->cap * 2);
         sb->cap *= 2;
     }
     memcpy(&sb->buffer[sb->len], s.raw, s.len);
@@ -22,7 +22,7 @@ void sb_append(StringBuilder* sb, string s) {
 
 void sb_append_c(StringBuilder* sb, char* s) {
     if (sb->len + strlen(s) > sb->cap) {
-        sb->buffer = realloc(sb->buffer, sb->cap*2);
+        sb->buffer = realloc(sb->buffer, sb->cap * 2);
         sb->cap *= 2;
     }
     memcpy(&sb->buffer[sb->len], s, strlen(s));

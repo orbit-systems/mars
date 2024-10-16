@@ -8,8 +8,8 @@ void crash(char* error, ...) {
     vprintf(error, args);
     va_end(args);
 
-    #ifndef __WIN32__
-    void* array[256]; //hold 256 stack traces
+#ifndef __WIN32__
+    void* array[256]; // hold 256 stack traces
     char** strings;
     int size;
 
@@ -21,39 +21,39 @@ void crash(char* error, ...) {
         for (int i = 0; i < size; i++) {
             string output_str = str(strings[i]);
             if (output_str.raw[0] == '.') {
-                //we need to trim
+                // we need to trim
                 for (; output_str.raw[0] != '('; output_str.raw++);
                 output_str.raw++;
                 int close_bracket = 0;
                 for (; output_str.raw[close_bracket] != ')'; close_bracket++);
                 output_str.len = close_bracket;
             }
-            printf("frame %d:\t"str_fmt"\n", i, str_arg(output_str));
+            printf("frame %d:\t" str_fmt "\n", i, str_arg(output_str));
         }
     }
 
-    free(strings); //this is partially unsafe?
-    #endif
+    free(strings); // this is partially unsafe?
+#endif
     exit(-1); // lmao
 }
 
 #ifndef __WIN32__
-void signal_handler(int sig, siginfo_t *info, void *ucontext) {
+void signal_handler(int sig, siginfo_t* info, void* ucontext) {
     ucontext = ucontext;
-    switch(sig) {
-        case SIGSEGV:
-            crash("SIGSEGV at addr 0x%lx\n", (long)info->si_addr);
-        
-        case SIGINT:
-            printf("Debug interupt caught");
-            return;
+    switch (sig) {
+    case SIGSEGV:
+        crash("SIGSEGV at addr 0x%lx\n", (long)info->si_addr);
 
-        case SIGFPE:
-            printf("Fatal arithmetic error! (its probably a division by zero)");
-            crash("");
+    case SIGINT:
+        printf("Debug interupt caught");
+        return;
 
-        default:
-            crash("Unhandled signal %s caught\n", strsignal(sig));
+    case SIGFPE:
+        printf("Fatal arithmetic error! (its probably a division by zero)");
+        crash("");
+
+    default:
+        crash("Unhandled signal %s caught\n", strsignal(sig));
     }
 }
 

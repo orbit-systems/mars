@@ -4,9 +4,9 @@
 
 size_t hashfunc(void* key) {
     size_t hash = 5381;
-    size_t k = (size_t) key;
-    hash = ((hash << 5) + hash) + ((k >> 0)  & 0xFF);
-    hash = ((hash << 5) + hash) + ((k >> 8)  & 0xFF);
+    size_t k = (size_t)key;
+    hash = ((hash << 5) + hash) + ((k >> 0) & 0xFF);
+    hash = ((hash << 5) + hash) + ((k >> 8) & 0xFF);
     hash = ((hash << 5) + hash) + ((k >> 16) & 0xFF);
     hash = ((hash << 5) + hash) + ((k >> 24) & 0xFF);
     hash = ((hash << 5) + hash) + ((k >> 32) & 0xFF);
@@ -18,8 +18,8 @@ size_t hashfunc(void* key) {
 
 void ptrmap_init(PtrMap* hm, size_t capacity) {
     hm->cap = capacity;
-    hm->vals = mars_alloc(sizeof(hm->vals[0])*hm->cap);
-    hm->keys = mars_alloc(sizeof(hm->keys[0])*hm->cap);
+    hm->vals = mars_alloc(sizeof(hm->vals[0]) * hm->cap);
+    hm->keys = mars_alloc(sizeof(hm->keys[0]) * hm->cap);
 }
 
 void ptrmap_destroy(PtrMap* hm) {
@@ -40,7 +40,7 @@ void ptrmap_put(PtrMap* hm, void* key, void* val) {
     }
 
     // search for nearby mars_free slot
-    for_urange (index, 1, min(MAX_SEARCH, hm->cap)) {
+    for_urange(index, 1, min(MAX_SEARCH, hm->cap)) {
         size_t i = (index + hash_index) % hm->cap;
         if ((hm->keys[i] == NULL) || hm->keys[hash_index] == key) {
             hm->keys[i] = key;
@@ -51,7 +51,7 @@ void ptrmap_put(PtrMap* hm, void* key, void* val) {
 
     // we gotta resize
     PtrMap new_hm;
-    ptrmap_init(&new_hm, hm->cap*2);
+    ptrmap_init(&new_hm, hm->cap * 2);
 
     // copy all the old entries into the new hasptrmap
     for (size_t i = 0; i < hm->cap; i++) {
@@ -76,7 +76,7 @@ void* ptrmap_get(PtrMap* hm, void* key) {
     }
 
     // linear search next slots
-    for_urange (index, 1, min(MAX_SEARCH, hm->cap)) {
+    for_urange(index, 1, min(MAX_SEARCH, hm->cap)) {
         size_t i = (index + hash_index) % hm->cap;
         if (hm->keys[i] == NULL) return PTRMAP_NOT_FOUND;
         if (hm->keys[i] == key) return hm->vals[i];
@@ -98,7 +98,7 @@ void ptrmap_remove(PtrMap* hm, void* key) {
     }
 
     // linear search next slots
-    for_urange (index, 1, min(MAX_SEARCH, hm->cap)) {
+    for_urange(index, 1, min(MAX_SEARCH, hm->cap)) {
         size_t i = (index + hash_index) % hm->cap;
         if (hm->keys[i] == NULL) return;
         if (hm->keys[hash_index] == key) {
@@ -110,6 +110,6 @@ void ptrmap_remove(PtrMap* hm, void* key) {
 }
 
 void ptrmap_reset(PtrMap* hm) {
-    memset(hm->vals, 0, sizeof(hm->vals[0])*hm->cap);
-    memset(hm->keys, 0, sizeof(hm->keys[0])*hm->cap);
+    memset(hm->vals, 0, sizeof(hm->vals[0]) * hm->cap);
+    memset(hm->keys, 0, sizeof(hm->keys[0]) * hm->cap);
 }

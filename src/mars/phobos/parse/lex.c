@@ -38,7 +38,7 @@ lexer new_lexer(string path, string src) {
     lex.src = src;
     lex.current_char = src.raw[0];
     lex.cursor = 0;
-    da_init(&lex.buffer, src.len/3.5);
+    da_init(&lex.buffer, src.len / 3.5);
     return lex;
 }
 
@@ -48,7 +48,7 @@ void construct_token_buffer(lexer* lex) {
 
     do {
         append_next_token(lex);
-    } while (lex->buffer.at[lex->buffer.len-1].type != TOK_EOF);
+    } while (lex->buffer.at[lex->buffer.len - 1].type != TOK_EOF);
 
     da_shrink(&lex->buffer);
 }
@@ -78,9 +78,7 @@ void append_next_token(lexer* lex) {
                 advance_char_n(lex, 2);
                 int final_level = skip_block_comment(lex);
                 if (final_level != 0) {
-                    error_at_string(lex->path, lex->src, string_make(&lex->src.raw[lex->cursor], 1), 
-                        "unclosed block comment"
-                    );
+                    error_at_string(lex->path, lex->src, string_make(&lex->src.raw[lex->cursor], 1), "unclosed block comment");
                 }
             } else goto skip_insignificant_end;
             continue;
@@ -88,11 +86,11 @@ void append_next_token(lexer* lex) {
             goto skip_insignificant_end;
         }
     }
-    skip_insignificant_end:
+skip_insignificant_end:
 
     if (lex->cursor >= lex->src.len) {
         da_append(
-            &lex->buffer, 
+            &lex->buffer,
             ((token){substring_len(lex->src, lex->cursor, 1), TOK_EOF})
         );
         return;
@@ -111,74 +109,74 @@ void append_next_token(lexer* lex) {
     }
 
     da_append(&lex->buffer, ((token){
-        .text = substring(lex->src, beginning_cursor, lex->cursor), 
-        .type = this_type,
-    }));
+                                .text = substring(lex->src, beginning_cursor, lex->cursor),
+                                .type = this_type,
+                            }));
 }
 
 token_type scan_ident_or_keyword(lexer* lex) {
     u64 beginning = lex->cursor;
-    
+
     advance_char(lex);
     while (can_be_in_identifier(current_char(lex))) advance_char(lex);
 
     string word = substring(lex->src, beginning, lex->cursor);
 
-    if (string_eq(word, constr("_")))            return TOK_IDENTIFIER_DISCARD;
+    if (string_eq(word, constr("_"))) return TOK_IDENTIFIER_DISCARD;
 
-    if (string_eq(word, constr("int")))          return TOK_TYPE_KEYWORD_INT;
-    if (string_eq(word, constr("i8")))           return TOK_TYPE_KEYWORD_I8;
-    if (string_eq(word, constr("i16")))          return TOK_TYPE_KEYWORD_I16;
-    if (string_eq(word, constr("i32")))          return TOK_TYPE_KEYWORD_I32;
-    if (string_eq(word, constr("i64")))          return TOK_TYPE_KEYWORD_I64;
-    if (string_eq(word, constr("uint")))         return TOK_TYPE_KEYWORD_UINT;
-    if (string_eq(word, constr("u8")))           return TOK_TYPE_KEYWORD_U8;
-    if (string_eq(word, constr("u16")))          return TOK_TYPE_KEYWORD_U16;
-    if (string_eq(word, constr("u32")))          return TOK_TYPE_KEYWORD_U32;
-    if (string_eq(word, constr("u64")))          return TOK_TYPE_KEYWORD_U64;
-    if (string_eq(word, constr("bool")))         return TOK_TYPE_KEYWORD_BOOL;
-    if (string_eq(word, constr("float")))        return TOK_TYPE_KEYWORD_FLOAT;
-    if (string_eq(word, constr("f16")))          return TOK_TYPE_KEYWORD_F16;
-    if (string_eq(word, constr("f32")))          return TOK_TYPE_KEYWORD_F32;
-    if (string_eq(word, constr("f64")))          return TOK_TYPE_KEYWORD_F64;
+    if (string_eq(word, constr("int"))) return TOK_TYPE_KEYWORD_INT;
+    if (string_eq(word, constr("i8"))) return TOK_TYPE_KEYWORD_I8;
+    if (string_eq(word, constr("i16"))) return TOK_TYPE_KEYWORD_I16;
+    if (string_eq(word, constr("i32"))) return TOK_TYPE_KEYWORD_I32;
+    if (string_eq(word, constr("i64"))) return TOK_TYPE_KEYWORD_I64;
+    if (string_eq(word, constr("uint"))) return TOK_TYPE_KEYWORD_UINT;
+    if (string_eq(word, constr("u8"))) return TOK_TYPE_KEYWORD_U8;
+    if (string_eq(word, constr("u16"))) return TOK_TYPE_KEYWORD_U16;
+    if (string_eq(word, constr("u32"))) return TOK_TYPE_KEYWORD_U32;
+    if (string_eq(word, constr("u64"))) return TOK_TYPE_KEYWORD_U64;
+    if (string_eq(word, constr("bool"))) return TOK_TYPE_KEYWORD_BOOL;
+    if (string_eq(word, constr("float"))) return TOK_TYPE_KEYWORD_FLOAT;
+    if (string_eq(word, constr("f16"))) return TOK_TYPE_KEYWORD_F16;
+    if (string_eq(word, constr("f32"))) return TOK_TYPE_KEYWORD_F32;
+    if (string_eq(word, constr("f64"))) return TOK_TYPE_KEYWORD_F64;
 
-    if (string_eq(word, constr("true")))         return TOK_LITERAL_BOOL;
-    if (string_eq(word, constr("false")))        return TOK_LITERAL_BOOL;
-    if (string_eq(word, constr("null")))         return TOK_LITERAL_NULL;
+    if (string_eq(word, constr("true"))) return TOK_LITERAL_BOOL;
+    if (string_eq(word, constr("false"))) return TOK_LITERAL_BOOL;
+    if (string_eq(word, constr("null"))) return TOK_LITERAL_NULL;
 
-    if (string_eq(word, constr("let")))          return TOK_KEYWORD_LET;
-    if (string_eq(word, constr("mut")))          return TOK_KEYWORD_MUT;
-    if (string_eq(word, constr("def")))          return TOK_KEYWORD_DEF;
-    if (string_eq(word, constr("type")))         return TOK_KEYWORD_TYPE;
-    if (string_eq(word, constr("if")))           return TOK_KEYWORD_IF;
-    if (string_eq(word, constr("in")))           return TOK_KEYWORD_IN;
-    if (string_eq(word, constr("elif")))         return TOK_KEYWORD_ELIF;
-    if (string_eq(word, constr("else")))         return TOK_KEYWORD_ELSE;
-    if (string_eq(word, constr("for")))          return TOK_KEYWORD_FOR;
-    if (string_eq(word, constr("fn")))           return TOK_KEYWORD_FN;
-    if (string_eq(word, constr("break")))        return TOK_KEYWORD_BREAK;
-    if (string_eq(word, constr("continue")))     return TOK_KEYWORD_CONTINUE;
-    if (string_eq(word, constr("case")))         return TOK_KEYWORD_CASE;
-    if (string_eq(word, constr("cast")))         return TOK_KEYWORD_CAST;
-    if (string_eq(word, constr("defer")))        return TOK_KEYWORD_DEFER;
-    if (string_eq(word, constr("distinct")))     return TOK_KEYWORD_DISTINCT;
-    if (string_eq(word, constr("do")))           return TOK_KEYWORD_DO;
-    if (string_eq(word, constr("enum")))         return TOK_KEYWORD_ENUM;
-    if (string_eq(word, constr("extern")))       return TOK_KEYWORD_EXTERN;
-    if (string_eq(word, constr("asm")))          return TOK_KEYWORD_ASM;
-    if (string_eq(word, constr("bitcast")))      return TOK_KEYWORD_BITCAST;
-    if (string_eq(word, constr("import")))       return TOK_KEYWORD_IMPORT;
-    if (string_eq(word, constr("fallthrough")))  return TOK_KEYWORD_FALLTHROUGH;
-    if (string_eq(word, constr("module")))       return TOK_KEYWORD_MODULE;
-    if (string_eq(word, constr("return")))       return TOK_KEYWORD_RETURN;
-    if (string_eq(word, constr("struct")))       return TOK_KEYWORD_STRUCT;
-    if (string_eq(word, constr("switch")))       return TOK_KEYWORD_SWITCH;
-    if (string_eq(word, constr("union")))        return TOK_KEYWORD_UNION;
-    if (string_eq(word, constr("while")))        return TOK_KEYWORD_WHILE;
-    if (string_eq(word, constr("inline")))       return TOK_KEYWORD_INLINE;
-    if (string_eq(word, constr("sizeof")))       return TOK_KEYWORD_SIZEOF;
-    if (string_eq(word, constr("alignof")))      return TOK_KEYWORD_ALIGNOF;
-    if (string_eq(word, constr("offsetof")))     return TOK_KEYWORD_OFFSETOF;
+    if (string_eq(word, constr("let"))) return TOK_KEYWORD_LET;
+    if (string_eq(word, constr("mut"))) return TOK_KEYWORD_MUT;
+    if (string_eq(word, constr("def"))) return TOK_KEYWORD_DEF;
+    if (string_eq(word, constr("type"))) return TOK_KEYWORD_TYPE;
+    if (string_eq(word, constr("if"))) return TOK_KEYWORD_IF;
+    if (string_eq(word, constr("in"))) return TOK_KEYWORD_IN;
+    if (string_eq(word, constr("elif"))) return TOK_KEYWORD_ELIF;
+    if (string_eq(word, constr("else"))) return TOK_KEYWORD_ELSE;
+    if (string_eq(word, constr("for"))) return TOK_KEYWORD_FOR;
+    if (string_eq(word, constr("fn"))) return TOK_KEYWORD_FN;
+    if (string_eq(word, constr("break"))) return TOK_KEYWORD_BREAK;
+    if (string_eq(word, constr("continue"))) return TOK_KEYWORD_CONTINUE;
+    if (string_eq(word, constr("case"))) return TOK_KEYWORD_CASE;
+    if (string_eq(word, constr("cast"))) return TOK_KEYWORD_CAST;
+    if (string_eq(word, constr("defer"))) return TOK_KEYWORD_DEFER;
+    if (string_eq(word, constr("distinct"))) return TOK_KEYWORD_DISTINCT;
+    if (string_eq(word, constr("do"))) return TOK_KEYWORD_DO;
+    if (string_eq(word, constr("enum"))) return TOK_KEYWORD_ENUM;
+    if (string_eq(word, constr("extern"))) return TOK_KEYWORD_EXTERN;
+    if (string_eq(word, constr("asm"))) return TOK_KEYWORD_ASM;
+    if (string_eq(word, constr("bitcast"))) return TOK_KEYWORD_BITCAST;
+    if (string_eq(word, constr("import"))) return TOK_KEYWORD_IMPORT;
+    if (string_eq(word, constr("fallthrough"))) return TOK_KEYWORD_FALLTHROUGH;
+    if (string_eq(word, constr("module"))) return TOK_KEYWORD_MODULE;
+    if (string_eq(word, constr("return"))) return TOK_KEYWORD_RETURN;
+    if (string_eq(word, constr("struct"))) return TOK_KEYWORD_STRUCT;
+    if (string_eq(word, constr("switch"))) return TOK_KEYWORD_SWITCH;
+    if (string_eq(word, constr("union"))) return TOK_KEYWORD_UNION;
+    if (string_eq(word, constr("while"))) return TOK_KEYWORD_WHILE;
+    if (string_eq(word, constr("inline"))) return TOK_KEYWORD_INLINE;
+    if (string_eq(word, constr("sizeof"))) return TOK_KEYWORD_SIZEOF;
+    if (string_eq(word, constr("alignof"))) return TOK_KEYWORD_ALIGNOF;
+    if (string_eq(word, constr("offsetof"))) return TOK_KEYWORD_OFFSETOF;
 
     return TOK_IDENTIFIER;
 }
@@ -187,7 +185,7 @@ token_type scan_number(lexer* lex) {
     advance_char(lex);
     while (true) {
         if (current_char(lex) == '.') {
-            
+
             // really quick, check if its one of the range operators? this causes bugs very often :sob:
             if (peek_char(lex, 1) == '.') {
                 return TOK_LITERAL_INT;
@@ -212,7 +210,7 @@ token_type scan_number(lexer* lex) {
 }
 token_type scan_string_or_char(lexer* lex) {
     char quote_char = current_char(lex);
-    u64  start_cursor = lex->cursor;
+    u64 start_cursor = lex->cursor;
 
     advance_char(lex);
     while (true) {
@@ -222,10 +220,8 @@ token_type scan_string_or_char(lexer* lex) {
             advance_char(lex);
             return quote_char == '\"' ? TOK_LITERAL_STRING : TOK_LITERAL_CHAR;
         } else if (current_char(lex) == '\n') {
-            if (quote_char == '\"') error_at_string(lex->path, lex->src, substring(lex->src, start_cursor, lex->cursor),
-                "unclosed string literal");
-            if (quote_char == '\'') error_at_string(lex->path, lex->src, substring(lex->src, start_cursor, lex->cursor),
-                "unclosed char literal");
+            if (quote_char == '\"') error_at_string(lex->path, lex->src, substring(lex->src, start_cursor, lex->cursor), "unclosed string literal");
+            if (quote_char == '\'') error_at_string(lex->path, lex->src, substring(lex->src, start_cursor, lex->cursor), "unclosed char literal");
         }
         advance_char(lex);
     }
@@ -277,7 +273,7 @@ token_type scan_operator(lexer* lex) {
         }
         if (current_char(lex) == '%') {
             advance_char(lex);
-                if (current_char(lex) == '=') {
+            if (current_char(lex) == '=') {
                 advance_char(lex);
                 return TOK_MOD_MOD_EQUAL;
             }
@@ -405,8 +401,7 @@ token_type scan_operator(lexer* lex) {
     case '}': advance_char(lex); return TOK_CLOSE_BRACE;
 
     default:
-        error_at_string(lex->path, lex->src, substring_len(lex->src, lex->cursor, 1), 
-            "unrecognized character");
+        error_at_string(lex->path, lex->src, substring_len(lex->src, lex->cursor, 1), "unrecognized character");
         break;
     }
     return TOK_INVALID;
@@ -421,8 +416,7 @@ int skip_block_comment(lexer* lex) {
         if (current_char(lex) == '/' && peek_char(lex, 1) == '*') {
             advance_char_n(lex, 2);
             level++;
-        }
-        else if (current_char(lex) == '*' && peek_char(lex, 1) == '/') {
+        } else if (current_char(lex) == '*' && peek_char(lex, 1) == '/') {
             advance_char(lex);
             advance_char(lex);
             level--;

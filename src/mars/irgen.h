@@ -9,8 +9,8 @@ typedef struct IrBuilder {
     mars_module* mars;
 
     FeModule* mod;
-    FeFunction* fn; // current function;
-    FeBasicBlock* bb; // current basic block
+    FeFunction* fn;         // current function;
+    FeBasicBlock* bb;       // current basic block
     FeBasicBlock* backlink; // control flow backlink
 
     // for return statements, which need immediate access to the stack objects for return values

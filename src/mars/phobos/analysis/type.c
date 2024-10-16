@@ -37,10 +37,10 @@ void type_canonicalize_graph() {
             // using insertion sort for nice best-case complexity
             for_urange(i, 1, t->as_enum.variants.len) {
                 u64 j = i;
-                while (j > 0 && type_enum_variant_less(type_get_variant(t, j), type_get_variant(t, j-1))) {
+                while (j > 0 && type_enum_variant_less(type_get_variant(t, j), type_get_variant(t, j - 1))) {
                     TypeEnumVariant temp = *type_get_variant(t, j);
-                    t->as_enum.variants.at[j] = t->as_enum.variants.at[j-1];
-                    t->as_enum.variants.at[j-1] = temp;
+                    t->as_enum.variants.at[j] = t->as_enum.variants.at[j - 1];
+                    t->as_enum.variants.at[j - 1] = temp;
                     j--;
                 }
             }
@@ -63,7 +63,7 @@ void type_canonicalize_graph() {
             if (typegraph.at[i]->tag == TYPE_ALIAS) continue;
             if (typegraph.at[i]->tag == TYPE_DISTINCT) continue;
             if (typegraph.at[i]->moved) continue;
-            for_urange(j, i+1, typegraph.len) {
+            for_urange(j, i + 1, typegraph.len) {
                 if (typegraph.at[j]->tag == TYPE_ALIAS) continue;
                 if (typegraph.at[j]->tag == TYPE_DISTINCT) continue;
                 if (typegraph.at[j]->moved) continue;
@@ -84,29 +84,27 @@ void type_canonicalize_graph() {
             // if (executed_TSA_at_all) {
             //     type_reset_numbers(0);
             // }
-            LOG("compared all to %p (%4zu / %4zu)\n", typegraph.at[i], i+1, typegraph.len);
+            LOG("compared all to %p (%4zu / %4zu)\n", typegraph.at[i], i + 1, typegraph.len);
             // typegraph.at[i]->dirty = false;
         }
-        for (int i = equalities.len-1; i >= 0; --i) {
+        for (int i = equalities.len - 1; i >= 0; --i) {
             Type* src = equalities.at[i].src;
             while (src->moved) {
-                src = src->moved; 
+                src = src->moved;
             }
             Type* dest = equalities.at[i].dest;
             while (dest->moved) {
-                dest = dest->moved; 
+                dest = dest->moved;
             }
             if (src == dest) continue;
             merge_type_references(dest, src, true);
             equalities.at[i].src->moved = dest;
             // dest->dirty = true;
             keep_going = true;
-            LOG("merged %p <- %p (%4zu / %4zu)\n", dest, src, equalities.len-i, equalities.len);
-            
+            LOG("merged %p <- %p (%4zu / %4zu)\n", dest, src, equalities.len - i, equalities.len);
         }
         // LOG("equalities merged\n");
         da_clear(&equalities);
-
 
         // for_urange(i, 0, typegraph.len) {
         //     if (typegraph.at[i]->moved) {
@@ -140,7 +138,7 @@ bool type_equivalent(Type* a, Type* b, bool* executed_TSA) {
     if (a == b) return true;
     if (a->tag != b->tag) return false;
     if (a->tag < TYPE_META_INTEGRAL) return true;
-    
+
     // a little more complex
     switch (a->tag) {
     case TYPE_POINTER:
@@ -194,7 +192,6 @@ bool type_equivalent(Type* a, Type* b, bool* executed_TSA) {
     default: break;
     }
 
-
     // total structure analysis
 
     type_reset_numbers(0);
@@ -225,9 +222,17 @@ bool type_element_equivalent(Type* a, Type* b, int num_set_a, int num_set_b) {
 
     switch (a->tag) {
     case TYPE_NONE:
-    case TYPE_I8:  case TYPE_I16: case TYPE_I32: case TYPE_I64:
-    case TYPE_U8:  case TYPE_U16: case TYPE_U32: case TYPE_U64:
-    case TYPE_F16: case TYPE_F32: case TYPE_F64:
+    case TYPE_I8:
+    case TYPE_I16:
+    case TYPE_I32:
+    case TYPE_I64:
+    case TYPE_U8:
+    case TYPE_U16:
+    case TYPE_U32:
+    case TYPE_U64:
+    case TYPE_F16:
+    case TYPE_F32:
+    case TYPE_F64:
         return true;
         // if (a->type_nums[num_set_a] == b->type_nums[num_set_b]) return true;
         break;
@@ -523,24 +528,24 @@ void print_type_graph() {
         Type* t = typegraph.at[i];
         if (t->moved) continue;
         // printf("%-2zu   [%-2hu, %-2hu]\t", i, t->type_nums[0], t->type_nums[1]);
-         printf("%-2zu\t", i);
+        printf("%-2zu\t", i);
         // printf(t->dirty ? "[dirty]\t" : "[clean]\t");
-        switch (t->tag){
-        case TYPE_NONE:    printf("(none)\n"); break;
+        switch (t->tag) {
+        case TYPE_NONE: printf("(none)\n"); break;
         case TYPE_UNTYPED_INT: printf("untyped int\n"); break;
         case TYPE_UNTYPED_FLOAT: printf("untyped float\n"); break;
-        case TYPE_I8:      printf("i8\n");   break;
-        case TYPE_I16:     printf("i16\n");  break;
-        case TYPE_I32:     printf("i32\n");  break;
-        case TYPE_I64:     printf("i64\n");  break;
-        case TYPE_U8:      printf("u8\n");   break;
-        case TYPE_U16:     printf("u16\n");  break;
-        case TYPE_U32:     printf("u32\n");  break;
-        case TYPE_U64:     printf("u64\n");  break;
-        case TYPE_F16:     printf("f16\n");  break;
-        case TYPE_F32:     printf("f32\n");  break;
-        case TYPE_F64:     printf("f64\n");  break;
-        case TYPE_BOOL:    printf("bool\n"); break;
+        case TYPE_I8: printf("i8\n"); break;
+        case TYPE_I16: printf("i16\n"); break;
+        case TYPE_I32: printf("i32\n"); break;
+        case TYPE_I64: printf("i64\n"); break;
+        case TYPE_U8: printf("u8\n"); break;
+        case TYPE_U16: printf("u16\n"); break;
+        case TYPE_U32: printf("u32\n"); break;
+        case TYPE_U64: printf("u64\n"); break;
+        case TYPE_F16: printf("f16\n"); break;
+        case TYPE_F32: printf("f32\n"); break;
+        case TYPE_F64: printf("f64\n"); break;
+        case TYPE_BOOL: printf("bool\n"); break;
         case TYPE_ALIAS:
             printf("(%zu)\n", type_get_index(type_get_target(t)));
             break;
@@ -671,7 +676,7 @@ u32 static size_of_internal(Type* t) {
             if (size > max_size) max_size = size;
         }
         return align_forward(max_size, type_real_align_of(t));
-        } break;
+    } break;
     case TYPE_STRUCT: {
         u64 full_size = 0;
         for_urange(i, 0, t->as_aggregate.fields.len) {
@@ -680,7 +685,7 @@ u32 static size_of_internal(Type* t) {
             full_size += elem_size;
         }
         return align_forward(full_size, type_real_align_of(t));
-        } break;
+    } break;
     default:
         CRASH("unreachable");
     }
@@ -722,7 +727,7 @@ u32 static align_of_internal(Type* t) {
         return t->align = align_of_internal(t->as_reference.subtype);
     case TYPE_ARRAY:
         return t->align = align_of_internal(t->as_array.subtype);
-    
+
     case TYPE_UNION:
     case TYPE_STRUCT: {
         u64 max_align = 0;
@@ -731,7 +736,7 @@ u32 static align_of_internal(Type* t) {
             if (align > max_align) max_align = align;
         }
         return t->align = max_align;
-        } break;
+    } break;
     default:
         CRASH("unreachable");
     }

@@ -10,21 +10,21 @@
 #define FE_VERSION_PATCH 0
 
 typedef struct FeModule FeModule;
-typedef struct FeFunction     FeFunction;
+typedef struct FeFunction FeFunction;
 typedef struct FeFunctionItem FeFunctionItem;
-typedef struct FeData         FeData;
-typedef struct FeSymbol       FeSymbol;
-typedef struct FeBasicBlock   FeBasicBlock;
+typedef struct FeData FeData;
+typedef struct FeSymbol FeSymbol;
+typedef struct FeBasicBlock FeBasicBlock;
 
 typedef u32 FeType;
-typedef struct FeIr  FeIr;
-typedef        FeIr* FeIrPTR;
+typedef struct FeIr FeIr;
+typedef FeIr* FeIrPTR;
 
 da_typedef(FeIrPTR);
 
 typedef struct FePass {
     char* name;
-    void (*module)(FeModule*); // run on the entire module.
+    void (*module)(FeModule*);        // run on the entire module.
     void (*function)(FeFunction* fn); // run on a function.
 } FePass;
 
@@ -74,7 +74,7 @@ typedef struct FeAggregateType {
     u8 kind;
 
     union {
-    
+
         struct {
             u64 len;
             FeType fields[]; // flexible array member
@@ -141,7 +141,7 @@ typedef struct FeData {
         } bytes;
         FeSymbol* symref;
 
-        u8  d8;
+        u8 d8;
         u16 d16;
         u32 d32;
         u64 d64;
@@ -162,7 +162,7 @@ typedef struct FeFunction {
     FeSymbol* sym;
 
     u8 cconv;
-    
+
     bool cfg_up_to_date;
 
     struct {
@@ -209,10 +209,10 @@ typedef struct FeCFGNode {
     FeCFGNode** outgoing;
 
     FeCFGNode* immediate_dominator;
-    
+
     // set of all nodes this node strictly dominates
     FeCFGNode** dominates;
-    
+
     // dominance frontier for this node
     FeCFGNode** domfront;
 
@@ -240,7 +240,7 @@ typedef struct FeBasicBlock {
 
 enum {
     FE_IR_INVALID,
-    
+
     // that signals the beginning/ending of a basic block.
     // contains a backlink to the basic block itself.
     // basic block start/end will ONLY point to this if
@@ -252,44 +252,44 @@ enum {
     // FeIrBinop
     _FE_IR_BINOP_BEGIN,
 
-        FE_IR_ADD,
-        FE_IR_SUB,
-        FE_IR_IMUL,
-        FE_IR_UMUL,
-        FE_IR_IDIV,
-        FE_IR_UDIV,
-        FE_IR_IMOD,
-        FE_IR_UMOD,
+    FE_IR_ADD,
+    FE_IR_SUB,
+    FE_IR_IMUL,
+    FE_IR_UMUL,
+    FE_IR_IDIV,
+    FE_IR_UDIV,
+    FE_IR_IMOD,
+    FE_IR_UMOD,
 
-        FE_IR_FADD,
-        FE_IR_FSUB,
-        FE_IR_FMUL,
-        FE_IR_FDIV,
-        FE_IR_FMOD,
+    FE_IR_FADD,
+    FE_IR_FSUB,
+    FE_IR_FMUL,
+    FE_IR_FDIV,
+    FE_IR_FMOD,
 
-        _FE_IR_CMP_START,
+    _FE_IR_CMP_START,
 
-            // FeIrBinop
-            FE_IR_ULT, // <
-            FE_IR_UGT, // >
-            FE_IR_ULE, // <=
-            FE_IR_UGE, // >=
-            FE_IR_ILT, // <
-            FE_IR_IGT, // >
-            FE_IR_ILE, // <=
-            FE_IR_IGE, // >=
-            FE_IR_EQ, // ==
-            FE_IR_NE, // !=
+    // FeIrBinop
+    FE_IR_ULT, // <
+    FE_IR_UGT, // >
+    FE_IR_ULE, // <=
+    FE_IR_UGE, // >=
+    FE_IR_ILT, // <
+    FE_IR_IGT, // >
+    FE_IR_ILE, // <=
+    FE_IR_IGE, // >=
+    FE_IR_EQ,  // ==
+    FE_IR_NE,  // !=
 
-        _FE_IR_CMP_END,
+    _FE_IR_CMP_END,
 
-        // FeBinop
-        FE_IR_AND,
-        FE_IR_OR,
-        FE_IR_XOR,
-        FE_IR_SHL,
-        FE_IR_ASR,
-        FE_IR_LSR,
+    // FeBinop
+    FE_IR_AND,
+    FE_IR_OR,
+    FE_IR_XOR,
+    FE_IR_SHL,
+    FE_IR_ASR,
+    FE_IR_LSR,
 
     _FE_BINOP_END,
 
@@ -297,7 +297,7 @@ enum {
     FE_IR_NOT,
     FE_IR_NEG,
 
-    // bitcast between 
+    // bitcast between
     FE_IR_BITCAST,
 
     // integer casting
@@ -350,7 +350,6 @@ enum {
     // FeIrReturn
     FE_IR_RETURN,
 
-
     // FeIrRetrieve
     FE_IR_RETRIEVE,
     // FeIrProvide
@@ -373,7 +372,7 @@ typedef struct FeIr {
     u16 use_count;
     FeType type;
     FeIr* next;
-    FeIr* prev;    
+    FeIr* prev;
 } FeIr;
 
 typedef struct FeIrArchInst {
@@ -431,12 +430,12 @@ typedef struct FeIrIndexPtr {
     load/store alignment
 
     the .align_offset field on FeIrLoad and FeIrStore indicates how misaligned
-    the pointer is from the type's natural alignment. if align_offset is greater or 
-    equal to the types natural alignment (a good catch-all is 255), the pointer's 
+    the pointer is from the type's natural alignment. if align_offset is greater or
+    equal to the types natural alignment (a good catch-all is 255), the pointer's
     alignment is treated as unknown.
 
     if align_offset is known but not zero, a codegen backend can optimize to a
-    specific misalignment case. for example: a load.i64 with align_offset=4 can be 
+    specific misalignment case. for example: a load.i64 with align_offset=4 can be
     translated to two 4-byte load instructions. a load.i64 with unknown (>=8) offset
     might be translated into several i8 loads.
 */
@@ -479,8 +478,8 @@ typedef struct FeIrConst {
 
     union {
         bool bool : 1;
-        
-        i8  i8;
+
+        i8 i8;
         i16 i16;
         i32 i32;
         i64 i64;
@@ -493,7 +492,7 @@ typedef struct FeIrConst {
 
 typedef struct FeIrLoadSymbol {
     FeIr base;
-    
+
     FeSymbol* sym;
 } FeIrLoadSymbol;
 
@@ -527,9 +526,9 @@ typedef struct FeIrBranch {
 } FeIrBranch;
 
 // get value from register parameter OR the pointer to a stack parameter.
-// if register, lifetime of the register starts from the start of the entry 
+// if register, lifetime of the register starts from the start of the entry
 // basic block and continues to this node.
-// MUST BE THE FIRST INSTRUCTION IN THE ENTRY BLOCK OR IN A SEQUENCE OF 
+// MUST BE THE FIRST INSTRUCTION IN THE ENTRY BLOCK OR IN A SEQUENCE OF
 // OTHER FeIrParamVal INSTRUCTIONS
 typedef struct FeIrParamVal {
     FeIr base;
@@ -607,18 +606,18 @@ enum {
     // FE_CCONV_OPT,
 };
 
-#define for_fe_ir(inst, basic_block) for(FeIr* inst = (basic_block).start; inst->kind != FE_IR_BOOKEND; inst = inst->next)
-#define for_fe_ir_from(inst, start, basic_block) for(FeIr* inst = start; inst->kind != FE_IR_BOOKEND; inst = inst->next)
+#define for_fe_ir(inst, basic_block) for (FeIr* inst = (basic_block).start; inst->kind != FE_IR_BOOKEND; inst = inst->next)
+#define for_fe_ir_from(inst, start, basic_block) for (FeIr* inst = start; inst->kind != FE_IR_BOOKEND; inst = inst->next)
 
 extern const size_t fe_inst_sizes[];
 
-FeModule*     fe_new_module(string name);
-FeFunction*   fe_new_function(FeModule* mod, FeSymbol* sym, u8 cconv);
+FeModule* fe_new_module(string name);
+FeFunction* fe_new_function(FeModule* mod, FeSymbol* sym, u8 cconv);
 FeBasicBlock* fe_new_basic_block(FeFunction* fn, string name);
-FeData*       fe_new_data(FeModule* mod, FeSymbol* sym, bool read_only);
-FeSymbol*     fe_new_symbol(FeModule* mod, string name, u8 binding);
-FeSymbol*     fe_find_symbol(FeModule* mod, string name);
-FeSymbol*     fe_find_or_new_symbol(FeModule* mod, string name, u8 binding);
+FeData* fe_new_data(FeModule* mod, FeSymbol* sym, bool read_only);
+FeSymbol* fe_new_symbol(FeModule* mod, string name, u8 binding);
+FeSymbol* fe_find_symbol(FeModule* mod, string name);
+FeSymbol* fe_find_or_new_symbol(FeModule* mod, string name, u8 binding);
 
 void fe_destroy_module(FeModule* m);
 void fe_destroy_function(FeFunction* f);
@@ -629,7 +628,7 @@ void fe_init_func_params(FeFunction* f, u16 count);
 void fe_init_func_returns(FeFunction* f, u16 count);
 FeFunctionItem* fe_add_func_param(FeFunction* f, FeType t);
 FeFunctionItem* fe_add_func_return(FeFunction* f, FeType t);
-u32  fe_bb_index(FeFunction* fn, FeBasicBlock* bb);
+u32 fe_bb_index(FeFunction* fn, FeBasicBlock* bb);
 void fe_set_data_bytes(FeData* data, u8* bytes, u32 data_len, bool zeroed);
 void fe_set_data_symref(FeData* data, FeSymbol* symref);
 
@@ -639,9 +638,9 @@ FeIr* fe_insert_ir_after(FeIr* new, FeIr* ref);
 FeIr* fe_remove_ir(FeIr* inst);
 FeIr* fe_move_ir_before(FeIr* inst, FeIr* ref);
 FeIr* fe_move_ir_after(FeIr* inst, FeIr* ref);
-void    fe_rewrite_ir_uses(FeFunction* f, FeIr* source, FeIr* dest);
-void    fe_add_ir_uses_to_worklist(FeFunction* f, FeIr* source, da(FeIrPTR)* worklist);
-bool    fe_is_ir_terminator(FeIr* inst);
+void fe_rewrite_ir_uses(FeFunction* f, FeIr* source, FeIr* dest);
+void fe_add_ir_uses_to_worklist(FeFunction* f, FeIr* source, da(FeIrPTR) * worklist);
+bool fe_is_ir_terminator(FeIr* inst);
 
 FeIr* fe_ir(FeFunction* f, u16 type);
 FeIr* fe_ir_binop(FeFunction* f, u16 type, FeIr* lhs, FeIr* rhs);
@@ -673,12 +672,11 @@ string fe_emit_c(FeModule* m);
 typedef struct FeReport {
     u8 severity;
     u8 kind;
-    
+
     char* function_of_origin;
     char* message;
 
     union {
-        
     };
 
 } FeReport;
@@ -711,8 +709,8 @@ void fe_print_report(FeReport msg);
 enum {
     _FE_ARCH_BEGIN,
 
-    FE_ARCH_X64,   // x86-64
-    FE_ARCH_APHELION, // aphelion 
+    FE_ARCH_X64,      // x86-64
+    FE_ARCH_APHELION, // aphelion
     FE_ARCH_ARM64,    // arm64
     FE_ARCH_XR17032,  // xr/17032
     FE_ARCH_FOX32,    // fox32
@@ -726,7 +724,7 @@ enum {
     FE_SYSTEM_NONE, // freestanding
     FE_SYSTEM_LINUX,
     FE_SYSTEM_WINDOWS,
-    
+
     _FE_SYSTEM_END,
 };
 
@@ -774,13 +772,13 @@ typedef struct FeModule {
 typedef struct FeAllocator {
     void* (*malloc)(size_t);
     void* (*realloc)(void*, size_t);
-    void  (*free)(void*);
+    void (*free)(void*);
 } FeAllocator;
 
-void  fe_set_allocator(FeAllocator alloc);
+void fe_set_allocator(FeAllocator alloc);
 void* fe_malloc(size_t size);
 void* fe_realloc(void* ptr, size_t size);
-void  fe_free(void* ptr);
+void fe_free(void* ptr);
 
 // like stringbuilder but epic
 typedef struct FeDataBuffer {

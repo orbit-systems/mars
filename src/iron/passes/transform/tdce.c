@@ -28,25 +28,25 @@ static void register_uses(FeIr* ir) {
     case FE_IR_XOR:
     case FE_IR_OR:
     case FE_IR_AND:
-        FeIrBinop* binop = (FeIrBinop*) ir;
+        FeIrBinop* binop = (FeIrBinop*)ir;
         binop->lhs->use_count++;
         binop->rhs->use_count++;
         break;
     case FE_IR_LOAD:
-        FeIrLoad* load = (FeIrLoad*) ir;
+        FeIrLoad* load = (FeIrLoad*)ir;
         load->location->use_count++;
         break;
     case FE_IR_STORE:
-        FeIrStore* store = (FeIrStore*) ir;
+        FeIrStore* store = (FeIrStore*)ir;
         store->location->use_count++;
         store->value->use_count++;
         break;
     case FE_IR_RETURNVAL:
-        FeIrReturnVal* retval = (FeIrReturnVal*) ir;
+        FeIrReturnVal* retval = (FeIrReturnVal*)ir;
         if (retval->source) retval->source->use_count++;
         break;
     case FE_IR_MOV:
-        FeIrMov* mov = (FeIrMov*) ir;
+        FeIrMov* mov = (FeIrMov*)ir;
         if (mov->source) mov->source->use_count++;
         break;
     case FE_IR_NOT:
@@ -54,7 +54,7 @@ static void register_uses(FeIr* ir) {
     case FE_IR_SIGNEXT:
     case FE_IR_ZEROEXT:
     case FE_IR_TRUNC:
-        FeIrUnop* unop = (FeIrUnop*) ir;
+        FeIrUnop* unop = (FeIrUnop*)ir;
         if (unop->source) unop->source->use_count++;
         break;
     case FE_IR_INVALID:
@@ -102,32 +102,32 @@ static void try_eliminate(FeIr* ir) {
     case FE_IR_XOR:
     case FE_IR_OR:
     case FE_IR_AND:
-        FeIrBinop* binop = (FeIrBinop*) ir;
+        FeIrBinop* binop = (FeIrBinop*)ir;
         binop->lhs->use_count--;
         binop->rhs->use_count--;
         try_eliminate(binop->lhs);
         try_eliminate(binop->rhs);
         break;
     case FE_IR_STORE:
-        FeIrStore* store = (FeIrStore*) ir;
+        FeIrStore* store = (FeIrStore*)ir;
         store->location->use_count--;
         store->value->use_count--;
         try_eliminate(store->location);
         try_eliminate(store->value);
         break;
     case FE_IR_RETURNVAL:
-        FeIrReturnVal* retval = (FeIrReturnVal*) ir;
+        FeIrReturnVal* retval = (FeIrReturnVal*)ir;
         if (retval->source) retval->source->use_count--;
         try_eliminate(retval->source);
         break;
     case FE_IR_MOV:
-        FeIrMov* mov = (FeIrMov*) ir;
+        FeIrMov* mov = (FeIrMov*)ir;
         if (mov->source) mov->source->use_count--;
         try_eliminate(mov->source);
         break;
     case FE_IR_NEG:
     case FE_IR_NOT:
-        FeIrUnop* unop = (FeIrUnop*) ir;
+        FeIrUnop* unop = (FeIrUnop*)ir;
         if (unop->source) unop->source->use_count--;
         try_eliminate(unop->source);
         break;

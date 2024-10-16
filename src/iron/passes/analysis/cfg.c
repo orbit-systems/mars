@@ -25,7 +25,6 @@ static struct {
     //      after lt_link(w, v)
     FeCFGNode** forest_parent;
 
-
     // lt_get_bucket(v) = set of vertices whose semidominator is v
     FeCFGNode** bucket;
     u32* bucket_lens;
@@ -38,8 +37,8 @@ static u32 pre_order_index;
 static void populate_pre_order(FeCFGNode* v, FeCFGNode* parent) {
     v->pre_order_index = ++pre_order_index;
 
-    LT.vertex [v->pre_order_index] = v;
-    LT.parent [v->pre_order_index] = parent;
+    LT.vertex[v->pre_order_index] = v;
+    LT.parent[v->pre_order_index] = parent;
     LT.semidom[v->pre_order_index] = v->pre_order_index;
 
     for_range(i, 0, v->out_len) {
@@ -72,14 +71,14 @@ static FeCFGNode* lt_eval(FeCFGNode* v) {
     return u;
 }
 
-static void lt_init(FeFunction* fn) {  
-    LT.array_len     = fn->blocks.len + 1;  
-    LT.parent        = fe_malloc(sizeof(LT.parent[0]) * LT.array_len);
-    LT.semidom       = fe_malloc(sizeof(LT.semidom[0]) * LT.array_len);
-    LT.vertex        = fe_malloc(sizeof(LT.vertex[0]) * LT.array_len);
+static void lt_init(FeFunction* fn) {
+    LT.array_len = fn->blocks.len + 1;
+    LT.parent = fe_malloc(sizeof(LT.parent[0]) * LT.array_len);
+    LT.semidom = fe_malloc(sizeof(LT.semidom[0]) * LT.array_len);
+    LT.vertex = fe_malloc(sizeof(LT.vertex[0]) * LT.array_len);
     LT.forest_parent = fe_malloc(sizeof(LT.forest_parent[0]) * LT.array_len);
-    LT.bucket        = fe_malloc(sizeof(LT.bucket[0]) * LT.array_len * LT.array_len);
-    LT.bucket_lens   = fe_malloc(sizeof(LT.bucket_lens[0]) * LT.array_len);
+    LT.bucket = fe_malloc(sizeof(LT.bucket[0]) * LT.array_len * LT.array_len);
+    LT.bucket_lens = fe_malloc(sizeof(LT.bucket_lens[0]) * LT.array_len);
 }
 
 static forceinline FeCFGNode** lt_get_bucket(FeCFGNode* w) {
@@ -120,7 +119,7 @@ static void init_cfg_nodes(FeFunction* fn) {
     lt_init(fn);
 
     // give every basic block a CFG node
-    foreach(FeBasicBlock* bb, fn->blocks) {
+    foreach (FeBasicBlock* bb, fn->blocks) {
         FeCFGNode* node = arena_alloc(&fn->cfg, sizeof(FeCFGNode), alignof(FeCFGNode));
         *node = (FeCFGNode){0};
         node->bb = bb;
@@ -129,10 +128,10 @@ static void init_cfg_nodes(FeFunction* fn) {
     }
 
     // populate outgoing and prepare incoming
-    foreach(FeBasicBlock* bb, fn->blocks) {
+    foreach (FeBasicBlock* bb, fn->blocks) {
         FeCFGNode* node = bb->cfg_node;
 
-        switch (bb->end->kind){
+        switch (bb->end->kind) {
         case FE_IR_RETURN:
             node->out_len = 0;
             break;
@@ -163,17 +162,17 @@ static void init_cfg_nodes(FeFunction* fn) {
     }
 
     // allocate incoming
-    foreach(FeBasicBlock* bb, fn->blocks) {
+    foreach (FeBasicBlock* bb, fn->blocks) {
         FeCFGNode* node = bb->cfg_node;
         node->incoming = arena_alloc(&fn->cfg, sizeof(FeCFGNode) * node->in_len, alignof(FeCFGNode));
         node->in_len = 0;
     }
 
     // populate incoming
-    foreach(FeBasicBlock* bb, fn->blocks) {
+    foreach (FeBasicBlock* bb, fn->blocks) {
         FeCFGNode* node = bb->cfg_node;
 
-        switch (bb->end->kind){
+        switch (bb->end->kind) {
         case FE_IR_RETURN:
             break;
         case FE_IR_JUMP:
@@ -214,7 +213,7 @@ static void init_cfg_nodes(FeFunction* fn) {
         for_range(vi, 0, LT.bucket_lens[LT.parent[w->pre_order_index]->pre_order_index]) {
             FeCFGNode* v = lt_get_bucket(LT.parent[w->pre_order_index])[vi];
             FeCFGNode* u = lt_eval(v);
-            
+
             if (LT.semidom[u->pre_order_index] < LT.semidom[v->pre_order_index]) {
                 v->immediate_dominator = u;
             } else {
@@ -237,10 +236,10 @@ static void emit_cfg_dot(FeFunction* fn) {
     printf("--------\n");
     printf("digraph CFG {\n");
 
-    foreach(FeBasicBlock* bb, fn->blocks) {
+    foreach (FeBasicBlock* bb, fn->blocks) {
         FeCFGNode* node = bb->cfg_node;
         for_range(i, 0, node->out_len) {
-            printf("  \""str_fmt"\" -> \""str_fmt"\"\n", str_arg(bb->name), str_arg(node->outgoing[i]->bb->name));
+            printf("  \"" str_fmt "\" -> \"" str_fmt "\"\n", str_arg(bb->name), str_arg(node->outgoing[i]->bb->name));
         }
     }
 
@@ -251,10 +250,10 @@ static void emit_domtree_dot(FeFunction* fn) {
     printf("--------\n");
     printf("digraph DominanceTree {\n");
 
-    foreach(FeBasicBlock* bb, fn->blocks) {
+    foreach (FeBasicBlock* bb, fn->blocks) {
         FeCFGNode* node = bb->cfg_node;
         if (node->immediate_dominator != NULL) {
-            printf("  \""str_fmt"\" -> \""str_fmt"\"\n", str_arg(node->immediate_dominator->bb->name), str_arg(bb->name));
+            printf("  \"" str_fmt "\" -> \"" str_fmt "\"\n", str_arg(node->immediate_dominator->bb->name), str_arg(bb->name));
         }
     }
 
@@ -285,11 +284,11 @@ static void compute_domfront(FeFunction* fn, FeCFGNode* N) {
     N->domfront = arena_alloc(&fn->cfg, sizeof(FeCFGNode*) * fn->blocks.len, alignof(FeCFGNode*));
     N->domfront_len = 0;
 
-    foreach(FeBasicBlock* bb, fn->blocks) {
+    foreach (FeBasicBlock* bb, fn->blocks) {
         FeCFGNode* node = bb->cfg_node;
 
         if (!dom(N, node)) continue;
-        
+
         for_range(i, 0, node->out_len) {
             FeCFGNode* successor = node->outgoing[i];
             if (!sdom(N, successor)) {
@@ -305,13 +304,13 @@ static void function_cfg(FeFunction* fn) {
     if (fn->cfg_up_to_date) return;
 
     if (fn->cfg.list.at != NULL) arena_delete(&fn->cfg);
-    fn->cfg = arena_make(sizeof(FeCFGNode)*(fn->blocks.len) + 10000);
+    fn->cfg = arena_make(sizeof(FeCFGNode) * (fn->blocks.len) + 10000);
 
     init_cfg_nodes(fn);
 
     lt_deinit(fn);
 
-    foreach(FeBasicBlock* bb, fn->blocks) {
+    foreach (FeBasicBlock* bb, fn->blocks) {
         compute_domfront(fn, bb->cfg_node);
     }
 

@@ -14,7 +14,7 @@
 
 typedef struct LiveRange {
     u32 from; // inclusive
-    u32 to;  // exclusive
+    u32 to;   // exclusive
     u32 vreg;
 } LiveRange;
 
@@ -43,7 +43,7 @@ static LifetimeSet* lifetimes;
 static LiveRange* pending;
 
 static LiveRange range_from_set(LifetimeSet* lts, u32 index) {
-    if (lts->cap == 0) 
+    if (lts->cap == 0)
         return lts->single_lifetime;
     return lts->at[index];
 }
@@ -55,7 +55,7 @@ static void add_range(LifetimeSet* lts, LiveRange range) {
         lts->single_lifetime = range;
         lts->len = 1;
         return;
-    } 
+    }
     if (lts->cap == 0 && lts->len == 1) {
         LiveRange og = lts->single_lifetime;
         lts->cap = 4;
@@ -111,7 +111,7 @@ static void liveness_analysis(FeMachBuffer* buf) {
 
         if (!regalloc_enabled && elem->kind != FE_MACH_CFG_BEGIN)
             continue;
-        
+
         switch (elem->kind) {
         case FE_MACH_CFG_BEGIN:
             regalloc_enabled = true;
@@ -131,10 +131,10 @@ static void liveness_analysis(FeMachBuffer* buf) {
             TODO("complex cfgs not handled yet");
             break;
         case FE_MACH_INST:
-            FeMachInst* inst = (FeMachInst*) elem;
+            FeMachInst* inst = (FeMachInst*)elem;
             const FeMachInstTemplate templ = buf->target.inst_templates[inst->template];
             u32 vreg_0 = inst->regs;
-            for_range (r, 0, templ.regs_len) {
+            for_range(r, 0, templ.regs_len) {
                 u32 vreg_index = buf->vreg_lists.at[vreg_0 + r];
                 bool is_def = (templ.defs & (1ull << r)) != 0;
                 bool is_use = (templ.uses & (1ull << r)) != 0;
@@ -142,11 +142,11 @@ static void liveness_analysis(FeMachBuffer* buf) {
             }
             break;
         case FE_MACH_LIFETIME_BEGIN:
-            FeMachLifetimePoint* ltp = (FeMachLifetimePoint*) elem;
+            FeMachLifetimePoint* ltp = (FeMachLifetimePoint*)elem;
             add_lifetime_point(here, ltp->vreg, true, false);
             break;
         case FE_MACH_LIFETIME_END:
-            ltp = (FeMachLifetimePoint*) elem;
+            ltp = (FeMachLifetimePoint*)elem;
             add_lifetime_point(here, ltp->vreg, false, true);
             break;
         default:
@@ -178,7 +178,7 @@ static void build_conflict_graph(FeMachBuffer* buf) {
     // copy ranges in and sort
     {
         u32 len = 0;
-        for_range (r, 0, buf->vregs.len) {
+        for_range(r, 0, buf->vregs.len) {
             for_range(i, 0, lifetimes[r].len) {
                 sorted_ranges[len++] = get_range_ptr(&lifetimes[r], i);
             }
@@ -187,8 +187,8 @@ static void build_conflict_graph(FeMachBuffer* buf) {
         for_range(i, 0, len) {
             LiveRange* x = sorted_ranges[i];
             u32 j = i;
-            while (j > 0 && sorted_ranges[j-1]->from > x->from) {
-                sorted_ranges[j] = sorted_ranges[j-1];
+            while (j > 0 && sorted_ranges[j - 1]->from > x->from) {
+                sorted_ranges[j] = sorted_ranges[j - 1];
                 j--;
             }
             sorted_ranges[j] = x;
@@ -253,7 +253,7 @@ static void assign_concrete(FeMachBuffer* buf) {
         // if theres a hint, check if that interferes with anything already assigned
         if (reg->hint != 0) {
             bool interferes = false;
-            foreach(LifetimeSet* maybe_interferes, lts->interference) {
+            foreach (LifetimeSet* maybe_interferes, lts->interference) {
                 FeMachVReg* maybe_reg = &buf->vregs.at[maybe_interferes->vreg];
                 if (maybe_reg->real == reg->hint) {
                     interferes = true;
@@ -268,7 +268,6 @@ static void assign_concrete(FeMachBuffer* buf) {
         }
 
         // look through and see if we can put a real reg to these bitches
-        
     }
 }
 

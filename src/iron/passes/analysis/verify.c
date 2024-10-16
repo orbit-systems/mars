@@ -1,10 +1,10 @@
 #include "iron/iron.h"
 
-#define FE_FATAL(m, msg) fe_push_report(m, (FeReport){ \
-    .function_of_origin = __func__,\
-    .message = (msg),\
-    .severity = FE_MSG_SEVERITY_FATAL, \
-})
+#define FE_FATAL(m, msg) fe_push_report(m, (FeReport){                            \
+                                               .function_of_origin = __func__,    \
+                                               .message = (msg),                  \
+                                               .severity = FE_MSG_SEVERITY_FATAL, \
+                                           })
 
 static void verify_basic_block(FeModule* m, FeFunction* fn, FeBasicBlock* bb, bool entry) {
     if (bb->start->kind == FE_IR_BOOKEND) {
@@ -16,19 +16,19 @@ static void verify_basic_block(FeModule* m, FeFunction* fn, FeBasicBlock* bb, bo
     }
 
     for_fe_ir(inst, *bb) {
-        switch (inst->kind){
+        switch (inst->kind) {
         case FE_IR_PARAMVAL:
             if (!entry || (inst->prev->kind != FE_IR_BOOKEND && inst->prev->kind != FE_IR_PARAMVAL))
                 FE_FATAL(m, "paramval must be at the beginning of the entry block");
 
-            FeIrParamVal* paramval = (FeIrParamVal*) inst;
+            FeIrParamVal* paramval = (FeIrParamVal*)inst;
             if (paramval->index >= fn->params.len) FE_FATAL(m, "paramval index out of range");
             if (inst->type != fn->params.at[paramval->index]->type) FE_FATAL(m, "paramval type != param type");
             break;
         case FE_IR_RETURNVAL:
             if ((inst->next->kind != FE_IR_RETURN && inst->prev->kind != FE_IR_RETURNVAL))
                 FE_FATAL(m, "returnval must be before a return or another returnval");
-            FeIrReturnVal* returnval = (FeIrReturnVal*) inst;
+            FeIrReturnVal* returnval = (FeIrReturnVal*)inst;
             if (returnval->index >= fn->returns.len) FE_FATAL(m, "returnval index out of range");
             if (returnval->source->type != fn->returns.at[returnval->index]->type) FE_FATAL(m, "returnval source type != return type");
             break;
@@ -36,7 +36,7 @@ static void verify_basic_block(FeModule* m, FeFunction* fn, FeBasicBlock* bb, bo
             if (inst->prev->kind != FE_IR_BOOKEND && inst->prev->kind != FE_IR_PHI) {
                 FE_FATAL(m, "phi must be at the beginning of a basic block");
             }
-            FeIrPhi* phi = (FeIrPhi*) inst;
+            FeIrPhi* phi = (FeIrPhi*)inst;
             break;
 
         case FE_IR_RETURN:
@@ -44,7 +44,6 @@ static void verify_basic_block(FeModule* m, FeFunction* fn, FeBasicBlock* bb, bo
         case FE_IR_BRANCH:
             if (inst->next->kind != FE_IR_BOOKEND) {
                 FE_FATAL(m, "terminator must be at the end of a basic block");
-                
             }
             break;
         default:
@@ -57,7 +56,7 @@ static void verify_function(FeFunction* f) {
     if (f->blocks.len == 0) {
         FE_FATAL(f->mod, "functions must have at least one basic block");
     }
-    foreach(FeBasicBlock* bb, f->blocks) {
+    foreach (FeBasicBlock* bb, f->blocks) {
         verify_basic_block(f->mod, f, bb, count == 0);
     }
 }

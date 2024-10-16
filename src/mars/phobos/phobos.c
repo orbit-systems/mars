@@ -18,7 +18,7 @@ void restore_cwd() {
         CRASH("cwd_stack popped at len == 0");
     }
 
-    char* cwd = cwd_stack.at[cwd_stack.len-1];
+    char* cwd = cwd_stack.at[cwd_stack.len - 1];
 
     chdir(cwd);
     da_pop(&cwd_stack);
@@ -35,7 +35,6 @@ void change_cwd(char* dir) {
 
     chdir(dir);
 }
-
 
 /*tune this probably*/
 #define PARSER_ARENA_SIZE 0x100000
@@ -59,24 +58,23 @@ string search_for_module(mars_module* mod, string relpath) {
     }
 
     return NULL_STR;
-
 }
 
 mars_module* parse_module(string input_path) {
 
     // path checks
     if (!fs_exists(input_path))
-        general_error("module \""str_fmt"\" does not exist", str_arg(input_path));
+        general_error("module \"" str_fmt "\" does not exist", str_arg(input_path));
 
     fs_file input_dir = {0};
     fs_get(input_path, &input_dir);
     if (!fs_is_directory(&input_dir)) {
-        general_error("path \""str_fmt"\" is not a directory", str_arg(input_path));
+        general_error("path \"" str_fmt "\" is not a directory", str_arg(input_path));
     }
 
     int subfile_count = fs_subfile_count(&input_dir);
     if (subfile_count == 0) {
-        general_error("path \""str_fmt"\" has no files", str_arg(input_path));
+        general_error("path \"" str_fmt "\" has no files", str_arg(input_path));
     }
 
     fs_file* subfiles = mars_alloc(sizeof(fs_file) * subfile_count);
@@ -99,9 +97,9 @@ mars_module* parse_module(string input_path) {
         string loaded_file;
 
         // stop the lexer from shitting itself
-        if (subfiles[i].size == 0) 
+        if (subfiles[i].size == 0)
             loaded_file = string_clone(str(" \n "));
-        else 
+        else
             loaded_file = string_alloc(subfiles[i].size);
 
         fs_open(&subfiles[i], "rb");
@@ -114,20 +112,18 @@ mars_module* parse_module(string input_path) {
         fs_close(&subfiles[i]);
 
         if (read_success == false)
-            general_error("cannot read from \""str_fmt"\"", str_arg(subfiles[i].path));
-
+            general_error("cannot read from \"" str_fmt "\"", str_arg(subfiles[i].path));
 
         lexer this_lexer = new_lexer(subfiles[i].path, loaded_file);
 
         da_append(&lexers, this_lexer);
-
     }
     if (mars_file_count == 0)
-        general_error("path \""str_fmt"\" has no \".mars\" files", str_arg(input_path));
+        general_error("path \"" str_fmt "\" has no \".mars\" files", str_arg(input_path));
 
     // timing
     struct timeval lex_begin, lex_end;
-    if (mars_flags.print_timings) gettimeofday(&lex_begin, 0);        
+    if (mars_flags.print_timings) gettimeofday(&lex_begin, 0);
     size_t tokens_lexed = 0;
 
     for_urange(i, 0, lexers.len) {
@@ -139,11 +135,11 @@ mars_module* parse_module(string input_path) {
         gettimeofday(&lex_end, 0);
         long seconds = lex_end.tv_sec - lex_begin.tv_sec;
         long microseconds = lex_end.tv_usec - lex_begin.tv_usec;
-        double elapsed = (double) seconds + (double) microseconds*1e-6;
+        double elapsed = (double)seconds + (double)microseconds * 1e-6;
         printf(STYLE_FG_Cyan STYLE_Bold "LEXING" STYLE_Reset);
         printf("\t  time      : %fs\n", elapsed);
         printf("\t  tokens    : %zu\n", tokens_lexed);
-        printf("\t  tok/s     : %.3f\n", (double) tokens_lexed / elapsed);
+        printf("\t  tok/s     : %.3f\n", (double)tokens_lexed / elapsed);
     }
 
     restore_cwd();
@@ -154,7 +150,7 @@ mars_module* parse_module(string input_path) {
     Arena alloca = arena_make(PARSER_ARENA_SIZE);
 
     for_urange(i, 0, lexers.len) {
-        
+
         parser p = make_parser(&lexers.at[i], &alloca);
 
         da_append(&parsers, p);
@@ -179,23 +175,23 @@ mars_module* parse_module(string input_path) {
     }
     da_append(&active_modules, module);
 
-    /* display timing */ 
+    /* display timing */
     if (mars_flags.print_timings) {
         gettimeofday(&parse_end, 0);
         long seconds = parse_end.tv_sec - parse_begin.tv_sec;
         long microseconds = parse_end.tv_usec - parse_begin.tv_usec;
-        double elapsed = (double) seconds + (double) microseconds*1e-6;
+        double elapsed = (double)seconds + (double)microseconds * 1e-6;
         printf(STYLE_FG_Blue STYLE_Bold "PARSING" STYLE_Reset);
         printf("\t  time      : %fs\n", elapsed);
         printf("\t  AST nodes : %zu\n", ast_nodes_created);
-        printf("\t  nodes/s   : %.3f\n", (double) ast_nodes_created / elapsed);
+        printf("\t  nodes/s   : %.3f\n", (double)ast_nodes_created / elapsed);
     }
 
     // index and parse imports
     for_urange(i, 0, module->program_tree.len) {
         if (module->program_tree.at[i].type == AST_import_stmt) {
             string importpath = search_for_module(
-                module, 
+                module,
                 module->program_tree.at[i].as_import_stmt->path.as_literal_expr->tok->text
             );
 
@@ -227,8 +223,7 @@ mars_module* parse_module(string input_path) {
                 for_urange(j, 0, active_modules.len) {
                     if (import_module == active_modules.at[j]) continue;
                     if (string_eq(active_modules.at[j]->module_name, import_module->module_name)) {
-                        warning_at_node(module, module->program_tree.at[i], 
-                            "imported module may cause symbol conflicts with module at \""str_fmt"\"", str_arg(active_modules.at[j]->module_path));
+                        warning_at_node(module, module->program_tree.at[i], "imported module may cause symbol conflicts with module at \"" str_fmt "\"", str_arg(active_modules.at[j]->module_path));
                     }
                 }
             }
@@ -245,7 +240,7 @@ mars_module* parse_module(string input_path) {
     return module;
 }
 
-mars_module* create_module(da(parser)* pl, Arena alloca) {
+mars_module* create_module(da(parser) * pl, Arena alloca) {
     if (pl == NULL) CRASH("build_module() provided with null parser list pointer");
     if (pl->len == 0) CRASH("build_module() provided with parser list of length 0");
 
@@ -261,19 +256,14 @@ mars_module* create_module(da(parser)* pl, Arena alloca) {
     da_init(&mod->files, pl->len);
     for_urange(i, 0, pl->len) {
         if (!string_eq(pl->at[i].module_decl.as_module_decl->name->text, mod->module_name)) {
-            error_at_string(pl->at[i].path, pl->at[i].src, pl->at[i].module_decl.as_module_decl->name->text,
-                "mismatched module name, expected '"str_fmt"'", str_arg(mod->module_name));
+            error_at_string(pl->at[i].path, pl->at[i].src, pl->at[i].module_decl.as_module_decl->name->text, "mismatched module name, expected '" str_fmt "'", str_arg(mod->module_name));
         }
 
-        da_append(&mod->files, ((mars_file){
-            pl->at[i].path,
-            pl->at[i].src
-        }));
+        da_append(&mod->files, ((mars_file){pl->at[i].path, pl->at[i].src}));
     }
 
     if (string_eq(mod->module_name, str("mars")))
-        error_at_string(pl->at[0].path, pl->at[0].src, pl->at[0].module_decl.as_module_decl->name->text,
-            "module name 'mars' is reserved");
+        error_at_string(pl->at[0].path, pl->at[0].src, pl->at[0].module_decl.as_module_decl->name->text, "module name 'mars' is reserved");
 
     // stitch ASTs together
     da_init(&mod->program_tree, pl->len);
@@ -286,7 +276,7 @@ mars_module* create_module(da(parser)* pl, Arena alloca) {
     return mod;
 }
 
-mars_file *find_source_file(mars_module* cu, string snippet) {
+mars_file* find_source_file(mars_module* cu, string snippet) {
     for_urange(i, 0, cu->files.len) {
         if (is_within(cu->files.at[i].src, snippet)) {
             return &cu->files.at[i];

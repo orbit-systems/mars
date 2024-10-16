@@ -29,4 +29,4 @@ void load_arguments(int argc, char* argv[], flag_set* fl);
 
 void print_help();
 
-extern flag_set mars_flags; 
+extern flag_set mars_flags;

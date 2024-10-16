@@ -11,31 +11,33 @@
 #include "common/crash.h"
 
 // emit an error that highlights an AST node
-#define error_at_node(module, node, msg, ...) do { \
-    string ast_str = str_from_tokens(*((node).base->start), *((node).base->end));                 \
-    mars_file* source_file = find_source_file((module), ast_str);                                 \
-    if (source_file == NULL) CRASH("source file not found for AST node");                         \
-    error_at_string(source_file->path, source_file->src, ast_str, msg __VA_OPT__(,) __VA_ARGS__); \
-} while (0)
+#define error_at_node(module, node, msg, ...)                                                          \
+    do {                                                                                               \
+        string ast_str = str_from_tokens(*((node).base->start), *((node).base->end));                  \
+        mars_file* source_file = find_source_file((module), ast_str);                                  \
+        if (source_file == NULL) CRASH("source file not found for AST node");                          \
+        error_at_string(source_file->path, source_file->src, ast_str, msg __VA_OPT__(, ) __VA_ARGS__); \
+    } while (0)
 
 // emit a warning that highlights an AST node
-#define warning_at_node(module, node, msg, ...) do { \
-    string ast_str = str_from_tokens(*((node).base->start), *((node).base->end));                   \
-    mars_file* source_file = find_source_file((module), ast_str);                                   \
-    if (source_file == NULL) CRASH("source file not found for AST node");                           \
-    warning_at_string(source_file->path, source_file->src, ast_str, msg __VA_OPT__(,) __VA_ARGS__); \
-} while (0)
+#define warning_at_node(module, node, msg, ...)                                                          \
+    do {                                                                                                 \
+        string ast_str = str_from_tokens(*((node).base->start), *((node).base->end));                    \
+        mars_file* source_file = find_source_file((module), ast_str);                                    \
+        if (source_file == NULL) CRASH("source file not found for AST node");                            \
+        warning_at_string(source_file->path, source_file->src, ast_str, msg __VA_OPT__(, ) __VA_ARGS__); \
+    } while (0)
 
 typedef struct checked_expr {
     AST expr;
 
     Type* type;
-    exact_value* ev; // for if is compile time constant
+    exact_value* ev;      // for if is compile time constant
     bool use_returns : 1; // use return list of type* as the type. for functions that return multiple things
 
-    bool mutable       : 1;
-    bool addressable   : 1;
-    bool local_ref     : 1; // so that we can warn against returning local pointers and shit
+    bool mutable : 1;
+    bool addressable : 1;
+    bool local_ref : 1; // so that we can warn against returning local pointers and shit
     bool local_derived : 1;
 } checked_expr;
 
@@ -52,7 +54,6 @@ Type* operation_to_type(token* tok);
 bool check_type_cast_implicit(Type* lhs, Type* rhs);
 bool check_type_cast_explicit(Type* lhs, Type* rhs);
 bool check_assign_op(token* op, Type* lhs, Type* rhs);
-
 
 /*
 void check_stmt(mars_module* mod, entity_table* et, ast_func_literal_expr* fn, AST stmt, bool global);

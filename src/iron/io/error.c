@@ -30,6 +30,6 @@ void fe_print_report(FeReport msg) {
     case FE_MSG_SEVERITY_WARNING: printf(STYLE_FG_Yellow "WARNING" STYLE_Reset); break;
     case FE_MSG_SEVERITY_LOG: printf(STYLE_FG_Green "LOG" STYLE_Reset); break;
     }
-    printf(" in "STYLE_Bold"%s"STYLE_Reset"(): ", msg.function_of_origin);
+    printf(" in " STYLE_Bold "%s" STYLE_Reset "(): ", msg.function_of_origin);
     printf("%s\n", msg.message);
 }

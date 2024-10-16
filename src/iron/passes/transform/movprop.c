@@ -16,7 +16,6 @@ static void function_movprop(FeFunction* fn) {
             fe_rewrite_ir_uses(fn, inst, ((FeIrMov*)inst)->source);
             fe_remove_ir(inst);
         }
-
     }
 }
 

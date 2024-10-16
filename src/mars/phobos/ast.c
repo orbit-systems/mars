@@ -146,9 +146,9 @@ void dump_tree(AST node, int n) {
         }
         break;
     case AST_decl_stmt:
-        if (node.as_decl_stmt->is_mut) 
+        if (node.as_decl_stmt->is_mut)
             printf("mut decl\n");
-        else 
+        else
             printf("let decl\n");
 
         for_urange(i, 0, node.as_decl_stmt->lhs.len) {
@@ -181,8 +181,8 @@ void dump_tree(AST node, int n) {
         dump_tree(node.as_enum_type_expr->backing_type, n+1);
         for_urange(i, 0, node.as_enum_type_expr->variants.len) {
             print_indent(n+1);
-            printstr((node.as_enum_type_expr->variants.at[i].ident.as_identifier_expr->tok->text)); 
-            
+            printstr((node.as_enum_type_expr->variants.at[i].ident.as_identifier_expr->tok->text));
+
             printf(" = %ld\n", node.as_enum_type_expr->variants.at[i].value);
         }
         break;
@@ -204,7 +204,7 @@ void dump_tree(AST node, int n) {
         dump_tree(node.as_func_literal_expr->type, n+1);
         dump_tree(node.as_func_literal_expr->code_block, n+1);
         break;
-    
+
     default:
         printf("unimplemented %d '%s'\n", node.type, ast_type_str[node.type]);
         break;

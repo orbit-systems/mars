@@ -18,7 +18,7 @@ typedef struct {
 da_typedef(mars_file);
 
 typedef struct {
-    struct mars_module ** at;
+    struct mars_module** at;
     size_t len;
     size_t cap;
 } module_list;
@@ -44,12 +44,11 @@ typedef char* cstring;
 
 da_typedef(cstring);
 
-
 mars_module* parse_module(string input_path);
 
 // creates a compilation unit from a list of parsers.
 // stitches the unchecked ASTs together and such
-mars_module* create_module(da(parser)* pl, Arena alloca);
+mars_module* create_module(da(parser) * pl, Arena alloca);
 
 // find the source file of a snippet of code
 // NOTE: the snippet must be an actual substring (is_within() must return true) of one of the files

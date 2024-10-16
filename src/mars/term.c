@@ -48,8 +48,8 @@ noreturn void error_at_string(string path, string text, string pos, char* messag
     int column = 1;
     char* line_ptr = text.raw - 1;
     int line_len = 0;
-    line_and_col(text, pos.raw-text.raw, &line_ptr, &line_len, &line, &column);
-    if (line_ptr[line_len-1] == '\r') line_len--; // stupid windows line breaks
+    line_and_col(text, pos.raw - text.raw, &line_ptr, &line_len, &line, &column);
+    if (line_ptr[line_len - 1] == '\r') line_len--; // stupid windows line breaks
 
     printf(STYLE_Italic STYLE_Bold);
     printstr(path);
@@ -70,10 +70,11 @@ noreturn void error_at_string(string path, string text, string pos, char* messag
     printf(STYLE_Reset);
 
     for (int i = 0; i < line_len; i++) {
-        if (is_whitespace(line_ptr[i]));
+        if (is_whitespace(line_ptr[i]))
+            ;
 
-        if (column-1 == i) printf(STYLE_FG_Red STYLE_Bold);
-        if (column-1 + pos.len == i) printf(STYLE_Reset);
+        if (column - 1 == i) printf(STYLE_FG_Red STYLE_Bold);
+        if (column - 1 + pos.len == i) printf(STYLE_Reset);
         putchar(line_ptr[i]);
     }
     printf(STYLE_Reset);
@@ -103,7 +104,7 @@ noreturn void error_at_string(string path, string text, string pos, char* messag
 }
 
 void warning_at_string(string path, string text, string pos, char* message, ...) {
-    
+
     /*printf("---\n");
 
     printf("["str_fmt"]", str_arg(pos));
@@ -124,7 +125,7 @@ void warning_at_string(string path, string text, string pos, char* message, ...)
     int column = 1;
     char* line_ptr = text.raw;
     int line_len = 0;
-    line_and_col(text, pos.raw-text.raw, &line_ptr, &line_len, &line, &column);
+    line_and_col(text, pos.raw - text.raw, &line_ptr, &line_len, &line, &column);
 
     printstr(path);
     printf(" @ %d:%d ", line, column);
@@ -148,17 +149,16 @@ void warning_at_string(string path, string text, string pos, char* message, ...)
     printf("\n   % 4d | ", line);
     printf(STYLE_Reset);
     for (int i = 0; i < line_len; i++) {
-        if (column-1 == i) printf(STYLE_FG_Yellow STYLE_Bold);
-        if (column-1 + pos.len == i) printf(STYLE_Reset);
+        if (column - 1 == i) printf(STYLE_FG_Yellow STYLE_Bold);
+        if (column - 1 + pos.len == i) printf(STYLE_Reset);
         putchar(line_ptr[i]);
     }
     printf(STYLE_Reset);
     printf(STYLE_Dim);
     printf("\n        | ");
     printf(STYLE_Reset);
-    
-    while (column-- > 1) printf(" ");
 
+    while (column-- > 1) printf(" ");
 
     printf(STYLE_FG_Yellow);
     printf(STYLE_Bold);
@@ -182,7 +182,7 @@ void warning_at_string(string path, string text, string pos, char* message, ...)
 }
 
 void line_and_col(string text, size_t position, char** last_newline, int* restrict line_len, int* restrict line, int* restrict col) {
-    
+
     int l = 0;
     int c = 0;
 

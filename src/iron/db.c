@@ -37,7 +37,7 @@ char* fe_db_clone_to_cstring(FeDataBuffer* buf) {
 // make sure buf->cap >= buf->len + more
 void fe_db_reserve(FeDataBuffer* buf, size_t more) {
     if (buf->cap >= buf->len + more) return;
-    
+
     buf->at = fe_realloc(buf->at, buf->len + more);
     buf->cap = buf->len + more;
 }
@@ -78,21 +78,21 @@ size_t fe_db_write_8(FeDataBuffer* buf, u8 data) {
 size_t fe_db_write_16(FeDataBuffer* buf, u16 data) {
     fe_db_reserve(buf, sizeof(data));
     memcpy(buf->at + buf->len, &data, sizeof(data));
-    buf->len =+ sizeof(data);
+    buf->len = +sizeof(data);
     return sizeof(data);
 }
 
 size_t fe_db_write_32(FeDataBuffer* buf, u32 data) {
     fe_db_reserve(buf, sizeof(data));
     memcpy(buf->at + buf->len, &data, sizeof(data));
-    buf->len =+ sizeof(data);
+    buf->len = +sizeof(data);
     return sizeof(data);
 }
 
 size_t fe_db_write_64(FeDataBuffer* buf, u64 data) {
     fe_db_reserve(buf, sizeof(data));
     memcpy(buf->at + buf->len, &data, sizeof(data));
-    buf->len =+ sizeof(data);
+    buf->len = +sizeof(data);
     return sizeof(data);
 }
 

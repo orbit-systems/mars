@@ -44,7 +44,7 @@ static void advance(Lexer* l) {
     if (l->index <= l->src.len) {
         l->index++;
         l->current = l->src.raw[l->index];
-    } 
+    }
 }
 
 static bool is_eof(Lexer* l) {
@@ -130,11 +130,11 @@ static Token next_token(Lexer* l) {
 static void* new_ast(Parser* p, u8 kind) {
     Ast* n;
     switch (kind) {
-    case AST_NULL:    n = arena_alloc(&p->node_alloca, sizeof(Ast),        alignof(Ast));        break;
+    case AST_NULL: n = arena_alloc(&p->node_alloca, sizeof(Ast), alignof(Ast)); break;
     case AST_NUMERIC: n = arena_alloc(&p->node_alloca, sizeof(AstNumeric), alignof(AstNumeric)); break;
-    case AST_STRING:  n = arena_alloc(&p->node_alloca, sizeof(AstString),  alignof(AstString));  break;
-    case AST_IDENT:   n = arena_alloc(&p->node_alloca, sizeof(AstIdent),   alignof(AstIdent));   break;
-    case AST_LIST:    n = arena_alloc(&p->node_alloca, sizeof(AstList),    alignof(AstList));    break;
+    case AST_STRING: n = arena_alloc(&p->node_alloca, sizeof(AstString), alignof(AstString)); break;
+    case AST_IDENT: n = arena_alloc(&p->node_alloca, sizeof(AstIdent), alignof(AstIdent)); break;
+    case AST_LIST: n = arena_alloc(&p->node_alloca, sizeof(AstList), alignof(AstList)); break;
     default:
         CRASH("");
         break;
@@ -182,7 +182,7 @@ static u8 hex_value(char c) {
 static string string_value(string s) {
     s.len -= 2;
     s.raw += 1; // trim ""
-    
+
     string val = {0};
     for_range(i, 0, s.len) {
         char c = s.raw[i];
@@ -200,7 +200,7 @@ static string string_value(string s) {
         char c = s.raw[i];
         if (c == '\\') {
             u8 v = hex_value(s.raw[i + 1]);
-            v   += hex_value(s.raw[i + 2]);
+            v += hex_value(s.raw[i + 2]);
             val.raw[val_cursor] = v;
             i += 2;
         } else {
@@ -224,11 +224,11 @@ static Ast* parse_list(Parser* p) {
     n->this = parse(p);
     n->base.token_index = n->this->token_index;
     n->next = parse_list(p);
-    return (Ast*) n;
+    return (Ast*)n;
 }
 
 Ast* parse(Parser* p) {
-    
+
     // string tokenstr = token_string(p, p->current);
     // printf("-- "str_fmt"\n", str_arg(tokenstr));
 
@@ -250,13 +250,13 @@ Ast* parse(Parser* p) {
         break;
     case TOK_NUMERIC:
         n = new_ast(p, AST_NUMERIC);
-        AstNumeric* numeric = (AstNumeric*) n;
+        AstNumeric* numeric = (AstNumeric*)n;
         numeric->value = numeric_value(token_string(p, p->current));
         advance_token(p);
         break;
     case TOK_STRING:
         n = new_ast(p, AST_STRING);
-        AstString* str = (AstString*) n;
+        AstString* str = (AstString*)n;
         str->value = string_value(token_string(p, p->current));
         advance_token(p);
         break;

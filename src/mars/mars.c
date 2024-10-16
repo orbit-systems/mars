@@ -16,7 +16,6 @@
 #include "iron/iron.h"
 #include "iron/codegen/x64/x64.h"
 
-
 #include "common/ptrmap.h"
 
 flag_set mars_flags;
@@ -24,23 +23,21 @@ flag_set mars_flags;
 FeModule* irgen_module(mars_module* mars);
 
 int main(int argc, char** argv) {
-    #ifndef _WIN32
-        init_signal_handler();
-    #endif
+#ifndef _WIN32
+    init_signal_handler();
+#endif
 
     load_arguments(argc, argv, &mars_flags);
 
-    mars_module* main_mod = parse_module(mars_flags.input_path);  
-      
+    mars_module* main_mod = parse_module(mars_flags.input_path);
 
-    if (mars_flags.output_dot == true) {  
+    if (mars_flags.output_dot == true) {
         emit_dot(str("test"), main_mod->program_tree);
-    }   
+    }
     // recursive check
     check_module(main_mod);
-    
-    printf("attempt IR generation\n");
 
+    printf("attempt IR generation\n");
 
     FeModule* iron_module = irgen_module(main_mod);
 
@@ -86,7 +83,7 @@ cmd_arg make_argument(char* s) {
     for (size_t i = 0; s[i] != '\0'; i++) {
         if (s[i] == ':') {
             s[i] = '\0';
-            return (cmd_arg){str(s), str(s+i+1)};
+            return (cmd_arg){str(s), str(s + i + 1)};
         }
     }
     return (cmd_arg){str(s), NULL_STR};
@@ -146,12 +143,12 @@ void load_arguments(int argc, char* argv[], flag_set* fl) {
         } else if (string_eq(a.key, str("-target"))) {
             set_target_triple(a.val, fl);
         } else {
-            general_error("unrecognized option \""str_fmt"\"", str_arg(a.key));
+            general_error("unrecognized option \"" str_fmt "\"", str_arg(a.key));
         }
     }
 
     if (fl->target_arch == -1 || fl->target_system == -1 || fl->target_product == -1) {
-        printf("No target selected, defaulting to "str_fmt "\n", str_arg(DEFAULT_TARGET));
+        printf("No target selected, defaulting to " str_fmt "\n", str_arg(DEFAULT_TARGET));
         set_target_triple(DEFAULT_TARGET, fl);
         return;
     }

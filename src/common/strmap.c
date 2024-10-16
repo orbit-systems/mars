@@ -4,7 +4,7 @@
 
 static u64 FNV_1a(string key) {
     const u64 FNV_OFFSET = 14695981039346656037ull;
-    const u64 FNV_PRIME  = 1099511628211ull;
+    const u64 FNV_PRIME = 1099511628211ull;
 
     u64 hash = FNV_OFFSET;
     for_urange(i, 0, key.len) {
@@ -16,10 +16,10 @@ static u64 FNV_1a(string key) {
 
 void strmap_init(StrMap* hm, size_t capacity) {
     hm->cap = capacity;
-    hm->vals = malloc(sizeof(hm->vals[0])*hm->cap);
-    hm->keys = malloc(sizeof(hm->keys[0])*hm->cap);
-    memset(hm->vals, 0, sizeof(hm->vals[0])*hm->cap);
-    memset(hm->keys, 0, sizeof(hm->keys[0])*hm->cap);
+    hm->vals = malloc(sizeof(hm->vals[0]) * hm->cap);
+    hm->keys = malloc(sizeof(hm->keys[0]) * hm->cap);
+    memset(hm->vals, 0, sizeof(hm->vals[0]) * hm->cap);
+    memset(hm->keys, 0, sizeof(hm->keys[0]) * hm->cap);
 }
 
 void strmap_destroy(StrMap* hm) {
@@ -41,7 +41,7 @@ void strmap_put(StrMap* hm, string key, void* val) {
     }
 
     // search for nearby free slot
-    for_urange (index, 1, min(MAX_SEARCH, hm->cap)) {
+    for_urange(index, 1, min(MAX_SEARCH, hm->cap)) {
         size_t i = (index + hash_index) % hm->cap;
         if ((hm->keys[i].raw == NULL) || string_eq(hm->keys[i], key)) {
             hm->keys[i] = key;
@@ -52,7 +52,7 @@ void strmap_put(StrMap* hm, string key, void* val) {
 
     // we gotta resize
     StrMap new_hm;
-    strmap_init(&new_hm, hm->cap*2);
+    strmap_init(&new_hm, hm->cap * 2);
 
     // copy all the old entries into the new hashmap
     for (size_t i = 0; i < hm->cap; i++) {
@@ -77,7 +77,7 @@ void* strmap_get(StrMap* hm, string key) {
     }
 
     // linear search next slots
-    for_urange (index, 1, min(MAX_SEARCH, hm->cap)) {
+    for_urange(index, 1, min(MAX_SEARCH, hm->cap)) {
         size_t i = (index + hash_index) % hm->cap;
         if (hm->keys[i].raw == NULL) return STRMAP_NOT_FOUND;
         if (string_eq(hm->keys[i], key)) return hm->vals[i];
@@ -98,7 +98,7 @@ void strmap_remove(StrMap* hm, string key) {
     }
 
     // linear search next slots
-    for_urange (index, 1, min(MAX_SEARCH, hm->cap)) {
+    for_urange(index, 1, min(MAX_SEARCH, hm->cap)) {
         size_t i = (index + hash_index) % hm->cap;
         if (hm->keys[i].raw == NULL) return;
         if (string_eq(hm->keys[i], key)) {
@@ -110,6 +110,6 @@ void strmap_remove(StrMap* hm, string key) {
 }
 
 void strmap_reset(StrMap* hm) {
-    memset(hm->vals, 0, sizeof(hm->vals[0])*hm->cap);
-    memset(hm->keys, 0, sizeof(hm->keys[0])*hm->cap);
+    memset(hm->vals, 0, sizeof(hm->vals[0]) * hm->cap);
+    memset(hm->keys, 0, sizeof(hm->keys[0]) * hm->cap);
 }

@@ -33,33 +33,32 @@
 
 // #define set_style(style) printf("\x1b[%dm", style)
 
-
 // use C's string literal concatenation
 
-#define STYLE_Reset  "\x1b[0m"
-#define STYLE_Bold   "\x1b[1m"
-#define STYLE_Dim    "\x1b[2m"
+#define STYLE_Reset "\x1b[0m"
+#define STYLE_Bold "\x1b[1m"
+#define STYLE_Dim "\x1b[2m"
 #define STYLE_Italic "\x1b[3m"
 
-#define STYLE_FG_Black    "\x1b[30m"
-#define STYLE_FG_Red      "\x1b[31m"
-#define STYLE_FG_Green    "\x1b[32m"
-#define STYLE_FG_Yellow   "\x1b[33m"
-#define STYLE_FG_Blue     "\x1b[34m"
-#define STYLE_FG_Magenta  "\x1b[35m"
-#define STYLE_FG_Cyan     "\x1b[36m"
-#define STYLE_FG_White    "\x1b[37m"
-#define STYLE_FG_Default  "\x1b[39m"
+#define STYLE_FG_Black "\x1b[30m"
+#define STYLE_FG_Red "\x1b[31m"
+#define STYLE_FG_Green "\x1b[32m"
+#define STYLE_FG_Yellow "\x1b[33m"
+#define STYLE_FG_Blue "\x1b[34m"
+#define STYLE_FG_Magenta "\x1b[35m"
+#define STYLE_FG_Cyan "\x1b[36m"
+#define STYLE_FG_White "\x1b[37m"
+#define STYLE_FG_Default "\x1b[39m"
 
-#define STYLE_BG_Black    "\x1b[40m"
-#define STYLE_BG_Red      "\x1b[41m"
-#define STYLE_BG_Green    "\x1b[42m"
-#define STYLE_BG_Yellow   "\x1b[43m"
-#define STYLE_BG_Blue     "\x1b[44m"
-#define STYLE_BG_Magenta  "\x1b[45m"
-#define STYLE_BG_Cyan     "\x1b[46m"
-#define STYLE_BG_White    "\x1b[47m"
-#define STYLE_BG_Default  "\x1b[49m"
+#define STYLE_BG_Black "\x1b[40m"
+#define STYLE_BG_Red "\x1b[41m"
+#define STYLE_BG_Green "\x1b[42m"
+#define STYLE_BG_Yellow "\x1b[43m"
+#define STYLE_BG_Blue "\x1b[44m"
+#define STYLE_BG_Magenta "\x1b[45m"
+#define STYLE_BG_Cyan "\x1b[46m"
+#define STYLE_BG_White "\x1b[47m"
+#define STYLE_BG_Default "\x1b[49m"
 
 void error_at_string(string path, string text, string pos, char* message, ...);
 void warning_at_string(string path, string text, string pos, char* message, ...);

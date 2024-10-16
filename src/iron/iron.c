@@ -22,12 +22,12 @@ void fe_destroy_module(FeModule* m) {
     // destroy symbol table.
     arena_delete(&m->symtab.alloca);
     da_destroy(&m->symtab);
-    
+
     // destroy typegraph
     arena_delete(&m->typegraph.alloca);
     da_destroy(&m->typegraph);
 
-    for_urange (i, 0, m->functions_len) {
+    for_urange(i, 0, m->functions_len) {
         fe_destroy_function(m->functions[i]);
     }
     fe_free(m->functions);
@@ -41,7 +41,7 @@ void fe_destroy_function(FeFunction* f) {
     fe_free(f->params.at);
     fe_free(f->returns.at);
     da_destroy(&f->stack);
-    foreach(FeBasicBlock* bb, f->blocks) {
+    foreach (FeBasicBlock* bb, f->blocks) {
         fe_destroy_basic_block(bb);
     }
     da_destroy(&f->blocks);

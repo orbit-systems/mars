@@ -2,11 +2,11 @@
 #include "iron/codegen/mach.h"
 #include "iron/codegen/x64/x64.h"
 
-#define FE_FATAL(m, msg) fe_push_report(m, (FeReport){ \
-    .function_of_origin = __func__,\
-    .message = (msg),\
-    .severity = FE_MSG_SEVERITY_FATAL, \
-})
+#define FE_FATAL(m, msg) fe_push_report(m, (FeReport){                            \
+                                               .function_of_origin = __func__,    \
+                                               .message = (msg),                  \
+                                               .severity = FE_MSG_SEVERITY_FATAL, \
+                                           })
 
 u32 fe_mach_get_vreg(FeMachBuffer* buf, FeMachInst* inst, u8 index) {
     return buf->vreg_lists.at[inst->regs + index];
@@ -17,17 +17,17 @@ void fe_mach_set_vreg(FeMachBuffer* buf, FeMachInst* inst, u8 index, u32 vreg) {
 }
 
 static size_t mach_sizes[] = {
-    [FE_MACH_SECTION]        = sizeof(FeMachSection),
+    [FE_MACH_SECTION] = sizeof(FeMachSection),
     [FE_MACH_LIFETIME_BEGIN] = sizeof(FeMachLifetimePoint),
-    [FE_MACH_LIFETIME_END]   = sizeof(FeMachLifetimePoint),
+    [FE_MACH_LIFETIME_END] = sizeof(FeMachLifetimePoint),
 
     [FE_MACH_CFG_BEGIN] = sizeof(FeMach),
-    [FE_MACH_CFG_END]   = sizeof(FeMach),
+    [FE_MACH_CFG_END] = sizeof(FeMach),
 
-    [FE_MACH_LABEL_LOCAL]    = sizeof(FeMachLocalLabel),
-    [FE_MACH_LABEL_GLOBAL]   = sizeof(FeMachGlobalLabel),
+    [FE_MACH_LABEL_LOCAL] = sizeof(FeMachLocalLabel),
+    [FE_MACH_LABEL_GLOBAL] = sizeof(FeMachGlobalLabel),
 
-    [FE_MACH_INST]           = sizeof(FeMachInst),
+    [FE_MACH_INST] = sizeof(FeMachInst),
 
     [_FE_MACH_MAX] = 0,
 };
@@ -47,19 +47,19 @@ FeMach* fe_mach_append(FeMachBuffer* buf, FeMach* inst) {
 }
 
 FeMach* fe_mach_new_lifetime_begin(FeMachBuffer* buf, u32 vreg) {
-    FeMachLifetimePoint* m = (FeMachLifetimePoint*) fe_mach_new(buf, FE_MACH_LIFETIME_BEGIN);
+    FeMachLifetimePoint* m = (FeMachLifetimePoint*)fe_mach_new(buf, FE_MACH_LIFETIME_BEGIN);
     m->vreg = vreg;
-    return (FeMach*) m;
+    return (FeMach*)m;
 }
 
 FeMach* fe_mach_new_lifetime_end(FeMachBuffer* buf, u32 vreg) {
-    FeMachLifetimePoint* m = (FeMachLifetimePoint*) fe_mach_new(buf, FE_MACH_LIFETIME_END);
+    FeMachLifetimePoint* m = (FeMachLifetimePoint*)fe_mach_new(buf, FE_MACH_LIFETIME_END);
     m->vreg = vreg;
-    return (FeMach*) m;
+    return (FeMach*)m;
 }
 
 FeMachInst* fe_mach_new_inst(FeMachBuffer* buf, u16 template_index) {
-    FeMachInst* inst = (FeMachInst*) fe_mach_new(buf, FE_MACH_INST);
+    FeMachInst* inst = (FeMachInst*)fe_mach_new(buf, FE_MACH_INST);
     FeMachInstTemplate* templ = &buf->target.inst_templates[template_index];
     inst->template = template_index;
     inst->regs = buf->vreg_lists.len;
@@ -96,7 +96,7 @@ FeMachBuffer fe_mach_codegen(FeModule* m) {
     FeMachBuffer mb;
     switch (m->target.arch) {
     case FE_ARCH_X64:
-        mb = fe_x64_codegen(m); 
+        mb = fe_x64_codegen(m);
         break;
     default:
         FE_FATAL(m, "unsupported architecture");
@@ -116,11 +116,11 @@ u32 fe_mach_new_vreg(FeMachBuffer* buf, u8 regclass) {
 // "native" (pointer-sized) integer type for an architecture.
 FeType fe_mach_type_of_native_int(u16 arch) {
     switch (arch) {
-    case FE_ARCH_X64:      return FE_TYPE_I64;
+    case FE_ARCH_X64: return FE_TYPE_I64;
     case FE_ARCH_APHELION: return FE_TYPE_I64;
-    case FE_ARCH_ARM64:    return FE_TYPE_I64;
-    case FE_ARCH_XR17032:  return FE_TYPE_I32;
-    case FE_ARCH_FOX32:    return FE_TYPE_I32;
+    case FE_ARCH_ARM64: return FE_TYPE_I64;
+    case FE_ARCH_XR17032: return FE_TYPE_I32;
+    case FE_ARCH_FOX32: return FE_TYPE_I32;
     default: CRASH("unknown arch");
     }
 }
@@ -130,11 +130,11 @@ FeType fe_mach_type_of_native_int(u16 arch) {
 // returns FE_TYPE_VOID if there's no native floating-point
 FeType fe_mach_type_of_native_float(u16 arch) {
     switch (arch) {
-    case FE_ARCH_X64:      return FE_TYPE_F64;
+    case FE_ARCH_X64: return FE_TYPE_F64;
     case FE_ARCH_APHELION: return FE_TYPE_F64;
-    case FE_ARCH_ARM64:    return FE_TYPE_F64;
-    case FE_ARCH_XR17032:  return FE_TYPE_VOID;
-    case FE_ARCH_FOX32:    return FE_TYPE_VOID;
+    case FE_ARCH_ARM64: return FE_TYPE_F64;
+    case FE_ARCH_XR17032: return FE_TYPE_VOID;
+    case FE_ARCH_FOX32: return FE_TYPE_VOID;
     default: CRASH("unknown arch");
     }
 }

@@ -54,13 +54,12 @@ enum {
     // an alias is an "entry point" for the type graph
     // an outside system can point to an alias and
     // the canonicalizer will make sure the alias never becomes invalid
-    // references to an alias type get canonicalized into 
+    // references to an alias type get canonicalized into
     // references to the underlying type
     TYPE_ALIAS,
     // like an alias, except checks against other types always fail.
     // references do not get canonicalized away like aliases
     TYPE_DISTINCT,
-
 };
 
 typedef struct Type Type;
@@ -70,14 +69,14 @@ da_typedef(TypePTR);
 typedef struct TypeStructField {
     string name;
     Type* subtype;
-    u64   offset;
+    u64 offset;
 } TypeStructField;
 
 da_typedef(TypeStructField);
 
 typedef struct TypeEnumVariant {
     string name;
-    i64   enum_val;
+    i64 enum_val;
 } TypeEnumVariant;
 
 da_typedef(TypeEnumVariant);
@@ -88,7 +87,7 @@ typedef struct Type {
             string name; // only used by TYPE_ALIAS
             Type* subtype;
             bool mutable; // only used by pointers and slices
-        } as_reference; // used by TYPE_POINTER, TYPE_SLICE, TYPE_ALIAS, and TYPE_DISTINCT
+        } as_reference;   // used by TYPE_POINTER, TYPE_SLICE, TYPE_ALIAS, and TYPE_DISTINCT
         struct {
             Type* subtype;
             u64 len;
@@ -122,21 +121,21 @@ typedef struct {
 
 extern TypeGraph typegraph;
 
-void  make_type_graph();
+void make_type_graph();
 Type* make_type(u8 tag);
 
-void  type_add_param(Type* s, Type* sub);
+void type_add_param(Type* s, Type* sub);
 Type* type_get_param(Type* s, size_t i);
-void  type_add_return(Type* s, Type* sub);
+void type_add_return(Type* s, Type* sub);
 Type* type_get_return(Type* s, size_t i);
 
 void type_add_field(Type* s, string name, Type* sub);
 TypeStructField* type_get_field(Type* s, size_t i);
 void type_add_variant(Type* e, string name, i64 val);
 TypeEnumVariant* type_get_variant(Type* e, size_t i);
-void  type_set_target(Type* p, Type* dest);
+void type_set_target(Type* p, Type* dest);
 Type* type_get_target(Type* p);
-u64   type_get_index(Type* t);
+u64 type_get_index(Type* t);
 
 Type* type_get_from_num(u16 num, int num_set);
 bool type_equivalent(Type* a, Type* b, bool* executed_TSA);
@@ -152,7 +151,7 @@ void print_type_graph();
 bool type_enum_variant_less(TypeEnumVariant* a, TypeEnumVariant* b);
 
 u32 type_real_size_of(Type* t);
-u32 type_real_align_of(Type*t);
+u32 type_real_align_of(Type* t);
 
 bool type_is_infinite(Type* t);
 

@@ -6,9 +6,10 @@
 
 typedef struct exact_value exact_value;
 
-typedef u8 exact_value_kind; enum {
+typedef u8 exact_value_kind;
+enum {
     EV_INVALID,
-    
+
     EV_BOOL,
     EV_STRING,
     EV_UNTYPED_INT,
@@ -27,11 +28,11 @@ typedef u8 exact_value_kind; enum {
     EV_F16,
     EV_F32,
     EV_F64,
-    
+
     EV_POINTER,
     EV_AGGREGATE,
-    // EV_TRUSTMEBRO, 
-    /* the checker can't determine what the value is, 
+    // EV_TRUSTMEBRO,
+    /* the checker can't determine what the value is,
        but it WILL be constant at compile time. this is
        usually due to pointer shenangians, where the value of the pointer
        will be known by the backend but isn't known by the frontend */
@@ -39,26 +40,26 @@ typedef u8 exact_value_kind; enum {
 
 typedef struct exact_value {
     union {
-        bool    as_bool;
-        string  as_string;
-        i64     as_untyped_int;
-        f64     as_untyped_float;
+        bool as_bool;
+        string as_string;
+        i64 as_untyped_int;
+        f64 as_untyped_float;
 
-        u8      as_u8;
-        u16     as_u16;
-        u32     as_u32;
-        u64     as_u64;
+        u8 as_u8;
+        u16 as_u16;
+        u32 as_u32;
+        u64 as_u64;
 
-        i8      as_i8;
-        i16     as_i16;
-        i32     as_i32;
-        i64     as_i64;
+        i8 as_i8;
+        i16 as_i16;
+        i32 as_i32;
+        i64 as_i64;
 
-        f64     as_f64;
-        f32     as_f32;
-        f16     as_f16;
+        f64 as_f64;
+        f32 as_f32;
+        f16 as_f16;
 
-        u64     as_pointer;
+        u64 as_pointer;
 
         struct {
             exact_value** vals; // REMEMBER TO ALLOCATE! its not a DA so this is manual

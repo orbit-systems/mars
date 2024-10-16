@@ -25,8 +25,8 @@ ColumnLimit: 0
 # ^^^ dont abuse this please 
 # if a line is too long, i count on you to fix it yourself... for now
 
-IncludeBlocks: Regroup
-SortIncludes: CaseInsensitive
+IncludeBlocks: Preserve
+SortIncludes: false # oh my god this one caused so many headaches
 
 PointerAlignment: Left
 QualifierAlignment: Left

@@ -9,25 +9,23 @@
 // sincerely, sandwichman
 
 static void emit_prelude(FeModule* m, StringBuilder* sb) {
-    sb_append_c(sb, 
-        "#include <stdint.h>\n"
-        "typedef uint64_t  u64;\n"
-        "typedef uint32_t  u32;\n"
-        "typedef uint16_t  u16;\n"
-        "typedef uint8_t   u8;\n"
-        "typedef int64_t   i64;\n"
-        "typedef int32_t   i32;\n"
-        "typedef int16_t   i16;\n"
-        "typedef int8_t    i8;\n"
-        "typedef double    f64;\n"
-        "typedef float     f32;\n"
-        "typedef _Float16  f16;\n"
-        "typedef uint8_t   bool;\n"
-        "typedef uint8_t*  ptr;\n"
-        "#define false     ((bool)0)\n"
-        "#define true      ((bool)1)\n"
-        "\n"
-    );
+    sb_append_c(sb, "#include <stdint.h>\n"
+                    "typedef uint64_t  u64;\n"
+                    "typedef uint32_t  u32;\n"
+                    "typedef uint16_t  u16;\n"
+                    "typedef uint8_t   u8;\n"
+                    "typedef int64_t   i64;\n"
+                    "typedef int32_t   i32;\n"
+                    "typedef int16_t   i16;\n"
+                    "typedef int8_t    i8;\n"
+                    "typedef double    f64;\n"
+                    "typedef float     f32;\n"
+                    "typedef _Float16  f16;\n"
+                    "typedef uint8_t   bool;\n"
+                    "typedef uint8_t*  ptr;\n"
+                    "#define false     ((bool)0)\n"
+                    "#define true      ((bool)1)\n"
+                    "\n");
 }
 
 PtrMap sym2ident = {0};
@@ -44,7 +42,7 @@ static string normalized_identifier(FeModule* m, void* entity, string name) {
     }
 
     bool is_normal = true;
-    for_range (i, 0, name.len) {
+    for_range(i, 0, name.len) {
         char c = name.raw[i];
         if ('a' <= c && c <= 'z') continue;
         if ('A' <= c && c <= 'A') continue;
@@ -78,7 +76,7 @@ static string normalized_identifier(FeModule* m, void* entity, string name) {
 // takes in i8, emits (u8), etc.
 static char* signed_to_unsigned_cast(FeType t) {
     switch (t) {
-    case FE_TYPE_I8:  return "(u8)";
+    case FE_TYPE_I8: return "(u8)";
     case FE_TYPE_I16: return "(u16)";
     case FE_TYPE_I32: return "(u32)";
     case FE_TYPE_I64: return "(u64)";
@@ -90,32 +88,32 @@ static char* signed_to_unsigned_cast(FeType t) {
 static void emit_type_name(FeType t, StringBuilder* sb) {
     switch (t) {
     case FE_TYPE_VOID: sb_append_c(sb, "void "); break;
-    case FE_TYPE_PTR:  sb_append_c(sb, "ptr "); break;
-    case FE_TYPE_I8:   sb_append_c(sb, "i8 "); break;
-    case FE_TYPE_I16:  sb_append_c(sb, "i16 "); break;
-    case FE_TYPE_I32:  sb_append_c(sb, "i32 "); break;
-    case FE_TYPE_I64:  sb_append_c(sb, "i64 "); break;
-    case FE_TYPE_F16:  sb_append_c(sb, "f16 "); break;
-    case FE_TYPE_F32:  sb_append_c(sb, "f32 "); break;
-    case FE_TYPE_F64:  sb_append_c(sb, "f64 "); break;
+    case FE_TYPE_PTR: sb_append_c(sb, "ptr "); break;
+    case FE_TYPE_I8: sb_append_c(sb, "i8 "); break;
+    case FE_TYPE_I16: sb_append_c(sb, "i16 "); break;
+    case FE_TYPE_I32: sb_append_c(sb, "i32 "); break;
+    case FE_TYPE_I64: sb_append_c(sb, "i64 "); break;
+    case FE_TYPE_F16: sb_append_c(sb, "f16 "); break;
+    case FE_TYPE_F32: sb_append_c(sb, "f32 "); break;
+    case FE_TYPE_F64: sb_append_c(sb, "f64 "); break;
     case FE_TYPE_BOOL: sb_append_c(sb, "bool "); break;
-    default:      sb_printf(sb, "_type_%p ", t); break;
+    default: sb_printf(sb, "_type_%p ", t); break;
     }
 }
 
 static void emit_type_ptr(FeType t, StringBuilder* sb) {
 
     switch (t) {
-    case FE_TYPE_PTR:  sb_append_c(sb, "ptr* "); break;
-    case FE_TYPE_I8:   sb_append_c(sb, "i8* "); break;
-    case FE_TYPE_I16:  sb_append_c(sb, "i16* "); break;
-    case FE_TYPE_I32:  sb_append_c(sb, "i32* "); break;
-    case FE_TYPE_I64:  sb_append_c(sb, "i64* "); break;
-    case FE_TYPE_F16:  sb_append_c(sb, "f16* "); break;
-    case FE_TYPE_F32:  sb_append_c(sb, "f32* "); break;
-    case FE_TYPE_F64:  sb_append_c(sb, "f64* "); break;
+    case FE_TYPE_PTR: sb_append_c(sb, "ptr* "); break;
+    case FE_TYPE_I8: sb_append_c(sb, "i8* "); break;
+    case FE_TYPE_I16: sb_append_c(sb, "i16* "); break;
+    case FE_TYPE_I32: sb_append_c(sb, "i32* "); break;
+    case FE_TYPE_I64: sb_append_c(sb, "i64* "); break;
+    case FE_TYPE_F16: sb_append_c(sb, "f16* "); break;
+    case FE_TYPE_F32: sb_append_c(sb, "f32* "); break;
+    case FE_TYPE_F64: sb_append_c(sb, "f64* "); break;
     case FE_TYPE_BOOL: sb_append_c(sb, "bool* "); break;
-    default:      sb_printf(sb, "_type_%p* ", t); break;
+    default: sb_printf(sb, "_type_%p* ", t); break;
     }
 }
 
@@ -212,7 +210,7 @@ static void emit_function(FeFunction* f, StringBuilder* sb) {
         emit_type_name(f->params.at[0]->type, sb);
         sb_append_c(sb, "_returnval_0;\n");
     }
-    foreach(FeBasicBlock* bb, f->blocks) {
+    foreach (FeBasicBlock* bb, f->blocks) {
         for_fe_ir(inst, *bb) {
             if (inst->type != FE_TYPE_VOID) {
                 sb_append_c(sb, "        ");
@@ -222,12 +220,12 @@ static void emit_function(FeFunction* f, StringBuilder* sb) {
         }
     }
 
-    sb_printf(sb, "        goto _label_"str_fmt";\n", str_arg(f->blocks.at[0]->name));
+    sb_printf(sb, "        goto _label_" str_fmt ";\n", str_arg(f->blocks.at[0]->name));
 
     // emit instructions
-    foreach(FeBasicBlock* bb, f->blocks) {
+    foreach (FeBasicBlock* bb, f->blocks) {
         string label = normalized_identifier(f->mod, bb, bb->name);
-        sb_printf(sb, "    _label_"str_fmt":\n", str_arg(label));
+        sb_printf(sb, "    _label_" str_fmt ":\n", str_arg(label));
         for_fe_ir(inst, *bb) {
             sb_append_c(sb, "\t");
             switch (inst->kind) {
@@ -236,13 +234,13 @@ static void emit_function(FeFunction* f, StringBuilder* sb) {
                 break;
             case FE_IR_CONST:
                 switch (inst->type) {
-                case FE_TYPE_I64: sb_printf(sb, "_inst_%llx = (i64) %lldll", inst, (i64) ((FeIrConst*)inst)->i64); break;
-                case FE_TYPE_I32: sb_printf(sb, "_inst_%llx = (i32) %lld", inst, (i64) ((FeIrConst*)inst)->i32); break;
-                case FE_TYPE_I16: sb_printf(sb, "_inst_%llx = (i16) %lld", inst, (i64) ((FeIrConst*)inst)->i16); break;
-                case FE_TYPE_I8:  sb_printf(sb, "_inst_%llx = (i8)  %lld", inst, (i64) ((FeIrConst*)inst)->i8);  break;
-                case FE_TYPE_F64: sb_printf(sb, "_inst_%llx = (f64) %lf",  inst, (double) ((FeIrConst*)inst)->f64); break;
-                case FE_TYPE_F32: sb_printf(sb, "_inst_%llx = (f32) %lf",  inst, (double) ((FeIrConst*)inst)->f32); break;
-                case FE_TYPE_F16: sb_printf(sb, "_inst_%llx = (f16) %lf",  inst, (double) ((FeIrConst*)inst)->f16); break;
+                case FE_TYPE_I64: sb_printf(sb, "_inst_%llx = (i64) %lldll", inst, (i64)((FeIrConst*)inst)->i64); break;
+                case FE_TYPE_I32: sb_printf(sb, "_inst_%llx = (i32) %lld", inst, (i64)((FeIrConst*)inst)->i32); break;
+                case FE_TYPE_I16: sb_printf(sb, "_inst_%llx = (i16) %lld", inst, (i64)((FeIrConst*)inst)->i16); break;
+                case FE_TYPE_I8: sb_printf(sb, "_inst_%llx = (i8)  %lld", inst, (i64)((FeIrConst*)inst)->i8); break;
+                case FE_TYPE_F64: sb_printf(sb, "_inst_%llx = (f64) %lf", inst, (double)((FeIrConst*)inst)->f64); break;
+                case FE_TYPE_F32: sb_printf(sb, "_inst_%llx = (f32) %lf", inst, (double)((FeIrConst*)inst)->f32); break;
+                case FE_TYPE_F16: sb_printf(sb, "_inst_%llx = (f16) %lf", inst, (double)((FeIrConst*)inst)->f16); break;
                 default: break;
                 }
                 break;
@@ -250,22 +248,20 @@ static void emit_function(FeFunction* f, StringBuilder* sb) {
             case FE_IR_ASR:
             case FE_IR_ADD:
             case FE_IR_IMUL:
-                FeIrBinop* binop = (FeIrBinop*) inst;
+                FeIrBinop* binop = (FeIrBinop*)inst;
 
                 sb_printf(sb, "_inst_%llx = _inst_%llx %s _inst_%llx", inst, binop->lhs, opstrings[inst->kind], binop->rhs);
                 break;
             case FE_IR_UMUL:
             case FE_IR_UDIV:
             case FE_IR_LSR:
-                binop = (FeIrBinop*) inst;
-                
-                sb_printf(sb, "_inst_%llx = %s _inst_%llx %s %s _inst_%llx", inst, 
-                    signed_to_unsigned_cast(binop->lhs->type), binop->lhs, opstrings[inst->kind], 
-                    signed_to_unsigned_cast(binop->rhs->type), binop->rhs);
+                binop = (FeIrBinop*)inst;
+
+                sb_printf(sb, "_inst_%llx = %s _inst_%llx %s %s _inst_%llx", inst, signed_to_unsigned_cast(binop->lhs->type), binop->lhs, opstrings[inst->kind], signed_to_unsigned_cast(binop->rhs->type), binop->rhs);
                 break;
             case FE_IR_RETURNVAL:
-                FeIrReturnVal* retval = (FeIrReturnVal*) inst;
-                
+                FeIrReturnVal* retval = (FeIrReturnVal*)inst;
+
                 if (retval->index == 0) {
                     sb_printf(sb, "_returnval_%d =  _inst_%llx", retval->index, retval->source);
                 } else {
@@ -300,7 +296,6 @@ string fe_emit_c(FeModule* m) {
         FeFunction* f = m->functions[i];
         emit_function(f, &sb);
     }
-
 
     string out = string_alloc(sb_len(&sb));
     sb_write(&sb, out.raw);

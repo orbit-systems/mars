@@ -7,7 +7,7 @@
 PtrMap irsym2machsym;
 
 static u32 mach_symbol(FeSymbol* sym) {
-    return (u32)(u64) ptrmap_get(&irsym2machsym, sym);
+    return (u32)(u64)ptrmap_get(&irsym2machsym, sym);
 }
 
 // generate symbol table and predefs/bindings if needed
@@ -34,7 +34,7 @@ static void put_ir_vreg(FeIr* inst, u32 vreg) {
 
 static u32 get_ir_vreg(FeIr* inst) {
     void* r = ptrmap_get(&ir2vreg, inst);
-    return r != PTRMAP_NOT_FOUND ? (u32)(u64) r : 0;
+    return r != PTRMAP_NOT_FOUND ? (u32)(u64)r : 0;
 }
 
 static bool does_ir_have_vreg(FeIr* inst) {
@@ -59,14 +59,14 @@ static const u8 mars_cconv_returnregs[] = {
     FE_X64_GPR_RDI,
 };
 
-#define new_inst(b, kind) (FeMachInst*) fe_mach_append(buf, (FeMach*) fe_mach_new_inst(buf, kind))
+#define new_inst(b, kind) (FeMachInst*)fe_mach_append(buf, (FeMach*)fe_mach_new_inst(buf, kind))
 
 static FeIr* emit_prologue(FeMachBuffer* buf, FeFunction* fn, FeIr* ir) {
     u32* callconv_vregs = fe_malloc(sizeof(u32) * fn->params.len);
     switch (fn->cconv) {
     case FE_CCONV_MARS:
         assert(fn->params.len <= 6); // preparation passes should have made this never fail
-        for (FeIrParamVal* pv = (FeIrParamVal*) ir; pv->base.kind == FE_IR_PARAMVAL; pv = (FeIrParamVal*) pv->base.next) {
+        for (FeIrParamVal* pv = (FeIrParamVal*)ir; pv->base.kind == FE_IR_PARAMVAL; pv = (FeIrParamVal*)pv->base.next) {
             // create the vreg for the callconv register
             u32 cconv_vreg = fe_mach_new_vreg(buf, FE_X64_REGCLASS_GPR);
             callconv_vregs[pv->index] = cconv_vreg;
@@ -74,7 +74,7 @@ static FeIr* emit_prologue(FeMachBuffer* buf, FeFunction* fn, FeIr* ir) {
             // begin its lifetime
             fe_mach_append(buf, fe_mach_new_lifetime_begin(buf, cconv_vreg));
         }
-        for (FeIrParamVal* pv = (FeIrParamVal*) ir; pv->base.kind == FE_IR_PARAMVAL; pv = (FeIrParamVal*) pv->base.next) {
+        for (FeIrParamVal* pv = (FeIrParamVal*)ir; pv->base.kind == FE_IR_PARAMVAL; pv = (FeIrParamVal*)pv->base.next) {
             // create the mov
             FeMachInst* mov = new_inst(buf, FE_X64_INST_MOV_RR_64);
             fe_mach_set_vreg(buf, mov, 1, callconv_vregs[pv->index]);
@@ -82,8 +82,8 @@ static FeIr* emit_prologue(FeMachBuffer* buf, FeFunction* fn, FeIr* ir) {
             u32 mov_out = fe_mach_new_vreg(buf, FE_X64_REGCLASS_GPR);
             buf->vregs.at[mov_out].hint = mars_cconv_paramregs[pv->index];
             fe_mach_set_vreg(buf, mov, 0, mov_out);
-            put_ir_vreg((FeIr*) pv, mov_out);
-            ir = (FeIr*) pv;
+            put_ir_vreg((FeIr*)pv, mov_out);
+            ir = (FeIr*)pv;
         }
         break;
     default:
@@ -98,7 +98,7 @@ static FeIr* emit_epilogue(FeMachBuffer* buf, FeFunction* fn, FeIr* ir) {
     u32* callconv_vregs = fe_malloc(sizeof(u32) * fn->returns.len);
 
     FeIrReturnVal* rv;
-    for (rv = (FeIrReturnVal*) ir; rv->base.kind == FE_IR_RETURNVAL; rv = (FeIrReturnVal*) rv->base.next) {
+    for (rv = (FeIrReturnVal*)ir; rv->base.kind == FE_IR_RETURNVAL; rv = (FeIrReturnVal*)rv->base.next) {
         // create the vreg for the callconv register
         u32 cconv_vreg = fe_mach_new_vreg(buf, FE_X64_REGCLASS_GPR);
         callconv_vregs[rv->index] = cconv_vreg;
@@ -110,7 +110,7 @@ static FeIr* emit_epilogue(FeMachBuffer* buf, FeFunction* fn, FeIr* ir) {
         fe_mach_set_vreg(buf, mov, 0, cconv_vreg);
     }
 
-    for (rv = (FeIrReturnVal*) ir; rv->base.kind == FE_IR_RETURNVAL; rv = (FeIrReturnVal*) rv->base.next) {
+    for (rv = (FeIrReturnVal*)ir; rv->base.kind == FE_IR_RETURNVAL; rv = (FeIrReturnVal*)rv->base.next) {
         // generate the lifetime endpoints
         fe_mach_append(buf, fe_mach_new_lifetime_end(buf, callconv_vregs[rv->index]));
     }
@@ -122,7 +122,7 @@ static FeIr* emit_epilogue(FeMachBuffer* buf, FeFunction* fn, FeIr* ir) {
 
 static void gen_basic_block(FeMachBuffer* buf, FeBasicBlock* bb) {
     // generate block label
-    FeMachLocalLabel* block_label = (FeMachLocalLabel*) fe_mach_append(buf, fe_mach_new(buf, FE_MACH_LABEL_LOCAL));
+    FeMachLocalLabel* block_label = (FeMachLocalLabel*)fe_mach_append(buf, fe_mach_new(buf, FE_MACH_LABEL_LOCAL));
     block_label->name = bb->name;
 
     FeMachInst* minst;
@@ -134,7 +134,7 @@ static void gen_basic_block(FeMachBuffer* buf, FeBasicBlock* bb) {
         ir = emit_epilogue(buf, bb->function, ir);
         break;
     case FE_IR_ADD:
-        FeIrBinop* binop = (FeIrBinop*) ir;
+        FeIrBinop* binop = (FeIrBinop*)ir;
         // insert a mov to move the first operand into the lhs
         u32 lhs_vreg;
         if (binop->lhs->use_count != 1) {
@@ -145,7 +145,7 @@ static void gen_basic_block(FeMachBuffer* buf, FeBasicBlock* bb) {
         } else {
             lhs_vreg = get_ir_vreg(binop->lhs);
         }
-        
+
         switch (ir->type) {
         case FE_TYPE_I64: minst = new_inst(buf, FE_X64_INST_ADD_RR_64); break;
         default: TODO("");
@@ -170,11 +170,11 @@ static void gen_function(FeMachBuffer* buf, FeFunction* fn) {
     ptrmap_reset(&ir2vreg);
 
     // generate function header
-    FeMachGlobalLabel* head_label = (FeMachGlobalLabel*) fe_mach_append(buf, fe_mach_new(buf, FE_MACH_LABEL_GLOBAL));
+    FeMachGlobalLabel* head_label = (FeMachGlobalLabel*)fe_mach_append(buf, fe_mach_new(buf, FE_MACH_LABEL_GLOBAL));
     head_label->symbol_index = mach_symbol(fn->sym);
     fe_mach_append(buf, fe_mach_new(buf, FE_MACH_CFG_BEGIN));
 
-    foreach(FeBasicBlock* bb, fn->blocks) {
+    foreach (FeBasicBlock* bb, fn->blocks) {
         gen_basic_block(buf, bb);
     }
 
@@ -187,12 +187,12 @@ static FeMachVReg* get_vreg(FeMachBuffer* buf, FeMachInst* inst, u32 i) {
 
 static void mov_reduce(FeMachBuffer* buf) {
     for_range(i, 0, buf->buf.len) {
-        if (buf->buf.at[i]->kind != FE_MACH_INST) 
+        if (buf->buf.at[i]->kind != FE_MACH_INST)
             continue;
-        FeMachInst* inst = (FeMachInst*) buf->buf.at[i];
-        if (inst->template != FE_X64_INST_MOV_RR_64) 
+        FeMachInst* inst = (FeMachInst*)buf->buf.at[i];
+        if (inst->template != FE_X64_INST_MOV_RR_64)
             continue;
-        
+
         u8 real0 = get_vreg(buf, inst, 0)->real;
         if (real0 != 0 && real0 == get_vreg(buf, inst, 1)->real) {
             inst->base.kind = FE_MACH_NONE;

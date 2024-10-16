@@ -3,7 +3,7 @@
 #include "common/alloc.h"
 
 _ArenaBlock arena_block_make(size_t size);
-void  arena_block_delete(_ArenaBlock* a);
+void arena_block_delete(_ArenaBlock* a);
 void* arena_block_alloc(_ArenaBlock* a, size_t size, size_t align);
 
 typedef struct _ArenaBlock {
@@ -18,7 +18,7 @@ _ArenaBlock arena_block_make(size_t size) {
     if (block.raw == NULL) {
         CRASH("internal: arena block size %zu too big, can't allocate", size);
     }
-    block.size = (u32) size;
+    block.size = (u32)size;
     block.offset = 0;
     return block;
 }
@@ -42,7 +42,7 @@ Arena arena_make(size_t block_size) {
     Arena al;
     da_init(&al.list, 1);
     al.arena_size = block_size;
-    
+
     _ArenaBlock initial_arena = arena_block_make(al.arena_size);
     da_append(&al.list, initial_arena);
 
@@ -59,7 +59,7 @@ void arena_delete(Arena* al) {
 
 void* arena_alloc(Arena* al, size_t size, size_t align) {
     // attempt to allocate at the top arena_block;
-    void* attempt = arena_block_alloc(&al->list.at[al->list.len-1], size, align);
+    void* attempt = arena_block_alloc(&al->list.at[al->list.len - 1], size, align);
     if (attempt != NULL) return attempt; // yay!
 
     // FUCK! we need to append another arena_block block
@@ -67,15 +67,14 @@ void* arena_alloc(Arena* al, size_t size, size_t align) {
     da_append(&al->list, new_arena);
 
     // we're gonna try again
-    attempt = arena_block_alloc(&al->list.at[al->list.len-1], size, align);
+    attempt = arena_block_alloc(&al->list.at[al->list.len - 1], size, align);
     return attempt; // this should ideally never be null
 }
-
 
 size_t align_forward(size_t ptr, size_t align) {
     if (!is_pow_2(align)) {
         CRASH("internal: align is not a power of two (got %zu)\n", align);
     }
-    
+
     return (ptr + align - 1) & ~(align - 1);
 }

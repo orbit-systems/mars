@@ -4,7 +4,7 @@ entity_table_list entity_tables;
 
 u64 FNV_1a(string key) {
     const u64 FNV_OFFSET = 14695981039346656037ull;
-    const u64 FNV_PRIME  = 1099511628211ull;
+    const u64 FNV_PRIME = 1099511628211ull;
 
     u64 hash = FNV_OFFSET;
     for_urange(i, 0, key.len) {
@@ -22,15 +22,15 @@ entity_table* new_entity_table(entity_table* parent) {
     et->parent = parent;
     da_init(et, 1);
 
-    et->alloca = arena_make(10*sizeof(entity));
-    
+    et->alloca = arena_make(10 * sizeof(entity));
+
     da_append(&entity_tables, et);
     return et;
 }
 
 entity* search_for_entity(entity_table* et, string ident) {
     if (et == NULL) return NULL;
-    
+
     // for now, its linear search bc im too lazy to impl a hashmap
     for_urange(i, 0, et->len) {
         if (string_eq(et->at[i]->identifier, ident)) {
