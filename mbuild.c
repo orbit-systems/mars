@@ -114,13 +114,15 @@ enum {
     BUILD_MODE_MARS,
     BUILD_MODE_IRON_EXE,
     BUILD_MODE_IRON_STATIC,
+    BUILD_MODE_FORMAT,
 };
 
 void print_usage() {
     printf(
-        "./build mars            build mars with iron\n"
-        "./build iron            build iron as a standalone application\n"
-        "./build iron-static     build iron as a static library\n"
+        "./mbuild mars            build mars with iron\n"
+        "./mbuild iron            build iron as a standalone application\n"
+        "./mbuild iron-static     build iron as a static library\n"
+        "./mbuild format          use clang-format on the whole project. all flags are ignored\n"
         "\n"
         "-opt [flags]            set optimization flags (default -O0)\n"
         "-clean                  delete the build folder OR force rebuild from scratch\n"
@@ -261,28 +263,26 @@ int main(int argc, char** argv) {
         char* arg = argv[i];
         if (strcmp(arg, "mars") == 0) {
             build_mode = BUILD_MODE_MARS;
-        }
-        else if (strcmp(arg, "iron") == 0) {
+        } else if (strcmp(arg, "iron") == 0) {
             build_mode = BUILD_MODE_IRON_EXE;
-        }
-        else if (strcmp(arg, "iron-static") == 0) {
+        } else if (strcmp(arg, "iron-static") == 0) {
             build_mode = BUILD_MODE_IRON_STATIC;
-        }
-        else if (strcmp(arg, "-clean") == 0) {
+        } else if (strcmp(arg, "format") == 0) {
+            build_mode = BUILD_MODE_FORMAT;
+            break;
+        } else if (strcmp(arg, "-clean") == 0) {
             clean_build = true;
             system("rm -rf build");
-        }
-        else if (strcmp(arg, "-release") == 0) {
+        } else if (strcmp(arg, "-release") == 0) {
             opt = " -O3 -flto ";
             release_build = true;
-        }
-        else if (strcmp(arg, "-opt") == 0) {
+        } else if (strcmp(arg, "-opt") == 0) {
             opt = argv[i+1];
             i++;
         } else if (strcmp(arg, "-cc") == 0) {
             cc = argv[i+1];
             i++;
-        }else if (strcmp(arg, "-cflags") == 0) {
+        } else if (strcmp(arg, "-cflags") == 0) {
             if (i + 1 == argc) {
                 printf("-cflags needs an argument list\n");
                 exit(-1);
@@ -292,7 +292,7 @@ int main(int argc, char** argv) {
             strcat(new_cflags, argv[i+1]);
             cflags = new_cflags;
             i++;
-        }else {
+        } else {
             printf("unknown flag '%s'\n", arg);
             exit(1);
         }
@@ -313,11 +313,11 @@ int main(int argc, char** argv) {
     da(cstr) source_folders = {0};
     da_init(&source_folders, 16);
 
-    if (build_mode == BUILD_MODE_MARS) {
+    if (build_mode == BUILD_MODE_FORMAT) {
         add_source_collection(&source_folders, mars_sources, sizeof(mars_sources)/sizeof(mars_sources[0]));
-    }
-
-    if (build_mode == BUILD_MODE_IRON_EXE) {
+    } else if (build_mode == BUILD_MODE_MARS) {
+        add_source_collection(&source_folders, mars_sources, sizeof(mars_sources)/sizeof(mars_sources[0]));
+    } else if (build_mode == BUILD_MODE_IRON_EXE) {
         da_append(&source_folders, realpath("src/iron/driver", NULL));
     }
     add_source_collection(&source_folders, iron_sources, sizeof(iron_sources)/sizeof(iron_sources[0]));
@@ -365,6 +365,15 @@ int main(int argc, char** argv) {
         }
     }
     chdir(saved_cwd);
+
+    if (build_mode == BUILD_MODE_FORMAT) {
+        foreach (string src_path, files_to_compile) {
+            string format_command = strprintf("clang-format -i "str_fmt, str_arg(src_path));
+            int return_code = system(clone_to_cstring(format_command));
+            if (return_code != 0) return return_code;
+        }
+        return 0;
+    }
     
     if (!fs_exists(constr("build"))) {
         mkdir("build");

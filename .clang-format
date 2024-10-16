@@ -1,0 +1,33 @@
+IndentWidth: 4
+BracedInitializerIndentWidth: 4
+UseTab: Never
+IndentCaseBlocks: false
+IndentCaseLabels: false
+IndentPPDirectives: AfterHash
+SpaceBeforeAssignmentOperators: true
+SpaceBeforeCaseColon: false
+SpaceBeforeParens: ControlStatements
+BreakBeforeBraces: Attach
+
+AlignArrayOfStructures: Left
+AlignAfterOpenBracket: BlockIndent
+
+LineEnding: LF
+MaxEmptyLinesToKeep: 1
+AllowShortIfStatementsOnASingleLine: AllIfsAndElse
+AllowShortFunctionsOnASingleLine: None
+AllowShortBlocksOnASingleLine: Never
+AllowShortLoopsOnASingleLine: true
+AllowShortEnumsOnASingleLine: false
+AllowShortCaseLabelsOnASingleLine: true
+
+ColumnLimit: 0
+# ^^^ dont abuse this please 
+# if a line is too long, i count on you to fix it yourself... for now
+
+IncludeBlocks: Regroup
+SortIncludes: CaseInsensitive
+
+PointerAlignment: Left
+QualifierAlignment: Left
+RemoveSemicolon: true
