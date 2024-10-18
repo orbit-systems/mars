@@ -54,6 +54,7 @@ Type* operation_to_type(token* tok);
 bool check_type_cast_implicit(Type* lhs, Type* rhs);
 bool check_type_cast_explicit(Type* lhs, Type* rhs);
 bool check_assign_op(token* op, Type* lhs, Type* rhs);
+Type* sema_type_unalias(Type* t);
 
 /*
 void check_stmt(mars_module* mod, entity_table* et, ast_func_literal_expr* fn, AST stmt, bool global);

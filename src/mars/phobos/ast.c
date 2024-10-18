@@ -1,4 +1,5 @@
 #include "common/orbit.h"
+#include "common/crash.h"
 #include "parse/lex.h"
 #include "mars/term.h"
 #include "common/arena.h"
@@ -26,10 +27,22 @@ AST new_ast_node(parser* p, ast_type type) {
     AST node;
     void* node_ptr = arena_alloc(p->alloca, ast_type_size[type], 8);
     if (node_ptr == NULL) {
-        general_error("internal: new_ast_node() could not allocate AST node of type '%s' with size %d", ast_type_str[type], ast_type_size[type]);
+        crash("internal: new_ast_node() could not allocate AST node of type '%s' with size %d\n", ast_type_str[type], ast_type_size[type]);
     }
     memset(node_ptr, 0, ast_type_size[type]);
     p->num_nodes++;
+    node.rawptr = node_ptr;
+    node.type = type;
+    return node;
+}
+
+AST new_ast_node_no_p(ast_type type) {
+    AST node;
+    void* node_ptr = malloc(ast_type_size[type]);
+    if (node_ptr == NULL) {
+        crash("internal: new_ast_node() could not allocate AST node of type '%s' with size %d\n", ast_type_str[type], ast_type_size[type]);
+    }
+    memset(node_ptr, 0, ast_type_size[type]);
     node.rawptr = node_ptr;
     node.type = type;
     return node;

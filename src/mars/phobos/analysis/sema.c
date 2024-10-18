@@ -1,12 +1,14 @@
 #include "sema.h"
+#include "../ast.h"
 #include "common/crash.h"
 #include "common/strmap.h"
-// #define LOG(...) printf(__VA_ARGS__)
-#define LOG(...)
+#define LOG(...) printf(__VA_ARGS__)
+// #define LOG(...)
 StrMap name_to_type;
 
 void check_module(mars_module* mod) {
     LOG("checking: " str_fmt "\n", str_arg(mod->module_name));
+    general_warning("TODO: exprs that CAN be comp-time computed, should be.");
     foreach (mars_module* module, mod->import_list) {
         if (!module->checked) {
             check_module(module);
@@ -18,7 +20,6 @@ void check_module(mars_module* mod) {
 
     */
     if (mod->entities == NULL) mod->entities = new_entity_table(NULL);
-
     strmap_init(&name_to_type, 1);
 
     // its Time.
@@ -50,14 +51,22 @@ Type* check_stmt(mars_module* mod, AST node, entity_table* scope) {
         // rhs.mutable = node.as_decl_stmt->is_mut;
 
         if (node.as_decl_stmt->rhs.type == AST_func_literal_expr && node.as_decl_stmt->lhs.len != 1) {
-            error_at_node(mod, node, "function definition should only be assigned to one value");
+            error_at_node(mod, node, "function definition can only be assigned to one value");
         }
 
-        Type* ast_type = rhs.type;
+        u8 decl_mutability = node.as_decl_stmt->is_mut;
 
-        if (!is_null_AST(node.as_decl_stmt->type)) ast_type = ast_to_type(mod, node.as_decl_stmt->type);
-
-        node.as_decl_stmt->tg_type = ast_type;
+        Type* decl_type = NULL;
+        Type* ast_type = NULL;
+        if (!is_null_AST(node.as_decl_stmt->type)) {
+            decl_type = ast_to_type(mod, node.as_decl_stmt->type);
+            if (decl_type->tag == TYPE_POINTER) node.as_decl_stmt->is_mut = decl_type->as_reference.mutable;
+            node.as_decl_stmt->tg_type = decl_type;
+        } else {
+            ast_type = rhs.type;
+            if (ast_type->tag == TYPE_POINTER) node.as_decl_stmt->is_mut = ast_type->as_reference.mutable;
+            node.as_decl_stmt->tg_type = ast_type; //FIXME: this is _wrong_ on a call_expr.
+        }
 
         if (rhs.expr.type == AST_call_expr) {
             if (node.as_decl_stmt->lhs.len != rhs.type->as_function.returns.len)
@@ -74,10 +83,12 @@ Type* check_stmt(mars_module* mod, AST node, entity_table* scope) {
                 lhs_entity->is_mutable = node.as_decl_stmt->is_mut;
                 lhs.as_identifier->entity = lhs_entity;
 
-                if (!is_null_AST(node.as_decl_stmt->type) && !check_type_cast_implicit(rhs.type, ast_type)) {
+                ast_type = rhs.type->as_function.returns.at[count];
+
+                if (decl_type && !check_type_cast_implicit(decl_type, ast_type)) {
                     error_at_node(mod, node, "type mismatch: lhs and rhs cannot be cast to eachother\nTODO: find out the type of lhs and rhs to print a more informative error");
                 }
-                lhs_entity->entity_type = ast_type;
+                lhs_entity->entity_type = (decl_type) ? decl_type : ast_type;
             }
         } else {
             LOG("rhs is of ast type: %s\n", ast_type_str[rhs.expr.type]);
@@ -211,16 +222,19 @@ Type* check_stmt(mars_module* mod, AST node, entity_table* scope) {
         strmap_put(&name_to_type, node.as_type_decl_stmt->lhs.as_identifier->tok->text, struct_alias);
 
         Type* rhs = ast_to_type(mod, node.as_type_decl_stmt->rhs);
+        rhs = sema_type_unalias(rhs);
         struct_alias->as_reference.subtype = rhs;
-        // we can now go through and unalias all the types in this type
-        foreach (TypeStructField field, type_unalias(struct_alias)->as_aggregate.fields) {
-            field.subtype = type_unalias(field.subtype);
-        }
-        return type_unalias(struct_alias);
+        //we're gonna do some trolling here
+        return struct_alias;
     default:
         error_at_node(mod, node, "[check_module] unexpected ast type: %s", ast_type_str[node.type]);
     }
     return NULL;
+}
+
+Type* sema_type_unalias(Type* t) {
+    while (t->tag == TYPE_DISTINCT || t->tag == TYPE_ALIAS) t = t->as_reference.subtype;
+    return t;
 }
 
 checked_expr check_expr(mars_module* mod, AST node, entity_table* scope) {
@@ -247,8 +261,13 @@ checked_expr check_expr(mars_module* mod, AST node, entity_table* scope) {
     case AST_identifier:
         entity* ident_ent = search_for_entity(scope, node.as_identifier->tok->text);
 
-        if (ident_ent == NULL) error_at_node(mod, node, "undefined identifier: " str_fmt, str_arg(node.as_identifier->tok->text));
+        if (ident_ent == NULL) {
+            //we need to see if this is a type identifier!
+            Type* type_ptr = strmap_get(&name_to_type, node.as_identifier->tok->text);
+            if (type_ptr == STRMAP_NOT_FOUND) error_at_node(mod, node, "undefined identifier: " str_fmt, str_arg(node.as_identifier->tok->text));
 
+            return (checked_expr){.expr = node, .type = type_unalias(type_ptr)};
+        }
         ident_ent->been_used = true;
         node.as_identifier->entity = ident_ent;
 
@@ -267,7 +286,9 @@ checked_expr check_expr(mars_module* mod, AST node, entity_table* scope) {
         checked_expr subexpr = check_expr(mod, node.as_unary_op_expr->inside, scope);
         LOG("verifying op: " str_fmt "\n", str_arg(node.as_unary_op_expr->op->text));
         subexpr.type = type_unalias(subexpr.type);
-        if (node.as_unary_op_expr->op->type == TOK_CARET) {
+
+        switch (node.as_unary_op_expr->op->type) {
+        case TOK_CARET: {
             if (subexpr.type->as_reference.subtype->tag == TYPE_NONE) {
                 error_at_node(mod, node.as_unary_op_expr->inside, "cannot dereference typeless ^%s pointer", subexpr.type->as_reference.mutable == true ? "mut" : "let");
             }
@@ -276,9 +297,14 @@ checked_expr check_expr(mars_module* mod, AST node, entity_table* scope) {
                 .expr = node,
                 .type = subexpr.type->as_reference.subtype,
                 .mutable = subexpr.type->as_reference.mutable,
-            };
+            }; 
         }
-        error_at_node(mod, node, "unexpected op: " str_fmt, str_arg(node.as_unary_op_expr->op->text));
+        case TOK_KEYWORD_SIZEOF:
+        case TOK_KEYWORD_ALIGNOF:
+            return (checked_expr){.expr = node, .type = make_type(TYPE_UNTYPED_INT)};
+        default:    
+            error_at_node(mod, node, "unexpected op: " str_fmt, str_arg(node.as_unary_op_expr->op->text));
+        }
     }
 
     case AST_cast_expr: {
@@ -296,6 +322,11 @@ checked_expr check_expr(mars_module* mod, AST node, entity_table* scope) {
             // we now need to scan to see what the rhs is, if its a selector we need to dig deeper
             if (node.as_selector_expr->rhs.type != AST_selector_expr && node.as_selector_expr->rhs.type != AST_identifier)
                 error_at_node(mod, node.as_selector_expr->rhs, "expected identifier or selector, got %s", ast_type_str[node.as_selector_expr->rhs.type]);
+            if (lhs.type->tag == TYPE_POINTER && 
+                lhs.type->as_reference.subtype->tag != TYPE_STRUCT && lhs.type->as_reference.subtype->tag != TYPE_UNION
+                ) error_at_node(mod, lhs.expr, "expected aggregate through pointer, got type tag %d", lhs.type->tag);
+            if (lhs.type->tag == TYPE_POINTER) lhs.type = lhs.type->as_reference.subtype;
+            if (lhs.type->tag != TYPE_STRUCT && lhs.type->tag != TYPE_UNION) error_at_node(mod, lhs.expr, "expected aggregate, got type tag %d", lhs.type->tag);
 
             Type* field_type = NULL;
 
@@ -318,7 +349,10 @@ checked_expr check_expr(mars_module* mod, AST node, entity_table* scope) {
                 if (!field_type) error_at_node(mod, node.as_selector_expr->rhs, "field " str_fmt " is not a field contained in this struct", str_arg(node.as_selector_expr->rhs.as_identifier->tok->text));
                 // we can return raw or len here
                 node.base->T = field_type;
-                return (checked_expr){.expr = node, .type = field_type};
+                //get lhs entity
+                entity* lhs_ent = search_for_entity(scope, lhs.expr.as_identifier->tok->text);
+                u8 mutability = lhs_ent->is_mutable;
+                return (checked_expr){.expr = node, .type = field_type, .mutable = mutability};
             }
 
             crash("check sel expr\n");
@@ -551,7 +585,6 @@ Type* ast_to_type(mars_module* mod, AST node) {
         return slice;
     case AST_struct_type_expr:
         // we create the type, and add it to the strmap.
-
         Type* aggregate = make_type((node.as_struct_type_expr->is_union == true) ? TYPE_UNION : TYPE_STRUCT);
 
         foreach (AST_typed_field field, node.as_struct_type_expr->fields) {

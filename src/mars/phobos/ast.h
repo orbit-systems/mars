@@ -304,4 +304,5 @@ extern char* ast_type_str[];
 extern const size_t ast_type_size[];
 
 AST new_ast_node(parser* p, ast_type type);
+AST new_ast_node_no_p(ast_type type);
 void dump_tree(AST node, int n);

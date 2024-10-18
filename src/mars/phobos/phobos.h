@@ -27,6 +27,7 @@ typedef struct entity_table entity_table;
 
 typedef struct mars_module {
     string module_name;
+    string module_identifier;
     string module_path;
     da(mars_file) files;
     module_list import_list;

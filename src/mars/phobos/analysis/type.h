@@ -4,7 +4,7 @@
 #include "common/orbit.h"
 #include "common/alloc.h"
 
-enum {
+enum MarsType {
     // does not really do anything. serves as an invalid/void type.
     TYPE_NONE,
 
@@ -109,7 +109,7 @@ typedef struct Type {
     bool visited : 1;
     u16 type_nums[2];
 
-    u32 size;
+    u32 size; //NOTE: types dont have size OR alignment until you call the type_real_(size/align)_of(T) function
     u32 align;
 } Type;
 
