@@ -52,14 +52,14 @@ int main(int argc, char** argv) {
 
     printf("attempt codegen\n");
 
-    iron_module->target.arch = FE_ARCH_X64;
+    iron_module->target.arch = &fe_arch_x64;
     iron_module->target.system = FE_SYSTEM_LINUX;
 
     FeMachBuffer mb = fe_mach_codegen(iron_module);
 
     FeDataBuffer db = fe_db_new(128);
 
-    fe_x64_emit_text(&db, &mb);
+    fe_mach_emit_text(&db, &mb);
 
     printf("\n%s\n", fe_db_clone_to_cstring(&db));
 

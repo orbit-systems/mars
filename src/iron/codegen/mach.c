@@ -90,20 +90,15 @@ FeMachImmediate* fe_mach_get_immediate(FeMachBuffer* buf, FeMachImmediateList li
 }
 
 FeMachBuffer fe_mach_codegen(FeModule* m) {
-    if (m->target.arch == 0) FE_FATAL(m, "target arch not set");
+    if (m->target.arch == NULL) FE_FATAL(m, "target arch not set");
     if (m->target.system == 0) FE_FATAL(m, "target system not set");
 
-    FeMachBuffer mb;
-    switch (m->target.arch) {
-    case FE_ARCH_X64:
-        mb = fe_x64_codegen(m);
-        break;
-    default:
-        FE_FATAL(m, "unsupported architecture");
-    }
-
-    // TODO("");
+    FeMachBuffer mb = m->target.arch->cg(m);
     return mb;
+}
+
+void fe_mach_emit_text(FeDataBuffer* db, FeMachBuffer* mb) {
+    mb->target.arch->emit_text(db, mb);
 }
 
 u32 fe_mach_new_vreg(FeMachBuffer* buf, u8 regclass) {
@@ -111,55 +106,4 @@ u32 fe_mach_new_vreg(FeMachBuffer* buf, u8 regclass) {
     vreg.class = regclass;
     da_append(&buf->vregs, vreg);
     return buf->vregs.len - 1;
-}
-
-// "native" (pointer-sized) integer type for an architecture.
-FeType fe_mach_type_of_native_int(u16 arch) {
-    switch (arch) {
-    case FE_ARCH_X64: return FE_TYPE_I64;
-    case FE_ARCH_APHELION: return FE_TYPE_I64;
-    case FE_ARCH_ARM64: return FE_TYPE_I64;
-    case FE_ARCH_XR17032: return FE_TYPE_I32;
-    case FE_ARCH_FOX32: return FE_TYPE_I32;
-    default: CRASH("unknown arch");
-    }
-}
-
-// highest precision floating point format less than or equal in size
-// to the arch's native integer type
-// returns FE_TYPE_VOID if there's no native floating-point
-FeType fe_mach_type_of_native_float(u16 arch) {
-    switch (arch) {
-    case FE_ARCH_X64: return FE_TYPE_F64;
-    case FE_ARCH_APHELION: return FE_TYPE_F64;
-    case FE_ARCH_ARM64: return FE_TYPE_F64;
-    case FE_ARCH_XR17032: return FE_TYPE_VOID;
-    case FE_ARCH_FOX32: return FE_TYPE_VOID;
-    default: CRASH("unknown arch");
-    }
-}
-
-// returns true if this type has a "native" representation on this architecture
-// ie. it does not need to be emulated via software or additional fuckery
-// returns false for aggregate types
-bool fe_mach_type_is_native(u16 arch, FeType t) {
-    switch (arch) {
-    case FE_ARCH_X64:
-        // all types natively supported
-        return t <= FE_TYPE_F64;
-    case FE_ARCH_APHELION:
-        // all types natively supported
-        return t <= FE_TYPE_F64;
-    case FE_ARCH_ARM64:
-        // all types natively supported
-        return t <= FE_TYPE_F64;
-    case FE_ARCH_XR17032:
-        // only integers up to i32 are native
-        return t <= FE_TYPE_I32;
-    case FE_ARCH_FOX32:
-        // only integers up to i32 are native
-        return t <= FE_TYPE_I32;
-    default: CRASH("unknown arch");
-    }
-    return false;
 }

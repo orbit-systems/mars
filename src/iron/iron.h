@@ -707,18 +707,6 @@ void fe_clear_report_buffer(FeModule* m);
 void fe_print_report(FeReport msg);
 
 enum {
-    _FE_ARCH_BEGIN,
-
-    FE_ARCH_X64,      // x86-64
-    FE_ARCH_APHELION, // aphelion
-    FE_ARCH_ARM64,    // arm64
-    FE_ARCH_XR17032,  // xr/17032
-    FE_ARCH_FOX32,    // fox32
-
-    _FE_ARCH_END,
-};
-
-enum {
     _FE_SYSTEM_BEGIN,
 
     FE_SYSTEM_NONE, // freestanding
@@ -727,6 +715,37 @@ enum {
 
     _FE_SYSTEM_END,
 };
+
+typedef struct FeMachBuffer FeMachBuffer;
+typedef struct FeDataBuffer FeDataBuffer;
+typedef struct FeMachInstTemplate FeMachInstTemplate;
+
+typedef struct FeArchRegclass {
+    u8 id;
+    u8 len; // number of registers in this class
+} FeArchRegclass;
+
+typedef struct FeArchInfo {
+    const char* name;
+
+    FeType native_int;
+    FeType native_float;
+
+    FeMachBuffer (*cg)(FeModule*);
+    void (*emit_text)(FeDataBuffer*, FeMachBuffer*);
+    void (*emit_obj)(FeDataBuffer*, FeMachBuffer*);
+    void (*emit_exe)(FeDataBuffer*, FeMachBuffer*);
+
+    struct {
+        const FeMachInstTemplate* at;
+        u32 len;
+    } inst_templates;
+
+    struct {
+        const FeArchRegclass* at;
+        u8 len;
+    } regclasses;
+} FeArchInfo;
 
 typedef struct FeModule {
     string name;
@@ -760,7 +779,7 @@ typedef struct FeModule {
     } pass_queue;
 
     struct {
-        u16 arch;
+        const FeArchInfo* arch;
         u16 system;
         void* arch_config;
         void* system_config;

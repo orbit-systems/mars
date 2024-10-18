@@ -209,9 +209,6 @@ FeMachBuffer fe_x64_codegen(FeModule* mod) {
     fe_run_all_passes(mod, false);
 
     FeMachBuffer mb = {0};
-    if (mod->target.arch != FE_ARCH_X64) {
-        CRASH("fe_x64_codegen called with arch != FE_ARCH_X64"); // make fatal report
-    }
 
     mb.target.arch = mod->target.arch;
     mb.target.arch_config = mod->target.arch_config;

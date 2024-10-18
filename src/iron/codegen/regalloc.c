@@ -234,18 +234,21 @@ static void build_conflict_graph(FeMachBuffer* buf) {
     }
 }
 
-static u8 real_max(u16 arch, u8 regclass) {
-    // there is def a better way to do this, i dont care right now
-    if (arch == FE_ARCH_X64 && regclass == FE_X64_REGCLASS_GPR) return _FE_X64_GPR_COUNT;
-    CRASH("FUCK");
+static u8 real_max(FeArchInfo* arch, u8 regclass) {
+    return arch->regclasses.at[regclass].len;
 }
 
 static void assign_concrete(FeMachBuffer* buf) {
     // shitty ish graph colorer
-    for_range(r, 0, buf->vregs.len) {
+
+    // remember to skip the null vreg
+    for_range(r, 1, buf->vregs.len) {
         LifetimeSet* lts = &lifetimes[r];
         FeMachVReg* reg = &buf->vregs.at[r];
-        reg->class = FE_X64_REGCLASS_GPR;
+        // unknown regclass?
+        if (reg->class == 0) {
+            CRASH("unknown regclass encountered");
+        }
 
         // this shit already assigned
         if (reg->real != 0) continue;

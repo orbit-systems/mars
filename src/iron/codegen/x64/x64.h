@@ -1,3 +1,5 @@
+#pragma once
+
 #include "iron/codegen/mach.h"
 
 enum {
@@ -36,15 +38,14 @@ enum {
     FE_X64_INST_LEA_RR_64, // lea def, [use + use]
     FE_X64_INST_RET,       // ret
 
-    _FE_X64_INST_MAX,
+    _FE_X64_INST_COUNT,
 };
 
-extern const FeMachInstTemplate fe_x64_inst_templates[_FE_X64_INST_MAX];
-
-FeMachBuffer fe_x64_codegen(FeModule* mod);
-void fe_x64_emit_text(FeDataBuffer* db, FeMachBuffer* machbuf);
+extern const FeMachInstTemplate fe_x64_inst_templates[_FE_X64_INST_COUNT];
 
 // x64-specific instructions
 enum {
     _FE_IR_X64_START = _FE_IR_ARCH_SPECIFIC_START,
 };
+
+extern const FeArchInfo fe_arch_x64;

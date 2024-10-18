@@ -21,7 +21,7 @@ da_typedef(FeMachImmediate);
 typedef struct FeMachBuffer {
 
     struct {
-        u16 arch;
+        FeArchInfo* arch;
         u16 system;
         void* arch_config;
         void* system_config;
@@ -170,6 +170,7 @@ typedef struct FeMachSymbol {
 } FeMachSymbol;
 
 FeMachBuffer fe_mach_codegen(FeModule* m);
+void fe_mach_emit_text(FeDataBuffer* db, FeMachBuffer* mb);
 
 FeType fe_mach_type_of_native_int(u16 arch);
 FeType fe_mach_type_of_native_float(u16 arch);
@@ -187,3 +188,4 @@ u32 fe_mach_get_vreg(FeMachBuffer* buf, FeMachInst* inst, u8 index);
 void fe_mach_set_vreg(FeMachBuffer* buf, FeMachInst* inst, u8 index, u32 vreg);
 
 void fe_mach_regalloc(FeMachBuffer* buf);
+

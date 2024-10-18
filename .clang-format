@@ -9,7 +9,7 @@ SpaceBeforeCaseColon: false
 SpaceBeforeParens: ControlStatements
 BreakBeforeBraces: Attach
 
-AlignArrayOfStructures: Left
+# AlignArrayOfStructures: Left
 AlignAfterOpenBracket: BlockIndent
 
 LineEnding: LF

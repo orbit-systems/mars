@@ -22,10 +22,12 @@ void crash(char* error, ...) {
             string output_str = str(strings[i]);
             if (output_str.raw[0] == '.') {
                 // we need to trim
-                for (; output_str.raw[0] != '('; output_str.raw++);
+                for (; output_str.raw[0] != '('; output_str.raw++)
+                    ;
                 output_str.raw++;
                 int close_bracket = 0;
-                for (; output_str.raw[close_bracket] != ')'; close_bracket++);
+                for (; output_str.raw[close_bracket] != ')'; close_bracket++)
+                    ;
                 output_str.len = close_bracket;
             }
             printf("frame %d:\t" str_fmt "\n", i, str_arg(output_str));
