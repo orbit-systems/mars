@@ -1,5 +1,6 @@
 module arena;
 
-let deref_a_pointer = fn(x: ^let int) -> int {
-    return x^;
+let alloc = fn(size, align: u64) -> ^mut {
+    size = align;
+    return cast(^mut)0;
 };

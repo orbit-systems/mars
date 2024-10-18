@@ -171,7 +171,35 @@ Type* check_stmt(mars_module* mod, AST node, entity_table* scope) {
     }
 
     case AST_import_stmt:
-        // this can be safely ignored.
+        //ENORMOUS FIXME: this method of grabbing entities is hacky and bad. this should
+        //be better handled in phobos
+
+        //we need to create an entity that ties the module* to an identifier name
+        //we need to grab the GLOBAL scope
+        //if the module has NO name, we import using module_name
+        //if the module has _ for a name, we error, since we dont handle that yet
+        
+        //now, first, we grab the module name from the module path by looking through the list!
+        mars_module* imported_module = NULL;
+        foreach(mars_module* module, mod->import_list) {
+            //HACK CENTRAL HERE: we're stealing the relpath analysis from phobos here
+            string importpath = search_for_module(
+                module,
+                node.as_import_stmt->path.as_identifier->tok->text
+            );
+
+            if (string_eq(module->module_path, importpath)) imported_module = module;
+        }
+        if (imported_module == NULL) error_at_node(mod, node.as_import_stmt->path, "no module exists with this path!");
+        string module_name = {0};
+
+        if (is_null_AST(node.as_import_stmt->name)) module_name = imported_module->module_name;
+        else module_name = node.as_import_stmt->name.as_identifier->tok->text;
+
+        entity_table* global_scope = mod->entities;
+        entity* import_ent = new_entity(global_scope, module_name, node);
+        import_ent->is_module = true;
+        import_ent->module = imported_module;
         return NULL;
 
     case AST_type_decl_stmt:
@@ -262,39 +290,58 @@ checked_expr check_expr(mars_module* mod, AST node, entity_table* scope) {
     }
 
     case AST_selector_expr: {
-        if (node.as_selector_expr->op->type != TOK_PERIOD) error_at_node(mod, node, "unhandled op: %s", token_type_str[node.as_selector_expr->op->type]);
+        if (node.as_selector_expr->op->type == TOK_PERIOD) {
+            checked_expr lhs = check_expr(mod, node.as_selector_expr->lhs, scope);
+            lhs.type = type_unalias(lhs.type);
+            // we now need to scan to see what the rhs is, if its a selector we need to dig deeper
+            if (node.as_selector_expr->rhs.type != AST_selector_expr && node.as_selector_expr->rhs.type != AST_identifier)
+                error_at_node(mod, node.as_selector_expr->rhs, "expected identifier or selector, got %s", ast_type_str[node.as_selector_expr->rhs.type]);
 
-        checked_expr lhs = check_expr(mod, node.as_selector_expr->lhs, scope);
-        lhs.type = type_unalias(lhs.type);
-        // we now need to scan to see what the rhs is, if its a selector we need to dig deeper
-        if (node.as_selector_expr->rhs.type != AST_selector_expr && node.as_selector_expr->rhs.type != AST_identifier)
-            error_at_node(mod, node.as_selector_expr->rhs, "expected identifier or selector, got %s", ast_type_str[node.as_selector_expr->rhs.type]);
+            Type* field_type = NULL;
 
-        Type* field_type = NULL;
+            if (node.as_selector_expr->rhs.type == AST_identifier) {
+                if (node.as_selector_expr->lhs.type != AST_identifier) crash("LHS of selector expr was not identifier, parser has broken!");
 
-        if (node.as_selector_expr->rhs.type == AST_identifier) {
-            if (node.as_selector_expr->lhs.type != AST_identifier) crash("LHS of selector expr was not identifier, parser has broken!");
-
-            foreach (TypeStructField field, lhs.type->as_aggregate.fields) {
-                if (string_eq(field.name, node.as_selector_expr->rhs.as_identifier->tok->text)) field_type = field.subtype;
-            }
-            if (lhs.type->tag == TYPE_SLICE) {
-                // we need to see if its len or raw, and if so we can check it correctly.
-                if (string_eq(constr("len"), node.as_selector_expr->rhs.as_identifier->tok->text)) field_type = make_type(TYPE_U64);
-                else if (string_eq(constr("raw"), node.as_selector_expr->rhs.as_identifier->tok->text)) {
-                    field_type = make_type(TYPE_POINTER);
-                    field_type->as_reference.mutable = lhs.type->as_reference.mutable;
-                    field_type->as_reference.subtype = lhs.type->as_reference.subtype;
+                foreach (TypeStructField field, lhs.type->as_aggregate.fields) {
+                    if (string_eq(field.name, node.as_selector_expr->rhs.as_identifier->tok->text)) field_type = field.subtype;
                 }
+                if (lhs.type->tag == TYPE_SLICE) {
+                    // we need to see if its len or raw, and if so we can check it correctly.
+                    if (string_eq(constr("len"), node.as_selector_expr->rhs.as_identifier->tok->text)) field_type = make_type(TYPE_U64);
+                    else if (string_eq(constr("raw"), node.as_selector_expr->rhs.as_identifier->tok->text)) {
+                        field_type = make_type(TYPE_POINTER);
+                        field_type->as_reference.mutable = lhs.type->as_reference.mutable;
+                        field_type->as_reference.subtype = lhs.type->as_reference.subtype;
+                    }
+                }
+
+                if (!field_type) error_at_node(mod, node.as_selector_expr->rhs, "field " str_fmt " is not a field contained in this struct", str_arg(node.as_selector_expr->rhs.as_identifier->tok->text));
+                // we can return raw or len here
+                node.base->T = field_type;
+                return (checked_expr){.expr = node, .type = field_type};
             }
 
-            if (!field_type) error_at_node(mod, node.as_selector_expr->rhs, "field " str_fmt " is not a field contained in this struct", str_arg(node.as_selector_expr->rhs.as_identifier->tok->text));
-            // we can return raw or len here
-            node.base->T = field_type;
-            return (checked_expr){.expr = node, .type = field_type};
-        }
+            crash("check sel expr\n");
+        } else if (node.as_selector_expr->op->type == TOK_COLON_COLON) {
+            //we get the lhs, and compare it against module names we know. if the module isnt in the list, error!
+            AST lhs = node.as_selector_expr->lhs;
+            mars_module* selected_mod = NULL;
+            foreach(entity* ent, *mod->entities) {
+                //we search the global scope looking for our special little scrunkly
+                if (ent->is_module == true && string_eq(lhs.as_identifier->tok->text, ent->identifier)) selected_mod = ent->module;
+            }
+            if (selected_mod == NULL) error_at_node(mod, lhs, "unknown module: "str_fmt, str_arg(lhs.as_identifier->tok->text));
+            //we now have our module, does the thing we're trying to do stuff with exist?
 
-        crash("check sel expr\n");
+            entity* selected_entity = NULL;
+            string rhs_identifier = node.as_selector_expr->rhs.as_identifier->tok->text;
+            foreach(entity* ent, *selected_mod->entities) {
+                if (string_eq(ent->identifier, rhs_identifier)) selected_entity = ent;
+            }
+            if (!selected_entity) error_at_node(mod, node, "unknown object: "str_fmt"::"str_fmt, str_arg(lhs.as_identifier->tok->text), str_arg(rhs_identifier));
+            return (checked_expr){.expr = node, .type = selected_entity->entity_type};
+        }
+        error_at_node(mod, node, "unhandled op: %s", token_type_str[node.as_selector_expr->op->type]);
     }
 
     case AST_call_expr: {
@@ -346,6 +393,8 @@ Type* check_func_literal(mars_module* mod, AST func_literal, entity_table* scope
     // we need to parse the fn_type_expr and generate entities for each entity in the type, and also create a new global scope.
     // we create a new scope for this literal, and assign each new identifier to this scope.
 
+    //FIXME: func_literals dont have their entity decl done until the decl_stmt parses, and so we get a C&E bug with recursive calls
+
     entity_table* func_scope = new_entity_table(scope);
 
     Type* fn_type = make_type(TYPE_FUNCTION);
@@ -392,6 +441,7 @@ Type* check_func_literal(mars_module* mod, AST func_literal, entity_table* scope
         Type* param_type = ast_to_type(mod, param.type);
         entity* param_entity = new_entity(func_scope, param.field.as_identifier->tok->text, param.field);
         param.field.as_identifier->entity = param_entity;
+        param_entity->is_mutable = true;
         param_entity->is_param = true;
         param_entity->entity_type = param_type;
         param_entity->param_idx = count;
@@ -415,6 +465,7 @@ Type* check_func_literal(mars_module* mod, AST func_literal, entity_table* scope
         Type* return_type = ast_to_type(mod, returns.type);
         entity* return_entity = new_entity(func_scope, returns.field.as_identifier->tok->text, returns.field);
         returns.field.as_identifier->entity = return_entity;
+        return_entity->is_mutable = true;
         return_entity->is_return = true;
         return_entity->entity_type = return_type;
         return_entity->return_idx = count;

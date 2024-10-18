@@ -53,3 +53,5 @@ mars_module* create_module(da(parser) * pl, Arena alloca);
 // find the source file of a snippet of code
 // NOTE: the snippet must be an actual substring (is_within() must return true) of one of the files
 mars_file* find_source_file(mars_module* cu, string snippet);
+
+string search_for_module(mars_module* mod, string relpath);
