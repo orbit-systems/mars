@@ -224,6 +224,15 @@ Type* check_stmt(mars_module* mod, AST node, entity_table* scope) {
         struct_alias->as_reference.subtype = rhs;
         //we're gonna do some trolling here
         return struct_alias;
+    case AST_call_expr: {
+        checked_expr call_expr = check_expr(mod, node, scope);
+        return call_expr.type;
+    }
+    case AST_for_in_stmt: {
+        
+    }
+
+
     default:
         error_at_node(mod, node, "[check_module] unexpected ast type: %s", ast_type_str[node.type]);
     }
@@ -532,6 +541,27 @@ Type* check_func_literal(mars_module* mod, AST func_literal, entity_table* scope
     return fn_type;
 }
 
+Type* get_native_int_type(mars_module* mod, bool sign) {
+    switch (mod->current_architecture->native_int) {
+    case FE_TYPE_I8:  return (sign) ? make_type(TYPE_I8)  : make_type(TYPE_U8);
+    case FE_TYPE_I16: return (sign) ? make_type(TYPE_I16) : make_type(TYPE_U16);
+    case FE_TYPE_I32: return (sign) ? make_type(TYPE_I32) : make_type(TYPE_U32);
+    case FE_TYPE_I64: return (sign) ? make_type(TYPE_I64) : make_type(TYPE_U64);
+    default: crash("unknown native int type: %d\n", mod->current_architecture->native_int);    
+    }
+    return NULL;
+}
+
+Type* get_native_float_type(mars_module* mod) {
+    switch (mod->current_architecture->native_float) {
+    case FE_TYPE_F16: return make_type(TYPE_F16);
+    case FE_TYPE_F32: return make_type(TYPE_F32);
+    case FE_TYPE_F64: return make_type(TYPE_F64);
+    default: crash("unknown native float type: %d\n", mod->current_architecture->native_float);    
+    }
+    return NULL; 
+}
+
 Type* ast_to_type(mars_module* mod, AST node) {
     switch (node.type) {
     case AST_basic_type_expr:
@@ -539,20 +569,20 @@ Type* ast_to_type(mars_module* mod, AST node) {
         case TOK_TYPE_KEYWORD_I8:  return make_type(TYPE_I8);
         case TOK_TYPE_KEYWORD_I16: return make_type(TYPE_I16);
         case TOK_TYPE_KEYWORD_I32: return make_type(TYPE_I32);
-        case TOK_TYPE_KEYWORD_INT:
+        case TOK_TYPE_KEYWORD_INT: return get_native_int_type(mod, true);
         case TOK_TYPE_KEYWORD_I64: return make_type(TYPE_I64);
 
-        case TOK_TYPE_KEYWORD_U8:  return make_type(TYPE_U8);
-        case TOK_TYPE_KEYWORD_U16: return make_type(TYPE_U16);
-        case TOK_TYPE_KEYWORD_U32: return make_type(TYPE_U32);
-        case TOK_TYPE_KEYWORD_UINT:
-        case TOK_TYPE_KEYWORD_U64: return make_type(TYPE_U64);
+        case TOK_TYPE_KEYWORD_U8:   return make_type(TYPE_U8);
+        case TOK_TYPE_KEYWORD_U16:  return make_type(TYPE_U16);
+        case TOK_TYPE_KEYWORD_U32:  return make_type(TYPE_U32);
+        case TOK_TYPE_KEYWORD_UINT: return get_native_int_type(mod, false);
+        case TOK_TYPE_KEYWORD_U64:  return make_type(TYPE_U64);
         
 
-        case TOK_TYPE_KEYWORD_F16: return make_type(TYPE_F16);
-        case TOK_TYPE_KEYWORD_F32: return make_type(TYPE_F32);
-        case TOK_TYPE_KEYWORD_FLOAT:
-        case TOK_TYPE_KEYWORD_F64: return make_type(TYPE_F64);
+        case TOK_TYPE_KEYWORD_F16:   return make_type(TYPE_F16);
+        case TOK_TYPE_KEYWORD_F32:   return make_type(TYPE_F32);
+        case TOK_TYPE_KEYWORD_FLOAT: return get_native_float_type(mod);
+        case TOK_TYPE_KEYWORD_F64:   return make_type(TYPE_F64);
         
         case TOK_TYPE_KEYWORD_BOOL: return make_type(TYPE_BOOL);
         default: error_at_node(mod, node, "[INTERNAL COMPILER ERROR] unknown token type \"%s\" found when converting AST_basic_type_expr to integral type", token_type_str[node.as_basic_type_expr->lit->type]);

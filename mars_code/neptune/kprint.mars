@@ -4,15 +4,15 @@ import mem "../memory";
 
 let PUTC_PORT: uint = 100;
 
-let kprintln = fn(str: []let u8) {
-    kprint(str);
-    kputc('\n');
-};
-
 let kprint = fn(str: []let u8) {
     for i in 0..<str.len {
         kputc(str[i]);
     }
+};
+
+let kprintln = fn(str: []let u8) {
+    kprint(str);
+    kputc('\n');
 };
 
 let kputc = fn(c: u8) {

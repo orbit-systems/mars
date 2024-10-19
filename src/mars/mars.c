@@ -22,6 +22,13 @@ flag_set mars_flags;
 
 FeModule* irgen_module(mars_module* mars);
 
+void apply_current_arch(mars_module* mod) {
+    foreach(mars_module* curr_mod, mod->import_list) {
+        curr_mod->current_architecture = mod->current_architecture;
+        apply_current_arch(curr_mod);
+    }
+}
+
 int main(int argc, char** argv) {
 #ifndef _WIN32
     init_signal_handler();
@@ -32,6 +39,7 @@ int main(int argc, char** argv) {
     mars_module* main_mod = parse_module(mars_flags.input_path);
 
     main_mod->current_architecture = mars_arch_to_fe(mars_flags.target_arch);
+    apply_current_arch(main_mod);
 
     if (mars_flags.output_dot == true) {
         emit_dot(str("test"), main_mod->program_tree);
