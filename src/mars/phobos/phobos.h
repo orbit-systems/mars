@@ -6,6 +6,7 @@
 #include "parse/lex.h"
 #include "parse/parse.h"
 #include "ast.h"
+#include "iron/iron.h"
 
 da_typedef(lexer);
 da_typedef(parser);
@@ -36,6 +37,8 @@ typedef struct mars_module {
     Arena AST_alloca;
     Arena temp_alloca;
     entity_table* entities;
+
+    const FeArchInfo* current_architecture;
 
     bool visited : 1; // checking shit
     bool checked : 1; // has been FULLY CHECKED by the checker

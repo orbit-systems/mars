@@ -1,4 +1,8 @@
 #include "targettriples.h"
+#include "iron/codegen/x64/x64.h"
+#include "common/crash.h"
+
+#include "iron/iron.h"
 
 void set_target_triple(string target, flag_set* fl) {
 
@@ -46,4 +50,23 @@ void set_target_triple(string target, flag_set* fl) {
     if (fl->target_arch == -1) general_error("unknown target architecture '" str_fmt "'", str_arg(arch));
     if (fl->target_system == -1) general_error("unknown target system '" str_fmt "'", str_arg(sys));
     if (fl->target_product == -1) general_error("unknown target product '" str_fmt "'", str_arg(product));
+}
+
+const FeArchInfo* mars_arch_to_fe(u8 arch) {
+    switch (arch) {
+    case TARGET_ARCH_APHELION: crash("aphelion not supported in iron yet!\n");
+    case TARGET_ARCH_X86_64:   return &fe_arch_x64; 
+    default: crash("unknown architecture!\n");
+    }
+    return NULL;
+}
+
+u8 mars_sys_to_fe(u8 arch) {
+    switch (arch) {
+    case TARGET_SYS_NONE:    crash("freestanding not supported in iron yet!\n");
+    case TARGET_SYS_LINUX:   return FE_SYSTEM_LINUX;
+    case TARGET_SYS_WINDOWS: return FE_SYSTEM_WINDOWS;
+    default: crash("unknown system!\n");
+    }
+    return 0;
 }

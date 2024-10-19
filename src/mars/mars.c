@@ -31,6 +31,8 @@ int main(int argc, char** argv) {
 
     mars_module* main_mod = parse_module(mars_flags.input_path);
 
+    main_mod->current_architecture = mars_arch_to_fe(mars_flags.target_arch);
+
     if (mars_flags.output_dot == true) {
         emit_dot(str("test"), main_mod->program_tree);
     }
@@ -41,19 +43,19 @@ int main(int argc, char** argv) {
 
     FeModule* iron_module = irgen_module(main_mod);
 
-    fe_sched_module_pass(iron_module, &fe_pass_verify);
-    fe_sched_module_pass(iron_module, &fe_pass_stackprom);
-    fe_sched_module_pass(iron_module, &fe_pass_tdce);
+    printf("IR generated\n");
+    printf("attempt passes\n");
+
+    MARS_STANDARD_PASSES(iron_module);
+
     fe_run_all_passes(iron_module, true);
 
-    // printstr(fe_emit_ir(iron_module));
-
-    printf("IR generated\n");
+    printf("passes done\n");
 
     printf("attempt codegen\n");
 
-    iron_module->target.arch = &fe_arch_x64;
-    iron_module->target.system = FE_SYSTEM_LINUX;
+    iron_module->target.arch = main_mod->current_architecture;
+    iron_module->target.system = mars_sys_to_fe(mars_flags.target_system);
 
     FeMachBuffer mb = fe_mach_codegen(iron_module);
 

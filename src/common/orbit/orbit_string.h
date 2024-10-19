@@ -41,6 +41,7 @@ int  string_cmp(string a, string b);
 bool string_eq(string a, string b);
 bool string_ends_with(string source, string ending);
 long string_strtol(string str, int base);
+f64  string_strtof(string str);
 
 #ifdef ORBIT_IMPLEMENTATION
 string strprintf(char* format, ...) {
@@ -135,6 +136,13 @@ string string_clone(string str) {
 long string_strtol(string str, int base) {
     char* cstr = clone_to_cstring(str);
     long value = strtol(cstr, NULL, base);
+    free(cstr);
+    return value;
+}
+
+f64 string_strtof(string str) {
+    char* cstr = clone_to_cstring(str);
+    f64 value = strtof(cstr, NULL);
     free(cstr);
     return value;
 }

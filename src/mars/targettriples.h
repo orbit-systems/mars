@@ -3,8 +3,11 @@
 
 #include "common/orbit.h"
 #include "mars/mars.h"
+#include "iron/iron.h"
 
 void set_target_triple(string target, flag_set* fl);
+const FeArchInfo* mars_arch_to_fe(u8 arch);
+u8 mars_sys_to_fe(u8 arch);
 
 #define SUPPORTED_ARCH      \
     X(APHELION, "aphelion") \
@@ -12,25 +15,26 @@ void set_target_triple(string target, flag_set* fl);
 
 #define SUPPORTED_SYS  \
     X(NONE, "unknown") \
-    X(LINUX, "linux")
+    X(LINUX, "linux") \
+    X(WINDOWS, "windows")
 
 #define SUPPORTED_PRODUCT \
     X(ASM, "asm")         \
     X(ELF, "elf")
 
-enum {
+enum MarsSupportedArch {
 #define X(variant, str) TARGET_ARCH_##variant,
     SUPPORTED_ARCH
 #undef X
 };
 
-enum {
+enum MarsSupportedSys {
 #define X(variant, str) TARGET_SYS_##variant,
     SUPPORTED_SYS
 #undef X
 };
 
-enum {
+enum MarsSupportedProduct {
 #define X(variant, str) TARGET_PRODUCT_##variant,
     SUPPORTED_PRODUCT
 #undef X

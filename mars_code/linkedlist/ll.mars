@@ -8,7 +8,7 @@ type Node = distinct struct {
 };
 
 let new_node = fn(val: int) -> ^mut Node {
-    let n : ^mut Node = arena::alloc(sizeof(Node), alignof(Node));
+    mut n : ^mut Node = arena::alloc(sizeof(Node), alignof(Node));
     n.val = val;
     n.next = null;
     return n;
@@ -16,7 +16,7 @@ let new_node = fn(val: int) -> ^mut Node {
 
 let node_at = fn(node: ^let Node, index: int) -> ^mut Node {
     mut i = index;
-    mut n = cast(^mut Node)node;
+    mut n = node;
     while i != 0 {
         if (n == null) do return null;
         n = n.next;
@@ -24,3 +24,4 @@ let node_at = fn(node: ^let Node, index: int) -> ^mut Node {
     }
     return n;
 };
+

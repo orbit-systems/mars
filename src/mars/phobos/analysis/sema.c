@@ -60,11 +60,9 @@ Type* check_stmt(mars_module* mod, AST node, entity_table* scope) {
         Type* ast_type = NULL;
         if (!is_null_AST(node.as_decl_stmt->type)) {
             decl_type = ast_to_type(mod, node.as_decl_stmt->type);
-            if (decl_type->tag == TYPE_POINTER) node.as_decl_stmt->is_mut = decl_type->as_reference.mutable;
             node.as_decl_stmt->tg_type = decl_type;
         } else {
             ast_type = rhs.type;
-            if (ast_type->tag == TYPE_POINTER) node.as_decl_stmt->is_mut = ast_type->as_reference.mutable;
             node.as_decl_stmt->tg_type = ast_type; //FIXME: this is _wrong_ on a call_expr.
         }
 
@@ -106,10 +104,10 @@ Type* check_stmt(mars_module* mod, AST node, entity_table* scope) {
             lhs_item_entity->is_mutable = node.as_decl_stmt->is_mut;
             lhs.as_identifier->entity = lhs_item_entity;
 
-            if (!is_null_AST(node.as_decl_stmt->type) && !check_type_cast_implicit(rhs.type, ast_type)) {
+            if (!is_null_AST(node.as_decl_stmt->type) && !check_type_cast_implicit(node.as_decl_stmt->tg_type, rhs.type)) {
                 error_at_node(mod, node, "type mismatch: lhs and rhs cannot be cast to eachother\nTODO: find out the type of lhs and rhs to print a more informative error");
             }
-            scope->at[scope->len - 1]->entity_type = ast_type;
+            scope->at[scope->len - 1]->entity_type = (decl_type) ? decl_type : ast_type;
         }
         return NULL;
     }
@@ -323,10 +321,15 @@ checked_expr check_expr(mars_module* mod, AST node, entity_table* scope) {
             if (node.as_selector_expr->rhs.type != AST_selector_expr && node.as_selector_expr->rhs.type != AST_identifier)
                 error_at_node(mod, node.as_selector_expr->rhs, "expected identifier or selector, got %s", ast_type_str[node.as_selector_expr->rhs.type]);
             if (lhs.type->tag == TYPE_POINTER && 
-                lhs.type->as_reference.subtype->tag != TYPE_STRUCT && lhs.type->as_reference.subtype->tag != TYPE_UNION
-                ) error_at_node(mod, lhs.expr, "expected aggregate through pointer, got type tag %d", lhs.type->tag);
+                lhs.type->as_reference.subtype->tag != TYPE_STRUCT && 
+                lhs.type->as_reference.subtype->tag != TYPE_UNION && 
+                lhs.type->as_reference.subtype->tag != TYPE_SLICE) 
+                    error_at_node(mod, lhs.expr, "expected aggregate through pointer, got type tag %d", lhs.type->tag);
+
             if (lhs.type->tag == TYPE_POINTER) lhs.type = lhs.type->as_reference.subtype;
-            if (lhs.type->tag != TYPE_STRUCT && lhs.type->tag != TYPE_UNION) error_at_node(mod, lhs.expr, "expected aggregate, got type tag %d", lhs.type->tag);
+            if (lhs.type->tag != TYPE_STRUCT && 
+                lhs.type->tag != TYPE_UNION && 
+                lhs.type->tag != TYPE_SLICE) error_at_node(mod, lhs.expr, "expected aggregate, got type tag %d", lhs.type->tag);
 
             Type* field_type = NULL;
 
@@ -408,8 +411,8 @@ checked_expr check_literal(mars_module* mod, AST literal) {
         literal.base->T = pointer;
         return (checked_expr){.expr = literal, .ev = ev, .type = pointer};
     case TOK_LITERAL_INT:
-        ev->as_i64 = string_strtol(literal.as_literal_expr->tok->text, 10);
-        ev->kind = EV_I64;
+        ev->as_untyped_int = string_strtol(literal.as_literal_expr->tok->text, 10);
+        ev->kind = EV_UNTYPED_INT;
         literal.base->T = make_type(TYPE_UNTYPED_INT); // TODO: this will be optimised, but dont be a lazy fuck kayla
         return (checked_expr){.expr = literal, .ev = ev, .type = make_type(TYPE_UNTYPED_INT)};
     case TOK_LITERAL_BOOL:
@@ -417,6 +420,11 @@ checked_expr check_literal(mars_module* mod, AST literal) {
         ev->kind = EV_BOOL;
         literal.base->T = make_type(TYPE_BOOL); // TODO: this will be optimised, but dont be a lazy fuck kayla
         return (checked_expr){.expr = literal, .ev = ev, .type = make_type(TYPE_BOOL)};
+    case TOK_LITERAL_FLOAT:
+        ev->as_untyped_float = string_strtof(literal.as_literal_expr->tok->text);
+        ev->kind = EV_UNTYPED_FLOAT;
+        literal.base->T = make_type(TYPE_UNTYPED_FLOAT);
+        return (checked_expr){.expr = literal, .ev = ev, .type = make_type(TYPE_UNTYPED_FLOAT)};
     default:
         error_at_node(mod, literal, "[INTERNAL COMPILER ERROR] unable to check literal " str_fmt " with type %s", str_arg(literal.as_literal_expr->tok->text), token_type_str[literal.as_literal_expr->tok->type]);
     }
@@ -528,47 +536,25 @@ Type* ast_to_type(mars_module* mod, AST node) {
     switch (node.type) {
     case AST_basic_type_expr:
         switch (node.as_basic_type_expr->lit->type) {
-        case TOK_TYPE_KEYWORD_I8: {
-            return make_type(TYPE_I8);
-        }
-        case TOK_TYPE_KEYWORD_I16: {
-            return make_type(TYPE_I16);
-        }
-        case TOK_TYPE_KEYWORD_I32: {
-            return make_type(TYPE_I32);
-        }
+        case TOK_TYPE_KEYWORD_I8:  return make_type(TYPE_I8);
+        case TOK_TYPE_KEYWORD_I16: return make_type(TYPE_I16);
+        case TOK_TYPE_KEYWORD_I32: return make_type(TYPE_I32);
         case TOK_TYPE_KEYWORD_INT:
-        case TOK_TYPE_KEYWORD_I64: {
-            return make_type(TYPE_I64);
-        }
+        case TOK_TYPE_KEYWORD_I64: return make_type(TYPE_I64);
 
-        case TOK_TYPE_KEYWORD_U8: {
-            return make_type(TYPE_U8);
-        }
-        case TOK_TYPE_KEYWORD_U16: {
-            return make_type(TYPE_U16);
-        }
-        case TOK_TYPE_KEYWORD_U32: {
-            return make_type(TYPE_U32);
-        }
+        case TOK_TYPE_KEYWORD_U8:  return make_type(TYPE_U8);
+        case TOK_TYPE_KEYWORD_U16: return make_type(TYPE_U16);
+        case TOK_TYPE_KEYWORD_U32: return make_type(TYPE_U32);
         case TOK_TYPE_KEYWORD_UINT:
-        case TOK_TYPE_KEYWORD_U64: {
-            return make_type(TYPE_U64);
-        }
+        case TOK_TYPE_KEYWORD_U64: return make_type(TYPE_U64);
+        
 
-        case TOK_TYPE_KEYWORD_F16: {
-            return make_type(TYPE_F16);
-        }
-        case TOK_TYPE_KEYWORD_F32: {
-            return make_type(TYPE_F32);
-        }
+        case TOK_TYPE_KEYWORD_F16: return make_type(TYPE_F16);
+        case TOK_TYPE_KEYWORD_F32: return make_type(TYPE_F32);
         case TOK_TYPE_KEYWORD_FLOAT:
-        case TOK_TYPE_KEYWORD_F64: {
-            return make_type(TYPE_F64);
-        }
-        case TOK_TYPE_KEYWORD_BOOL: {
-            return make_type(TYPE_BOOL);
-        }
+        case TOK_TYPE_KEYWORD_F64: return make_type(TYPE_F64);
+        
+        case TOK_TYPE_KEYWORD_BOOL: return make_type(TYPE_BOOL);
         default: error_at_node(mod, node, "[INTERNAL COMPILER ERROR] unknown token type \"%s\" found when converting AST_basic_type_expr to integral type", token_type_str[node.as_basic_type_expr->lit->type]);
         }
     case AST_pointer_type_expr:
@@ -653,7 +639,14 @@ bool check_type_cast_implicit(Type* lhs, Type* rhs) {
     rhs = type_unalias(rhs);
 
     LOG("lhs: %d, rhs: %d\n", lhs->tag, rhs->tag);
-    if (lhs->tag == rhs->tag && rhs->tag != TYPE_STRUCT && rhs->tag != TYPE_UNION && rhs->tag != TYPE_ENUM && rhs->tag != TYPE_UNTYPED_AGGREGATE && rhs->tag != TYPE_FUNCTION && rhs->tag != TYPE_POINTER && rhs->tag != TYPE_ALIAS) return true;
+    if (lhs->tag == rhs->tag && 
+        rhs->tag != TYPE_STRUCT && 
+        rhs->tag != TYPE_UNION && 
+        rhs->tag != TYPE_ENUM && 
+        rhs->tag != TYPE_UNTYPED_AGGREGATE && 
+        rhs->tag != TYPE_FUNCTION && 
+        rhs->tag != TYPE_POINTER && 
+        rhs->tag != TYPE_ALIAS) return true;
 
     if (type_equivalent(lhs, rhs, NULL)) return true;
     // we now have a situation where implicit casts are possible.
@@ -683,12 +676,26 @@ bool check_type_cast_implicit(Type* lhs, Type* rhs) {
     }
     // now we check for implicit casts between integrals
     // we check ONLY the rhs going to lhs
-    if (TYPE_I8 <= rhs->tag && rhs->tag <= TYPE_I64 && TYPE_I8 <= lhs->tag && lhs->tag <= TYPE_I64 && rhs->tag <= lhs->tag) return true;
+    if (TYPE_I8 <= rhs->tag && rhs->tag <= TYPE_I64 && 
+        TYPE_I8 <= lhs->tag && lhs->tag <= TYPE_I64 && 
+        rhs->tag <= lhs->tag) return true;
 
-    if (TYPE_U8 <= rhs->tag && rhs->tag <= TYPE_U64 && TYPE_U8 <= lhs->tag && lhs->tag <= TYPE_U64 && rhs->tag <= lhs->tag) return true;
+    if (TYPE_U8 <= rhs->tag && rhs->tag <= TYPE_U64 && 
+        TYPE_U8 <= lhs->tag && lhs->tag <= TYPE_U64 && 
+        rhs->tag <= lhs->tag) return true;
 
-    if (rhs->tag == TYPE_UNTYPED_INT && TYPE_I8 <= lhs->tag && lhs->tag <= TYPE_U64) return true;
+    if (TYPE_F16 <= rhs->tag && rhs->tag <= TYPE_F64 && 
+        TYPE_F16 <= lhs->tag && lhs->tag <= TYPE_F64 && 
+        rhs->tag <= lhs->tag) return true;
+
+    if ((rhs->tag == TYPE_UNTYPED_INT || rhs->tag == TYPE_UNTYPED_FLOAT) && 
+        TYPE_I8 <= lhs->tag && lhs->tag <= TYPE_F64) return true;
     if ((rhs->tag == TYPE_UNTYPED_INT || (TYPE_I8 <= rhs->tag && rhs->tag <= TYPE_U64)) && lhs->tag == TYPE_POINTER) return true;
+
+    if (rhs->tag == lhs->tag && (rhs->tag == TYPE_UNTYPED_INT || rhs->tag == TYPE_UNTYPED_FLOAT)) return true;
+    if ((rhs->tag == TYPE_UNTYPED_INT   && lhs->tag == TYPE_UNTYPED_FLOAT) ||
+        (rhs->tag == TYPE_UNTYPED_FLOAT && lhs->tag == TYPE_UNTYPED_INT)) return true;
+
 
     return false;
 }
