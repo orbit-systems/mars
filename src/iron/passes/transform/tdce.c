@@ -41,9 +41,11 @@ static void register_uses(FeIr* ir) {
         store->location->use_count++;
         store->value->use_count++;
         break;
-    case FE_IR_RETURNVAL:
-        FeIrReturnVal* retval = (FeIrReturnVal*)ir;
-        if (retval->source) retval->source->use_count++;
+    case FE_IR_RETURN:
+        FeIrReturn* ret = (FeIrReturn*)ir;
+        for_range (i, 0, ret->len) {
+            ret->sources[i]->use_count++;
+        }
         break;
     case FE_IR_MOV:
         FeIrMov* mov = (FeIrMov*)ir;
@@ -61,7 +63,6 @@ static void register_uses(FeIr* ir) {
     case FE_IR_CONST:
     case FE_IR_PARAMVAL:
     case FE_IR_STACK_ADDR:
-    case FE_IR_RETURN:
         break;
     default:
         CRASH("unhandled inst type %d", ir->kind);
@@ -115,10 +116,12 @@ static void try_eliminate(FeIr* ir) {
         try_eliminate(store->location);
         try_eliminate(store->value);
         break;
-    case FE_IR_RETURNVAL:
-        FeIrReturnVal* retval = (FeIrReturnVal*)ir;
-        if (retval->source) retval->source->use_count--;
-        try_eliminate(retval->source);
+    case FE_IR_RETURN:
+        FeIrReturn* ret = (FeIrReturn*)ir;
+        for_range (i, 0, ret->len) {
+            ret->sources[i]->use_count--;
+            try_eliminate(ret->sources[i]);
+        }
         break;
     case FE_IR_MOV:
         FeIrMov* mov = (FeIrMov*)ir;

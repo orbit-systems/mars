@@ -49,26 +49,26 @@ Let sandwichman know if you spot a place where this happens.
 
     The following only act on integer types.
 
-    `FE_IR_ADD`  - add two integers
-    `FE_IR_SUB`  - subtract two integers
-    `FE_IR_IMUL` - multiply two integers as if they are signed
-    `FE_IR_UMUL` - multiply two integers as if they are unsigned
-    `FE_IR_IDIV` - divide two integers as if they are signed
-    `FE_IR_UDIV` - divide two integers as if they are unsigned
-    `FE_IR_IMOD` - modulo two integers as if they are signed
-    `FE_IR_UMOD` - modulo two integers as if they are unsigned
-    `FE_IR_NEG`  - negation
+        `FE_IR_ADD`  - add two integers
+        `FE_IR_SUB`  - subtract two integers
+        `FE_IR_IMUL` - multiply two integers as if they are signed
+        `FE_IR_UMUL` - multiply two integers as if they are unsigned
+        `FE_IR_IDIV` - divide two integers as if they are signed
+        `FE_IR_UDIV` - divide two integers as if they are unsigned
+        `FE_IR_IMOD` - modulo two integers as if they are signed
+        `FE_IR_UMOD` - modulo two integers as if they are unsigned
+        `FE_IR_NEG`  - negation
 
-    `FE_IR_SHL` - bitwise shift left
-    `FE_IR_ASR` - bitwise arithmetic shift right (copy top bit)
-    `FE_IR_LSR` - bitwise logical shift right (zero top bit)
+        `FE_IR_SHL` - bitwise shift left
+        `FE_IR_ASR` - bitwise arithmetic shift right (copy top bit)
+        `FE_IR_LSR` - bitwise logical shift right (zero top bit)
 
         The following act on boolean values as well.
 
-        `FE_IR_AND` - bitwise and
-        `FE_IR_OR`  - bitwise or
-        `FE_IR_XOR` - bitwise xor
-        `FE_IR_NOT` - bitwise not
+            `FE_IR_AND` - bitwise and
+            `FE_IR_OR`  - bitwise or
+            `FE_IR_XOR` - bitwise xor
+            `FE_IR_NOT` - bitwise not
 
     The following only act on floating-point types.
 
@@ -90,3 +90,24 @@ Let sandwichman know if you spot a place where this happens.
         `FE_IR_IGE` - integer signed greater than or equal to (a >= b).
         `FE_IR_EQ`  - integer equality (a == b)
         `FE_IR_NE`  - integer inequality (a != b)
+
+    `FE_IR_BITCAST` - reinterpret cast. do no data transformations. requires sizeof(lhs) == sizeof(rhs)
+
+    `FE_IR_TRUNC` - truncate high bitsize integer to low bitsize integer. requires sizeof(lhs) <= sizeof(rhs).
+                    when sizeof(lhs) == sizeof(rhs), this is treated as a no-op.
+    `FE_IR_SIGNEXT` - sign-extend low bitsize integer to high bitsize integer. requires sizeof(lhs) >= sizeof(rhs).
+                    when sizeof(lhs) == sizeof(rhs), this is treated as a no-op.
+    `FE_IR_ZEROEXT` - zero-extend low bitsize integer to high bitsize integer. requires sizeof(lhs) >= sizeof(rhs).
+                    when sizeof(lhs) == sizeof(rhs), this is treated as a no-op.
+
+    `FE_IR_STACK_ADDR` - take the address of a stack variable.
+    `FE_IR_FIELDPTR` - take the pointer to a field from a pointer-to-record.
+    `FE_IR_INDEXPTR` - take the pointer to an element from a pointer-to-array.
+
+    `FE_IR_CONST` - create a constant value.
+    `FE_IR_LOAD_SYMBOL` - load the value of a symbol.
+
+    `FE_IR_MOV` - duplicate a value. often used as an intermediate in passes, and gets elided by the `movprop` pass.
+    `FE_IR_PHI` - merge values from multiple different control paths.
+
+    `FE_IR_PARAMVAL` - 

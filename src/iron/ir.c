@@ -292,7 +292,6 @@ const size_t fe_inst_sizes[] = {
     [FE_IR_JUMP] = sizeof(FeIrJump),
 
     [FE_IR_PARAMVAL] = sizeof(FeIrParamVal),
-    [FE_IR_RETURNVAL] = sizeof(FeIrReturnVal),
 
     [FE_IR_RETURN] = sizeof(FeIrReturn),
 };
@@ -474,18 +473,14 @@ FeIr* fe_ir_paramval(FeFunction* f, u32 param) {
     return (FeIr*)ir;
 }
 
-FeIr* fe_ir_returnval(FeFunction* f, u32 ret, FeIr* source) {
-    FeIrReturnVal* ir = (FeIrReturnVal*)fe_ir(f, FE_IR_RETURNVAL);
-    ir->index = ret;
-    if (ret >= f->returns.len) {
-        FE_FATAL(f->mod, cstrprintf("returnval index %d is out of range [0, %d)", ret, f->returns.len));
-    }
-    ir->source = source;
-    return (FeIr*)ir;
-}
-
 FeIr* fe_ir_return(FeFunction* f) {
-    return fe_ir(f, FE_IR_RETURN);
+    FeIrReturn* ret = (FeIrReturn*) fe_ir(f, FE_IR_RETURN);
+    u32 count = f->returns.len;
+    if (count != 0) {
+        ret->sources = fe_malloc(count * sizeof(ret->sources[0]));
+    }
+    ret->len = count;
+    return (FeIr*) ret;
 }
 
 // hasta la vista baby
@@ -556,11 +551,6 @@ void fe_rewrite_uses_in_inst(FeIr* inst, FeIr* source, FeIr* dest) {
         rewrite_if_eq(binop->lhs, source, dest);
         rewrite_if_eq(binop->rhs, source, dest);
         break;
-    case FE_IR_RETURNVAL:
-        FeIrReturnVal* retval = (FeIrReturnVal*)inst;
-        rewrite_if_eq(retval->source, source, dest);
-        break;
-
     case FE_IR_STACK_STORE:
         FeIrStackStore* stack_store = (FeIrStackStore*)inst;
         rewrite_if_eq(stack_store->value, source, dest);
@@ -576,12 +566,17 @@ void fe_rewrite_uses_in_inst(FeIr* inst, FeIr* source, FeIr* dest) {
             rewrite_if_eq(phi->sources[i], source, dest);
         }
         break;
+    case FE_IR_RETURN:
+        FeIrReturn* ret = (FeIrReturn*)inst;
+        for_range(i, 0, ret->len) {
+            rewrite_if_eq(ret->sources[i], source, dest);
+        }
+        break;
     case FE_IR_PARAMVAL:
     case FE_IR_STACK_ADDR:
     case FE_IR_STACK_LOAD:
     case FE_IR_CONST:
     case FE_IR_JUMP:
-    case FE_IR_RETURN:
         break; // no inputs
     default:
         printf("---- %d\n", inst->kind);

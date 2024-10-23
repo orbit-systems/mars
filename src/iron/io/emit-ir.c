@@ -178,11 +178,6 @@ static void emit_inst(StringBuilder* sb, FeFunction* fn, FeIr* inst) {
         FeIrParamVal* paramval = (FeIrParamVal*)inst;
         sb_printf(sb, "paramval %u", paramval->index);
         break;
-    case FE_IR_RETURNVAL:
-        FeIrReturnVal* returnval = (FeIrReturnVal*)inst;
-        sb_printf(sb, "returnval %u" COLOR_INST " %u" RESET, returnval->index, number(returnval->source));
-        break;
-
     case FE_IR_PHI:
         FeIrPhi* phi = (FeIrPhi*)inst;
         sb_append_c(sb, "phi ");
@@ -253,7 +248,11 @@ static void emit_inst(StringBuilder* sb, FeFunction* fn, FeIr* inst) {
         sb_printf(sb, "jump \'" str_fmt "\'", str_arg(jump->dest->name));
         break;
     case FE_IR_RETURN:
+        FeIrReturn* ret = (FeIrReturn*)inst;
         sb_append_c(sb, "return");
+        for_range(i, 0, ret->len) {
+            sb_printf(sb, COLOR_INST " %u" RESET, number(ret->sources[i]));
+        }
         break;
     default:
         sb_append_c(sb, "unknown");
@@ -279,14 +278,12 @@ static void emit_function(StringBuilder* sb, FeFunction* f) {
 
     sb_append_c(sb, "(");
     for_range(i, 0, f->params.len) {
-        if (f->params.at[i]->byval) TODO("");
         FeType t = f->params.at[i]->type;
         emit_type(sb, f->mod, t);
         if (i != f->params.len - 1) sb_append_c(sb, " ");
     }
     sb_append_c(sb, ") (");
     for_range(i, 0, f->returns.len) {
-        if (f->returns.at[i]->byval) TODO("");
         FeType t = f->returns.at[i]->type;
         emit_type(sb, f->mod, t);
         if (i != f->returns.len - 1) sb_append_c(sb, " ");

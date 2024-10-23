@@ -97,24 +97,23 @@ static FeIr* emit_prologue(FeMachBuffer* buf, FeFunction* fn, FeIr* ir) {
 static FeIr* emit_epilogue(FeMachBuffer* buf, FeFunction* fn, FeIr* ir) {
     u32* callconv_vregs = fe_malloc(sizeof(u32) * fn->returns.len);
 
-    FeIrReturnVal* rv;
-    for (rv = (FeIrReturnVal*)ir; rv->base.kind == FE_IR_RETURNVAL; rv = (FeIrReturnVal*)rv->base.next) {
+    FeIrReturn* ret = (FeIrReturn*) ir;
+    for_range(i, 0, ret->len) {
         // create the vreg for the callconv register
         u32 cconv_vreg = fe_mach_new_vreg(buf, FE_X64_REGCLASS_GPR);
-        callconv_vregs[rv->index] = cconv_vreg;
-        buf->vregs.at[cconv_vreg].real = mars_cconv_returnregs[rv->index];
+        callconv_vregs[i] = cconv_vreg;
+        buf->vregs.at[cconv_vreg].real = mars_cconv_returnregs[i];
 
         // generate the mov
         FeMachInst* mov = new_inst(buf, FE_X64_INST_MOV_RR_64);
-        fe_mach_set_vreg(buf, mov, 1, get_ir_vreg(rv->source));
+        fe_mach_set_vreg(buf, mov, 1, get_ir_vreg(ret->sources[i]));
         fe_mach_set_vreg(buf, mov, 0, cconv_vreg);
     }
 
-    for (rv = (FeIrReturnVal*)ir; rv->base.kind == FE_IR_RETURNVAL; rv = (FeIrReturnVal*)rv->base.next) {
+    for_range(i, 0, ret->len) {
         // generate the lifetime endpoints
-        fe_mach_append(buf, fe_mach_new_lifetime_end(buf, callconv_vregs[rv->index]));
+        fe_mach_append(buf, fe_mach_new_lifetime_end(buf, callconv_vregs[i]));
     }
-    ir = rv->base.prev;
 
     fe_free(callconv_vregs);
     return ir;
@@ -130,8 +129,9 @@ static void gen_basic_block(FeMachBuffer* buf, FeBasicBlock* bb) {
     case FE_IR_PARAMVAL:
         ir = emit_prologue(buf, bb->function, ir);
         break;
-    case FE_IR_RETURNVAL:
+    case FE_IR_RETURN:
         ir = emit_epilogue(buf, bb->function, ir);
+        new_inst(buf, FE_X64_INST_RET);
         break;
     case FE_IR_ADD:
         FeIrBinop* binop = (FeIrBinop*)ir;
@@ -154,9 +154,6 @@ static void gen_basic_block(FeMachBuffer* buf, FeBasicBlock* bb) {
         fe_mach_set_vreg(buf, minst, 0, lhs_vreg);
         fe_mach_set_vreg(buf, minst, 1, get_ir_vreg(binop->rhs));
         put_ir_vreg(ir, lhs_vreg);
-        break;
-    case FE_IR_RETURN:
-        new_inst(buf, FE_X64_INST_RET);
         break;
     default:
         TODO("unhandled ir");

@@ -29,8 +29,8 @@ void test_algsimp_reassoc() {
     FeIr* add2 = fe_append_ir(bb, fe_ir_binop(f, FE_IR_ADD, (FeIr*)add, (FeIr*)c2));
     add2->type = FE_TYPE_I64;
 
-    fe_append_ir(bb, fe_ir_returnval(f, 0, (FeIr*)add2));
-    fe_append_ir(bb, fe_ir_return(f));
+    FeIrReturn* ret = (FeIrReturn*) fe_append_ir(bb, fe_ir_return(f));
+    ret->sources[0] = (FeIr*)add2;
 
     fe_sched_module_pass(m, &fe_pass_algsimp);
     fe_sched_module_pass(m, &fe_pass_tdce);
@@ -64,8 +64,8 @@ void test_algsimp_sr() {
     FeIr* mul = fe_append_ir(bb, fe_ir_binop(f, FE_IR_UMUL, (FeIr*)p, (FeIr*)c1));
     mul->type = FE_TYPE_I64;
 
-    fe_append_ir(bb, fe_ir_returnval(f, 0, (FeIr*)mul));
-    fe_append_ir(bb, fe_ir_return(f));
+    FeIrReturn* ret = (FeIrReturn*) fe_append_ir(bb, fe_ir_return(f));
+    ret->sources[0] = (FeIr*)mul;
 
     fe_sched_module_pass(m, &fe_pass_algsimp);
     fe_sched_module_pass(m, &fe_pass_tdce);
@@ -103,10 +103,9 @@ void test_c_gen() {
     FeIr* mul = fe_append_ir(bb, fe_ir_binop(f, FE_IR_UMUL, (FeIr*)p0, (FeIr*)p1));
     mul->type = FE_TYPE_I64;
 
-    FeIr* r0 = fe_append_ir(bb, fe_ir_returnval(f, 0, (FeIr*)add));
-    FeIr* r1 = fe_append_ir(bb, fe_ir_returnval(f, 1, (FeIr*)mul));
-
-    fe_append_ir(bb, fe_ir_return(f));
+    FeIrReturn* ret = (FeIrReturn*) fe_append_ir(bb, fe_ir_return(f));
+    ret->sources[0] = (FeIr*)add;
+    ret->sources[1] = (FeIr*)mul;
 
     fe_run_all_passes(m, true);
 

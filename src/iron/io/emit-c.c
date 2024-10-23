@@ -150,7 +150,6 @@ static void emit_function_signature(FeFunction* f, StringBuilder* sb) {
 
     for_range(i, 0, f->params.len) {
         FeFunctionItem* item = f->params.at[i];
-        if (item->byval) TODO("");
 
         emit_type_name(item->type, sb);
 
@@ -161,7 +160,6 @@ static void emit_function_signature(FeFunction* f, StringBuilder* sb) {
     }
     for_range(i, 1, f->returns.len) {
         FeFunctionItem* item = f->returns.at[i];
-        if (item->byval) TODO("");
 
         emit_type_ptr(item->type, sb);
 
@@ -259,16 +257,8 @@ static void emit_function(FeFunction* f, StringBuilder* sb) {
 
                 sb_printf(sb, "_inst_%llx = %s _inst_%llx %s %s _inst_%llx", inst, signed_to_unsigned_cast(binop->lhs->type), binop->lhs, opstrings[inst->kind], signed_to_unsigned_cast(binop->rhs->type), binop->rhs);
                 break;
-            case FE_IR_RETURNVAL:
-                FeIrReturnVal* retval = (FeIrReturnVal*)inst;
-
-                if (retval->index == 0) {
-                    sb_printf(sb, "_returnval_%d =  _inst_%llx", retval->index, retval->source);
-                } else {
-                    sb_printf(sb, "*_returnval_%d = _inst_%llx", retval->index, retval->source);
-                }
-                break;
             case FE_IR_RETURN:
+                TODO("redo this for the retval change");
                 if (f->params.len > 0) {
                     sb_append_c(sb, "return _returnval_0");
                 } else {

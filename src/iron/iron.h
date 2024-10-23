@@ -197,9 +197,6 @@ typedef struct FeFunctionItem {
 
     FeType type;
 
-    // this is an aggregate passed by value and needs to be copied on the callee or caller side
-    // before modification.
-    FeType byval;
 } FeFunctionItem;
 
 typedef struct FeCFGNode FeCFGNode;
@@ -345,15 +342,11 @@ enum {
     // FeIrJump
     FE_IR_JUMP,
 
-    // FeIrReturnVal
-    FE_IR_RETURNVAL,
     // FeIrReturn
     FE_IR_RETURN,
 
     // FeIrRetrieve
     FE_IR_RETRIEVE,
-    // FeIrProvide
-    FE_IR_PROVIDE,
     // FeIrCall
     FE_IR_CALL,
     // FeIrPtrCall
@@ -525,47 +518,28 @@ typedef struct FeIrBranch {
     FeBasicBlock* if_false;
 } FeIrBranch;
 
-// get value from register parameter OR the pointer to a stack parameter.
-// if register, lifetime of the register starts from the start of the entry
-// basic block and continues to this node.
-// MUST BE THE FIRST INSTRUCTION IN THE ENTRY BLOCK OR IN A SEQUENCE OF
-// OTHER FeIrParamVal INSTRUCTIONS
 typedef struct FeIrParamVal {
     FeIr base;
 
     u32 index;
 } FeIrParamVal;
 
-// set register return val
-typedef struct FeIrReturnVal {
-    FeIr base;
-    FeIr* source;
-
-    u32 index;
-} FeIrReturnVal;
-
 typedef struct FeIrReturn {
     FeIr base;
+
+    FeIr** sources;
+    u16 len; // sync'd with function return len
+
 } FeIrReturn;
-
-typedef struct FeIrProvide {
-    FeIr base;
-
-    FeIr* source;
-    u16 index;
-} FeIrProvide;
-
-typedef struct FeIrRetrieve {
-    FeIr base;
-
-    u16 index;
-} FeIrRetrieve;
 
 typedef struct FeIrCall {
     FeIr base;
 
     FeFunction* source;
     // derives calling convention from source
+
+    FeIr** params;
+    u16 params_len;
 } FeIrCall;
 
 typedef struct FeIrPtrCall {
@@ -575,8 +549,21 @@ typedef struct FeIrPtrCall {
     u16 callconv;
 } FeIrPtrCall;
 
+typedef struct FeIrRetrieve {
+    FeIr base;
+
+    FeIr* call;
+
+    u16 index;
+} FeIrRetrieve;
+
 typedef struct FeIrAsm {
     FeIr base;
+
+    // KINDA TODO LMAO
+
+    FeIr** params;
+    u16 params_len;
 
     // assembly text
     string text;
@@ -659,7 +646,6 @@ FeIr* fe_ir_phi(FeFunction* f, u32 count, FeType type);
 FeIr* fe_ir_jump(FeFunction* f, FeBasicBlock* dest);
 FeIr* fe_ir_branch(FeFunction* f, FeIr* cond, FeBasicBlock* if_true, FeBasicBlock* if_false);
 FeIr* fe_ir_paramval(FeFunction* f, u32 param);
-FeIr* fe_ir_returnval(FeFunction* f, u32 param, FeIr* source);
 FeIr* fe_ir_return(FeFunction* f);
 
 void fe_add_phi_source(FeFunction* f, FeIrPhi* phi, FeIr* source, FeBasicBlock* source_block);

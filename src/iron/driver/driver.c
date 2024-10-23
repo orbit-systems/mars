@@ -59,8 +59,8 @@ int main() {
         {
             FeIr* y_load = fe_append_ir(return_bb, fe_ir_stack_load(fn, var_y));
 
-            FeIr* returnval = fe_append_ir(return_bb, fe_ir_returnval(fn, 0, y_load));
-            FeIr* ret = fe_append_ir(return_bb, fe_ir_return(fn));
+            FeIrReturn* ret = (FeIrReturn*) fe_append_ir(return_bb, fe_ir_return(fn));
+            ret->sources[0] = y_load;
         }
     }
 

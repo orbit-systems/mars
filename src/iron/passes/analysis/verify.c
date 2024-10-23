@@ -25,13 +25,6 @@ static void verify_basic_block(FeModule* m, FeFunction* fn, FeBasicBlock* bb, bo
             if (paramval->index >= fn->params.len) FE_FATAL(m, "paramval index out of range");
             if (inst->type != fn->params.at[paramval->index]->type) FE_FATAL(m, "paramval type != param type");
             break;
-        case FE_IR_RETURNVAL:
-            if ((inst->next->kind != FE_IR_RETURN && inst->prev->kind != FE_IR_RETURNVAL))
-                FE_FATAL(m, "returnval must be before a return or another returnval");
-            FeIrReturnVal* returnval = (FeIrReturnVal*)inst;
-            if (returnval->index >= fn->returns.len) FE_FATAL(m, "returnval index out of range");
-            if (returnval->source->type != fn->returns.at[returnval->index]->type) FE_FATAL(m, "returnval source type != return type");
-            break;
         case FE_IR_PHI:
             if (inst->prev->kind != FE_IR_BOOKEND && inst->prev->kind != FE_IR_PHI) {
                 FE_FATAL(m, "phi must be at the beginning of a basic block");

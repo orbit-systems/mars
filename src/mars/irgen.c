@@ -213,29 +213,31 @@ FeIr* irgen_value_expr(IrBuilder* builder, AST expr) {
 void irgen_stmt(IrBuilder* builder, AST stmt) {
     switch (stmt.type) {
     case AST_return_stmt:
-        ast_return_stmt* ret = stmt.as_return_stmt;
+        ast_return_stmt* astret = stmt.as_return_stmt;
 
         // if there are immediate return values,
         // we get them and store them into their stack objects
-        foreach (AST expr, ret->returns) {
+        foreach (AST expr, astret->returns) {
             FeIr* value = irgen_value_expr(builder, expr);
             fe_append_ir(builder->bb, fe_ir_stack_store(builder->fn, builder->fn_returns[count], value));
         }
 
         // regardless of if there are immediate returns,
         // we get the values from the stack objects
-        // and put them in returnvals
+        // and put them in the return
+
 
         FeIr** return_values = mars_alloc(sizeof(FeIr*) * builder->fn_returns_len);
         for_urange(i, 0, builder->fn_returns_len) {
             return_values[i] = fe_append_ir(builder->bb, fe_ir_stack_load(builder->fn, builder->fn_returns[i]));
         }
+
+        FeIrReturn* ret = (FeIrReturn*) fe_append_ir(builder->bb, fe_ir_return(builder->fn));
         for_urange(i, 0, builder->fn_returns_len) {
-            fe_append_ir(builder->bb, fe_ir_returnval(builder->fn, i, return_values[i]));
+            ret->sources[i] = return_values[i];
         }
         mars_free(return_values);
         // return lmao
-        fe_append_ir(builder->bb, fe_ir_return(builder->fn));
         break;
     case AST_if_stmt:
         ast_if_stmt* ifstmt = stmt.as_if_stmt;
