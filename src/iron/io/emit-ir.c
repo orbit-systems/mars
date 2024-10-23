@@ -174,9 +174,9 @@ static void emit_inst(StringBuilder* sb, FeFunction* fn, FeIr* inst) {
     // sb_append_c(sb, "\n      (");
     sb_printf(sb, "\n" COLOR_INST "     % 9llu: " RESET "(", number(inst));
     switch (inst->kind) {
-    case FE_IR_PARAMVAL:
-        FeIrParamVal* paramval = (FeIrParamVal*)inst;
-        sb_printf(sb, "paramval %u", paramval->index);
+    case FE_IR_PARAM:
+        FeIrParam* param = (FeIrParam*)inst;
+        sb_printf(sb, "param %u", param->index);
         break;
     case FE_IR_PHI:
         FeIrPhi* phi = (FeIrPhi*)inst;

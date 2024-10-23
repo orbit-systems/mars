@@ -66,7 +66,7 @@ static FeIr* emit_prologue(FeMachBuffer* buf, FeFunction* fn, FeIr* ir) {
     switch (fn->cconv) {
     case FE_CCONV_MARS:
         assert(fn->params.len <= 6); // preparation passes should have made this never fail
-        for (FeIrParamVal* pv = (FeIrParamVal*)ir; pv->base.kind == FE_IR_PARAMVAL; pv = (FeIrParamVal*)pv->base.next) {
+        for (FeIrParam* pv = (FeIrParam*)ir; pv->base.kind == FE_IR_PARAM; pv = (FeIrParam*)pv->base.next) {
             // create the vreg for the callconv register
             u32 cconv_vreg = fe_mach_new_vreg(buf, FE_X64_REGCLASS_GPR);
             callconv_vregs[pv->index] = cconv_vreg;
@@ -74,7 +74,7 @@ static FeIr* emit_prologue(FeMachBuffer* buf, FeFunction* fn, FeIr* ir) {
             // begin its lifetime
             fe_mach_append(buf, fe_mach_new_lifetime_begin(buf, cconv_vreg));
         }
-        for (FeIrParamVal* pv = (FeIrParamVal*)ir; pv->base.kind == FE_IR_PARAMVAL; pv = (FeIrParamVal*)pv->base.next) {
+        for (FeIrParam* pv = (FeIrParam*)ir; pv->base.kind == FE_IR_PARAM; pv = (FeIrParam*)pv->base.next) {
             // create the mov
             FeMachInst* mov = new_inst(buf, FE_X64_INST_MOV_RR_64);
             fe_mach_set_vreg(buf, mov, 1, callconv_vregs[pv->index]);
@@ -126,7 +126,7 @@ static void gen_basic_block(FeMachBuffer* buf, FeBasicBlock* bb) {
 
     FeMachInst* minst;
     for_fe_ir(ir, *bb) switch (ir->kind) {
-    case FE_IR_PARAMVAL:
+    case FE_IR_PARAM:
         ir = emit_prologue(buf, bb->function, ir);
         break;
     case FE_IR_RETURN:

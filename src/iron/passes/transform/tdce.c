@@ -61,7 +61,7 @@ static void register_uses(FeIr* ir) {
         break;
     case FE_IR_INVALID:
     case FE_IR_CONST:
-    case FE_IR_PARAMVAL:
+    case FE_IR_PARAM:
     case FE_IR_STACK_ADDR:
         break;
     default:
@@ -136,7 +136,7 @@ static void try_eliminate(FeIr* ir) {
         break;
     case FE_IR_INVALID:
     case FE_IR_CONST:
-    case FE_IR_PARAMVAL:
+    case FE_IR_PARAM:
         break;
     default:
         CRASH("unhandled inst type %d", ir->kind);

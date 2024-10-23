@@ -104,17 +104,17 @@ FeFunction* irgen_function(IrBuilder* builder, ast_func_literal_expr* fn_literal
     FeBasicBlock* entry_bb = fe_new_basic_block(fn, next_block_name());
     builder->bb = entry_bb;
 
-    FeIr** paramvals = mars_alloc(sizeof(FeIr*) * fn_literal->paramlen);
+    FeIr** params = mars_alloc(sizeof(FeIr*) * fn_literal->paramlen);
 
-    // initialize FeFunction params and add the paramval instructions
+    // initialize FeFunction params and add the param instructions
     for_range(i, 0, fn_literal->paramlen) {
         entity* param_entity = fn_literal->params[i];
         FeType param_fe_type = irgen_mars_to_iron_type(builder, param_entity->entity_type);
 
         // add param to function definition
         fe_add_func_param(fn, param_fe_type);
-        // add the paramval inst
-        paramvals[i] = fe_append_ir(entry_bb, fe_ir_paramval(fn, i));
+        // add the param inst
+        params[i] = fe_append_ir(entry_bb, fe_ir_param(fn, i));
     }
 
     // store all the params in stack objects.
@@ -127,14 +127,14 @@ FeFunction* irgen_function(IrBuilder* builder, ast_func_literal_expr* fn_literal
         // add it to the builder's ptrmap
         ptrmap_put(&builder->entity2stackobj, param_entity, param_stack_object);
         // store in stack object
-        fe_append_ir(entry_bb, fe_ir_stack_store(fn, param_stack_object, paramvals[i]));
+        fe_append_ir(entry_bb, fe_ir_stack_store(fn, param_stack_object, params[i]));
     }
 
-    mars_free(paramvals);
+    mars_free(params);
 
     // for kayla: the reason these are two different loops is because
-    // irons needs the paramval instructions at the beginning of the
-    // basic block, so it needs to emit all the paramvals and then emit the stack_stores.
+    // irons needs the param instructions at the beginning of the
+    // basic block, so it needs to emit all the params and then emit the stack_stores.
 
     // initialize FeFunction returns and create stack objects
     builder->fn_returns = mars_alloc(sizeof(FeStackObject*) * fn_literal->returnlen);

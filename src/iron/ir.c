@@ -223,10 +223,10 @@ FeIr* fe_insert_ir_after(FeIr* new, FeIr* ref) {
 FeIr* fe_ir(FeFunction* f, u16 type) {
     size_t extra = 0;
     if (type >= _FE_IR_ARCH_SPECIFIC_START) {
+        TODO("");
         if (f->mod->target.arch == 0) {
             FE_FATAL(f->mod, "cannot create arch-specific ir without target arch");
         }
-        TODO("");
     }
     FeIr* ir = arena_alloc(&f->alloca, fe_inst_sizes[type] + extra, 8);
     ir->kind = type;
@@ -271,8 +271,8 @@ const size_t fe_inst_sizes[] = {
     [FE_IR_ZEROEXT] = sizeof(FeIrUnop),
 
     [FE_IR_STACK_ADDR] = sizeof(FeIrStackAddr),
-    [FE_IR_FIELDPTR] = sizeof(FeIrFieldPtr),
-    [FE_IR_INDEXPTR] = sizeof(FeIrIndexPtr),
+    [FE_IR_FIELD_PTR] = sizeof(FeIrFieldPtr),
+    [FE_IR_INDEX_PTR] = sizeof(FeIrIndexPtr),
 
     [FE_IR_LOAD] = sizeof(FeIrLoad),
     [FE_IR_VOL_LOAD] = sizeof(FeIrLoad),
@@ -291,7 +291,7 @@ const size_t fe_inst_sizes[] = {
     [FE_IR_BRANCH] = sizeof(FeIrBranch),
     [FE_IR_JUMP] = sizeof(FeIrJump),
 
-    [FE_IR_PARAMVAL] = sizeof(FeIrParamVal),
+    [FE_IR_PARAM] = sizeof(FeIrParam),
 
     [FE_IR_RETURN] = sizeof(FeIrReturn),
 };
@@ -340,14 +340,14 @@ FeIr* fe_ir_stackaddr(FeFunction* f, FeStackObject* obj) {
 }
 
 FeIr* fe_ir_getfieldptr(FeFunction* f, u32 index, FeIr* source) {
-    FeIrFieldPtr* ir = (FeIrFieldPtr*)fe_ir(f, FE_IR_FIELDPTR);
+    FeIrFieldPtr* ir = (FeIrFieldPtr*)fe_ir(f, FE_IR_FIELD_PTR);
     ir->index = index;
     ir->source = source;
     return (FeIr*)ir;
 }
 
 FeIr* fe_ir_getindexptr(FeFunction* f, FeIr* index, FeIr* source) {
-    FeIrIndexPtr* ir = (FeIrIndexPtr*)fe_ir(f, FE_IR_INDEXPTR);
+    FeIrIndexPtr* ir = (FeIrIndexPtr*)fe_ir(f, FE_IR_INDEX_PTR);
     ir->index = index;
     ir->source = source;
     return (FeIr*)ir;
@@ -462,12 +462,12 @@ FeIr* fe_ir_branch(FeFunction* f, FeIr* cond, FeBasicBlock* if_true, FeBasicBloc
     return (FeIr*)ir;
 }
 
-FeIr* fe_ir_paramval(FeFunction* f, u32 param) {
-    FeIrParamVal* ir = (FeIrParamVal*)fe_ir(f, FE_IR_PARAMVAL);
+FeIr* fe_ir_param(FeFunction* f, u32 param) {
+    FeIrParam* ir = (FeIrParam*)fe_ir(f, FE_IR_PARAM);
     ir->index = param;
     if (param >= f->params.len) {
-        FE_FATAL(f->mod, cstrprintf("paramval index %d is out of range [0, %d)", param, f->params.len));
-        // CRASH("paramval index %d is out of range", param);
+        FE_FATAL(f->mod, cstrprintf("param index %d is out of range [0, %d)", param, f->params.len));
+        // CRASH("param index %d is out of range", param);
     }
     ir->base.type = f->params.at[param]->type;
     return (FeIr*)ir;
@@ -572,7 +572,7 @@ void fe_rewrite_uses_in_inst(FeIr* inst, FeIr* source, FeIr* dest) {
             rewrite_if_eq(ret->sources[i], source, dest);
         }
         break;
-    case FE_IR_PARAMVAL:
+    case FE_IR_PARAM:
     case FE_IR_STACK_ADDR:
     case FE_IR_STACK_LOAD:
     case FE_IR_CONST:

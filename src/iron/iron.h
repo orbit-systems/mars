@@ -294,10 +294,10 @@ enum {
     FE_IR_NOT,
     FE_IR_NEG,
 
-    // bitcast between
+    // FeIrUnop
     FE_IR_BITCAST,
 
-    // integer casting
+    // FeIrUnop
     FE_IR_TRUNC,
     FE_IR_SIGNEXT,
     FE_IR_ZEROEXT,
@@ -306,10 +306,19 @@ enum {
     FE_IR_STACK_ADDR,
 
     // FeIrFieldPtr
-    FE_IR_FIELDPTR,
-
+    FE_IR_FIELD_PTR,
     // FeIrIndexPtr
-    FE_IR_INDEXPTR,
+    FE_IR_INDEX_PTR,
+
+    // FeIrGetField
+    FE_IR_GET_FIELD,
+    // FeIrSetField
+    FE_IR_SET_FIELD,
+
+    // FeIrGetIndex
+    FE_IR_GET_INDEX,
+    // FeIrSetIndex
+    FE_IR_SET_INDEX,
 
     // FeIrConst
     FE_IR_CONST,
@@ -321,8 +330,8 @@ enum {
     // FeIrPhi
     FE_IR_PHI,
 
-    // FeIrParamVal
-    FE_IR_PARAMVAL,
+    // FeIrParam
+    FE_IR_PARAM,
 
     _FE_IR_NO_SIDE_EFFECTS_END,
 
@@ -411,6 +420,21 @@ typedef struct FeIrFieldPtr {
     u32 index;
 } FeIrFieldPtr;
 
+typedef struct FeIrSetField {
+    FeIr base;
+
+    FeIr* record;
+    FeIr* source;
+    u32 index;
+} FeIrSetField;
+
+typedef struct FeIrGetField {
+    FeIr base;
+
+    FeIr* record;
+    u32 index;
+} FeIrGetField;
+
 // used for array accesses
 typedef struct FeIrIndexPtr {
     FeIr base;
@@ -418,6 +442,20 @@ typedef struct FeIrIndexPtr {
     FeIr* source;
     FeIr* index;
 } FeIrIndexPtr;
+
+typedef struct FeIrSetIndex {
+    FeIr base;
+
+    FeIr* record;
+    u32 index;
+} FeIrSetIndex;
+
+typedef struct FeIrGetIndex {
+    FeIr base;
+
+    FeIr* array;
+    u32 index;
+} FeIrGetIndex;
 
 /*
     load/store alignment
@@ -518,11 +556,11 @@ typedef struct FeIrBranch {
     FeBasicBlock* if_false;
 } FeIrBranch;
 
-typedef struct FeIrParamVal {
+typedef struct FeIrParam {
     FeIr base;
 
     u32 index;
-} FeIrParamVal;
+} FeIrParam;
 
 typedef struct FeIrReturn {
     FeIr base;
@@ -645,7 +683,7 @@ FeIr* fe_ir_mov(FeFunction* f, FeIr* source);
 FeIr* fe_ir_phi(FeFunction* f, u32 count, FeType type);
 FeIr* fe_ir_jump(FeFunction* f, FeBasicBlock* dest);
 FeIr* fe_ir_branch(FeFunction* f, FeIr* cond, FeBasicBlock* if_true, FeBasicBlock* if_false);
-FeIr* fe_ir_paramval(FeFunction* f, u32 param);
+FeIr* fe_ir_param(FeFunction* f, u32 param);
 FeIr* fe_ir_return(FeFunction* f);
 
 void fe_add_phi_source(FeFunction* f, FeIrPhi* phi, FeIr* source, FeBasicBlock* source_block);

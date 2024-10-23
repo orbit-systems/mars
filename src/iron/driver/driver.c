@@ -35,14 +35,14 @@ int main() {
         FeBasicBlock* if_bb = fe_new_basic_block(fn, str("if_true"));
         FeBasicBlock* return_bb = fe_new_basic_block(fn, str("return"));
 
-        FeIr* x_paramval =  fe_append_ir(entry_bb, fe_ir_paramval(fn, 0));
+        FeIr* x_param =  fe_append_ir(entry_bb, fe_ir_param(fn, 0));
 
         // entry bb
         {
             FeIrConst* zero = (FeIrConst*) fe_append_ir(entry_bb, fe_ir_const(fn, FE_TYPE_I64));
             zero->i64 = 0ul;
             FeIrStackStore* y_init_store = (FeIrStackStore*) fe_append_ir(entry_bb, fe_ir_stack_store(fn, var_y, (FeIr*)zero));
-            FeIr* branch = fe_append_ir(entry_bb, fe_ir_branch(fn, x_paramval, if_bb, return_bb));
+            FeIr* branch = fe_append_ir(entry_bb, fe_ir_branch(fn, x_param, if_bb, return_bb));
         }
 
         // if bb
@@ -87,7 +87,7 @@ int main() {
         fe_init_func_params(fn, 1);
         fe_add_func_param(fn, FE_TYPE_BOOL);
 
-        FeIr* cond = fe_append_ir(A, fe_ir_paramval(fn, 0));
+        FeIr* cond = fe_append_ir(A, fe_ir_param(fn, 0));
         fe_append_ir(A, fe_ir_branch(fn, cond, B, F));
         fe_append_ir(B, fe_ir_branch(fn, cond, C, D));
         fe_append_ir(C, fe_ir_jump(fn, E));

@@ -153,7 +153,7 @@ static void emit_function_signature(FeFunction* f, StringBuilder* sb) {
 
         emit_type_name(item->type, sb);
 
-        sb_printf(sb, "_paramval_%d", i);
+        sb_printf(sb, "_param_%d", i);
         if (i != f->params.len - 1 || f->returns.len > 1) {
             sb_printf(sb, ", ");
         }
@@ -227,8 +227,8 @@ static void emit_function(FeFunction* f, StringBuilder* sb) {
         for_fe_ir(inst, *bb) {
             sb_append_c(sb, "\t");
             switch (inst->kind) {
-            case FE_IR_PARAMVAL:
-                sb_printf(sb, "_inst_%llx = _paramval_%d", inst, ((FeIrParamVal*)inst)->index);
+            case FE_IR_PARAM:
+                sb_printf(sb, "_inst_%llx = _param_%d", inst, ((FeIrParam*)inst)->index);
                 break;
             case FE_IR_CONST:
                 switch (inst->type) {

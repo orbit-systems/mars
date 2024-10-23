@@ -17,13 +17,13 @@ static void verify_basic_block(FeModule* m, FeFunction* fn, FeBasicBlock* bb, bo
 
     for_fe_ir(inst, *bb) {
         switch (inst->kind) {
-        case FE_IR_PARAMVAL:
-            if (!entry || (inst->prev->kind != FE_IR_BOOKEND && inst->prev->kind != FE_IR_PARAMVAL))
-                FE_FATAL(m, "paramval must be at the beginning of the entry block");
+        case FE_IR_PARAM:
+            if (!entry || (inst->prev->kind != FE_IR_BOOKEND && inst->prev->kind != FE_IR_PARAM))
+                FE_FATAL(m, "param must be at the beginning of the entry block");
 
-            FeIrParamVal* paramval = (FeIrParamVal*)inst;
-            if (paramval->index >= fn->params.len) FE_FATAL(m, "paramval index out of range");
-            if (inst->type != fn->params.at[paramval->index]->type) FE_FATAL(m, "paramval type != param type");
+            FeIrParam* param = (FeIrParam*)inst;
+            if (param->index >= fn->params.len) FE_FATAL(m, "param index out of range");
+            if (inst->type != fn->params.at[param->index]->type) FE_FATAL(m, "param type != param type");
             break;
         case FE_IR_PHI:
             if (inst->prev->kind != FE_IR_BOOKEND && inst->prev->kind != FE_IR_PHI) {
