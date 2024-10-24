@@ -16,7 +16,7 @@ void fe_push_report(FeModule* m, FeReport msg) {
         da_init(&m->messages, 32);
     }
     da_append(&m->messages, msg);
-    if (msg.severity == FE_MSG_SEVERITY_FATAL) {
+    if (msg.severity == FE_REP_SEVERITY_FATAL) {
         fe_print_report(msg);
         crash("iron: fatal message\n");
     }
@@ -25,10 +25,10 @@ void fe_push_report(FeModule* m, FeReport msg) {
 void fe_print_report(FeReport msg) {
     printf("IRON ");
     switch (msg.severity) {
-    case FE_MSG_SEVERITY_FATAL: printf(STYLE_FG_Red STYLE_Bold "FATAL" STYLE_Reset); break;
-    case FE_MSG_SEVERITY_ERROR: printf(STYLE_FG_Red "ERROR" STYLE_Reset); break;
-    case FE_MSG_SEVERITY_WARNING: printf(STYLE_FG_Yellow "WARNING" STYLE_Reset); break;
-    case FE_MSG_SEVERITY_LOG: printf(STYLE_FG_Green "LOG" STYLE_Reset); break;
+    case FE_REP_SEVERITY_FATAL: printf(STYLE_FG_Red STYLE_Bold "FATAL" STYLE_Reset); break;
+    case FE_REP_SEVERITY_ERROR: printf(STYLE_FG_Red "ERROR" STYLE_Reset); break;
+    case FE_REP_SEVERITY_WARNING: printf(STYLE_FG_Yellow "WARNING" STYLE_Reset); break;
+    case FE_REP_SEVERITY_LOG: printf(STYLE_FG_Green "LOG" STYLE_Reset); break;
     }
     printf(" in " STYLE_Bold "%s" STYLE_Reset "(): ", msg.function_of_origin);
     printf("%s\n", msg.message);

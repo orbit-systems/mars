@@ -618,7 +618,7 @@ enum {
     FE_CCONV_SYSV,
 
     // none of the above calling conventions support multi-returns natively.
-    // a FeReport of FE_MSG_SEVERITY_ERROR severity will be generated at codegen.
+    // a FeReport of FE_REP_SEVERITY_ERROR severity will be generated at codegen.
 
     // mars calling convention, native multi-return support
     FE_CCONV_MARS,
@@ -671,8 +671,8 @@ FeIr* fe_ir(FeFunction* f, u16 type);
 FeIr* fe_ir_binop(FeFunction* f, u16 type, FeIr* lhs, FeIr* rhs);
 FeIr* fe_ir_unop(FeFunction* f, u16 type, FeIr* source);
 FeIr* fe_ir_stackaddr(FeFunction* f, FeStackObject* obj);
-FeIr* fe_ir_getfieldptr(FeFunction* f, u32 index, FeIr* source);
-FeIr* fe_ir_getindexptr(FeFunction* f, FeIr* index, FeIr* source);
+FeIr* fe_ir_field_ptr(FeFunction* f, u32 index, FeIr* source);
+FeIr* fe_ir_index_ptr(FeFunction* f, FeIr* index, FeIr* source);
 FeIr* fe_ir_load(FeFunction* f, FeIr* ptr, FeType as, bool is_vol);
 FeIr* fe_ir_store(FeFunction* f, FeIr* ptr, FeIr* value, bool is_vol);
 FeIr* fe_ir_stack_load(FeFunction* f, FeStackObject* location);
@@ -712,16 +712,16 @@ typedef struct FeReportQueue {
 } FeReportQueue;
 
 enum {
-    FE_MSG_KIND_NONE,
-    FE_MSG_KIND_IR,
-    FE_MSG_KIND_MACH_IR,
+    FE_REP_KIND_NONE,
+    FE_REP_KIND_IR,
+    FE_REP_KIND_MACH_IR,
 };
 
 enum {
-    FE_MSG_SEVERITY_FATAL,
-    FE_MSG_SEVERITY_ERROR,
-    FE_MSG_SEVERITY_WARNING,
-    FE_MSG_SEVERITY_LOG,
+    FE_REP_SEVERITY_FATAL,
+    FE_REP_SEVERITY_ERROR,
+    FE_REP_SEVERITY_WARNING,
+    FE_REP_SEVERITY_LOG,
 };
 
 // if the report is fatal, the error is immediately printed

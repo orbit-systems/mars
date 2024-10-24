@@ -3,7 +3,7 @@
 #define FE_FATAL(m, msg) fe_push_report(m, (FeReport){                            \
                                                .function_of_origin = __func__,    \
                                                .message = (msg),                  \
-                                               .severity = FE_MSG_SEVERITY_FATAL, \
+                                               .severity = FE_REP_SEVERITY_FATAL, \
                                            })
 
 static void verify_basic_block(FeModule* m, FeFunction* fn, FeBasicBlock* bb, bool entry) {

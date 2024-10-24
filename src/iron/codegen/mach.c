@@ -5,7 +5,7 @@
 #define FE_FATAL(m, msg) fe_push_report(m, (FeReport){                            \
                                                .function_of_origin = __func__,    \
                                                .message = (msg),                  \
-                                               .severity = FE_MSG_SEVERITY_FATAL, \
+                                               .severity = FE_REP_SEVERITY_FATAL, \
                                            })
 
 u32 fe_mach_get_vreg(FeMachBuffer* buf, FeMachInst* inst, u8 index) {

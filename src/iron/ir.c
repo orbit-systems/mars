@@ -5,7 +5,7 @@
 #define FE_FATAL(m, msg) fe_push_report(m, (FeReport){                            \
                                                .function_of_origin = __func__,    \
                                                .message = (msg),                  \
-                                               .severity = FE_MSG_SEVERITY_FATAL, \
+                                               .severity = FE_REP_SEVERITY_FATAL, \
                                            })
 
 // if (sym == NULL), create new symbol with no name
@@ -339,14 +339,14 @@ FeIr* fe_ir_stackaddr(FeFunction* f, FeStackObject* obj) {
     return (FeIr*)ir;
 }
 
-FeIr* fe_ir_getfieldptr(FeFunction* f, u32 index, FeIr* source) {
+FeIr* fe_ir_field_ptr(FeFunction* f, u32 index, FeIr* source) {
     FeIrFieldPtr* ir = (FeIrFieldPtr*)fe_ir(f, FE_IR_FIELD_PTR);
     ir->index = index;
     ir->source = source;
     return (FeIr*)ir;
 }
 
-FeIr* fe_ir_getindexptr(FeFunction* f, FeIr* index, FeIr* source) {
+FeIr* fe_ir_index_ptr(FeFunction* f, FeIr* index, FeIr* source) {
     FeIrIndexPtr* ir = (FeIrIndexPtr*)fe_ir(f, FE_IR_INDEX_PTR);
     ir->index = index;
     ir->source = source;
