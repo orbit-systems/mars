@@ -45,13 +45,20 @@ static void verify_basic_block(FeModule* m, FeFunction* fn, FeBasicBlock* bb, bo
     }
 }
 
+static void reset_flags(FeFunction* f) {
+    for_urange(i, 0, f->blocks.len) {
+        for_fe_ir(inst, *f->blocks.at[i]) {
+            inst->flags = 0;
+        }
+    }
+}
+
 static void verify_function(FeFunction* f) {
     if (f->blocks.len == 0) {
         FE_FATAL(f->mod, "functions must have at least one basic block");
     }
-    foreach (FeBasicBlock* bb, f->blocks) {
-        verify_basic_block(f->mod, f, bb, count == 0);
-    }
+    reset_flags(f);
+    verify_basic_block(f->mod, f, f->blocks.at[0], true);
 }
 
 static void verify_module(FeModule* m) {

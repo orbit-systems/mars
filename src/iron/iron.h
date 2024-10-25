@@ -194,9 +194,7 @@ typedef struct FeFunction {
 } FeFunction;
 
 typedef struct FeFunctionItem {
-
     FeType type;
-
 } FeFunctionItem;
 
 typedef struct FeCFGNode FeCFGNode;
@@ -371,7 +369,7 @@ enum {
 // basic IR structure
 typedef struct FeIr {
     u16 kind;
-    u16 use_count;
+    u16 flags;
     FeType type;
     FeIr* next;
     FeIr* prev;

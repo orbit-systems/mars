@@ -97,7 +97,7 @@ static FeIr* emit_prologue(FeMachBuffer* buf, FeFunction* fn, FeIr* ir) {
 static FeIr* emit_epilogue(FeMachBuffer* buf, FeFunction* fn, FeIr* ir) {
     u32* callconv_vregs = fe_malloc(sizeof(u32) * fn->returns.len);
 
-    FeIrReturn* ret = (FeIrReturn*) ir;
+    FeIrReturn* ret = (FeIrReturn*)ir;
     for_range(i, 0, ret->len) {
         // create the vreg for the callconv register
         u32 cconv_vreg = fe_mach_new_vreg(buf, FE_X64_REGCLASS_GPR);
@@ -137,7 +137,7 @@ static void gen_basic_block(FeMachBuffer* buf, FeBasicBlock* bb) {
         FeIrBinop* binop = (FeIrBinop*)ir;
         // insert a mov to move the first operand into the lhs
         u32 lhs_vreg;
-        if (binop->lhs->use_count != 1) {
+        if (binop->lhs->flags != 1) {
             lhs_vreg = fe_mach_new_vreg(buf, FE_X64_REGCLASS_GPR);
             FeMachInst* mov = new_inst(buf, FE_X64_INST_MOV_RR_64);
             fe_mach_set_vreg(buf, mov, 0, lhs_vreg);

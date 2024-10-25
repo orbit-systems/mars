@@ -188,4 +188,3 @@ u32 fe_mach_get_vreg(FeMachBuffer* buf, FeMachInst* inst, u8 index);
 void fe_mach_set_vreg(FeMachBuffer* buf, FeMachInst* inst, u8 index, u32 vreg);
 
 void fe_mach_regalloc(FeMachBuffer* buf);
-

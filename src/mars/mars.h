@@ -34,8 +34,9 @@ extern flag_set mars_flags;
 #define MARS_PASS(module, name) \
     fe_sched_module_pass((module), &(name));
 
-#define MARS_STANDARD_PASSES(module) do { \
-    MARS_PASS(module, fe_pass_verify) \
-    MARS_PASS(module, fe_pass_stackprom) \
-    MARS_PASS(module, fe_pass_tdce) \
-    } while(0)
+#define MARS_STANDARD_PASSES(module)         \
+    do {                                     \
+        MARS_PASS(module, fe_pass_verify)    \
+        MARS_PASS(module, fe_pass_stackprom) \
+        MARS_PASS(module, fe_pass_tdce)      \
+    } while (0)

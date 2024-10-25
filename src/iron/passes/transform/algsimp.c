@@ -8,11 +8,12 @@
         2 * 2   -> 4
         6 / 2   -> 3
         (neg) 1 -> -1
+        ...
 
     strength reduction:
         x * 2 -> x << 1 // extend to powers of two
         x / 2 -> x >> 1 // extend to powers of two
-        x % 2 -> x & 1  // extend to powers of two (is this valid? please tell me)
+        x % 2 -> x & 1  // extend to powers of two
 
     identity reduction:
         x + 0      -> x
@@ -30,17 +31,17 @@
         -(-x)      -> x
 
         (these only applies to bool):
-            x && false -> false
-            x && true  -> x
-            x || false -> x
-            x || true  -> true
+            x & false -> false
+            x & true  -> x
+            x | false -> x
+            x | true  -> true
 
     reassociation:
         (x + 1) + 2  ->  x + (1 + 2)
         (x * 1) * 2  ->  x * (1 * 2)
         (x & 1) & 2  ->  x & (1 & 2)
         (x | 1) | 2  ->  x | (1 | 2)
-        xor is also associative
+        (x ^ 1) ^ 2  ->  x ^ (1 ^ 2)
 */
 
 // if possible, replace the contents of target with source.

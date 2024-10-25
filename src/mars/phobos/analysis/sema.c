@@ -63,7 +63,7 @@ Type* check_stmt(mars_module* mod, AST node, entity_table* scope) {
             node.as_decl_stmt->tg_type = decl_type;
         } else {
             ast_type = rhs.type;
-            node.as_decl_stmt->tg_type = ast_type; //FIXME: this is _wrong_ on a call_expr.
+            node.as_decl_stmt->tg_type = ast_type; // FIXME: this is _wrong_ on a call_expr.
         }
 
         if (rhs.expr.type == AST_call_expr) {
@@ -180,18 +180,18 @@ Type* check_stmt(mars_module* mod, AST node, entity_table* scope) {
     }
 
     case AST_import_stmt:
-        //ENORMOUS FIXME: this method of grabbing entities is hacky and bad. this should
-        //be better handled in phobos
+        // ENORMOUS FIXME: this method of grabbing entities is hacky and bad. this should
+        // be better handled in phobos
 
-        //we need to create an entity that ties the module* to an identifier name
-        //we need to grab the GLOBAL scope
-        //if the module has NO name, we import using module_name
-        //if the module has _ for a name, we error, since we dont handle that yet
-        
-        //now, first, we grab the module name from the module path by looking through the list!
+        // we need to create an entity that ties the module* to an identifier name
+        // we need to grab the GLOBAL scope
+        // if the module has NO name, we import using module_name
+        // if the module has _ for a name, we error, since we dont handle that yet
+
+        // now, first, we grab the module name from the module path by looking through the list!
         mars_module* imported_module = NULL;
-        foreach(mars_module* module, mod->import_list) {
-            //HACK CENTRAL HERE: we're stealing the relpath analysis from phobos here
+        foreach (mars_module* module, mod->import_list) {
+            // HACK CENTRAL HERE: we're stealing the relpath analysis from phobos here
             string importpath = search_for_module(
                 module,
                 node.as_import_stmt->path.as_identifier->tok->text
@@ -222,16 +222,14 @@ Type* check_stmt(mars_module* mod, AST node, entity_table* scope) {
         Type* rhs = ast_to_type(mod, node.as_type_decl_stmt->rhs);
         rhs = sema_type_unalias(rhs);
         struct_alias->as_reference.subtype = rhs;
-        //we're gonna do some trolling here
+        // we're gonna do some trolling here
         return struct_alias;
     case AST_call_expr: {
         checked_expr call_expr = check_expr(mod, node, scope);
         return call_expr.type;
     }
     case AST_for_in_stmt: {
-        
     }
-
 
     default:
         error_at_node(mod, node, "[check_module] unexpected ast type: %s", ast_type_str[node.type]);
@@ -269,7 +267,7 @@ checked_expr check_expr(mars_module* mod, AST node, entity_table* scope) {
         entity* ident_ent = search_for_entity(scope, node.as_identifier->tok->text);
 
         if (ident_ent == NULL) {
-            //we need to see if this is a type identifier!
+            // we need to see if this is a type identifier!
             Type* type_ptr = strmap_get(&name_to_type, node.as_identifier->tok->text);
             if (type_ptr == STRMAP_NOT_FOUND) error_at_node(mod, node, "undefined identifier: " str_fmt, str_arg(node.as_identifier->tok->text));
 
@@ -304,12 +302,12 @@ checked_expr check_expr(mars_module* mod, AST node, entity_table* scope) {
                 .expr = node,
                 .type = subexpr.type->as_reference.subtype,
                 .mutable = subexpr.type->as_reference.mutable,
-            }; 
+            };
         }
         case TOK_KEYWORD_SIZEOF:
         case TOK_KEYWORD_ALIGNOF:
             return (checked_expr){.expr = node, .type = make_type(TYPE_UNTYPED_INT)};
-        default:    
+        default:
             error_at_node(mod, node, "unexpected op: " str_fmt, str_arg(node.as_unary_op_expr->op->text));
         }
     }
@@ -329,15 +327,15 @@ checked_expr check_expr(mars_module* mod, AST node, entity_table* scope) {
             // we now need to scan to see what the rhs is, if its a selector we need to dig deeper
             if (node.as_selector_expr->rhs.type != AST_selector_expr && node.as_selector_expr->rhs.type != AST_identifier)
                 error_at_node(mod, node.as_selector_expr->rhs, "expected identifier or selector, got %s", ast_type_str[node.as_selector_expr->rhs.type]);
-            if (lhs.type->tag == TYPE_POINTER && 
-                lhs.type->as_reference.subtype->tag != TYPE_STRUCT && 
-                lhs.type->as_reference.subtype->tag != TYPE_UNION && 
-                lhs.type->as_reference.subtype->tag != TYPE_SLICE) 
-                    error_at_node(mod, lhs.expr, "expected aggregate through pointer, got type tag %d", lhs.type->tag);
+            if (lhs.type->tag == TYPE_POINTER &&
+                lhs.type->as_reference.subtype->tag != TYPE_STRUCT &&
+                lhs.type->as_reference.subtype->tag != TYPE_UNION &&
+                lhs.type->as_reference.subtype->tag != TYPE_SLICE)
+                error_at_node(mod, lhs.expr, "expected aggregate through pointer, got type tag %d", lhs.type->tag);
 
             if (lhs.type->tag == TYPE_POINTER) lhs.type = lhs.type->as_reference.subtype;
-            if (lhs.type->tag != TYPE_STRUCT && 
-                lhs.type->tag != TYPE_UNION && 
+            if (lhs.type->tag != TYPE_STRUCT &&
+                lhs.type->tag != TYPE_UNION &&
                 lhs.type->tag != TYPE_SLICE) error_at_node(mod, lhs.expr, "expected aggregate, got type tag %d", lhs.type->tag);
 
             Type* field_type = NULL;
@@ -361,7 +359,7 @@ checked_expr check_expr(mars_module* mod, AST node, entity_table* scope) {
                 if (!field_type) error_at_node(mod, node.as_selector_expr->rhs, "field " str_fmt " is not a field contained in this struct", str_arg(node.as_selector_expr->rhs.as_identifier->tok->text));
                 // we can return raw or len here
                 node.base->T = field_type;
-                //get lhs entity
+                // get lhs entity
                 entity* lhs_ent = search_for_entity(scope, lhs.expr.as_identifier->tok->text);
                 u8 mutability = lhs_ent->is_mutable;
                 return (checked_expr){.expr = node, .type = field_type, .mutable = mutability};
@@ -369,22 +367,22 @@ checked_expr check_expr(mars_module* mod, AST node, entity_table* scope) {
 
             crash("check sel expr\n");
         } else if (node.as_selector_expr->op->type == TOK_COLON_COLON) {
-            //we get the lhs, and compare it against module names we know. if the module isnt in the list, error!
+            // we get the lhs, and compare it against module names we know. if the module isnt in the list, error!
             AST lhs = node.as_selector_expr->lhs;
             mars_module* selected_mod = NULL;
-            foreach(entity* ent, *mod->entities) {
-                //we search the global scope looking for our special little scrunkly
+            foreach (entity* ent, *mod->entities) {
+                // we search the global scope looking for our special little scrunkly
                 if (ent->is_module == true && string_eq(lhs.as_identifier->tok->text, ent->identifier)) selected_mod = ent->module;
             }
-            if (selected_mod == NULL) error_at_node(mod, lhs, "unknown module: "str_fmt, str_arg(lhs.as_identifier->tok->text));
-            //we now have our module, does the thing we're trying to do stuff with exist?
+            if (selected_mod == NULL) error_at_node(mod, lhs, "unknown module: " str_fmt, str_arg(lhs.as_identifier->tok->text));
+            // we now have our module, does the thing we're trying to do stuff with exist?
 
             entity* selected_entity = NULL;
             string rhs_identifier = node.as_selector_expr->rhs.as_identifier->tok->text;
-            foreach(entity* ent, *selected_mod->entities) {
+            foreach (entity* ent, *selected_mod->entities) {
                 if (string_eq(ent->identifier, rhs_identifier)) selected_entity = ent;
             }
-            if (!selected_entity) error_at_node(mod, node, "unknown object: "str_fmt"::"str_fmt, str_arg(lhs.as_identifier->tok->text), str_arg(rhs_identifier));
+            if (!selected_entity) error_at_node(mod, node, "unknown object: " str_fmt "::" str_fmt, str_arg(lhs.as_identifier->tok->text), str_arg(rhs_identifier));
             return (checked_expr){.expr = node, .type = selected_entity->entity_type};
         }
         error_at_node(mod, node, "unhandled op: %s", token_type_str[node.as_selector_expr->op->type]);
@@ -444,7 +442,7 @@ Type* check_func_literal(mars_module* mod, AST func_literal, entity_table* scope
     // we need to parse the fn_type_expr and generate entities for each entity in the type, and also create a new global scope.
     // we create a new scope for this literal, and assign each new identifier to this scope.
 
-    //FIXME: func_literals dont have their entity decl done until the decl_stmt parses, and so we get a C&E bug with recursive calls
+    // FIXME: func_literals dont have their entity decl done until the decl_stmt parses, and so we get a C&E bug with recursive calls
 
     entity_table* func_scope = new_entity_table(scope);
 
@@ -543,11 +541,11 @@ Type* check_func_literal(mars_module* mod, AST func_literal, entity_table* scope
 
 Type* get_native_int_type(mars_module* mod, bool sign) {
     switch (mod->current_architecture->native_int) {
-    case FE_TYPE_I8:  return (sign) ? make_type(TYPE_I8)  : make_type(TYPE_U8);
+    case FE_TYPE_I8: return (sign) ? make_type(TYPE_I8) : make_type(TYPE_U8);
     case FE_TYPE_I16: return (sign) ? make_type(TYPE_I16) : make_type(TYPE_U16);
     case FE_TYPE_I32: return (sign) ? make_type(TYPE_I32) : make_type(TYPE_U32);
     case FE_TYPE_I64: return (sign) ? make_type(TYPE_I64) : make_type(TYPE_U64);
-    default: crash("unknown native int type: %d\n", mod->current_architecture->native_int);    
+    default: crash("unknown native int type: %d\n", mod->current_architecture->native_int);
     }
     return NULL;
 }
@@ -557,33 +555,32 @@ Type* get_native_float_type(mars_module* mod) {
     case FE_TYPE_F16: return make_type(TYPE_F16);
     case FE_TYPE_F32: return make_type(TYPE_F32);
     case FE_TYPE_F64: return make_type(TYPE_F64);
-    default: crash("unknown native float type: %d\n", mod->current_architecture->native_float);    
+    default: crash("unknown native float type: %d\n", mod->current_architecture->native_float);
     }
-    return NULL; 
+    return NULL;
 }
 
 Type* ast_to_type(mars_module* mod, AST node) {
     switch (node.type) {
     case AST_basic_type_expr:
         switch (node.as_basic_type_expr->lit->type) {
-        case TOK_TYPE_KEYWORD_I8:  return make_type(TYPE_I8);
+        case TOK_TYPE_KEYWORD_I8: return make_type(TYPE_I8);
         case TOK_TYPE_KEYWORD_I16: return make_type(TYPE_I16);
         case TOK_TYPE_KEYWORD_I32: return make_type(TYPE_I32);
         case TOK_TYPE_KEYWORD_INT: return get_native_int_type(mod, true);
         case TOK_TYPE_KEYWORD_I64: return make_type(TYPE_I64);
 
-        case TOK_TYPE_KEYWORD_U8:   return make_type(TYPE_U8);
-        case TOK_TYPE_KEYWORD_U16:  return make_type(TYPE_U16);
-        case TOK_TYPE_KEYWORD_U32:  return make_type(TYPE_U32);
+        case TOK_TYPE_KEYWORD_U8: return make_type(TYPE_U8);
+        case TOK_TYPE_KEYWORD_U16: return make_type(TYPE_U16);
+        case TOK_TYPE_KEYWORD_U32: return make_type(TYPE_U32);
         case TOK_TYPE_KEYWORD_UINT: return get_native_int_type(mod, false);
-        case TOK_TYPE_KEYWORD_U64:  return make_type(TYPE_U64);
-        
+        case TOK_TYPE_KEYWORD_U64: return make_type(TYPE_U64);
 
-        case TOK_TYPE_KEYWORD_F16:   return make_type(TYPE_F16);
-        case TOK_TYPE_KEYWORD_F32:   return make_type(TYPE_F32);
+        case TOK_TYPE_KEYWORD_F16: return make_type(TYPE_F16);
+        case TOK_TYPE_KEYWORD_F32: return make_type(TYPE_F32);
         case TOK_TYPE_KEYWORD_FLOAT: return get_native_float_type(mod);
-        case TOK_TYPE_KEYWORD_F64:   return make_type(TYPE_F64);
-        
+        case TOK_TYPE_KEYWORD_F64: return make_type(TYPE_F64);
+
         case TOK_TYPE_KEYWORD_BOOL: return make_type(TYPE_BOOL);
         default: error_at_node(mod, node, "[INTERNAL COMPILER ERROR] unknown token type \"%s\" found when converting AST_basic_type_expr to integral type", token_type_str[node.as_basic_type_expr->lit->type]);
         }
@@ -669,13 +666,13 @@ bool check_type_cast_implicit(Type* lhs, Type* rhs) {
     rhs = type_unalias(rhs);
 
     LOG("lhs: %d, rhs: %d\n", lhs->tag, rhs->tag);
-    if (lhs->tag == rhs->tag && 
-        rhs->tag != TYPE_STRUCT && 
-        rhs->tag != TYPE_UNION && 
-        rhs->tag != TYPE_ENUM && 
-        rhs->tag != TYPE_UNTYPED_AGGREGATE && 
-        rhs->tag != TYPE_FUNCTION && 
-        rhs->tag != TYPE_POINTER && 
+    if (lhs->tag == rhs->tag &&
+        rhs->tag != TYPE_STRUCT &&
+        rhs->tag != TYPE_UNION &&
+        rhs->tag != TYPE_ENUM &&
+        rhs->tag != TYPE_UNTYPED_AGGREGATE &&
+        rhs->tag != TYPE_FUNCTION &&
+        rhs->tag != TYPE_POINTER &&
         rhs->tag != TYPE_ALIAS) return true;
 
     if (type_equivalent(lhs, rhs, NULL)) return true;
@@ -706,26 +703,25 @@ bool check_type_cast_implicit(Type* lhs, Type* rhs) {
     }
     // now we check for implicit casts between integrals
     // we check ONLY the rhs going to lhs
-    if (TYPE_I8 <= rhs->tag && rhs->tag <= TYPE_I64 && 
-        TYPE_I8 <= lhs->tag && lhs->tag <= TYPE_I64 && 
+    if (TYPE_I8 <= rhs->tag && rhs->tag <= TYPE_I64 &&
+        TYPE_I8 <= lhs->tag && lhs->tag <= TYPE_I64 &&
         rhs->tag <= lhs->tag) return true;
 
-    if (TYPE_U8 <= rhs->tag && rhs->tag <= TYPE_U64 && 
-        TYPE_U8 <= lhs->tag && lhs->tag <= TYPE_U64 && 
+    if (TYPE_U8 <= rhs->tag && rhs->tag <= TYPE_U64 &&
+        TYPE_U8 <= lhs->tag && lhs->tag <= TYPE_U64 &&
         rhs->tag <= lhs->tag) return true;
 
-    if (TYPE_F16 <= rhs->tag && rhs->tag <= TYPE_F64 && 
-        TYPE_F16 <= lhs->tag && lhs->tag <= TYPE_F64 && 
+    if (TYPE_F16 <= rhs->tag && rhs->tag <= TYPE_F64 &&
+        TYPE_F16 <= lhs->tag && lhs->tag <= TYPE_F64 &&
         rhs->tag <= lhs->tag) return true;
 
-    if ((rhs->tag == TYPE_UNTYPED_INT || rhs->tag == TYPE_UNTYPED_FLOAT) && 
+    if ((rhs->tag == TYPE_UNTYPED_INT || rhs->tag == TYPE_UNTYPED_FLOAT) &&
         TYPE_I8 <= lhs->tag && lhs->tag <= TYPE_F64) return true;
     if ((rhs->tag == TYPE_UNTYPED_INT || (TYPE_I8 <= rhs->tag && rhs->tag <= TYPE_U64)) && lhs->tag == TYPE_POINTER) return true;
 
     if (rhs->tag == lhs->tag && (rhs->tag == TYPE_UNTYPED_INT || rhs->tag == TYPE_UNTYPED_FLOAT)) return true;
-    if ((rhs->tag == TYPE_UNTYPED_INT   && lhs->tag == TYPE_UNTYPED_FLOAT) ||
+    if ((rhs->tag == TYPE_UNTYPED_INT && lhs->tag == TYPE_UNTYPED_FLOAT) ||
         (rhs->tag == TYPE_UNTYPED_FLOAT && lhs->tag == TYPE_UNTYPED_INT)) return true;
-
 
     return false;
 }

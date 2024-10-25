@@ -29,27 +29,27 @@ static void register_uses(FeIr* ir) {
     case FE_IR_OR:
     case FE_IR_AND:
         FeIrBinop* binop = (FeIrBinop*)ir;
-        binop->lhs->use_count++;
-        binop->rhs->use_count++;
+        binop->lhs->flags++;
+        binop->rhs->flags++;
         break;
     case FE_IR_LOAD:
         FeIrLoad* load = (FeIrLoad*)ir;
-        load->location->use_count++;
+        load->location->flags++;
         break;
     case FE_IR_STORE:
         FeIrStore* store = (FeIrStore*)ir;
-        store->location->use_count++;
-        store->value->use_count++;
+        store->location->flags++;
+        store->value->flags++;
         break;
     case FE_IR_RETURN:
         FeIrReturn* ret = (FeIrReturn*)ir;
-        for_range (i, 0, ret->len) {
-            ret->sources[i]->use_count++;
+        for_range(i, 0, ret->len) {
+            ret->sources[i]->flags++;
         }
         break;
     case FE_IR_MOV:
         FeIrMov* mov = (FeIrMov*)ir;
-        if (mov->source) mov->source->use_count++;
+        if (mov->source) mov->source->flags++;
         break;
     case FE_IR_NOT:
     case FE_IR_NEG:
@@ -57,7 +57,7 @@ static void register_uses(FeIr* ir) {
     case FE_IR_ZEROEXT:
     case FE_IR_TRUNC:
         FeIrUnop* unop = (FeIrUnop*)ir;
-        if (unop->source) unop->source->use_count++;
+        if (unop->source) unop->source->flags++;
         break;
     case FE_IR_INVALID:
     case FE_IR_CONST:
@@ -70,10 +70,10 @@ static void register_uses(FeIr* ir) {
     }
 }
 
-static void reset_use_counts(FeFunction* f) {
+static void reset_flags(FeFunction* f) {
     for_urange(i, 0, f->blocks.len) {
         for_fe_ir(inst, *f->blocks.at[i]) {
-            inst->use_count = 0;
+            inst->flags = 0;
         }
     }
 }
@@ -88,7 +88,7 @@ static void count_uses_func(FeFunction* f) {
 
 static void try_eliminate(FeIr* ir) {
     // recursively attempt to eliminate dead code
-    if (ir == NULL || ir->use_count != 0 || has_side_effects(ir)) return;
+    if (ir == NULL || ir->flags != 0 || has_side_effects(ir)) return;
 
     switch (ir->kind) {
     case FE_IR_ADD:
@@ -104,34 +104,34 @@ static void try_eliminate(FeIr* ir) {
     case FE_IR_OR:
     case FE_IR_AND:
         FeIrBinop* binop = (FeIrBinop*)ir;
-        binop->lhs->use_count--;
-        binop->rhs->use_count--;
+        binop->lhs->flags--;
+        binop->rhs->flags--;
         try_eliminate(binop->lhs);
         try_eliminate(binop->rhs);
         break;
     case FE_IR_STORE:
         FeIrStore* store = (FeIrStore*)ir;
-        store->location->use_count--;
-        store->value->use_count--;
+        store->location->flags--;
+        store->value->flags--;
         try_eliminate(store->location);
         try_eliminate(store->value);
         break;
     case FE_IR_RETURN:
         FeIrReturn* ret = (FeIrReturn*)ir;
-        for_range (i, 0, ret->len) {
-            ret->sources[i]->use_count--;
+        for_range(i, 0, ret->len) {
+            ret->sources[i]->flags--;
             try_eliminate(ret->sources[i]);
         }
         break;
     case FE_IR_MOV:
         FeIrMov* mov = (FeIrMov*)ir;
-        if (mov->source) mov->source->use_count--;
+        if (mov->source) mov->source->flags--;
         try_eliminate(mov->source);
         break;
     case FE_IR_NEG:
     case FE_IR_NOT:
         FeIrUnop* unop = (FeIrUnop*)ir;
-        if (unop->source) unop->source->use_count--;
+        if (unop->source) unop->source->flags--;
         try_eliminate(unop->source);
         break;
     case FE_IR_INVALID:
@@ -148,7 +148,7 @@ static void try_eliminate(FeIr* ir) {
 
 static void tdce_on_function(FeFunction* f) {
     // FIXME: this should be done as a separate pass!
-    reset_use_counts(f);
+    reset_flags(f);
     count_uses_func(f);
 
     for_urange(i, 0, f->blocks.len) {

@@ -2,10 +2,9 @@
 
 /* pass "sccp" - sparse conditional constant propagation
 
-    performs a limited abstract interpretation to determine if values are 
-    constant (better than algsimp can). This also
-
-    it's a good idea to run a DCE pass cause this can generate some constant garbage.
+    performs a limited abstract interpretation to determine if values are
+    constant (better than algsimp can). This also modifies the CFG if it
+    detects a branch on a constant.
 
 */
 

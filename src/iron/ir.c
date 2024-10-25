@@ -474,13 +474,13 @@ FeIr* fe_ir_param(FeFunction* f, u32 param) {
 }
 
 FeIr* fe_ir_return(FeFunction* f) {
-    FeIrReturn* ret = (FeIrReturn*) fe_ir(f, FE_IR_RETURN);
+    FeIrReturn* ret = (FeIrReturn*)fe_ir(f, FE_IR_RETURN);
     u32 count = f->returns.len;
     if (count != 0) {
         ret->sources = fe_malloc(count * sizeof(ret->sources[0]));
     }
     ret->len = count;
-    return (FeIr*) ret;
+    return (FeIr*)ret;
 }
 
 // hasta la vista baby
@@ -605,6 +605,7 @@ static FeIr* get_usage(FeBasicBlock* bb, FeIr* source, FeIr* start) {
 }
 
 void fe_add_ir_uses_to_worklist(FeFunction* f, FeIr* source, da(FeIrPTR) * worklist) {
+    TODO("rework this");
     for_urange(i, 0, f->blocks.len) {
         FeBasicBlock* bb = f->blocks.at[i];
         FeIr* next_usage = get_usage(bb, source, 0);

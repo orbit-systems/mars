@@ -23,7 +23,7 @@ flag_set mars_flags;
 FeModule* irgen_module(mars_module* mars);
 
 void apply_current_arch(mars_module* mod) {
-    foreach(mars_module* curr_mod, mod->import_list) {
+    foreach (mars_module* curr_mod, mod->import_list) {
         curr_mod->current_architecture = mod->current_architecture;
         apply_current_arch(curr_mod);
     }

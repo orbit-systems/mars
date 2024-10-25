@@ -204,17 +204,17 @@ mars_module* parse_module(string input_path) {
             for_urange(j, 0, active_modules.len) {
                 if (string_eq(active_modules.at[j]->module_path, importpath)) {
                     found_imported_module = j;
-                } 
+                }
             }
 
             module->program_tree.at[i].as_import_stmt->realpath = importpath;
-            //we need to setup module identifiers carefully, since sometimes they'll be the blank _.
-/*            if (module->program_tree.at[i].as_import_stmt->name.type == AST_identifier) {
-                module->module_identifier = module->program_tree.at[i].as_import_stmt->name.as_identifier->tok->text;
-            } else {
-                //no name, so they get _ as a name
-                module->module_identifier = string_clone(constr("_"));
-            }*/
+            // we need to setup module identifiers carefully, since sometimes they'll be the blank _.
+            /*            if (module->program_tree.at[i].as_import_stmt->name.type == AST_identifier) {
+                            module->module_identifier = module->program_tree.at[i].as_import_stmt->name.as_identifier->tok->text;
+                        } else {
+                            //no name, so they get _ as a name
+                            module->module_identifier = string_clone(constr("_"));
+                        }*/
 
             if (found_imported_module != -1) {
                 if (active_modules.at[found_imported_module]->visited) {

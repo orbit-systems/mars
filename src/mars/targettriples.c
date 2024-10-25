@@ -55,7 +55,7 @@ void set_target_triple(string target, flag_set* fl) {
 const FeArchInfo* mars_arch_to_fe(u8 arch) {
     switch (arch) {
     case TARGET_ARCH_APHELION: crash("aphelion not supported in iron yet!\n");
-    case TARGET_ARCH_X86_64:   return &fe_arch_x64; 
+    case TARGET_ARCH_X86_64: return &fe_arch_x64;
     default: crash("unknown architecture!\n");
     }
     return NULL;
@@ -63,8 +63,8 @@ const FeArchInfo* mars_arch_to_fe(u8 arch) {
 
 u8 mars_sys_to_fe(u8 arch) {
     switch (arch) {
-    case TARGET_SYS_NONE:    crash("freestanding not supported in iron yet!\n");
-    case TARGET_SYS_LINUX:   return FE_SYSTEM_LINUX;
+    case TARGET_SYS_NONE: crash("freestanding not supported in iron yet!\n");
+    case TARGET_SYS_LINUX: return FE_SYSTEM_LINUX;
     case TARGET_SYS_WINDOWS: return FE_SYSTEM_WINDOWS;
     default: crash("unknown system!\n");
     }

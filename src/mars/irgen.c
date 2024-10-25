@@ -226,13 +226,12 @@ void irgen_stmt(IrBuilder* builder, AST stmt) {
         // we get the values from the stack objects
         // and put them in the return
 
-
         FeIr** return_values = mars_alloc(sizeof(FeIr*) * builder->fn_returns_len);
         for_urange(i, 0, builder->fn_returns_len) {
             return_values[i] = fe_append_ir(builder->bb, fe_ir_stack_load(builder->fn, builder->fn_returns[i]));
         }
 
-        FeIrReturn* ret = (FeIrReturn*) fe_append_ir(builder->bb, fe_ir_return(builder->fn));
+        FeIrReturn* ret = (FeIrReturn*)fe_append_ir(builder->bb, fe_ir_return(builder->fn));
         for_urange(i, 0, builder->fn_returns_len) {
             ret->sources[i] = return_values[i];
         }

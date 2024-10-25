@@ -15,7 +15,7 @@ u8 mars_sys_to_fe(u8 arch);
 
 #define SUPPORTED_SYS  \
     X(NONE, "unknown") \
-    X(LINUX, "linux") \
+    X(LINUX, "linux")  \
     X(WINDOWS, "windows")
 
 #define SUPPORTED_PRODUCT \
