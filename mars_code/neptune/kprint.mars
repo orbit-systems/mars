@@ -4,16 +4,17 @@ import mem "../memory";
 
 let PUTC_PORT: uint = 100;
 
+let kprintln = fn(str: []let u8) {
+    kprint(str);
+    kputc('\n');
+};
+
 let kprint = fn(str: []let u8) {
     for i in 0..<str.len {
         kputc(str[i]);
     }
 };
 
-let kprintln = fn(str: []let u8) {
-    kprint(str);
-    kputc('\n');
-};
 
 let kputc = fn(c: u8) {
     asm(c -> "ra", PUTC_PORT -> "rb") {
@@ -21,7 +22,7 @@ let kputc = fn(c: u8) {
     } 
 };
 
-let kprintf = fn(format: []let u8, args: []let addr) {
+let kprintf = fn(format: []let u8, args: []let) {
     if args.len == 0 {
         kprint(format);
         return;

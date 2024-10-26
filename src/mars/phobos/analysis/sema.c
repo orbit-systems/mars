@@ -3,7 +3,7 @@
 #include "common/crash.h"
 #include "common/strmap.h"
 #define LOG(...) printf(__VA_ARGS__)
-// #define LOG(...)
+//#define LOG(...)
 StrMap name_to_type;
 
 void check_module(mars_module* mod) {
@@ -17,10 +17,21 @@ void check_module(mars_module* mod) {
 
     // TODO:
     /*
-
+        types _are_ entities
     */
     if (mod->entities == NULL) mod->entities = new_entity_table(NULL);
     strmap_init(&name_to_type, 1);
+
+    foreach (AST trunk, mod->program_tree) {
+        //shallow scan, grab entities if they have decls.
+        if (trunk.type == AST_decl_stmt) {
+            foreach(AST lhs, trunk.as_decl_stmt->lhs) {
+                LOG("surface passing: "str_fmt"\n", str_arg(lhs.as_identifier->tok->text));
+                new_entity(mod->entities, lhs.as_identifier->tok->text, trunk);
+            }
+        }
+    }
+
 
     // its Time.
     foreach (AST trunk, mod->program_tree) {
@@ -35,7 +46,7 @@ Type* check_stmt(mars_module* mod, AST node, entity_table* scope) {
         ast_func_literal_expr* fn = node.as_func_literal_expr;
         string ident = fn->ident.base->start->text;
 
-        if (search_for_entity(scope, ident))
+        if (search_for_entity(scope, ident)) 
             error_at_node(mod, fn->ident, "identifier already exists in scope");
 
         entity* fn_ent = new_entity(scope, ident, node);
@@ -43,6 +54,7 @@ Type* check_stmt(mars_module* mod, AST node, entity_table* scope) {
 
         fn_ent->entity_type = check_func_literal(mod, node, scope);
         fn_ent->is_mutable = false;
+        fn_ent->checked = true;
         fn->ident.as_identifier->entity = fn_ent;
         return NULL;
     } break;
@@ -76,7 +88,7 @@ Type* check_stmt(mars_module* mod, AST node, entity_table* scope) {
 
                 if (search_for_entity(scope, lhs.as_identifier->tok->text)) error_at_node(mod, lhs, "identifier already exists in scope");
 
-                entity* lhs_entity = new_entity(scope, lhs.as_identifier->tok->text, lhs);
+                entity* lhs_entity = new_entity(scope, lhs.as_identifier->tok->text, node);
                 if (scope == mod->entities) lhs_entity->is_global = true;
                 lhs_entity->is_mutable = node.as_decl_stmt->is_mut;
                 lhs.as_identifier->entity = lhs_entity;
@@ -86,6 +98,7 @@ Type* check_stmt(mars_module* mod, AST node, entity_table* scope) {
                 if (decl_type && !check_type_cast_implicit(decl_type, ast_type)) {
                     error_at_node(mod, node, "type mismatch: lhs and rhs cannot be cast to eachother\nTODO: find out the type of lhs and rhs to print a more informative error");
                 }
+                lhs_entity->checked = true;
                 lhs_entity->entity_type = (decl_type) ? decl_type : ast_type;
             }
         } else {
@@ -97,17 +110,20 @@ Type* check_stmt(mars_module* mod, AST node, entity_table* scope) {
             if (lhs.type != AST_identifier) error_at_node(mod, lhs, "expected identifier, got %s", ast_type_str[lhs.type]);
             LOG("decl: " str_fmt "\n", str_arg(lhs.as_identifier->tok->text));
 
-            if (search_for_entity(scope, lhs.as_identifier->tok->text)) error_at_node(mod, lhs, "identifier already exists in scope");
+            entity* potential_entity = search_for_entity(scope, lhs.as_identifier->tok->text);
 
-            entity* lhs_item_entity = new_entity(scope, lhs.as_identifier->tok->text, lhs);
+            if (potential_entity && potential_entity->checked == true && potential_entity->been_used == false) error_at_node(mod, lhs, "identifier already exists in scope");
+
+            entity* lhs_item_entity = potential_entity ? potential_entity : new_entity(scope, lhs.as_identifier->tok->text, node);
             if (scope == mod->entities) lhs_item_entity->is_global = true;
             lhs_item_entity->is_mutable = node.as_decl_stmt->is_mut;
             lhs.as_identifier->entity = lhs_item_entity;
+            lhs_item_entity->checked = true;
 
             if (!is_null_AST(node.as_decl_stmt->type) && !check_type_cast_implicit(node.as_decl_stmt->tg_type, rhs.type)) {
                 error_at_node(mod, node, "type mismatch: lhs and rhs cannot be cast to eachother\nTODO: find out the type of lhs and rhs to print a more informative error");
             }
-            scope->at[scope->len - 1]->entity_type = (decl_type) ? decl_type : ast_type;
+            lhs_item_entity->entity_type = (decl_type) ? decl_type : ast_type;
         }
         return NULL;
     }
@@ -209,27 +225,82 @@ Type* check_stmt(mars_module* mod, AST node, entity_table* scope) {
         entity* import_ent = new_entity(global_scope, module_name, node);
         import_ent->is_module = true;
         import_ent->module = imported_module;
+        import_ent->checked = true;
         return NULL;
 
     case AST_type_decl_stmt:
         // we now need to create a type.
         // what is it? who knows.
 
-        Type* struct_alias = make_type(TYPE_ALIAS);
+        Type* type_alias = make_type(TYPE_ALIAS);
 
-        strmap_put(&name_to_type, node.as_type_decl_stmt->lhs.as_identifier->tok->text, struct_alias);
+        strmap_put(&name_to_type, node.as_type_decl_stmt->lhs.as_identifier->tok->text, type_alias);
 
         Type* rhs = ast_to_type(mod, node.as_type_decl_stmt->rhs);
         rhs = sema_type_unalias(rhs);
-        struct_alias->as_reference.subtype = rhs;
+        type_alias->as_reference.subtype = rhs;
         // we're gonna do some trolling here
-        return struct_alias;
+        return type_alias;
+
     case AST_call_expr: {
         checked_expr call_expr = check_expr(mod, node, scope);
         return call_expr.type;
     }
-    case AST_for_in_stmt: {
+
+    case AST_for_stmt: {
+        //we create a new scope for the for loop
+        entity_table* for_scope = new_entity_table(scope);
+        //we now call check_stmt on the index
+        check_stmt(mod, node.as_for_stmt->prelude, for_scope);
+        //we HOPE this is fine.
+        checked_expr cond = check_expr(mod, node.as_for_stmt->condition, for_scope);
+        if (cond.type->tag != TYPE_BOOL) error_at_node(mod, node.as_for_stmt->condition, "expected condition to be of type bool");
+        foreach(AST update, node.as_for_stmt->update) {
+            check_stmt(mod, update, for_scope);
+        }
+        foreach(AST stmt, node.as_for_stmt->block.as_stmt_block->stmts) {
+            check_stmt(mod, stmt, for_scope);
+        }
+        return NULL;
     }
+
+
+    case AST_for_in_stmt: {
+        //we need to create a new scope for the for in loop, since we need an entity for indexvar
+        entity_table* for_scope = new_entity_table(scope);
+        //we now create a new entity
+        entity* indexvar = new_entity(for_scope, node.as_for_in_stmt->indexvar.as_identifier->tok->text, node.as_for_in_stmt->indexvar);
+        indexvar->is_mutable = true;
+        indexvar->checked = true;
+        indexvar->declaration = node.as_for_in_stmt->indexvar;
+        //we now verify that the type that indexvar has can be implictly cast to the ranges, and that the ranges
+        //can be cast to eachother.
+        checked_expr from = check_expr(mod, node.as_for_in_stmt->from, for_scope);
+        checked_expr to = check_expr(mod, node.as_for_in_stmt->to, for_scope);
+        //if from's type is UNTYPED_INT, we set it to to's type.
+        if (from.type->tag == TYPE_UNTYPED_INT) from.type = to.type;
+
+        if (!check_type_cast_implicit(from.type, to.type)) error_at_node(mod, node.as_for_in_stmt->from, "cannot cast interval start to end");
+        if (!check_type_cast_implicit(to.type, from.type)) error_at_node(mod, node.as_for_in_stmt->to, "cannot cast interval end to start");
+        //since from and to can be cast to eachother, they should both be castable to the indexvar.
+        //we now set indexvar's type to the type of from
+        indexvar->entity_type = from.type;
+
+        //we dont care about interval inclusivity, so now we just check the block
+        foreach(AST stmt, node.as_for_in_stmt->block.as_stmt_block->stmts) {
+            check_stmt(mod, stmt, for_scope);
+        }
+        return NULL;
+
+    }
+
+    case AST_asm_stmt: {
+        warning_at_node(mod, node, "ASM stmts and blocks are COMPLETELY unchecked. sandwichman you gotta add textual registers");
+        return NULL;
+    }
+
+    case AST_continue_stmt:
+        return NULL;
 
     default:
         error_at_node(mod, node, "[check_module] unexpected ast type: %s", ast_type_str[node.type]);
@@ -269,9 +340,14 @@ checked_expr check_expr(mars_module* mod, AST node, entity_table* scope) {
         if (ident_ent == NULL) {
             // we need to see if this is a type identifier!
             Type* type_ptr = strmap_get(&name_to_type, node.as_identifier->tok->text);
-            if (type_ptr == STRMAP_NOT_FOUND) error_at_node(mod, node, "undefined identifier: " str_fmt, str_arg(node.as_identifier->tok->text));
-
-            return (checked_expr){.expr = node, .type = type_unalias(type_ptr)};
+            if (type_ptr != STRMAP_NOT_FOUND) {
+                return (checked_expr){.expr = node, .type = type_unalias(type_ptr)};
+            }
+            error_at_node(mod, node, "undefined identifier: " str_fmt, str_arg(node.as_identifier->tok->text));
+        }
+        if (ident_ent->checked == false) {
+            LOG("ident "str_fmt" was only surface checked, stmt checking ast %s\n", str_arg(node.as_identifier->tok->text), ast_type_str[ident_ent->declaration.type]); 
+            check_stmt(mod, ident_ent->declaration, mod->entities);
         }
         ident_ent->been_used = true;
         node.as_identifier->entity = ident_ent;
@@ -390,6 +466,7 @@ checked_expr check_expr(mars_module* mod, AST node, entity_table* scope) {
 
     case AST_call_expr: {
         checked_expr lhs = check_expr(mod, node.as_call_expr->lhs, scope);
+        if (lhs.type->tag == TYPE_ALIAS) lhs.type = type_unalias(lhs.type);
         if (lhs.type->tag != TYPE_FUNCTION) crash("expected function on lhs of call_expr, got type %d\n", lhs.type->tag);
         foreach (AST rhs, node.as_call_expr->params) {
             checked_expr argument = check_expr(mod, rhs, scope);
@@ -398,6 +475,18 @@ checked_expr check_expr(mars_module* mod, AST node, entity_table* scope) {
         }
         node.base->T = lhs.type;
         return (checked_expr){.expr = node, .type = lhs.type};
+    }
+
+    case AST_index_expr: {
+        checked_expr lhs = check_expr(mod, node.as_index_expr->lhs, scope);
+        checked_expr inside = check_expr(mod, node.as_index_expr->inside, scope);
+        lhs.type = type_unalias(lhs.type);
+        if (!is_integral(inside.type)) error_at_node(mod, node.as_index_expr->inside, "inside of array index is not an integral type");
+        //we now need to grab the lhs's type and verify its an array or pointer or slice
+        if (lhs.type->tag != TYPE_ARRAY && lhs.type->tag != TYPE_SLICE) error_at_node(mod, node.as_index_expr->lhs, "identifier "str_fmt" is not an array or slice", str_arg(lhs.expr.as_identifier->tok->text));
+        if (inside.ev) warning_at_node(mod, node.as_index_expr->inside, "inside is not checked for constexpr bounds yet");
+        //SUBTYPE IS NULL!
+        return (checked_expr){.expr = node, .type = lhs.type->as_reference.subtype};
     }
 
     default:
@@ -432,6 +521,13 @@ checked_expr check_literal(mars_module* mod, AST literal) {
         ev->kind = EV_UNTYPED_FLOAT;
         literal.base->T = make_type(TYPE_UNTYPED_FLOAT);
         return (checked_expr){.expr = literal, .ev = ev, .type = make_type(TYPE_UNTYPED_FLOAT)};
+    case TOK_LITERAL_CHAR:
+        if (string_eq(constr("\\n"), literal.as_literal_expr->tok->text)) ev->as_u8 = '\n';
+        if (ev->as_u8 == 0 && literal.as_literal_expr->tok->text.len != 1) crash("unhandled escape code in char literal checking!\n");
+        ev->as_u8 = literal.as_literal_expr->tok->text.raw[0];
+        ev->kind = EV_U8;
+        literal.base->T = make_type(TYPE_U8);
+        return (checked_expr){.expr = literal, .ev = ev, .type = make_type(TYPE_U8)};
     default:
         error_at_node(mod, literal, "[INTERNAL COMPILER ERROR] unable to check literal " str_fmt " with type %s", str_arg(literal.as_literal_expr->tok->text), token_type_str[literal.as_literal_expr->tok->type]);
     }
@@ -494,6 +590,7 @@ Type* check_func_literal(mars_module* mod, AST func_literal, entity_table* scope
         param_entity->is_param = true;
         param_entity->entity_type = param_type;
         param_entity->param_idx = count;
+        param_entity->checked = true;
         type_add_param(fn_type, param_type);
 
         // (sandwich): add the entities to the function definition
@@ -518,6 +615,7 @@ Type* check_func_literal(mars_module* mod, AST func_literal, entity_table* scope
         return_entity->is_return = true;
         return_entity->entity_type = return_type;
         return_entity->return_idx = count;
+        return_entity->checked = true;
         type_add_return(fn_type, return_type);
 
         // (sandwich): add the entities to the function definition
@@ -658,6 +756,23 @@ bool check_assign_op(token* op, Type* lhs, Type* rhs) {
     else if (lhs->tag > TYPE_META_INTEGRAL && lhs->tag == TYPE_POINTER && check_type_cast_implicit(lhs, rhs)) return true;
     else if (TYPE_NONE < lhs->tag && lhs->tag < TYPE_META_INTEGRAL && check_type_cast_implicit(lhs, rhs)) return true;
     else return false;
+}
+
+bool is_integral(Type* t) {
+    t = type_unalias(t);
+    switch (t->tag) {
+        case TYPE_UNTYPED_INT:
+        case TYPE_I8:
+        case TYPE_I16:
+        case TYPE_I32:
+        case TYPE_I64:
+        case TYPE_U8:
+        case TYPE_U16:
+        case TYPE_U32:
+        case TYPE_U64: return true;
+        default: return false;
+    }
+
 }
 
 bool check_type_cast_implicit(Type* lhs, Type* rhs) {

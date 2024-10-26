@@ -136,12 +136,13 @@ AST parse_stmt(parser* p) {
     //<for_type_two> ::= "for" <identifier> (":" <type> | E) "in" <expression>  ("..<" | "..=")  <expression> <control_flow_block>
     case TOK_KEYWORD_FOR:
         // we need to look ahead here
+        token* start_token = &current_token(p);
         advance_token(p);
         if (peek_token(p, 1).type == TOK_COLON || peek_token(p, 1).type == TOK_KEYWORD_IN) {
             //<for_type_two> ::= "for" <identifier> (":" <type> | E) "in" <expression>  ("..<" | "..=") <expression> <control_flow_block>
             general_warning("for-in loop detected! this code is unchecked.");
             n = new_ast_node(p, AST_for_in_stmt);
-            n.as_for_in_stmt->base.start = &current_token(p);
+            n.as_for_in_stmt->base.start = start_token;
             n.as_for_in_stmt->indexvar = parse_identifier(p);
             if (current_token(p).type == TOK_COLON) {
                 advance_token(p);
@@ -160,7 +161,7 @@ AST parse_stmt(parser* p) {
         }
         //<for_type_one> ::= "for" <simple_stmt> ";" <expression>  ";" (( <assignment> "," )* <assignment> ("," | E) | E) <control_flow_block>
         AST n = new_ast_node(p, AST_for_stmt);
-        n.as_for_stmt->base.start = &current_token(p);
+        n.as_for_stmt->base.start = start_token;
         if (current_token(p).type == TOK_KEYWORD_MUT || current_token(p).type == TOK_KEYWORD_LET) {
             // we have a decl!
             n.as_for_stmt->prelude = parse_decl_stmt(p);
@@ -504,7 +505,7 @@ AST parse_type(parser* p) {
         n = new_ast_node(p, AST_slice_type_expr);
         n.as_slice_type_expr->base.start = &current_token(p);
         advance_token(p);
-        // if (current_token(p).type != TOK_CLOSE_BRACKET) error_at_parser(p, "expected ]");
+        if (current_token(p).type != TOK_CLOSE_BRACKET) error_at_parser(p, "expected ]");
     case TOK_CARET:
         if (is_null_AST(n)) n = new_ast_node(p, AST_pointer_type_expr);
         if (n.as_slice_type_expr->base.start == NULL) n.as_slice_type_expr->base.start = &current_token(p);
@@ -610,6 +611,7 @@ AST parse_atomic_expr(parser* p) {
             advance_token(p);
             left.as_slice_expr->inside_right = parse_expr(p);
             if (current_token(p).type != TOK_CLOSE_BRACKET) error_at_parser(p, "expected ]");
+            left.as_slice_expr->base.end = &current_token(p);
             advance_token(p);
             continue;
         }
