@@ -10,6 +10,34 @@ int main() {
     FeModule* m = fe_new_module(str("cfg"));
 
     {
+         FeSymbol* sym = fe_new_symbol(m, str("algsimp_test"), FE_BIND_LOCAL);
+        FeFunction* f = fe_new_function(m, sym, FE_CCONV_MARS);
+        fe_init_func_params(f, 1);
+        fe_add_func_param(f, FE_TYPE_I64);
+        fe_init_func_returns(f, 1);
+        fe_add_func_return(f, FE_TYPE_I64);
+
+        FeBasicBlock* bb = fe_new_basic_block(f, str("block1"));
+
+        FeIrParam* p = (FeIrParam*)fe_append_ir(bb, fe_ir_param(f, 0));
+
+        FeIrConst* c1 = (FeIrConst*)fe_append_ir(bb, fe_ir_const(f, FE_TYPE_I64));
+        c1->i64 = 1;
+
+        FeIrConst* c2 = (FeIrConst*)fe_append_ir(bb, fe_ir_const(f, FE_TYPE_I64));
+        c2->i64 = 2;
+
+        FeIr* add = fe_append_ir(bb, fe_ir_binop(f, FE_IR_ADD, (FeIr*)c1, (FeIr*)c2));
+        add->type = FE_TYPE_I64;
+
+        FeIr* add2 = fe_append_ir(bb, fe_ir_binop(f, FE_IR_ADD, (FeIr*)add, (FeIr*)c2));
+        add2->type = FE_TYPE_I64;
+
+        FeIrReturn* ret = (FeIrReturn*)fe_append_ir(bb, fe_ir_return(f));
+        ret->sources[0] = (FeIr*)add2;
+    }
+
+    if (0) {
         FeSymbol* fn_sym = fe_new_symbol(m, str("foo"), FE_BIND_EXPORT);
         FeFunction* fn = fe_new_function(m, fn_sym, FE_CCONV_MARS);
 
@@ -64,42 +92,8 @@ int main() {
         }
     }
 
-    if (0) {
-        /*
-                    D
-                   / \
-            A-->--B   E-->--F
-             \     \ /     /
-              \     C     /
-               ----->-----
-        */
 
-        FeSymbol* fn_sym = fe_new_symbol(m, str("bar"), FE_BIND_EXPORT);
-        FeFunction* fn = fe_new_function(m, fn_sym, FE_CCONV_CDECL);
-
-        FeBasicBlock* A = fe_new_basic_block(fn, str("A"));
-        FeBasicBlock* B = fe_new_basic_block(fn, str("B"));
-        FeBasicBlock* C = fe_new_basic_block(fn, str("C"));
-        FeBasicBlock* D = fe_new_basic_block(fn, str("D"));
-        FeBasicBlock* E = fe_new_basic_block(fn, str("E"));
-        FeBasicBlock* F = fe_new_basic_block(fn, str("F"));
-
-        fe_init_func_params(fn, 1);
-        fe_add_func_param(fn, FE_TYPE_BOOL);
-
-        FeIr* cond = fe_append_ir(A, fe_ir_param(fn, 0));
-        fe_append_ir(A, fe_ir_branch(fn, cond, B, F));
-        fe_append_ir(B, fe_ir_branch(fn, cond, C, D));
-        fe_append_ir(C, fe_ir_jump(fn, E));
-        fe_append_ir(D, fe_ir_jump(fn, E));
-        fe_append_ir(E, fe_ir_jump(fn, F));
-        fe_append_ir(F, fe_ir_return(fn));
-    }
-
-
-
-
-    fe_sched_module_pass(m, &fe_pass_stackprom);
+    fe_sched_module_pass(m, &fe_pass_algsimp);
 
     fe_run_all_passes(m, true);
 

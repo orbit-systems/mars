@@ -243,6 +243,7 @@ static void function_algsimp(FeFunction* fn) {
         }
     }
 
+
     while (worklist.len != 0) {
         FeIr* inst = da_pop(&worklist);
 
