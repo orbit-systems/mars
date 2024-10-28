@@ -120,14 +120,15 @@ operators
         | bitcasting does not modify the value data of a variable,
         | but only changes what type the data is interpreted as.
 
-        note : the ONLY types that can cast implicitly are:
+        allowed implicit casts are:
         | ^mut   -> ^(mut/let) (T)
         | ^mut T -> ^let T
         | ^let   -> ^let T
         | ^let T -> ^let
         | enum T -> T
-        |
         | (u/i)N -> (u/i)M where N, M ∈ {8, 16, 32, 64}, N <= M
+
+        note: only one implicit cast may be made between expressions/AST edges. e.g. if y is of type `^mut int`, `let x: ^mut float = y;` is not allowed.
     
     unary reference
         &       generate pointer        using type T in (all): &<T> -> <^T>
@@ -161,10 +162,6 @@ operators
         | access entities from other modules: a_module::something
 
     
-    /* function - might get removed, i dont think its worth it
-        inline  inline a function call - only works with compile-time-constant functions contained in the current module
-    */
-
     if/switch
         if      ternary expression              using type T in (all) : if <bool> do <T> else <T>
         when    comp-time ternary expression    using type T in (all) : when <bool> do <T> else <T>

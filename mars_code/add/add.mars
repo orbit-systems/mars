@@ -1,5 +1,5 @@
-module add_test;
+module arithmetic_test;
 
-fn add(a, b: u64) -> u64 {
+fn add(a, b: int) -> int {
     return a + b;
 }
