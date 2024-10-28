@@ -2,6 +2,8 @@
 
 /* pass "sccp" - sparse conditional constant propagation
 
+    TODO
+
     performs a limited abstract interpretation to determine if values are
     constant (better than algsimp can). This also modifies the CFG if it
     detects a branch on a constant.

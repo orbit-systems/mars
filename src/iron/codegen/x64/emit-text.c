@@ -98,33 +98,33 @@ void fe_x64_emit_text(FeDataBuffer* db, FeMachBuffer* machbuf) {
         if (m->kind == 0) continue;
         // fe_db_write_format(db, "% 3d |   ", i);
         switch (m->kind) {
-        case FE_MACH_CFG_BRANCH:
-            fe_db_write_cstring(db, "; cfg branch\n");
-            break;
-        case FE_MACH_CFG_JUMP:
-            fe_db_write_cstring(db, "; cfg jump\n");
-            break;
-        case FE_MACH_CFG_TARGET:
-            fe_db_write_cstring(db, "; cfg target\n");
-            break;
-        case FE_MACH_CFG_BEGIN:
-            fe_db_write_cstring(db, "; regalloc begin\n");
-            break;
-        case FE_MACH_CFG_END:
-            fe_db_write_cstring(db, "; regalloc end\n");
-            break;
-        case FE_MACH_LIFETIME_BEGIN:
-            FeMachLifetimePoint* ltp = (FeMachLifetimePoint*)m;
-            fe_db_write_cstring(db, "; lifetime begin ");
-            emit_register(db, machbuf, ltp->vreg, GPR_64);
-            fe_db_write_cstring(db, "\n");
-            break;
-        case FE_MACH_LIFETIME_END:
-            ltp = (FeMachLifetimePoint*)m;
-            fe_db_write_cstring(db, "; lifetime end ");
-            emit_register(db, machbuf, ltp->vreg, GPR_64);
-            fe_db_write_8(db, '\n');
-            break;
+        // case FE_MACH_CFG_BRANCH:
+        //     fe_db_write_cstring(db, "; cfg branch\n");
+        //     break;
+        // case FE_MACH_CFG_JUMP:
+        //     fe_db_write_cstring(db, "; cfg jump\n");
+        //     break;
+        // case FE_MACH_CFG_TARGET:
+        //     fe_db_write_cstring(db, "; cfg target\n");
+        //     break;
+        // case FE_MACH_CFG_BEGIN:
+        //     fe_db_write_cstring(db, "; regalloc begin\n");
+        //     break;
+        // case FE_MACH_CFG_END:
+        //     fe_db_write_cstring(db, "; regalloc end\n");
+        //     break;
+        // case FE_MACH_LIFETIME_BEGIN:
+        //     FeMachLifetimePoint* ltp = (FeMachLifetimePoint*)m;
+        //     fe_db_write_cstring(db, "; lifetime begin ");
+        //     emit_register(db, machbuf, ltp->vreg, GPR_64);
+        //     fe_db_write_cstring(db, "\n");
+        //     break;
+        // case FE_MACH_LIFETIME_END:
+        //     ltp = (FeMachLifetimePoint*)m;
+        //     fe_db_write_cstring(db, "; lifetime end ");
+        //     emit_register(db, machbuf, ltp->vreg, GPR_64);
+        //     fe_db_write_8(db, '\n');
+        //     break;
         case FE_MACH_INST:
             fe_db_write_cstring(db, "   ");
             emit_inst(db, machbuf, m);

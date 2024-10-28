@@ -228,10 +228,22 @@ FeMachBuffer fe_x64_codegen(FeModule* mod) {
         gen_function(&mb, fn);
     }
 
+    // printstr();
+    FeDataBuffer db = fe_db_new(128);
+
+    fe_mach_emit_text(&db, &mb);
+
+    printf("\n%s\n", fe_db_clone_to_cstring(&db));
+
     // TODO("");
+    printf("register allocation!\n");
+    printf("live ranges:\n");
     fe_mach_regalloc(&mb);
 
+    printf("reducing redundant movs...\n");
     mov_reduce(&mb);
+
+    // printf("final code generation!\n");
 
     return mb;
 }
