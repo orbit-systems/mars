@@ -37,13 +37,13 @@ let kprintf = fn(format: []let u8, args: []let) {
         i += 1;
 
         if mem::str_equal(format[i:i+3], "int") {
-            print_integer(cast(uint) &cast(^let int)args[current_arg], 64, true, 10);
+            print_integer(cast(uint) &(cast([]let int)args)[current_arg], 64, true, 10);
             i += 2;
             current_arg += 1;
             continue;
         }
         if mem::str_equal(format[i:i+4], "uint") {
-            print_integer(cast(uint) &cast(^let uint)args[current_arg], 64, false, 10);
+            print_integer(cast(uint) &(cast([]let uint)args)[current_arg], 64, false, 10);
             i += 3;
             current_arg += 1;
             continue;

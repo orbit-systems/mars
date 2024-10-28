@@ -18,6 +18,7 @@ void check_module(mars_module* mod) {
     // TODO:
     /*
         types _are_ entities
+        type decls are _scoped_
     */
     if (mod->entities == NULL) mod->entities = new_entity_table(NULL);
     strmap_init(&name_to_type, 1);
@@ -29,6 +30,10 @@ void check_module(mars_module* mod) {
                 LOG("surface passing: "str_fmt"\n", str_arg(lhs.as_identifier->tok->text));
                 new_entity(mod->entities, lhs.as_identifier->tok->text, trunk);
             }
+        }
+        if (trunk.type == AST_func_literal_expr) {
+            LOG("surface passing: "str_fmt"\n", str_arg(trunk.as_func_literal_expr->ident.as_identifier->tok->text));
+            new_entity(mod->entities, trunk.as_func_literal_expr->ident.as_identifier->tok->text, trunk);
         }
     }
 
@@ -42,22 +47,6 @@ void check_module(mars_module* mod) {
 
 Type* check_stmt(mars_module* mod, AST node, entity_table* scope) {
     switch (node.type) {
-    case AST_func_literal_expr: {
-        ast_func_literal_expr* fn = node.as_func_literal_expr;
-        string ident = fn->ident.base->start->text;
-
-        if (search_for_entity(scope, ident)) 
-            error_at_node(mod, fn->ident, "identifier already exists in scope");
-
-        entity* fn_ent = new_entity(scope, ident, node);
-        if (scope == mod->entities) fn_ent->is_global = true;
-
-        fn_ent->entity_type = check_func_literal(mod, node, scope);
-        fn_ent->is_mutable = false;
-        fn_ent->checked = true;
-        fn->ident.as_identifier->entity = fn_ent;
-        return NULL;
-    } break;
     case AST_decl_stmt: {
         checked_expr rhs = check_expr(mod, node.as_decl_stmt->rhs, scope);
         // rhs.mutable = node.as_decl_stmt->is_mut;
@@ -171,7 +160,10 @@ Type* check_stmt(mars_module* mod, AST node, entity_table* scope) {
                 error_at_node(mod, assignee, "cannot assign to immutable expression");
             }
             da_append(&lhs_exprs, checked_assignee);
-            if (!check_assign_op(node.as_assign_stmt->op, checked_assignee.type, rhs.type)) error_at_node(mod, node, "cannot do operation " str_fmt " to lhs with rhs as param", str_arg(node.as_assign_stmt->op->text));
+            if (rhs.expr.type == AST_call_expr) {
+                if (!check_assign_op(node.as_assign_stmt->op, checked_assignee.type, rhs.type->as_function.returns.at[count])) error_at_node(mod, node, "cannot do operation " str_fmt " to lhs with rhs as param", str_arg(node.as_assign_stmt->op->text));
+            } 
+            else if (!check_assign_op(node.as_assign_stmt->op, checked_assignee.type, rhs.type)) error_at_node(mod, node, "cannot do operation " str_fmt " to lhs with rhs as param", str_arg(node.as_assign_stmt->op->text));
         }
 
         if (rhs.expr.type == AST_call_expr) {
@@ -302,6 +294,10 @@ Type* check_stmt(mars_module* mod, AST node, entity_table* scope) {
     case AST_continue_stmt:
         return NULL;
 
+
+    case AST_empty_stmt:
+        return NULL;
+
     default:
         error_at_node(mod, node, "[check_module] unexpected ast type: %s", ast_type_str[node.type]);
     }
@@ -383,6 +379,19 @@ checked_expr check_expr(mars_module* mod, AST node, entity_table* scope) {
         case TOK_KEYWORD_SIZEOF:
         case TOK_KEYWORD_ALIGNOF:
             return (checked_expr){.expr = node, .type = make_type(TYPE_UNTYPED_INT)};
+        case TOK_AND: {
+            //we need to create a "wrapped" type around THE type we received from the subexpr
+            Type* ptr_type = make_type(TYPE_POINTER);
+            ptr_type->as_reference.subtype = subexpr.type;
+            ptr_type->as_reference.mutable = false;
+            return (checked_expr){.expr = node, .type = ptr_type, .mutable = false};
+        }
+        case TOK_SUB: {
+            if (!is_integral(subexpr.type)) error_at_node(mod, node, "cannot negate non-integral type");
+            return (checked_expr){.expr = node, .type = subexpr.type};
+        }
+
+
         default:
             error_at_node(mod, node, "unexpected op: " str_fmt, str_arg(node.as_unary_op_expr->op->text));
         }
@@ -489,6 +498,25 @@ checked_expr check_expr(mars_module* mod, AST node, entity_table* scope) {
         return (checked_expr){.expr = node, .type = lhs.type->as_reference.subtype};
     }
 
+    case AST_slice_expr: {
+        checked_expr lhs = check_expr(mod, node.as_slice_expr->lhs, scope);
+        checked_expr inside_left = check_expr(mod, node.as_slice_expr->inside_left, scope);
+        checked_expr inside_right = check_expr(mod, node.as_slice_expr->inside_right, scope);
+
+        lhs.type = type_unalias(lhs.type);
+        if (lhs.type->tag != TYPE_ARRAY && lhs.type->tag != TYPE_SLICE) error_at_node(mod, node.as_slice_expr->lhs, "identifier "str_fmt" is not an array or slice", str_arg(node.as_slice_expr->lhs.as_identifier->tok->text));
+
+        //we now know lhs is a slicable type OR an array
+        warning_at_node(mod, node, "bounds checking not yet implemented! be careful not to break anything!");
+
+        //we now make a slice type
+        Type* slice_type = make_type(TYPE_SLICE);
+        slice_type->as_reference.subtype = lhs.type->as_reference.subtype;
+
+        return (checked_expr) {.expr = node, .type = slice_type};
+    }
+
+
     default:
         error_at_node(mod, node, "[check_expr] unexpected ast type: %s", ast_type_str[node.type]);
     }
@@ -509,25 +537,31 @@ checked_expr check_literal(mars_module* mod, AST literal) {
     case TOK_LITERAL_INT:
         ev->as_untyped_int = string_strtol(literal.as_literal_expr->tok->text, 10);
         ev->kind = EV_UNTYPED_INT;
-        literal.base->T = make_type(TYPE_UNTYPED_INT); // TODO: this will be optimised, but dont be a lazy fuck kayla
-        return (checked_expr){.expr = literal, .ev = ev, .type = make_type(TYPE_UNTYPED_INT)};
+        literal.base->T = make_type(TYPE_UNTYPED_INT);
+        return (checked_expr){.expr = literal, .ev = ev, .type = literal.base->T};
     case TOK_LITERAL_BOOL:
         ev->as_bool = string_cmp(constr("true"), literal.as_literal_expr->tok->text) != 0 ? 1 : 0;
         ev->kind = EV_BOOL;
-        literal.base->T = make_type(TYPE_BOOL); // TODO: this will be optimised, but dont be a lazy fuck kayla
-        return (checked_expr){.expr = literal, .ev = ev, .type = make_type(TYPE_BOOL)};
+        literal.base->T = make_type(TYPE_BOOL);
+        return (checked_expr){.expr = literal, .ev = ev, .type = literal.base->T};
     case TOK_LITERAL_FLOAT:
         ev->as_untyped_float = string_strtof(literal.as_literal_expr->tok->text);
         ev->kind = EV_UNTYPED_FLOAT;
         literal.base->T = make_type(TYPE_UNTYPED_FLOAT);
-        return (checked_expr){.expr = literal, .ev = ev, .type = make_type(TYPE_UNTYPED_FLOAT)};
+        return (checked_expr){.expr = literal, .ev = ev, .type = literal.base->T};
     case TOK_LITERAL_CHAR:
-        if (string_eq(constr("\\n"), literal.as_literal_expr->tok->text)) ev->as_u8 = '\n';
-        if (ev->as_u8 == 0 && literal.as_literal_expr->tok->text.len != 1) crash("unhandled escape code in char literal checking!\n");
         ev->as_u8 = literal.as_literal_expr->tok->text.raw[0];
         ev->kind = EV_U8;
         literal.base->T = make_type(TYPE_U8);
-        return (checked_expr){.expr = literal, .ev = ev, .type = make_type(TYPE_U8)};
+        return (checked_expr){.expr = literal, .ev = ev, .type = literal.base->T};
+    case TOK_LITERAL_STRING:
+        ev->as_string = literal.as_literal_expr->tok->text;
+        ev->kind = EV_STRING;
+        //string literal's type is []let u8
+        literal.base->T = make_type(TYPE_SLICE);
+        literal.base->T->as_reference.subtype = make_type(TYPE_U8);
+        literal.base->T->as_reference.mutable = false;
+        return (checked_expr){.expr = literal, .ev = ev, .type = literal.base->T};
     default:
         error_at_node(mod, literal, "[INTERNAL COMPILER ERROR] unable to check literal " str_fmt " with type %s", str_arg(literal.as_literal_expr->tok->text), token_type_str[literal.as_literal_expr->tok->type]);
     }
@@ -842,14 +876,22 @@ bool check_type_cast_implicit(Type* lhs, Type* rhs) {
 }
 
 bool check_type_cast_explicit(Type* lhs, Type* rhs) {
+    if (check_type_cast_implicit(lhs, rhs)) return true;
+
     lhs = type_unalias(lhs);
     rhs = type_unalias(rhs);
-
-    if (check_type_cast_implicit(lhs, rhs)) return true;
     // we now need to check casts that are already _not_ implicit.
     if (TYPE_UNTYPED_INT <= lhs->tag && lhs->tag <= TYPE_F64 &&
         TYPE_UNTYPED_INT <= rhs->tag && rhs->tag <= TYPE_F64) return true;
+    if (rhs->tag == TYPE_NONE) return false;
+    if (lhs->tag == TYPE_NONE) return false;
 
-    crash("UNKNOWN CAST! FILL THIS OUT IF YOU SEE IT!\n");
+    if (lhs->tag == TYPE_POINTER && rhs->tag == TYPE_SLICE) return true; //THIS MIGHT NOT BE TRUE!!!
+    if (lhs->tag == TYPE_U64 && rhs->tag == TYPE_POINTER) return true;
+    if (lhs->tag == rhs->tag && lhs->tag == TYPE_POINTER) return true; //TODO?: we should warn about mutability
+
+    //crash("UNKNOWN CAST! FILL THIS OUT IF YOU SEE IT! lhs: %d, rhs %d\n", lhs->tag, rhs->tag);
+    general_warning("cast between %d and %d might not be invalid, just beware!", lhs->tag, rhs->tag);
+
     return false;
 }
