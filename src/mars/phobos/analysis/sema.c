@@ -643,17 +643,29 @@ Type* check_func_literal(mars_module* mod, AST func_literal, entity_table* scope
         }
 
         Type* return_type = ast_to_type(mod, returns.type);
-        entity* return_entity = new_entity(func_scope, returns.field.as_identifier->tok->text, returns.field);
-        returns.field.as_identifier->entity = return_entity;
-        return_entity->is_mutable = true;
-        return_entity->is_return = true;
-        return_entity->entity_type = return_type;
-        return_entity->return_idx = count;
-        return_entity->checked = true;
+
+        //not all returns have identifiers attached to them, e.g fn a(...) -> T {}
+        if (returns.field.type == AST_identifier) {
+            entity* return_entity = new_entity(func_scope, returns.field.as_identifier->tok->text, returns.field);
+            returns.field.as_identifier->entity = return_entity;
+            return_entity->is_mutable = true;
+            return_entity->is_return = true;
+            return_entity->entity_type = return_type;
+            return_entity->return_idx = count;
+            return_entity->checked = true;
+            // (sandwich): add the entities to the function definition
+            func_literal.as_func_literal_expr->returns[count] = return_entity;    
+        } else {
+            //we create a dummy entity in this scope so that we can still have return semantics without a strict entity name.
+            entity* return_entity = new_entity(func_scope, constr("fake return"), returns.field);
+            return_entity->is_mutable = true;
+            return_entity->is_return = true;
+            return_entity->entity_type = return_type;
+            return_entity->return_idx = count;
+            return_entity->checked = true;
+        }
         type_add_return(fn_type, return_type);
 
-        // (sandwich): add the entities to the function definition
-        func_literal.as_func_literal_expr->returns[count] = return_entity;
     }
     // type_canonicalize_graph();
     // the func literal has been parsed, now we continue down
