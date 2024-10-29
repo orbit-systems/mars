@@ -21,7 +21,7 @@ da_typedef(FeMachImmediate);
 typedef struct FeMachBuffer {
 
     struct {
-        FeArchInfo* arch;
+        const FeArchInfo* arch;
         u16 system;
         void* arch_config;
         void* system_config;

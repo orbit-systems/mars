@@ -20,7 +20,7 @@ void sb_append(StringBuilder* sb, string s) {
     sb->len += s.len;
 }
 
-void sb_append_c(StringBuilder* sb, char* s) {
+void sb_append_c(StringBuilder* sb, const char* s) {
     if (sb->len + strlen(s) > sb->cap) {
         sb->buffer = realloc(sb->buffer, sb->cap * 2);
         sb->cap *= 2;
@@ -28,7 +28,7 @@ void sb_append_c(StringBuilder* sb, char* s) {
     memcpy(&sb->buffer[sb->len], s, strlen(s));
     sb->len += strlen(s);
 }
-void sb_printf(StringBuilder* sb, char* fmt, ...) {
+void sb_printf(StringBuilder* sb, const char* fmt, ...) {
     va_list varargs;
     va_start(varargs, fmt);
 

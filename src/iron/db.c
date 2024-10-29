@@ -55,14 +55,14 @@ size_t fe_db_write_string(FeDataBuffer* buf, string s) {
     return fe_db_write_bytes(buf, s.raw, s.len);
 }
 
-size_t fe_db_write_bytes(FeDataBuffer* buf, void* ptr, size_t len) {
+size_t fe_db_write_bytes(FeDataBuffer* buf, const void* ptr, size_t len) {
     fe_db_reserve(buf, len);
     memcpy(buf->at + buf->len, ptr, len);
     buf->len += len;
     return len;
 }
 
-size_t fe_db_write_cstring(FeDataBuffer* buf, char* s) {
+size_t fe_db_write_cstring(FeDataBuffer* buf, const char* s) {
     size_t slen = strlen(s);
     fe_db_reserve(buf, slen);
     memcpy(buf->at + buf->len, s, slen);
@@ -96,7 +96,7 @@ size_t fe_db_write_64(FeDataBuffer* buf, u64 data) {
     return sizeof(data);
 }
 
-size_t fe_db_write_format(FeDataBuffer* buf, char* fmt, ...) {
+size_t fe_db_write_format(FeDataBuffer* buf, const char* fmt, ...) {
     va_list varargs;
     va_start(varargs, fmt);
 

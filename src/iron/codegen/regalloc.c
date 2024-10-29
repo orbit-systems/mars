@@ -130,7 +130,7 @@ static void liveness_analysis(FeMachBuffer* buf) {
         case FE_MACH_CFG_TARGET:
             TODO("complex cfgs not handled yet");
             break;
-        case FE_MACH_INST:
+        case FE_MACH_INST: {
             FeMachInst* inst = (FeMachInst*)elem;
             const FeMachInstTemplate templ = buf->target.inst_templates[inst->template];
             u32 vreg_0 = inst->regs;
@@ -141,14 +141,17 @@ static void liveness_analysis(FeMachBuffer* buf) {
                 add_lifetime_point(here, vreg_index, is_def, is_use);
             }
             break;
-        case FE_MACH_LIFETIME_BEGIN:
+	}
+        case FE_MACH_LIFETIME_BEGIN: {
             FeMachLifetimePoint* ltp = (FeMachLifetimePoint*)elem;
             add_lifetime_point(here, ltp->vreg, true, false);
             break;
-        case FE_MACH_LIFETIME_END:
-            ltp = (FeMachLifetimePoint*)elem;
+	}
+        case FE_MACH_LIFETIME_END: {
+            FeMachLifetimePoint* ltp = (FeMachLifetimePoint*)elem;
             add_lifetime_point(here, ltp->vreg, false, true);
             break;
+	}
         default:
             break;
         }

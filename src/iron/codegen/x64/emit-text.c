@@ -130,18 +130,20 @@ void fe_x64_emit_text(FeDataBuffer* db, FeMachBuffer* machbuf) {
             emit_inst(db, machbuf, m);
             fe_db_write_8(db, '\n');
             break;
-        case FE_MACH_LABEL_LOCAL:
+        case FE_MACH_LABEL_LOCAL: {
             fe_db_write_8(db, '.');
             FeMachLocalLabel* local = (FeMachLocalLabel*)m;
             fe_db_write_string(db, local->name);
             fe_db_write_cstring(db, ":\n");
             break;
-        case FE_MACH_LABEL_GLOBAL:
+	}
+        case FE_MACH_LABEL_GLOBAL: {
             FeMachGlobalLabel* label = (FeMachGlobalLabel*)m;
             FeMachSymbol sym = machbuf->symtab.at[label->symbol_index];
             fe_db_write_bytes(db, sym.name, sym.name_len);
             fe_db_write_cstring(db, ":\n");
             break;
+	}
         }
     }
 }

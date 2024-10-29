@@ -107,7 +107,7 @@ AST parse_stmt(parser* p) {
         n.as_else_stmt->inside = parse_stmt_block(p);
         return n;
     //<while> ::= "while" (<expression>  | E) <control_flow_block>
-    case TOK_KEYWORD_WHILE:
+    case TOK_KEYWORD_WHILE: {
         n = new_ast_node(p, AST_while_stmt);
         n.as_while_stmt->base.start = &current_token(p);
         advance_token(p);
@@ -139,7 +139,7 @@ AST parse_stmt(parser* p) {
         error_at_parser(p, "expected do <stmt> or statement block");
     //<for_type_one> ::= "for" <simple_stmt> ";" <expression>  ";" (( <assignment> "," )* <assignment> ("," | E) | E) <control_flow_block>
     //<for_type_two> ::= "for" <identifier> (":" <type> | E) "in" <expression>  ("..<" | "..=")  <expression> <control_flow_block>
-    case TOK_KEYWORD_FOR:
+    case TOK_KEYWORD_FOR: {
         // we need to look ahead here
         token* start_token = &current_token(p);
         advance_token(p);
@@ -191,6 +191,7 @@ AST parse_stmt(parser* p) {
         n.as_for_stmt->block = parse_cfs(p);
         n.as_for_stmt->base.end = &current_token(p);
         return n;
+    }
     //<asm> ::= "asm" "(" (<asm_param> ",")* <asm_param> ("," | E) ")"
     // "{" (<string> ",")* <string> ("," | E) "}"
     case TOK_KEYWORD_ASM:
@@ -274,8 +275,9 @@ AST parse_stmt(parser* p) {
         n.as_switch_stmt->base.end = &current_token(p);
         advance_token(p);
         return n;
+    }
     //<break> ::= "break" (<identifier> | E) ";"
-    case TOK_KEYWORD_BREAK:
+    case TOK_KEYWORD_BREAK: {
         n = new_ast_node(p, AST_break_stmt);
         n.as_break_stmt->base.start = &current_token(p);
         advance_token(p);
@@ -286,6 +288,7 @@ AST parse_stmt(parser* p) {
         n.as_break_stmt->base.end = &current_token(p);
         advance_token(p);
         return n;
+    }
     //<fallthrough> ::= "fallthrough" ";"
     case TOK_KEYWORD_FALLTHROUGH:
         n = new_ast_node(p, AST_fallthrough_stmt);
@@ -346,7 +349,7 @@ AST parse_stmt(parser* p) {
     case TOK_KEYWORD_FN:
         n = parse_fn(p, true);
         return n;
-    default:
+    default: {
         token* curr_tok = &current_token(p);
         AST expr = parse_expr(p);
         if (is_null_AST(expr)) return NULL_AST;
@@ -377,6 +380,7 @@ AST parse_stmt(parser* p) {
         if (current_token(p).type != TOK_SEMICOLON) error_at_parser(p, "expected ;");
         advance_token(p);
         return expr;
+    }
     }
 }
 
@@ -433,7 +437,7 @@ AST parse_type(parser* p) {
     AST n = NULL_AST;
     switch (current_token(p).type) {
     //<identifier>
-    case TOK_IDENTIFIER:
+    case TOK_IDENTIFIER: {
         AST left = parse_identifier(p);
         while (current_token(p).type == TOK_COLON_COLON) {
             AST namespace_selector = new_ast_node(p, AST_selector_expr);
@@ -447,6 +451,7 @@ AST parse_type(parser* p) {
             left = namespace_selector;
         }
         return left;
+    }
     //"i8" | "i16" | "i32" | "i64" | "int" |
     //"u8" | "u16" | "u32" | "u64" | "uint" |
     //"f16" | "f32" | "f64" | "float" | "bool" |

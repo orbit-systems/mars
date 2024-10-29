@@ -245,18 +245,19 @@ static void emit_function(FeFunction* f, StringBuilder* sb) {
             case FE_IR_SHL:
             case FE_IR_ASR:
             case FE_IR_ADD:
-            case FE_IR_IMUL:
+            case FE_IR_IMUL: {
                 FeIrBinop* binop = (FeIrBinop*)inst;
 
                 sb_printf(sb, "_inst_%llx = _inst_%llx %s _inst_%llx", inst, binop->lhs, opstrings[inst->kind], binop->rhs);
                 break;
+      	    }
             case FE_IR_UMUL:
             case FE_IR_UDIV:
-            case FE_IR_LSR:
-                binop = (FeIrBinop*)inst;
-
+            case FE_IR_LSR: {
+                FeIrBinop* binop = (FeIrBinop*)inst;
                 sb_printf(sb, "_inst_%llx = %s _inst_%llx %s %s _inst_%llx", inst, signed_to_unsigned_cast(binop->lhs->type), binop->lhs, opstrings[inst->kind], signed_to_unsigned_cast(binop->rhs->type), binop->rhs);
                 break;
+            }
             case FE_IR_RETURN:
                 TODO("redo this for the retval change");
                 if (f->params.len > 0) {

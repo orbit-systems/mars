@@ -27,38 +27,44 @@ static void register_uses(FeIr* ir) {
     case FE_IR_SHL:
     case FE_IR_XOR:
     case FE_IR_OR:
-    case FE_IR_AND:
+    case FE_IR_AND: {
         FeIrBinop* binop = (FeIrBinop*)ir;
         binop->lhs->flags++;
         binop->rhs->flags++;
         break;
-    case FE_IR_LOAD:
+    }
+    case FE_IR_LOAD: {
         FeIrLoad* load = (FeIrLoad*)ir;
         load->location->flags++;
         break;
-    case FE_IR_STORE:
+    }
+    case FE_IR_STORE: {
         FeIrStore* store = (FeIrStore*)ir;
         store->location->flags++;
         store->value->flags++;
         break;
-    case FE_IR_RETURN:
+    }
+    case FE_IR_RETURN: {
         FeIrReturn* ret = (FeIrReturn*)ir;
         for_range(i, 0, ret->len) {
             ret->sources[i]->flags++;
         }
         break;
-    case FE_IR_MOV:
+    }
+    case FE_IR_MOV: {
         FeIrMov* mov = (FeIrMov*)ir;
         if (mov->source) mov->source->flags++;
         break;
+    }
     case FE_IR_NOT:
     case FE_IR_NEG:
     case FE_IR_SIGNEXT:
     case FE_IR_ZEROEXT:
-    case FE_IR_TRUNC:
+    case FE_IR_TRUNC: {
         FeIrUnop* unop = (FeIrUnop*)ir;
         if (unop->source) unop->source->flags++;
         break;
+    }
     case FE_IR_INVALID:
     case FE_IR_CONST:
     case FE_IR_PARAM:
@@ -102,38 +108,43 @@ static void try_eliminate(FeIr* ir) {
     case FE_IR_SHL:
     case FE_IR_XOR:
     case FE_IR_OR:
-    case FE_IR_AND:
+    case FE_IR_AND: {
         FeIrBinop* binop = (FeIrBinop*)ir;
         binop->lhs->flags--;
         binop->rhs->flags--;
         try_eliminate(binop->lhs);
         try_eliminate(binop->rhs);
         break;
-    case FE_IR_STORE:
+    }
+    case FE_IR_STORE: {
         FeIrStore* store = (FeIrStore*)ir;
         store->location->flags--;
         store->value->flags--;
         try_eliminate(store->location);
         try_eliminate(store->value);
         break;
-    case FE_IR_RETURN:
+    }
+    case FE_IR_RETURN: {
         FeIrReturn* ret = (FeIrReturn*)ir;
         for_range(i, 0, ret->len) {
             ret->sources[i]->flags--;
             try_eliminate(ret->sources[i]);
         }
         break;
-    case FE_IR_MOV:
+    }
+    case FE_IR_MOV: {
         FeIrMov* mov = (FeIrMov*)ir;
         if (mov->source) mov->source->flags--;
         try_eliminate(mov->source);
         break;
+    }
     case FE_IR_NEG:
-    case FE_IR_NOT:
+    case FE_IR_NOT: {
         FeIrUnop* unop = (FeIrUnop*)ir;
         if (unop->source) unop->source->flags--;
         try_eliminate(unop->source);
         break;
+    }
     case FE_IR_INVALID:
     case FE_IR_CONST:
     case FE_IR_PARAM:

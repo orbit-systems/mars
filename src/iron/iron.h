@@ -695,8 +695,8 @@ typedef struct FeReport {
     u8 severity;
     u8 kind;
 
-    char* function_of_origin;
-    char* message;
+    const char* function_of_origin;
+    const char* message;
 
     union {
     };
@@ -844,9 +844,9 @@ void fe_db_reserve_until(FeDataBuffer* buf, size_t new_cap);
 
 // append data to end of buffer
 size_t fe_db_write_string(FeDataBuffer* buf, string s);
-size_t fe_db_write_bytes(FeDataBuffer* buf, void* ptr, size_t len);
-size_t fe_db_write_cstring(FeDataBuffer* buf, char* s);
-size_t fe_db_write_format(FeDataBuffer* buf, char* fmt, ...);
+size_t fe_db_write_bytes(FeDataBuffer* buf, const void* ptr, size_t len);
+size_t fe_db_write_cstring(FeDataBuffer* buf, const char* s);
+size_t fe_db_write_format(FeDataBuffer* buf, const char* fmt, ...);
 size_t fe_db_write_8(FeDataBuffer* buf, u8 data);
 size_t fe_db_write_16(FeDataBuffer* buf, u16 data);
 size_t fe_db_write_32(FeDataBuffer* buf, u32 data);

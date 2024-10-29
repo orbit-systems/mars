@@ -48,7 +48,7 @@ string irgen_anonymous_fn_identifier(IrBuilder* builder) {
     memcpy(str.raw, "_anon_", strlen("_anon_"));
 
     for_range(i, 1, 17) {
-        u8 digit = (counter >> (64 - i * 4)) && 0x0Full;
+        u8 digit = (counter >> (64 - i * 4)) & 0x0Full;
         if (digit < 10) {
             str.raw[i + strlen("_anon_") - 1] = digit + '0';
         } else {
@@ -83,11 +83,12 @@ void irgen_global_decl(IrBuilder* builder, ast_decl_stmt* global_decl) {
     FeData* global_data = fe_new_data(builder->mod, global_sym, !global_decl->is_mut);
 
     switch (global_decl->rhs.type) {
-    case AST_func_literal_expr:
+    case AST_func_literal_expr: {
         FeSymbol* fn_sym = fe_new_symbol(builder->mod, irgen_anonymous_fn_identifier(builder), FE_BIND_LOCAL);
         FeFunction* fn = irgen_function(builder, global_decl->rhs.as_func_literal_expr, fn_sym);
         fe_set_data_symref(global_data, fn_sym);
         break;
+    }
     default:
         crash("unhandled global rhs '%s'", ast_type_str[global_decl->rhs.type]);
     }
@@ -176,7 +177,7 @@ static bool is_mars_type_unsigned(Type* t) {
 // this is different from generate_place_expr, which returns a pointer to load/store from.
 FeIr* irgen_value_expr(IrBuilder* builder, AST expr) {
     switch (expr.type) {
-    case AST_binary_op_expr:
+    case AST_binary_op_expr: {
         ast_binary_op_expr* binop = expr.as_binary_op_expr;
 
         // generate lhs and rhs
@@ -193,8 +194,8 @@ FeIr* irgen_value_expr(IrBuilder* builder, AST expr) {
         }
         // combine
         return fe_append_ir(builder->bb, fe_ir_binop(builder->fn, kind, lhs, rhs));
-
-    case AST_identifier:
+    }
+    case AST_identifier: {
         ast_identifier* ident = expr.as_identifier;
 
         general_warning("TODO: rn it makes the assumption that all variables/identifiers are stack allocated.");
@@ -204,6 +205,7 @@ FeIr* irgen_value_expr(IrBuilder* builder, AST expr) {
         if (obj == PTRMAP_NOT_FOUND) crash("ptrmap could not find stack object of entity");
         // load
         return fe_append_ir(builder->bb, fe_ir_stack_load(builder->fn, obj));
+    }
     default:
         crash("unhandled expr '%s'", ast_type_str[expr.type]);
         return NULL;
@@ -212,7 +214,7 @@ FeIr* irgen_value_expr(IrBuilder* builder, AST expr) {
 
 void irgen_stmt(IrBuilder* builder, AST stmt) {
     switch (stmt.type) {
-    case AST_return_stmt:
+    case AST_return_stmt: {
         ast_return_stmt* astret = stmt.as_return_stmt;
 
         // if there are immediate return values,
@@ -238,7 +240,8 @@ void irgen_stmt(IrBuilder* builder, AST stmt) {
         mars_free(return_values);
         // return lmao
         break;
-    case AST_if_stmt:
+    }
+    case AST_if_stmt: {
         ast_if_stmt* ifstmt = stmt.as_if_stmt;
 
         // TODO("on hold until i rework branches in iron");
@@ -260,6 +263,7 @@ void irgen_stmt(IrBuilder* builder, AST stmt) {
         builder->bb = if_false;
 
         break;
+    }
     case AST_stmt_block:
         irgen_block(builder, stmt.as_stmt_block);
         break;

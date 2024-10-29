@@ -46,32 +46,36 @@ static void check_defined(FeModule* m, FeIr* inst) {
     case FE_IR_ILE:
     case FE_IR_IGE:
     case FE_IR_EQ:
-    case FE_IR_NE:
+    case FE_IR_NE: {
         FeIrBinop* binop = (FeIrBinop*)inst;
         fatal_if_not_def(binop->lhs);
         fatal_if_not_def(binop->rhs);
         break;
-    case FE_IR_STACK_STORE:
+    }
+    case FE_IR_STACK_STORE: {
         FeIrStackStore* stack_store = (FeIrStackStore*)inst;
         fatal_if_not_def(stack_store->value);
         break;
-    case FE_IR_BRANCH:
+    }
+    case FE_IR_BRANCH: {
         FeIrBranch* branch = (FeIrBranch*)inst;
         fatal_if_not_def(branch->cond);
         break;
-
-    case FE_IR_PHI:
+    }
+    case FE_IR_PHI: {
         FeIrPhi* phi = (FeIrPhi*)inst;
         for_range(i, 0, phi->len) {
             fatal_if_not_def(phi->sources[i]);
         }
         break;
-    case FE_IR_RETURN:
+    }
+    case FE_IR_RETURN: {
         FeIrReturn* ret = (FeIrReturn*)inst;
         for_range(i, 0, ret->len) {
             fatal_if_not_def(ret->sources[i]);
         }
         break;
+    }
     case FE_IR_PARAM:
     case FE_IR_STACK_ADDR:
     case FE_IR_STACK_LOAD:

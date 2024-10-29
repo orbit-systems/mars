@@ -187,7 +187,7 @@ Type* check_stmt(mars_module* mod, AST node, entity_table* scope) {
         crash("unexpected environment in case AST_assign_stmt!\n");
     }
 
-    case AST_import_stmt:
+    case AST_import_stmt: {
         // ENORMOUS FIXME: this method of grabbing entities is hacky and bad. this should
         // be better handled in phobos
 
@@ -219,8 +219,8 @@ Type* check_stmt(mars_module* mod, AST node, entity_table* scope) {
         import_ent->module = imported_module;
         import_ent->checked = true;
         return NULL;
-
-    case AST_type_decl_stmt:
+    }
+    case AST_type_decl_stmt: {
         // we now need to create a type.
         // what is it? who knows.
 
@@ -233,7 +233,7 @@ Type* check_stmt(mars_module* mod, AST node, entity_table* scope) {
         type_alias->as_reference.subtype = rhs;
         // we're gonna do some trolling here
         return type_alias;
-
+    }
     case AST_call_expr: {
         checked_expr call_expr = check_expr(mod, node, scope);
         return call_expr.type;
@@ -312,12 +312,12 @@ Type* sema_type_unalias(Type* t) {
 checked_expr check_expr(mars_module* mod, AST node, entity_table* scope) {
     // we fill out ent with the info it needs :)
     switch (node.type) {
-    case AST_func_literal_expr:
+    case AST_func_literal_expr: {
         Type* fn_type = check_func_literal(mod, node, scope);
         node.base->T = fn_type;
         return (checked_expr){.expr = node, .type = fn_type};
-
-    case AST_binary_op_expr:
+    }
+    case AST_binary_op_expr: {
         checked_expr lhs = check_expr(mod, node.as_binary_op_expr->lhs, scope);
         checked_expr rhs = check_expr(mod, node.as_binary_op_expr->rhs, scope);
         bool rhs_to_lhs = check_type_cast_implicit(lhs.type, rhs.type);
@@ -329,8 +329,8 @@ checked_expr check_expr(mars_module* mod, AST node, entity_table* scope) {
         if (ret_type == NULL && rhs_to_lhs && lhs_to_rhs) ret_type = lhs.type;
         node.base->T = ret_type;
         return (checked_expr){.expr = node, .type = ret_type};
-
-    case AST_identifier:
+    }
+    case AST_identifier: {
         entity* ident_ent = search_for_entity(scope, node.as_identifier->tok->text);
 
         if (ident_ent == NULL) {
@@ -355,7 +355,7 @@ checked_expr check_expr(mars_module* mod, AST node, entity_table* scope) {
             .addressable = true,
             .mutable = ident_ent->is_mutable,
         };
-
+    }
     case AST_literal_expr:
         return check_literal(mod, node);
 
@@ -716,19 +716,21 @@ Type* ast_to_type(mars_module* mod, AST node) {
         case TOK_TYPE_KEYWORD_BOOL: return make_type(TYPE_BOOL);
         default: error_at_node(mod, node, "[INTERNAL COMPILER ERROR] unknown token type \"%s\" found when converting AST_basic_type_expr to integral type", token_type_str[node.as_basic_type_expr->lit->type]);
         }
-    case AST_pointer_type_expr:
+    case AST_pointer_type_expr: {
         Type* pointer = make_type(TYPE_POINTER);
         pointer->as_reference.mutable = node.as_pointer_type_expr->mutable;
         if (is_null_AST(node.as_pointer_type_expr->subexpr)) pointer->as_reference.subtype = make_type(TYPE_NONE);
         else pointer->as_reference.subtype = ast_to_type(mod, node.as_pointer_type_expr->subexpr);
         return pointer;
-    case AST_slice_type_expr:
+    }
+    case AST_slice_type_expr: {
         Type* slice = make_type(TYPE_SLICE);
         slice->as_reference.mutable = node.as_slice_type_expr->mutable;
         if (is_null_AST(node.as_slice_type_expr->subexpr)) slice->as_reference.subtype = make_type(TYPE_NONE);
         else slice->as_reference.subtype = ast_to_type(mod, node.as_slice_type_expr->subexpr);
         return slice;
-    case AST_struct_type_expr:
+    }
+    case AST_struct_type_expr: {
         // we create the type, and add it to the strmap.
         Type* aggregate = make_type((node.as_struct_type_expr->is_union == true) ? TYPE_UNION : TYPE_STRUCT);
 
@@ -736,14 +738,17 @@ Type* ast_to_type(mars_module* mod, AST node) {
             type_add_field(aggregate, field.field.as_identifier->tok->text, ast_to_type(mod, field.type));
         }
         return aggregate;
-    case AST_distinct_type_expr:
+    }
+    case AST_distinct_type_expr: {
         Type* distinct = make_type(TYPE_DISTINCT);
         distinct->as_reference.subtype = ast_to_type(mod, node.as_distinct_type_expr->subexpr);
         return distinct;
-    case AST_identifier:
+    }
+    case AST_identifier: {
         Type* T = strmap_get(&name_to_type, node.as_identifier->tok->text);
         if (T == STRMAP_NOT_FOUND) error_at_node(mod, node, "Unknown type " str_fmt "\n", str_arg(node.as_identifier->tok->text));
         return T;
+    }
     default:
         error_at_node(mod, node, "[INTERNAL COMPILER ERROR] found unknown node \"%s\" when converting AST to Type*", ast_type_str[node.type]);
     }

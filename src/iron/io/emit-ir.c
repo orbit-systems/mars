@@ -174,11 +174,12 @@ static void emit_inst(StringBuilder* sb, FeFunction* fn, FeIr* inst) {
     // sb_append_c(sb, "\n      (");
     sb_printf(sb, "\n" COLOR_INST "     % 9llu: " RESET "(", number(inst));
     switch (inst->kind) {
-    case FE_IR_PARAM:
+    case FE_IR_PARAM: {
         FeIrParam* param = (FeIrParam*)inst;
         sb_printf(sb, "param %u", param->index);
         break;
-    case FE_IR_PHI:
+    }
+    case FE_IR_PHI: {
         FeIrPhi* phi = (FeIrPhi*)inst;
         sb_append_c(sb, "phi ");
         emit_type(sb, fn->mod, inst->type);
@@ -187,11 +188,12 @@ static void emit_inst(StringBuilder* sb, FeFunction* fn, FeIr* inst) {
             sb_printf(sb, "\'" str_fmt "\'", str_arg(phi->source_BBs[i]->name));
         }
         break;
-
-    case FE_IR_MOV:
+    }
+    case FE_IR_MOV: {
         FeIrMov* mov = (FeIrMov*)inst;
         sb_printf(sb, "mov %u", number(mov->source));
         break;
+    }
     case FE_IR_ADD:
     case FE_IR_SUB:
     case FE_IR_IMUL:
@@ -203,12 +205,13 @@ static void emit_inst(StringBuilder* sb, FeFunction* fn, FeIr* inst) {
     case FE_IR_XOR:
     case FE_IR_SHL:
     case FE_IR_LSR:
-    case FE_IR_ASR:
+    case FE_IR_ASR: {
         FeIrBinop* binop = (FeIrBinop*)inst;
         sb_append_c(sb, opnames[inst->kind]);
         emit_type(sb, fn->mod, inst->type);
         sb_printf(sb, COLOR_INST " %u %u" RESET, number(binop->lhs), number(binop->rhs));
         break;
+    }
     case FE_IR_ULT:
     case FE_IR_UGT:
     case FE_IR_ULE:
@@ -218,42 +221,47 @@ static void emit_inst(StringBuilder* sb, FeFunction* fn, FeIr* inst) {
     case FE_IR_ILE:
     case FE_IR_IGE:
     case FE_IR_EQ:
-    case FE_IR_NE:
+    case FE_IR_NE: {
         FeIrBinop* cmp = (FeIrBinop*)inst;
         sb_append_c(sb, opnames[inst->kind]);
         sb_printf(sb, COLOR_INST "%u %u" RESET, number(cmp->lhs), number(cmp->rhs));
         break;
-
-    case FE_IR_CONST:
+    }
+    case FE_IR_CONST: {
         FeIrConst* const_inst = (FeIrConst*)inst;
         sb_append_c(sb, "const ");
         emit_type(sb, fn->mod, inst->type);
         sb_printf(sb, " %llu", const_inst->i64);
         break;
-    case FE_IR_STACK_STORE:
+    }
+    case FE_IR_STACK_STORE: {
         FeIrStackStore* stack_store = (FeIrStackStore*)inst;
         sb_printf(sb, "stack_store " COLOR_STACK "%u" COLOR_INST " %u" RESET, stack_object_index(fn, stack_store->location), number(stack_store->value));
         break;
-    case FE_IR_STACK_LOAD:
+    }
+    case FE_IR_STACK_LOAD: {
         FeIrStackLoad* stack_load = (FeIrStackLoad*)inst;
         sb_printf(sb, "stack_load " COLOR_STACK "%u" RESET, stack_object_index(fn, stack_load->location));
         break;
-
-    case FE_IR_BRANCH:
+    }
+    case FE_IR_BRANCH: {
         FeIrBranch* branch = (FeIrBranch*)inst;
         sb_printf(sb, "branch " COLOR_INST "%u" RESET " \'" str_fmt "\' \'" str_fmt "\'", number(branch->cond), str_arg(branch->if_true->name), str_arg(branch->if_false->name));
         break;
-    case FE_IR_JUMP:
+    }
+    case FE_IR_JUMP: {
         FeIrJump* jump = (FeIrJump*)inst;
         sb_printf(sb, "jump \'" str_fmt "\'", str_arg(jump->dest->name));
         break;
-    case FE_IR_RETURN:
+    }
+    case FE_IR_RETURN: {
         FeIrReturn* ret = (FeIrReturn*)inst;
         sb_append_c(sb, "return");
         for_range(i, 0, ret->len) {
             sb_printf(sb, COLOR_INST " %u" RESET, number(ret->sources[i]));
         }
         break;
+    }
     default:
         sb_append_c(sb, "unknown");
         break;

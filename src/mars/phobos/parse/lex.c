@@ -13,7 +13,14 @@
 #define valid_0b(ch) (ch == '0' || ch == '1' || ch == '_')
 
 #define current_char(lex) (lex->current_char)
-#define advance_char(lex) ((lex->cursor) < lex->src.len ? (lex->current_char = lex->src.raw[++lex->cursor]) : '\0')
+
+#define advance_char(lex) { if (lex->cursor + 1 < lex->src.len ) lex->current_char = lex->src.raw[++lex->cursor]; \
+                            else { \
+                                lex->current_char = '\0'; \
+                                lex->cursor=lex->src.len; \
+                            } \
+                          } 
+// #define advance_char(lex) ((lex->cursor) < (lex->src.len - 1) ? (lex->current_char = lex->src.raw[++lex->cursor]) : (lex->cursor = lex->src.len, lex->current_char = lex->src.raw[lex->src.len - 1]))
 #define advance_char_n(lex, n) (lex->cursor + (n) < lex->src.len ? (lex->current_char = lex->src.raw[lex->cursor += (n)]) : lex->src.raw[lex->src.len - 1])
 #define peek_char(lex, n) ((lex->cursor + (n)) < lex->src.len ? lex->src.raw[lex->cursor + (n)] : '\0')
 

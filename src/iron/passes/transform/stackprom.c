@@ -131,7 +131,7 @@ static void rename_defs(FeBasicBlock* block) {
 
     for_fe_ir(inst, *block) {
         switch (inst->kind) {
-        case FE_IR_STACK_LOAD:
+        case FE_IR_STACK_LOAD: {
             FeIrStackLoad* load = (FeIrStackLoad*)inst;
             if (load->location != def_stack.obj) break;
 
@@ -141,7 +141,8 @@ static void rename_defs(FeBasicBlock* block) {
 
             fe_remove_ir(inst);
             break;
-        case FE_IR_STACK_STORE:
+        }
+        case FE_IR_STACK_STORE: {
             FeIrStackStore* store = (FeIrStackStore*)inst;
             if (store->location != def_stack.obj) break;
 
@@ -149,11 +150,13 @@ static void rename_defs(FeBasicBlock* block) {
             def_set_current_block(block);
             fe_remove_ir(inst);
             break;
-        case FE_IR_JUMP:
+        }
+        case FE_IR_JUMP: {
             FeIrJump* jump = (FeIrJump*)inst;
             rename_defs(jump->dest);
             break;
-        case FE_IR_BRANCH:
+        }
+        case FE_IR_BRANCH: {
             FeIrBranch* branch = (FeIrBranch*)inst;
             def_push_copy();
             rename_defs(branch->if_true);
@@ -163,6 +166,7 @@ static void rename_defs(FeBasicBlock* block) {
             rename_defs(branch->if_false);
             def_pop();
             break;
+        }
         }
     }
 }

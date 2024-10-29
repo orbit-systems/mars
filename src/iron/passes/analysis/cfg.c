@@ -135,7 +135,7 @@ static void init_cfg_nodes(FeFunction* fn) {
         case FE_IR_RETURN:
             node->out_len = 0;
             break;
-        case FE_IR_JUMP:
+        case FE_IR_JUMP: {
             FeIrJump* jump = (FeIrJump*)bb->end;
             // set outgoing
             node->out_len = 1;
@@ -144,7 +144,8 @@ static void init_cfg_nodes(FeFunction* fn) {
             // increment incoming len of target node
             jump->dest->cfg_node->in_len++;
             break;
-        case FE_IR_BRANCH:
+        }
+        case FE_IR_BRANCH: {
             FeIrBranch* branch = (FeIrBranch*)bb->end;
             // set outgoing
             node->out_len = 2;
@@ -155,6 +156,7 @@ static void init_cfg_nodes(FeFunction* fn) {
             branch->if_true->cfg_node->in_len++;
             branch->if_false->cfg_node->in_len++;
             break;
+        }
         default:
             CRASH("invalid terminator"); // todo: replace this with an FeReport
             break;
@@ -175,18 +177,20 @@ static void init_cfg_nodes(FeFunction* fn) {
         switch (bb->end->kind) {
         case FE_IR_RETURN:
             break;
-        case FE_IR_JUMP:
+        case FE_IR_JUMP: {
             FeIrJump* jump = (FeIrJump*)bb->end;
             FeCFGNode* jump_target = node->outgoing[0];
             jump_target->incoming[jump_target->in_len++] = node;
             break;
-        case FE_IR_BRANCH:
+        }
+        case FE_IR_BRANCH: {
             FeIrBranch* branch = (FeIrBranch*)bb->end;
             FeCFGNode* true_target = node->outgoing[0];
             FeCFGNode* false_target = node->outgoing[1];
             true_target->incoming[true_target->in_len++] = node;
             false_target->incoming[false_target->in_len++] = node;
             break;
+        }
         default:
             CRASH("invalid terminator"); // todo: replace this with an FeReport
             break;

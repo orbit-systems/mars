@@ -60,7 +60,7 @@ FeMach* fe_mach_new_lifetime_end(FeMachBuffer* buf, u32 vreg) {
 
 FeMachInst* fe_mach_new_inst(FeMachBuffer* buf, u16 template_index) {
     FeMachInst* inst = (FeMachInst*)fe_mach_new(buf, FE_MACH_INST);
-    FeMachInstTemplate* templ = &buf->target.inst_templates[template_index];
+    const FeMachInstTemplate* templ = &buf->target.inst_templates[template_index];
     inst->template = template_index;
     inst->regs = buf->vreg_lists.len;
     inst->imms = buf->immediates.len;

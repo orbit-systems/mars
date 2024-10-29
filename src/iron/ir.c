@@ -546,32 +546,36 @@ void fe_rewrite_uses_in_inst(FeIr* inst, FeIr* source, FeIr* dest) {
     case FE_IR_ILE:
     case FE_IR_IGE:
     case FE_IR_EQ:
-    case FE_IR_NE:
+    case FE_IR_NE: {
         FeIrBinop* binop = (FeIrBinop*)inst;
         rewrite_if_eq(binop->lhs, source, dest);
         rewrite_if_eq(binop->rhs, source, dest);
         break;
-    case FE_IR_STACK_STORE:
+    }
+    case FE_IR_STACK_STORE: {
         FeIrStackStore* stack_store = (FeIrStackStore*)inst;
         rewrite_if_eq(stack_store->value, source, dest);
         break;
-    case FE_IR_BRANCH:
+    }
+    case FE_IR_BRANCH: {
         FeIrBranch* branch = (FeIrBranch*)inst;
         rewrite_if_eq(branch->cond, source, dest);
         break;
-
-    case FE_IR_PHI:
+    }
+    case FE_IR_PHI: {
         FeIrPhi* phi = (FeIrPhi*)inst;
         for_range(i, 0, phi->len) {
             rewrite_if_eq(phi->sources[i], source, dest);
         }
         break;
-    case FE_IR_RETURN:
+    }
+    case FE_IR_RETURN: {
         FeIrReturn* ret = (FeIrReturn*)inst;
         for_range(i, 0, ret->len) {
             rewrite_if_eq(ret->sources[i], source, dest);
         }
         break;
+    }
     case FE_IR_PARAM:
     case FE_IR_STACK_ADDR:
     case FE_IR_STACK_LOAD:

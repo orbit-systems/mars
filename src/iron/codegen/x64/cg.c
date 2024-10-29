@@ -133,7 +133,7 @@ static void gen_basic_block(FeMachBuffer* buf, FeBasicBlock* bb) {
         ir = emit_epilogue(buf, bb->function, ir);
         new_inst(buf, FE_X64_INST_RET);
         break;
-    case FE_IR_ADD:
+    case FE_IR_ADD: {
         FeIrBinop* binop = (FeIrBinop*)ir;
         // insert a mov to move the first operand into the lhs
         u32 lhs_vreg;
@@ -155,6 +155,7 @@ static void gen_basic_block(FeMachBuffer* buf, FeBasicBlock* bb) {
         fe_mach_set_vreg(buf, minst, 1, get_ir_vreg(binop->rhs));
         put_ir_vreg(ir, lhs_vreg);
         break;
+    }
     default:
         TODO("unhandled ir");
     }
