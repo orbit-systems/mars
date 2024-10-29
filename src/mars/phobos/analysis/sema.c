@@ -2,8 +2,8 @@
 #include "../ast.h"
 #include "common/crash.h"
 #include "common/strmap.h"
-#define LOG(...) printf(__VA_ARGS__)
-//#define LOG(...)
+//#define LOG(...) printf(__VA_ARGS__)
+#define LOG(...)
 StrMap name_to_type;
 
 void check_module(mars_module* mod) {
@@ -663,6 +663,8 @@ Type* check_func_literal(mars_module* mod, AST func_literal, entity_table* scope
             return_entity->entity_type = return_type;
             return_entity->return_idx = count;
             return_entity->checked = true;
+            func_literal.as_func_literal_expr->returns[count] = return_entity;    
+        
         }
         type_add_return(fn_type, return_type);
 

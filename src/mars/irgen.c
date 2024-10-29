@@ -25,21 +25,10 @@ FeModule* irgen_module(mars_module* mars) {
         case AST_decl_stmt:
             irgen_global_decl(&builder, decl.as_decl_stmt);
             break;
-        case AST_func_literal_expr:
-            irgen_global_fn_decl(&builder, decl.as_func_literal_expr);
-            break;
         }
     }
 
     return mod;
-}
-
-void irgen_global_fn_decl(IrBuilder* builder, ast_func_literal_expr* func) {
-    string mars_identifier = func->ident.as_identifier->tok->text;
-    string global_sym_str = irgen_mangle_identifer(builder, mars_identifier);
-
-    FeSymbol* global_sym = fe_new_symbol(builder->mod, global_sym_str, FE_BIND_EXPORT);
-    irgen_function(builder, func, global_sym);
 }
 
 string irgen_anonymous_fn_identifier(IrBuilder* builder) {
@@ -156,7 +145,7 @@ FeFunction* irgen_function(IrBuilder* builder, ast_func_literal_expr* fn_literal
         fe_append_ir(entry_bb, fe_ir_stack_store(fn, return_stack_object, (FeIr*)initial_zero));
     }
 
-    irgen_block(builder, fn_literal->code_block.as_stmt_block);
+    irgen_stmt(builder, fn, fn_literal->code_block);
 
     return fn;
 }
@@ -212,7 +201,7 @@ FeIr* irgen_value_expr(IrBuilder* builder, AST expr) {
     }
 }
 
-void irgen_stmt(IrBuilder* builder, AST stmt) {
+void irgen_stmt(IrBuilder* builder, FeFunction* func, AST stmt) {
     switch (stmt.type) {
     case AST_return_stmt: {
         ast_return_stmt* astret = stmt.as_return_stmt;
@@ -257,7 +246,7 @@ void irgen_stmt(IrBuilder* builder, AST stmt) {
         builder->backlink = if_false;
 
         builder->bb = if_true;
-        irgen_stmt(builder, ifstmt->if_branch);
+        irgen_stmt(builder, func, ifstmt->if_branch);
 
         builder->backlink = previous_backlink; // reset backlink
         builder->bb = if_false;
@@ -265,17 +254,27 @@ void irgen_stmt(IrBuilder* builder, AST stmt) {
         break;
     }
     case AST_stmt_block:
-        irgen_block(builder, stmt.as_stmt_block);
+        if (stmt.as_stmt_block->stmts.len == 0) crash("expected statements in statement block!\n"); 
+        foreach(AST st, stmt.as_stmt_block->stmts) {
+            irgen_stmt(builder, func, st);
+        }
         break;
-    default:
-        crash("unhandled stmt '%s'", ast_type_str[stmt.type]);
-    }
-}
+    case AST_decl_stmt:
+        //we create stack objects for each lhs element
+        foreach(AST lhs, stmt.as_decl_stmt->lhs) {
+            FeType entity_type = irgen_mars_to_iron_type(builder, lhs.as_identifier->entity->entity_type);
 
-// uses current basic block
-void irgen_block(IrBuilder* builder, ast_stmt_block* block) {
-    foreach (AST stmt, block->stmts) {
-        irgen_stmt(builder, stmt);
+            ptrmap_put(&builder->entity2stackobj, lhs.as_identifier->entity, fe_new_stackobject(func, entity_type));
+        }
+        if (stmt.as_decl_stmt->lhs.len != 1) crash("irgen doesnt support multidecl yet!");
+        if (stmt.as_decl_stmt->lhs.len == 1) {
+            FeStackObject* obj = ptrmap_get(&builder->entity2stackobj, stmt.as_decl_stmt->lhs.at[0].as_identifier->entity);
+            FeIr* store = fe_ir_stack_store(func, obj, irgen_value_expr(builder, stmt.as_decl_stmt->rhs));
+            fe_append_ir(builder->bb, store);
+        }
+        return;
+    default:
+        crash("unhandled stmt '%s'\n", ast_type_str[stmt.type]);
     }
 }
 
@@ -293,6 +292,12 @@ FeType irgen_mars_to_iron_type(IrBuilder* builder, Type* t) {
     case TYPE_I8:
     case TYPE_U8:
         return FE_TYPE_I8;
+    case TYPE_F16:
+        return FE_TYPE_F16;
+    case TYPE_F32:
+        return FE_TYPE_F32;
+    case TYPE_F64:
+        return FE_TYPE_F64;
     case TYPE_POINTER:
     case TYPE_FUNCTION:
         return FE_TYPE_PTR;

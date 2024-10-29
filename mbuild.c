@@ -74,6 +74,7 @@ char* cflags =
     " -std=c17 -D_XOPEN_SOURCE=700 -fwrapv "
     " -fno-delete-null-pointer-checks -fno-strict-overflow -fno-strict-aliasing "
     " -Wall -Wno-format -Wno-unused -Werror=incompatible-pointer-types -Wno-discarded-qualifiers "
+    " -Wno-maybe-uninitialized"
 ;
 char* lflags =
     " -lm "
