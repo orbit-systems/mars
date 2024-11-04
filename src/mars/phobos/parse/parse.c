@@ -14,7 +14,6 @@
  */
 
 //TODO: fix string and char literals so we handle escape sequences
-//TODO?: spoof a decl_stmt if we parse an fn literal stmt
 
 // #define debug_trace(p) printf("stack -> %s @ %zu '" str_fmt "'\n", __func__, (p)->current_tok, str_arg((p)->tokens.at[(p)->current_tok].text))
 #define debug_trace(p)
