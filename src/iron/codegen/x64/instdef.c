@@ -32,10 +32,6 @@ const FeMachInstTemplate fe_x64_inst_templates[_FE_X64_INST_COUNT] = {
     }
 };
 
-const FeIrArchInstInfo fe_x64_inst_arch_info[] = {
-
-};
-
 static const FeArchRegclass regclasses[] = {
     [FE_X64_REGCLASS_UNKNOWN] = {},
     [FE_X64_REGCLASS_GPR] = {

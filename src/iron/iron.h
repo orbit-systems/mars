@@ -358,8 +358,8 @@ enum {
     FE_IR_CALL,
     // FeIrPtrCall
     FE_IR_PTR_CALL,
-    // FeIrAsm
-    FE_IR_ASM,
+    // FeIrAsmBlock
+    FE_IR_ASM_BLOCK,
 
     _FE_IR_MAX,
 
@@ -374,17 +374,6 @@ typedef struct FeIr {
     FeIr* next;
     FeIr* prev;
 } FeIr;
-
-typedef struct FeIrArchInst {
-    FeIr base;
-    FeIr* sources[]; // variable length field
-} FeIrArchInst;
-
-// information about an arch inst
-typedef struct FeIrArchInstInfo {
-    const char* name;
-    u16 sources_len;
-} FeIrArchInstInfo;
 
 typedef struct FeIrBookend {
     FeIr base;
@@ -570,20 +559,28 @@ typedef struct FeIrReturn {
 
 typedef struct FeIrCall {
     FeIr base;
-
     FeFunction* source;
-    // derives calling convention from source
 
     FeIr** params;
-    u16 params_len;
+    u16 len;
+    u16 cap;
+
+    // derives calling convention from source
 } FeIrCall;
 
 typedef struct FeIrPtrCall {
     FeIr base;
     FeIr* source;
 
+    FeIr** params;
+    u16 len;
+    u16 cap;
     u16 callconv;
 } FeIrPtrCall;
+// simplifies param manipulation functions
+static_assert(offsetof(FeIrCall, params) == offsetof(FeIrPtrCall, params));
+static_assert(offsetof(FeIrCall, len) == offsetof(FeIrPtrCall, len));
+static_assert(offsetof(FeIrCall, cap) == offsetof(FeIrPtrCall, cap));
 
 typedef struct FeIrRetrieve {
     FeIr base;
@@ -593,7 +590,7 @@ typedef struct FeIrRetrieve {
     u16 index;
 } FeIrRetrieve;
 
-typedef struct FeIrAsm {
+typedef struct FeIrAsmBlock {
     FeIr base;
 
     // KINDA TODO LMAO
@@ -603,7 +600,7 @@ typedef struct FeIrAsm {
 
     // assembly text
     string text;
-} FeIrAsm;
+} FeIrAsmBlock;
 
 enum {
 
@@ -683,8 +680,12 @@ FeIr* fe_ir_jump(FeFunction* f, FeBasicBlock* dest);
 FeIr* fe_ir_branch(FeFunction* f, FeIr* cond, FeBasicBlock* if_true, FeBasicBlock* if_false);
 FeIr* fe_ir_param(FeFunction* f, u32 param);
 FeIr* fe_ir_return(FeFunction* f);
+FeIr* fe_ir_call(FeFunction* f, FeFunction* callee);
+FeIr* fe_ir_ptr_call(FeFunction* f, FeIr* callee_ptr, u16 callconv, usize paramlen);
+FeIr* fe_ir_retrieve(FeFunction* f, FeIr* call, FeType ret_type, u16 index);
 
 void fe_add_phi_source(FeFunction* f, FeIrPhi* phi, FeIr* source, FeBasicBlock* source_block);
+void fe_add_call_param(FeIr* call, FeIr* source);
 
 string fe_emit_ir(FeModule* m);
 FeModule* fe_read_module(string text);

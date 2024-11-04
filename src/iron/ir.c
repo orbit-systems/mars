@@ -483,6 +483,60 @@ FeIr* fe_ir_return(FeFunction* f) {
     return (FeIr*)ret;
 }
 
+FeIr* fe_ir_call(FeFunction* f, FeFunction* callee) {
+    if (!callee) FE_FATAL(f->mod, "callee cannot be null");
+
+    FeIrCall* call = (FeIrCall*)fe_ir(f, FE_IR_CALL);
+    call->source = callee;
+    call->cap = callee->params.len;
+    call->len = 0;
+    call->params = fe_malloc(sizeof(call->params[0])*call->cap);
+    return (FeIr*)call;
+}
+
+FeIr* fe_ir_ptr_call(FeFunction* f, FeIr* callee_ptr, u16 callconv, usize paramlen) {
+    FeIrPtrCall* call = (FeIrPtrCall*)fe_ir(f, FE_IR_CALL);
+    call->source = callee_ptr;
+    call->cap = paramlen;
+    call->callconv = callconv;
+    call->len = 0;
+    call->params = fe_malloc(sizeof(call->params[0])*call->cap);
+    return (FeIr*)call;
+}
+
+// works on both call and ptrcall
+void fe_add_call_param(FeIr* call, FeIr* source) {
+    FeIrCall* c = (FeIrCall*) call;
+    if (c->cap == c->len) {
+        c->cap *= 2;
+        c->params = fe_realloc(c->params, sizeof(*c->params) * c->cap);
+    }
+    c->params[c->len++] = source;
+}
+
+// if (ret_type) is void, it will try to derive the type from the call
+// fails if not
+FeIr* fe_ir_retrieve(FeFunction* f, FeIr* call, FeType ret_type, u16 index) {
+    FeIrRetrieve* retr = (FeIrRetrieve*) fe_ir(f, FE_IR_RETRIEVE);
+    retr->call = call;
+    retr->index = index;
+    if (call->kind == FE_IR_CALL) {
+        FeIrCall* ircall = (FeIrCall*) call;
+        assert(index < ircall->source->returns.len);
+        FeFunctionItem* return_item = ircall->source->returns.at[index];
+        if (ret_type == FE_TYPE_VOID) {
+            ret_type = return_item->type;
+        } else if (ret_type != return_item->type) {
+            FE_FATAL(f->mod, "ret_type != return item type");
+        }
+    } else {
+        if (ret_type == FE_TYPE_VOID) {
+            FE_FATAL(f->mod, "cannot retrieve void");
+        }
+    }
+    retr->base.type = ret_type;
+}
+
 // hasta la vista baby
 bool fe_is_ir_terminator(FeIr* inst) {
     switch (inst->kind) {
