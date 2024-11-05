@@ -47,6 +47,22 @@ void check_module(mars_module* mod) {
 
 Type* check_stmt(mars_module* mod, AST node, entity_table* scope) {
     switch (node.type) {
+    case AST_func_literal_expr: {
+        ast_func_literal_expr* fn = node.as_func_literal_expr;
+        string ident = fn->ident.base->start->text;
+        entity* fn_ent = search_for_entity(scope, ident);
+        if (fn_ent && fn_ent->checked) {
+            error_at_node(mod, fn->ident, "identifier already exists in scope");
+        }
+        if (!fn_ent) fn_ent = new_entity(scope, ident, node);
+        if (scope == mod->entities) fn_ent->is_global = true;
+        fn_ent->entity_type = check_func_literal(mod, node, scope);
+        fn_ent->is_mutable = false;
+        fn_ent->checked = true;
+        
+        fn->ident.as_identifier->entity = fn_ent;
+        return NULL;
+    } break;
     case AST_decl_stmt: {
         checked_expr rhs = check_expr(mod, node.as_decl_stmt->rhs, scope);
         // rhs.mutable = node.as_decl_stmt->is_mut;

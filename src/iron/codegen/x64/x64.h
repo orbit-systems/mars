@@ -48,4 +48,9 @@ enum {
     _FE_IR_X64_START = _FE_IR_ARCH_SPECIFIC_START,
 };
 
-extern const FeArchInfo fe_arch_x64;
+extern const FeArchInfo fe_arch_x64;        // x64 / x86-64 / amd64 whatever
+/*
+extern const FeArchInfo fe_arch_aphelion;   // aphelion (orbit systems)
+extern const FeArchInfo fe_arch_xr17032;    // xr17032 (hyenasky/xr-station)
+extern const FeArchInfo fe_arch_fox32;      // fox32 (ryfox)
+*/

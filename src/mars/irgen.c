@@ -15,6 +15,7 @@ static string next_block_name() {
     return str;
 }
 
+
 FeModule* irgen_module(mars_module* mars) {
     FeModule* mod = fe_new_module(mars->module_name);
 
@@ -24,6 +25,9 @@ FeModule* irgen_module(mars_module* mars) {
         switch (decl.type) {
         case AST_decl_stmt:
             irgen_global_decl(&builder, decl.as_decl_stmt);
+            break;
+        case AST_func_literal_expr:
+            irgen_global_fn_decl(&builder, decl.as_func_literal_expr);
             break;
         }
     }
@@ -81,6 +85,14 @@ void irgen_global_decl(IrBuilder* builder, ast_decl_stmt* global_decl) {
     default:
         crash("unhandled global rhs '%s'", ast_type_str[global_decl->rhs.type]);
     }
+}
+
+void irgen_global_fn_decl(IrBuilder* builder, ast_func_literal_expr* fn) {
+    string mars_identifier = fn->ident.base->start->text;
+    string global_sym_str = irgen_mangle_identifer(builder, mars_identifier);
+
+    FeSymbol* global_sym = fe_new_symbol(builder->mod, global_sym_str, FE_BIND_EXPORT);
+    FeFunction* fe_fn = irgen_function(builder, fn, global_sym);
 }
 
 // this will overwrite the current function and basic block

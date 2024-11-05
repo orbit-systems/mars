@@ -535,6 +535,7 @@ FeIr* fe_ir_retrieve(FeFunction* f, FeIr* call, FeType ret_type, u16 index) {
         }
     }
     retr->base.type = ret_type;
+    return (FeIr*) retr;
 }
 
 // hasta la vista baby

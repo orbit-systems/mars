@@ -1007,16 +1007,16 @@ AST parse_fn(parser* p, bool ident_expected) {
         lit.as_func_literal_expr->code_block = parse_stmt_block(p);
         lit.as_func_literal_expr->base.end = &current_token(p);
 
-        if (ident_expected) {
-            //we're in a fake fn decl, we generate this so sema doesnt need any extra functionality to work.
-            AST decl = new_ast_node(p, AST_decl_stmt);
-            da_init(&decl.as_decl_stmt->lhs, 1);
-            da_append(&decl.as_decl_stmt->lhs, literal_ident);
-            decl.as_decl_stmt->rhs = lit;
-            decl.as_decl_stmt->base.start = n.as_fn_type_expr->base.start;
-            decl.as_decl_stmt->base.end = &current_token(p);
-            return decl;
-        }
+        // if (ident_expected) {
+        //     //we're in a fake fn decl, we generate this so sema doesnt need any extra functionality to work.
+        //     AST decl = new_ast_node(p, AST_decl_stmt);
+        //     da_init(&decl.as_decl_stmt->lhs, 1);
+        //     da_append(&decl.as_decl_stmt->lhs, literal_ident);
+        //     decl.as_decl_stmt->rhs = lit;
+        //     decl.as_decl_stmt->base.start = n.as_fn_type_expr->base.start;
+        //     decl.as_decl_stmt->base.end = &current_token(p);
+        //     return decl;
+        // }
 
         return lit;
     }
