@@ -1,27 +1,33 @@
-module ll;
+module llist;
 
-import arena "../arena";
-
-type Node = distinct struct {
+type Node = struct {
     val: int,
     next: ^mut Node,
 };
 
-let new_node = fn(val: int) -> ^mut Node {
-    mut n : ^mut Node = arena::alloc(sizeof(Node), alignof(Node));
-    n.val = val;
-    n.next = null;
-    return n;
+type List = struct {
+    head: ^mut Node,
+    tail: ^mut Node,
 };
 
-let node_at = fn(node: ^let Node, index: int) -> ^mut Node {
-    mut i = index;
-    mut n = node;
-    while i != 0 {
-        if (n == null) do return null;
-        n = n.next;
-        i -= 1;
+fn append_head(l: ^mut List, new: ^mut Node) {
+    if (list.head == null) {
+        list.head = new;
+        list.tail = new;
+        new.next = null;
+    } else {
+        new.next = list.head;
+        list.head = new;
     }
-    return n;
-};
+}
 
+fn append_tail(l: ^mut List, new: ^mut Node) {
+    if (list.head == null) {
+        list.head = new;
+        list.tail = new;
+        new.next = null;
+    } else {
+        list.tail.next = new;
+        list.tail = new;
+    }
+}
