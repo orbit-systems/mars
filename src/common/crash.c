@@ -8,7 +8,7 @@ void crash(char* error, ...) {
     vprintf(error, args);
     va_end(args);
 
-#ifndef __WIN32__
+#if !defined(_WIN32) && !defined(__CYGWIN__)
     void* array[256]; // hold 256 stack traces
     char** strings;
     int size;
@@ -39,7 +39,7 @@ void crash(char* error, ...) {
     exit(-1); // lmao
 }
 
-#ifndef __WIN32__
+#if !defined(_WIN32) && !defined(__CYGWIN__)
 void signal_handler(int sig, siginfo_t* info, void* ucontext) {
     ucontext = ucontext;
     switch (sig) {

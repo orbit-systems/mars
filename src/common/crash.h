@@ -1,6 +1,6 @@
 #pragma once
 
-#ifndef __WIN32__
+#if !defined(_WIN32) && !defined(__CYGWIN__)
 #    include <execinfo.h>
 #    include <signal.h>
 #    include <errno.h>

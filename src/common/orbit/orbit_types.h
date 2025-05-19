@@ -17,6 +17,12 @@ typedef double   f64;
 typedef float    f32;
 typedef _Float16 f16;
 
+#if __STDC_VERSION__ < 202311L
+#if __STDC_VERSION >= 199901L
+#include <stdbool.h>
+#else
 typedef uint8_t bool;
 #define false ((bool)0)
 #define true ((bool)1)
+#endif
+#endif
