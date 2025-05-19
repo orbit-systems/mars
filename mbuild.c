@@ -42,7 +42,7 @@
 #define STYLE_BG_White    "\x1b[47m"
 #define STYLE_BG_Default  "\x1b[49m"
 
-#ifdef __linux__
+#if !defined(_WIN32)
     #define mkdir(x) mkdir(x, S_IRWXU);
 #endif
 
