@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <signal.h>
 
-#ifdef __linux__
+#if !defined(_WIN32)
     #include <sys/types.h>
     #include <execinfo.h>
     #include <errno.h>
@@ -25,7 +25,7 @@
     va_end(args);
     printf("\n");
 
-#ifndef _WIN32
+#if !defined(_WIN32) && !defined(__CYGWIN__)
     void* array[256]; // hold 256 stack traces
     char** strings;
     int size;
@@ -72,33 +72,7 @@
     exit(-1);
 }
 
-#ifdef _WIN32
-static void signal_handler(int sig) {
-    switch (sig) {
-    case SIGSEGV:
-        FE_CRASH("segfault");
-        break;
-    case SIGINT:
-        FE_CRASH("debug interrupt");
-        break;
-    case SIGFPE:
-        FE_CRASH("fatal arithmetic exception");
-        break;
-    case SIGTERM:
-        exit(0);
-        break;
-    default:
-        FE_CRASH("unhandled signal %d", sig);
-        break;
-    }
-}
-void fe_init_signal_handler() {
-    signal(SIGSEGV, signal_handler);
-    signal(SIGINT, signal_handler);
-    signal(SIGFPE, signal_handler);
-    signal(SIGTERM, signal_handler); 
-}
-#else
+#if !defined(_WIN32) && !defined(__CYGWIN__)
 static void signal_handler(int sig, siginfo_t* info, void* ucontext) {
     // ucontext = ucontext;
     switch (sig) {
@@ -137,5 +111,31 @@ void fe_init_signal_handler() {
         printf("sigaction to catch SIGABRT failed.");
         exit(-1);
     }
+}
+#else
+static void signal_handler(int sig) {
+    switch (sig) {
+    case SIGSEGV:
+        FE_CRASH("segfault");
+        break;
+    case SIGINT:
+        FE_CRASH("debug interrupt");
+        break;
+    case SIGFPE:
+        FE_CRASH("fatal arithmetic exception");
+        break;
+    case SIGTERM:
+        exit(0);
+        break;
+    default:
+        FE_CRASH("unhandled signal %d", sig);
+        break;
+    }
+}
+void fe_init_signal_handler() {
+    signal(SIGSEGV, signal_handler);
+    signal(SIGINT, signal_handler);
+    signal(SIGFPE, signal_handler);
+    signal(SIGTERM, signal_handler); 
 }
 #endif
