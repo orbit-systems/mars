@@ -1,0 +1,19 @@
+
+FN doesnt_return(x: ^WORD): NORETURN
+    WHILE TRUE DO
+        x^ += 1
+    END
+
+    UNREACHABLE
+END
+
+FN dead_code_after_noreturn(y: ^WORD): WORD
+    // doesnt_return(y)
+
+    IF y^ THEN
+        RETURN 1
+    END
+
+    y^ += 1
+    RETURN 2
+END

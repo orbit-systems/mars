@@ -1,5 +1,0 @@
-module arithmetic_test;
-
-fn add(a, b: int) -> int {
-    return a + b;
-}

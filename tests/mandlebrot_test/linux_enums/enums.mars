@@ -1,3 +1,0 @@
-module linux_enums;
-
-let LINUX_STDOUT = 0;

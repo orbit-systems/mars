@@ -1,0 +1,12 @@
+EXTERN FN bar(IN x: UWORD, IN y: UWORD, IN z: UWORD)
+
+FN foo()
+    a := 1
+    b := 1
+    c := 1
+    
+    bar(a, b, c)
+    bar(a, b, c)
+    bar(a, b, c)
+    bar(a, b, c)
+END

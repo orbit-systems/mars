@@ -1,6 +1,0 @@
-module checkertest;
-
-let test = fn(a: ^mut) -> bool {
-    mut y = cast(^mut u8) a;
-    y += a;
-};

@@ -1,30 +1,45 @@
-# The Mars Programming Language
+# Mars
 
-Mars is a statically-typed, procedural language for kernel and embedded programming. 
-Mars focuses on low-level control, with emphasis on code configuration.
+> [!WARNING]  
+> Mars and its toolchain are **work-in-progress** and not ready for production use.
 
-This repository is also home to Iron, a lightweight and low-level compiler backend. Iron is 
-developed alongside Mars, but can be built and used separately in other projects.
+Mars is a strongly-typed procedural language, built for ergonomic data-oriented design.
 
-NOTE: Mars and Iron are still VERY WORK-IN-PROGRESS at the moment. the compiler may work on some basic functions, but is subject to TODOs, crashes, and assertion failures as we build functionality up over time.
+This repository is also home to various other compiler projects:
 
-## Why?
+## Iron
 
-Mars was born out of the desire for a language that *feels* like C (no hidden mechanics, minimal runtime), but without all the legacy baggage that C comes with today (obtuse syntax, incompatible standards, 
-unportable compiler-specific features).
+Iron is a lightweight but powerful code optimization and generation library, built on a custom SSA-CFG. Iron provides a direct IR to binary pipeline, with a high-level integrated assembler and linker.
+
+Iron is the backend library that powers all the language frontends in this repository.
+
+## Coyote
+
+Coyote is an implementation of the [Jackal](https://github.com/xrarch/newsdk) language by [hyenasky](https://github.com/hyenasky).
+Coyote focuses on useful diagnostics, lower memory usage, faster compile times, and high quality code generation compared to the original XR/SDK implementation.
+
+Coyote introduces various features to Jackal for ergonomics (pointers to scalar stack variables, implicit `IN`, `ALIGNOF` and `ALIGNOFVALUE`, etc.) and optimization (`NOALIAS` qualifier, etc.).
 
 ## Building
-### Prerequisites:
-- C Compiler
 
-To build the Mars compiler, compile/run `mbuild.c`:
-```shell
-cc mbuild.c -o mbuild -Isrc
-./mbuild mars -release
+### Linux and WSL
+
+You will need Make, a C compiler with support for C23 (with some GNU extensions), and a linker (`gcc` is the default for both of these).
+
+To build from scratch:
+```sh
+make clean mars    # for Mars
+make clean coyote  # for Coyote
+make clean libiron # for Iron as a library
 ```
-To build Iron, use `mbuild` as well:
-```shell
-./mbuild iron -release        # build as a standalone application
-./mbuild iron static -release # build as a static library
+
+To build incrementally, after the initial `clean` build:
+```sh
+make mars          # for Mars
+make coyote        # for Coyote
+make libiron       # for Iron as a library
 ```
-Use `mbuild` with no arguments to see additional options, such as optimization and compiler flag control.
+
+### Windows Native
+
+Work in progress! Feel free to bother me about this. It shouldn't be too hard to figure out, it's just not a priority for me right now.

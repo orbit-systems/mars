@@ -1,5 +1,0 @@
-module linux_syscalls;
-
-let write = fn(pipe: u8, data: ^mut, len: u64) {
-
-};

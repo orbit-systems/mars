@@ -1,676 +1,1322 @@
+#include "common/util.h"
+
 #include "iron/iron.h"
-#include "iron/passes/passes.h"
-#include "iron/codegen/x64/x64.h"
+#include <string.h>
 
-#define FE_FATAL(m, msg) fe_push_report(m, (FeReport){                            \
-                                               .function_of_origin = __func__,    \
-                                               .message = (msg),                  \
-                                               .severity = FE_REP_SEVERITY_FATAL, \
-                                           })
-
-// if (sym == NULL), create new symbol with no name
-FeFunction* fe_new_function(FeModule* mod, FeSymbol* sym, u8 cconv) {
-    FeFunction* fn = fe_malloc(sizeof(FeFunction));
-
-    fn->sym = sym ? sym : fe_new_symbol(mod, NULL_STR, FE_BIND_EXPORT);
-    if (!sym) fn->sym->name = strprintf("symbol_%016llx", fn->sym);
-    fn->sym->is_function = true;
-    fn->sym->function = fn;
-    fn->cconv = cconv;
-    fn->cfg_up_to_date = false;
-    fn->alloca = arena_make(FE_FN_ALLOCA_BLOCK_SIZE);
-    fn->params.at = NULL;
-    fn->returns.at = NULL;
-    fn->mod = mod;
-    da_init(&fn->blocks, 1);
-    da_init(&fn->stack, 1);
-
-    mod->functions = mars_realloc(mod->functions, sizeof(*mod->functions) * (mod->functions_len + 1));
-    mod->functions[mod->functions_len++] = fn;
-    return fn;
-}
-
-FeStackObject* fe_new_stackobject(FeFunction* f, FeType t) {
-    FeStackObject* obj = arena_alloc(&f->alloca, sizeof(*obj), alignof(*obj));
-    obj->t = t;
-    da_append(&f->stack, obj);
-    return obj;
-}
-
-static char* cstrprintf(char* fmt, ...) {
-
-    va_list varargs;
-    va_start(varargs, fmt);
-
-    static char buf[1000];
-    memset(buf, 0, sizeof(buf));
-
-    vsprintf(buf, fmt, varargs);
-    char* out = malloc(strlen(buf) + 1);
-    strcpy(out, buf);
-    return out;
-}
-
-void fe_init_func_params(FeFunction* f, u16 count) {
-    f->params.at = fe_malloc(count * sizeof(f->params.at[0]));
-    f->params.cap = count;
-    f->params.len = 0;
-}
-void fe_init_func_returns(FeFunction* f, u16 count) {
-    f->returns.at = fe_malloc(count * sizeof(f->returns.at[0]));
-    f->returns.cap = count;
-    f->returns.len = 0;
-}
-FeFunctionItem* fe_add_func_param(FeFunction* f, FeType t) {
-    if (f->params.at == NULL) {
-        fe_init_func_params(f, 4);
+static const char* inst_name(FeInst* inst) {
+    FeInst* bookend = inst;
+    while (bookend->kind != FE__BOOKEND) {
+        bookend = bookend->next;
     }
-    if (f->params.len == f->params.cap) {
-        f->params.at = mars_realloc(f->params.at, f->params.cap * 2);
-        f->params.cap *= 2;
+    const FeTarget* t = fe_extra(bookend, FeInst_Bookend)->block->func->mod->target;
+    return fe_inst_name(t, inst->kind);
+}
+
+FeModule* fe_module_new(FeArch arch, FeSystem system) {
+    FeModule* mod = fe_malloc(sizeof(*mod));
+    memset(mod, 0, sizeof(*mod));
+
+    mod->target = fe_make_target(arch, system);
+    fe_symtab_init(&mod->symtab);
+    return mod;
+}
+
+void fe_module_destroy(FeModule* mod) {
+    // destroy the functions
+    while (mod->funcs.first) {
+        fe_func_destroy(mod->funcs.first);  
     }
-    FeFunctionItem* p = fe_malloc(sizeof(*p));
-    p->type = t;
-    f->params.at[f->params.len++] = p;
-    return p;
+
+    fe_free((void*)mod->target);
+    fe_free(mod);
 }
-FeFunctionItem* fe_add_func_return(FeFunction* f, FeType t) {
-    if (f->returns.at == NULL) {
-        fe_init_func_params(f, 4);
+
+// void fe_section_destroy(FeSection* section) {
+
+// }
+
+FeSection* fe_section_new(FeModule* m, const char* name, u16 len, FeSectionFlags flags) {
+    FeSection* section = fe_malloc(sizeof(*section));
+    memset(section, 0, sizeof(*section));
+
+    if (len == 0) {
+        len = strlen(name);
     }
-    if (f->returns.len == f->returns.cap) {
-        f->returns.at = mars_realloc(f->returns.at, f->returns.cap * 2);
-        f->returns.cap *= 2;
+
+    section->name = fe_compstr(name, len);
+    section->flags = flags;
+
+    if (m->sections.first == nullptr) {
+        m->sections.first = section;
+        m->sections.last = section;
+    } else {
+        section->prev = m->sections.last;
+        m->sections.last->next = section;
+        m->sections.last = section;
     }
-    FeFunctionItem* r = fe_malloc(sizeof(*r));
-    r->type = t;
-    f->returns.at[f->returns.len++] = r;
-    return r;
+
+    return section;
 }
 
-FeData* fe_new_data(FeModule* mod, FeSymbol* sym, bool read_only) {
-    FeData* data = fe_malloc(sizeof(FeData));
+FeComplexTy* fe_ty_record_new(u32 fields_len) {
+    FeComplexTy* record = fe_malloc(sizeof(*record));
+    record->ty = FE_TY_RECORD;
+    record->record.fields_len = fields_len;
+    record->record.fields = fe_malloc(sizeof(FeRecordField) * fields_len);
 
-    data->sym = sym;
-    data->read_only = read_only;
-
-    mod->datas = mars_realloc(mod->datas, sizeof(*mod->datas) * (mod->datas_len + 1));
-    mod->datas[mod->datas_len++] = data;
-    return data;
+    return record;
 }
 
-void fe_set_data_bytes(FeData* data, u8* bytes, u32 len, bool zeroed) {
-    data->kind = FE_DATA_BYTES;
-    data->bytes.data = bytes;
-    data->bytes.len = len;
-    data->bytes.zeroed = zeroed;
+// if elem_ty is not a complex type, elem_cty should be nullptr
+FeComplexTy* fe_ty_array_new(u32 array_len, FeTy elem_ty, FeComplexTy* elem_cty) {
+    FeComplexTy* array = fe_malloc(sizeof(*array));
+    array->ty = FE_TY_ARRAY;
+    array->array.elem_ty = elem_ty;
+    array->array.complex_elem_ty = elem_cty;
+    array->array.len = array_len;
+    return array;
 }
 
-void fe_set_data_symref(FeData* data, FeSymbol* symref) {
-    data->kind = FE_DATA_SYMREF;
-    data->symref = symref;
-}
-
-void fe_set_data_numeric(FeData* data, u64 content, u8 kind) {
-    if (!(kind > _FE_DATA_NUMERIC_BEGIN && kind < _FE_DATA_NUMERIC_END)) {
-        CRASH("data kind %d is not numeric", kind);
+usize fe_ty_get_align(FeTy ty, FeComplexTy *cty) {
+    switch (ty) {
+    case FE_TY_VOID:
+        FE_CRASH("cant get align of void");
+    case FE_TY_TUPLE:
+        FE_CRASH("cant get align of tuple");
+    case FE_TY_ARRAY:
+        if (cty != nullptr) {
+            FE_CRASH("ty is array but no FeComplexTy was provided");
+        }
+        return fe_ty_get_align(cty->array.elem_ty, cty->array.complex_elem_ty);
+    case FE_TY_RECORD: {
+        if (cty != nullptr) {
+            FE_CRASH("ty is record but no FeComplexTy was provided");
+        }
+        usize align = 1;
+        FeRecordField* fields = cty->record.fields;
+        for_n(i, 0, cty->record.fields_len) {
+            usize field_align = fe_ty_get_align(fields[i].ty, fields[i].complex_ty);
+            if (align < field_align) {
+                align = field_align;
+            }
+        }
+        return align;
     }
-    data->kind = kind;
+    case FE_TY_BOOL:
+    case FE_TY_I8:
+        return 1;
+    case FE_TY_I16:
+        return 2;
+    case FE_TY_I32:
+    case FE_TY_F32:
+        return 4;
+    case FE_TY_I64:
+    case FE_TY_F64:
+        return 8;
+    default:
+        if (FE_TY_IS_VEC(ty)) {
+            switch (FE_TY_VEC_SIZETY(ty)) {
+            case FE_TY_V128:
+                return 16;
+            case FE_TY_V256:
+                return 32;
+            case FE_TY_V512:
+                return 64;
+            default:
+                FE_CRASH("insane vector type");
+            }
+        }
+        FE_CRASH("unknown ty %u", ty);
+    }
 }
 
-// WARNING: does NOT check if a symbol already exists
-FeSymbol* fe_new_symbol(FeModule* mod, string name, u8 binding) {
+usize fe_ty_get_size(FeTy ty, FeComplexTy *cty) {
+    switch (ty) {
+    case FE_TY_VOID:
+        FE_CRASH("cant get size of void");
+    case FE_TY_TUPLE:
+        FE_CRASH("cant get size of tuple");
+    case FE_TY_ARRAY:
+        if (cty == nullptr) {
+            FE_CRASH("ty is array but no FeComplexTy was provided");
+        }
+        return cty->array.len * fe_ty_get_size(cty->array.elem_ty, cty->array.complex_elem_ty);
+    case FE_TY_RECORD: {
+        if (cty == nullptr) {
+            FE_CRASH("ty is record but no FeComplexTy was provided");
+        }
+
+        usize align = fe_ty_get_align(ty, cty);
+
+        FeRecordField* last_field = &cty->record.fields[cty->record.fields_len];
+        return last_field->offset + last_field->offset;
+    }
+    case FE_TY_BOOL:
+    case FE_TY_I8:
+        return 1;
+    case FE_TY_I16:
+        return 2;
+    case FE_TY_I32:
+    case FE_TY_F32:
+        return 4;
+    case FE_TY_I64:
+    case FE_TY_F64:
+        return 8;
+    default:
+        if (FE_TY_IS_VEC(ty)) {
+            switch (FE_TY_VEC_SIZETY(ty)) {
+            case FE_TY_V128:
+                return 16;
+            case FE_TY_V256:
+                return 32;
+            case FE_TY_V512:
+                return 64;
+            default:
+                FE_CRASH("insane vector type");
+            }
+        }
+        FE_CRASH("unknown ty %u", ty);
+    }
+}
+
+// if len == 0, calculate with strlen
+FeSymbol* fe_symbol_new(FeModule* m, const char* name, u16 len, FeSection* section, FeSymbolBinding bind) {
+    if (name == nullptr) {
+        FE_CRASH("symbol cannot be null");
+    }
+    if (len == 0) {
+        len = strlen(name);
+    }
+    if (len == 0) {
+        FE_CRASH("symbol cannot have zero length");
+    }
+    // put this in an arena of some sort later
     FeSymbol* sym = fe_malloc(sizeof(FeSymbol));
-    sym->name = name;
-    sym->binding = binding;
+    sym->kind = FE_SYMKIND_NONE;
+    sym->bind = bind;
+    sym->section = section;
+    sym->name = fe_compstr(name, len);
 
-    da_append(&mod->symtab, sym);
+    if (fe_symtab_get(&m->symtab, name, len)) {
+        FE_CRASH("symbol with name '%.*s' already exists", len, name);
+    }
+    fe_symtab_put(&m->symtab, sym);
+
     return sym;
 }
 
-FeSymbol* fe_find_or_new_symbol(FeModule* mod, string name, u8 binding) {
-    FeSymbol* sym = fe_find_symbol(mod, name);
-    return sym ? sym : fe_new_symbol(mod, name, binding);
+void fe_symbol_destroy(FeSymbol* sym) {
+    memset(sym, 0, sizeof(*sym));
+    fe_free(sym);
 }
 
-// returns NULL if the symbol cannot be found
-FeSymbol* fe_find_symbol(FeModule* mod, string name) {
-    for_urange(i, 0, mod->symtab.len) {
-        if (string_eq(mod->symtab.at[i]->name, name)) {
-            return mod->symtab.at[i];
-        }
-    }
-    return NULL;
-}
-
-FeBasicBlock* fe_new_basic_block(FeFunction* fn, string name) {
-    FeBasicBlock* bb = fe_malloc(sizeof(FeBasicBlock));
-    fn->cfg_up_to_date = false;
-
-    bb->name = name;
-    bb->function = fn;
-
-    FeIrBookend* bk = (FeIrBookend*)fe_ir(fn, FE_IR_BOOKEND);
-    bk->bb = bb;
-
-    bb->start = (FeIr*)bk;
-    bb->end = (FeIr*)bk;
-
-    da_append(&fn->blocks, bb);
-    return bb;
-}
-
-u32 fe_bb_index(FeFunction* fn, FeBasicBlock* bb) {
-    for_urange(i, 0, fn->blocks.len) {
-        if (fn->blocks.at[i] != bb) continue;
-        return i;
-    }
-    return UINT32_MAX;
-}
-
-FeIr* fe_append_ir(FeBasicBlock* bb, FeIr* inst) {
-    inst->prev = NULL;
-    inst->next = NULL;
-
-    // this is the basic block's first instruction.
-    if (bb->start->kind == FE_IR_BOOKEND) {
-        FeIr* bookend = bb->start;
-        // set up the bookend
-        bookend->next = inst;
-        bookend->prev = inst;
-        inst->next = bookend;
-        inst->prev = bookend;
-
-        // retarget bb off of the bookend
-        bb->start = inst;
-        bb->end = inst;
-    } else {
-        fe_insert_ir_after(inst, bb->end);
-    }
-
-    return inst;
-}
-
-// inserts new before ref
-FeIr* fe_insert_ir_before(FeIr* new, FeIr* ref) {
-    if (ref->prev->kind == FE_IR_BOOKEND) {
-        FeIrBookend* bookend = (FeIrBookend*)ref->prev;
-        bookend->bb->start = new;
-    }
-    new->next = ref;
-    new->prev = ref->prev;
-    ref->prev->next = new;
-    ref->prev = new;
-
-    return new;
-}
-
-// inserts new after ref
-FeIr* fe_insert_ir_after(FeIr* new, FeIr* ref) {
-    if (ref->next->kind == FE_IR_BOOKEND) {
-        FeIrBookend* bookend = (FeIrBookend*)ref->next;
-        bookend->bb->end = new;
-        bookend->bb->function->cfg_up_to_date = false;
-    }
-    new->prev = ref;
-    new->next = ref->next;
-    ref->next->prev = new;
-    ref->next = new;
-
-    return new;
-}
-
-FeIr* fe_ir(FeFunction* f, u16 type) {
-    size_t extra = 0;
-    if (type >= _FE_IR_ARCH_SPECIFIC_START) {
-        TODO("");
-        if (f->mod->target.arch == 0) {
-            FE_FATAL(f->mod, "cannot create arch-specific ir without target arch");
-        }
-    }
-    FeIr* ir = arena_alloc(&f->alloca, fe_inst_sizes[type] + extra, 8);
-    ir->kind = type;
-    ir->type = FE_TYPE_VOID;
-    return ir;
-}
-
-const size_t fe_inst_sizes[] = {
-    [FE_IR_INVALID] = sizeof(FeIr),
-    [FE_IR_BOOKEND] = sizeof(FeIrBookend),
-
-    [FE_IR_ADD] = sizeof(FeIrBinop),
-    [FE_IR_SUB] = sizeof(FeIrBinop),
-    [FE_IR_IMUL] = sizeof(FeIrBinop),
-    [FE_IR_UMUL] = sizeof(FeIrBinop),
-    [FE_IR_IDIV] = sizeof(FeIrBinop),
-    [FE_IR_UDIV] = sizeof(FeIrBinop),
-
-    [FE_IR_AND] = sizeof(FeIrBinop),
-    [FE_IR_OR] = sizeof(FeIrBinop),
-    [FE_IR_XOR] = sizeof(FeIrBinop),
-    [FE_IR_SHL] = sizeof(FeIrBinop),
-    [FE_IR_LSR] = sizeof(FeIrBinop),
-    [FE_IR_ASR] = sizeof(FeIrBinop),
-
-    [FE_IR_ULT] = sizeof(FeIrBinop),
-    [FE_IR_UGT] = sizeof(FeIrBinop),
-    [FE_IR_ULE] = sizeof(FeIrBinop),
-    [FE_IR_UGE] = sizeof(FeIrBinop),
-    [FE_IR_ILT] = sizeof(FeIrBinop),
-    [FE_IR_IGT] = sizeof(FeIrBinop),
-    [FE_IR_ILE] = sizeof(FeIrBinop),
-    [FE_IR_IGE] = sizeof(FeIrBinop),
-    [FE_IR_EQ] = sizeof(FeIrBinop),
-    [FE_IR_NE] = sizeof(FeIrBinop),
-
-    [FE_IR_NOT] = sizeof(FeIrUnop),
-    [FE_IR_NEG] = sizeof(FeIrUnop),
-    [FE_IR_BITCAST] = sizeof(FeIrUnop),
-    [FE_IR_TRUNC] = sizeof(FeIrUnop),
-    [FE_IR_SIGNEXT] = sizeof(FeIrUnop),
-    [FE_IR_ZEROEXT] = sizeof(FeIrUnop),
-
-    [FE_IR_STACK_ADDR] = sizeof(FeIrStackAddr),
-    [FE_IR_FIELD_PTR] = sizeof(FeIrFieldPtr),
-    [FE_IR_INDEX_PTR] = sizeof(FeIrIndexPtr),
-
-    [FE_IR_LOAD] = sizeof(FeIrLoad),
-    [FE_IR_VOL_LOAD] = sizeof(FeIrLoad),
-    [FE_IR_STACK_LOAD] = sizeof(FeIrStackLoad),
-
-    [FE_IR_STORE] = sizeof(FeIrStore),
-    [FE_IR_VOL_STORE] = sizeof(FeIrStore),
-    [FE_IR_STACK_STORE] = sizeof(FeIrStackStore),
-
-    [FE_IR_CONST] = sizeof(FeIrConst),
-    [FE_IR_LOAD_SYMBOL] = sizeof(FeIrLoadSymbol),
-
-    [FE_IR_MOV] = sizeof(FeIrMov),
-    [FE_IR_PHI] = sizeof(FeIrPhi),
-
-    [FE_IR_BRANCH] = sizeof(FeIrBranch),
-    [FE_IR_JUMP] = sizeof(FeIrJump),
-
-    [FE_IR_PARAM] = sizeof(FeIrParam),
-
-    [FE_IR_RETURN] = sizeof(FeIrReturn),
+FeFuncSig* fe_funcsig_new(FeCallConv cconv, u16 param_len, u16 return_len) {
+    FeFuncSig* sig = fe_malloc(
+        sizeof(*sig) + (param_len + return_len) * sizeof(sig->params[0])
+    );
+    sig->cconv = cconv,
+    sig->param_len = param_len;
+    sig->return_len = return_len;
+    return sig;
 };
 
-FeIr* fe_ir_binop(FeFunction* f, u16 type, FeIr* lhs, FeIr* rhs) {
-    FeIrBinop* ir = (FeIrBinop*)fe_ir(f, type);
+FeFuncParam* fe_funcsig_param(FeFuncSig* sig, u16 index) {
+    if (index >= sig->param_len) {
+        FE_CRASH("index > param_len");
+    }
+    return &sig->params[index];
+}
 
-    if (lhs->type == rhs->type) {
-        ir->base.type = lhs->type;
+FeFuncParam* fe_funcsig_return(FeFuncSig* sig, u16 index) {
+    if (index >= sig->return_len) {
+        FE_CRASH("index > return_len");
+    }
+    return &sig->params[sig->param_len + index];
+}
+
+void fe_funcsig_destroy(FeFuncSig* sig) {
+    fe_free(sig);
+}
+
+FeBlock* fe_block_new(FeFunc* f) {
+    FeBlock* block = fe_malloc(sizeof(*block));
+    memset(block, 0, sizeof(*block));
+
+    block->id = f->max_block_id++;
+
+    // init predecessor list
+    block->pred_len = 0;
+    block->pred_cap = 2;
+    block->pred = fe_ipool_list_alloc(f->ipool, block->pred_cap);
+
+    // init successor list
+    block->succ_len = 0;
+    block->succ_cap = 2;
+    block->succ = fe_ipool_list_alloc(f->ipool, block->succ_cap);
+
+    block->func = f;
+    
+    // adds initial bookend instruction to block
+    FeInst* bookend = fe_ipool_alloc(f->ipool, sizeof(FeInst_Bookend));
+    bookend->kind = FE__BOOKEND;
+    bookend->ty = FE_TY_VOID;
+    bookend->next = bookend;
+    bookend->prev = bookend;
+    fe_extra(bookend, FeInst_Bookend)->block = block;
+    block->bookend = bookend;
+
+    // append to block list
+    if (f->last_block) {
+        FeBlock* last = f->last_block;
+        block->list_prev = last;
+        last->list_next = block;
+        f->last_block = block;
     } else {
-        FE_FATAL(f->mod, "lhs type != rhs type");
+        f->last_block = block;
+        f->entry_block = block;
     }
-    if (_FE_IR_CMP_START < type && type < _FE_IR_CMP_END) {
-        ir->base.type = FE_TYPE_BOOL;
+    return block;
+}
+
+void fe_block_destroy(FeBlock *block) {
+    FeFunc* f = block->func;
+
+    // remove from linked list
+    if (block->list_next) {
+        block->list_next->list_prev = block->list_prev;
+    } else {
+        f->last_block = block->list_prev;
+    }
+    if (block->list_prev) {
+        block->list_prev->list_next = block->list_next;
+    } else {
+        f->entry_block = block->list_next;
     }
 
-    switch (type) {
-    case FE_IR_ADD:
-    case FE_IR_UMUL:
-    case FE_IR_IMUL:
-        if (lhs->kind == FE_IR_CONST && rhs->kind != FE_IR_CONST) {
-            ir->lhs = rhs;
-            ir->rhs = lhs;
+    for_inst(inst, block) {
+        fe_inst_destroy(f, inst);
+    }
+    fe_inst_destroy(f, block->bookend);
+    
+    fe_ipool_list_free(f->ipool, block->pred, block->pred_cap);
+    fe_ipool_list_free(f->ipool, block->succ, block->succ_cap);
+    
+    fe_free(block);
+}
+
+FeInstChain fe_chain_from_block(FeBlock* block) {
+    FeInstChain chain;
+    
+    // extract it from the block's inst list
+    chain.begin = block->bookend->next;
+    chain.end = block->bookend->prev;
+    chain.begin->prev = nullptr;
+    chain.end->next = nullptr;
+    
+    // remove it from the block
+    block->bookend->next = block->bookend;
+    block->bookend->prev = block->bookend;
+    return chain;
+}
+
+void fe_cfg_add_edge(FeFunc* f, FeBlock* pred, FeBlock* succ) {
+    FeInstPool* pool = f->ipool;
+
+    // append succ to pred's succ list
+    if_unlikely (pred->succ_cap == pred->succ_len) {
+        pred->succ_cap *= 2;
+        FeBlock** new_list = fe_ipool_list_alloc(pool, pred->succ_len);
+        memcpy(new_list, pred->succ, sizeof(pred->succ[0]) * pred->succ_len);
+        fe_ipool_list_free(pool, pred->succ, pred->succ_len);
+        pred->succ = new_list;
+    }
+    pred->succ[pred->succ_len] = succ;
+    pred->succ_len += 1;
+
+    // append pred to succ's pred list
+    if_unlikely (succ->pred_cap == succ->pred_len) {
+        succ->pred_cap *= 2;
+        FeBlock** new_list = fe_ipool_list_alloc(pool, succ->pred_len);
+        memcpy(new_list, succ->pred, sizeof(succ->pred[0]) * succ->pred_len);
+        fe_ipool_list_free(pool, pred->pred, succ->pred_len);
+        succ->pred = new_list;
+    }
+    succ->pred[succ->pred_len] = pred;
+    succ->pred_len += 1;
+}
+
+void fe_cfg_remove_edge(FeBlock* pred, FeBlock* succ) {
+    // find succ in pred's succ list
+    for_n(i, 0, pred->succ_len) {
+        if (pred->succ[i] == succ) {
+            // unordered remove
+            pred->succ[i] = pred->succ[--pred->succ_len];
             break;
         }
-    default:
-        ir->lhs = lhs;
-        ir->rhs = rhs;
-        break;
     }
 
-    return (FeIr*)ir;
-}
-
-FeIr* fe_ir_unop(FeFunction* f, u16 type, FeIr* source) {
-    FeIrUnop* ir = (FeIrUnop*)fe_ir(f, type);
-    ir->source = source;
-    return (FeIr*)ir;
-}
-
-FeIr* fe_ir_stackaddr(FeFunction* f, FeStackObject* obj) {
-    FeIrStackAddr* ir = (FeIrStackAddr*)fe_ir(f, FE_IR_STACK_ADDR);
-
-    ir->object = obj;
-    return (FeIr*)ir;
-}
-
-FeIr* fe_ir_field_ptr(FeFunction* f, u32 index, FeIr* source) {
-    FeIrFieldPtr* ir = (FeIrFieldPtr*)fe_ir(f, FE_IR_FIELD_PTR);
-    ir->index = index;
-    ir->source = source;
-    return (FeIr*)ir;
-}
-
-FeIr* fe_ir_index_ptr(FeFunction* f, FeIr* index, FeIr* source) {
-    FeIrIndexPtr* ir = (FeIrIndexPtr*)fe_ir(f, FE_IR_INDEX_PTR);
-    ir->index = index;
-    ir->source = source;
-    return (FeIr*)ir;
-}
-
-FeIr* fe_ir_load(FeFunction* f, FeIr* ptr, FeType as, bool is_vol) {
-    FeIrLoad* ir = (FeIrLoad*)fe_ir(f, FE_IR_LOAD);
-    if (!fe_type_is_scalar(as)) {
-        FE_FATAL(f->mod, "cannot load/store non-scalar type");
+    // find pred in succ's pred list
+    for_n(i, 0, succ->pred_len) {
+        if (succ->pred[i] == pred) {
+            // unordered remove
+            succ->pred[i] = succ->pred[--succ->pred_len];
+            break;
+        } 
     }
-    if (is_vol) ir->base.kind = FE_IR_VOL_LOAD;
-    ir->location = ptr;
-    ir->base.type = as;
-    return (FeIr*)ir;
 }
 
-FeIr* fe_ir_store(FeFunction* f, FeIr* ptr, FeIr* value, bool is_vol) {
-    FeIrStore* ir = (FeIrStore*)fe_ir(f, FE_IR_STORE);
-    if (!fe_type_is_scalar(value->type)) {
-        FE_FATAL(f->mod, "cannot load/store non-scalar type");
+static inline usize usize_next_pow_2(usize x) {
+    return 1 << ((sizeof(x) * 8) -_Generic(x,
+        unsigned long long: __builtin_clzll(x - 1),
+        unsigned long: __builtin_clzl(x - 1),
+        unsigned int: __builtin_clz(x - 1)));
+}
+
+static inline usize usize_log2(usize x) {
+    return (sizeof(x) * 8 - 1) - _Generic(x,
+        unsigned long long: __builtin_clzll(x),
+        unsigned long: __builtin_clzl(x),
+        unsigned int: __builtin_clz(x));
+}
+
+static usize count_composite_items(FeTy ty, FeComplexTy* cty) {
+    if (ty == FE_TY_ARRAY) {
+        return cty->array.len * count_composite_items(
+            cty->array.elem_ty, 
+            cty->array.complex_elem_ty
+        );
+    } else if (ty == FE_TY_RECORD) {
+        usize n = 0;
+        for_n(i, 0, cty->record.fields_len) {
+            FeRecordField* field = &cty->record.fields[i];
+            n += count_composite_items(field->ty, field->complex_ty);
+        }
+        return n;
     }
-    if (is_vol) ir->base.kind = FE_IR_VOL_STORE;
-    ir->location = ptr;
-    ir->value = value;
-    return (FeIr*)ir;
+    return 1;
 }
 
-FeIr* fe_ir_stack_load(FeFunction* f, FeStackObject* location) {
-    FeIrStackLoad* ir = (FeIrStackLoad*)fe_ir(f, FE_IR_STACK_LOAD);
-    if (!fe_type_is_scalar(location->t)) {
-        FE_FATAL(f->mod, "cannot load/store non-scalar type");
-    }
-    ir->base.type = location->t;
-    ir->location = location;
-    return (FeIr*)ir;
-}
-
-FeIr* fe_ir_stack_store(FeFunction* f, FeStackObject* location, FeIr* value) {
-    FeIrStackStore* ir = (FeIrStackStore*)fe_ir(f, FE_IR_STACK_STORE);
-    if (!fe_type_is_scalar(location->t)) {
-        FE_FATAL(f->mod, "cannot load/store non-scalar type");
-    }
-    if (location->t != value->type) {
-        FE_FATAL(f->mod, "value type != location type");
-    }
-    ir->location = location;
-    ir->value = value;
-    return (FeIr*)ir;
-}
-
-FeIr* fe_ir_const(FeFunction* f, FeType type) {
-    FeIrConst* ir = (FeIrConst*)fe_ir(f, FE_IR_CONST);
-    ir->base.type = type;
-    return (FeIr*)ir;
-}
-
-FeIr* fe_ir_load_symbol(FeFunction* f, FeType type, FeSymbol* symbol) {
-    FeIrLoadSymbol* ir = (FeIrLoadSymbol*)fe_ir(f, FE_IR_LOAD_SYMBOL);
-    ir->sym = symbol;
-    if (!fe_type_is_scalar(type)) {
-        FE_FATAL(f->mod, "cannot load symbol into non-scalar type");
-    }
-    return (FeIr*)ir;
-}
-
-FeIr* fe_ir_mov(FeFunction* f, FeIr* source) {
-    FeIrMov* ir = (FeIrMov*)fe_ir(f, FE_IR_MOV);
-    ir->source = source;
-    ir->base.type = source->type;
-    return (FeIr*)ir;
-}
-
-FeIr* fe_ir_phi(FeFunction* f, u32 count, FeType type) {
-    FeIrPhi* ir = (FeIrPhi*)fe_ir(f, FE_IR_PHI);
-    ir->base.type = type;
-    ir->len = 0;
-    ir->cap = count;
-    ir->sources = fe_malloc(sizeof(*ir->sources) * count);
-    ir->source_BBs = fe_malloc(sizeof(*ir->source_BBs) * count);
-    return (FeIr*)ir;
-}
-
-void fe_add_phi_source(FeFunction* f, FeIrPhi* phi, FeIr* source, FeBasicBlock* source_block) {
-    if (source->type != phi->base.type) {
-        FE_FATAL(f->mod, "phi source must match phi type");
-    }
-
-    if (phi->cap == phi->len) {
-        phi->cap *= 2;
-        phi->sources = fe_realloc(phi->sources, sizeof(*phi->sources) * phi->cap);
-        phi->source_BBs = fe_realloc(phi->source_BBs, sizeof(*phi->source_BBs) * phi->cap);
-    }
-    phi->sources[phi->len] = source;
-    phi->source_BBs[phi->len] = source_block;
-    phi->len++;
-}
-
-FeIr* fe_ir_jump(FeFunction* f, FeBasicBlock* dest) {
-    FeIrJump* ir = (FeIrJump*)fe_ir(f, FE_IR_JUMP);
-    ir->dest = dest;
-    return (FeIr*)ir;
-}
-
-FeIr* fe_ir_branch(FeFunction* f, FeIr* cond, FeBasicBlock* if_true, FeBasicBlock* if_false) {
-    FeIrBranch* ir = (FeIrBranch*)fe_ir(f, FE_IR_BRANCH);
-    ir->cond = cond;
-    if (cond->type != FE_TYPE_BOOL) {
-        FE_FATAL(f->mod, "branch condition must be boolean");
-    }
-    ir->if_true = if_true;
-    ir->if_false = if_false;
-    return (FeIr*)ir;
-}
-
-FeIr* fe_ir_param(FeFunction* f, u32 param) {
-    FeIrParam* ir = (FeIrParam*)fe_ir(f, FE_IR_PARAM);
-    ir->index = param;
-    if (param >= f->params.len) {
-        FE_FATAL(f->mod, cstrprintf("param index %d is out of range [0, %d)", param, f->params.len));
-        // CRASH("param index %d is out of range", param);
-    }
-    ir->base.type = f->params.at[param]->type;
-    return (FeIr*)ir;
-}
-
-FeIr* fe_ir_return(FeFunction* f) {
-    FeIrReturn* ret = (FeIrReturn*)fe_ir(f, FE_IR_RETURN);
-    u32 count = f->returns.len;
-    if (count != 0) {
-        ret->sources = fe_malloc(count * sizeof(ret->sources[0]));
-    }
-    ret->len = count;
-    return (FeIr*)ret;
-}
-
-FeIr* fe_ir_call(FeFunction* f, FeFunction* callee) {
-    if (!callee) FE_FATAL(f->mod, "callee cannot be null");
-
-    FeIrCall* call = (FeIrCall*)fe_ir(f, FE_IR_CALL);
-    call->source = callee;
-    call->cap = callee->params.len;
-    call->len = 0;
-    call->params = fe_malloc(sizeof(call->params[0])*call->cap);
-    return (FeIr*)call;
-}
-
-FeIr* fe_ir_ptr_call(FeFunction* f, FeIr* callee_ptr, u16 callconv, usize paramlen) {
-    FeIrPtrCall* call = (FeIrPtrCall*)fe_ir(f, FE_IR_CALL);
-    call->source = callee_ptr;
-    call->cap = paramlen;
-    call->callconv = callconv;
-    call->len = 0;
-    call->params = fe_malloc(sizeof(call->params[0])*call->cap);
-    return (FeIr*)call;
-}
-
-// works on both call and ptrcall
-void fe_add_call_param(FeIr* call, FeIr* source) {
-    FeIrCall* c = (FeIrCall*) call;
-    if (c->cap == c->len) {
-        c->cap *= 2;
-        c->params = fe_realloc(c->params, sizeof(*c->params) * c->cap);
-    }
-    c->params[c->len++] = source;
-}
-
-// if (ret_type) is void, it will try to derive the type from the call
-// fails if not
-FeIr* fe_ir_retrieve(FeFunction* f, FeIr* call, FeType ret_type, u16 index) {
-    FeIrRetrieve* retr = (FeIrRetrieve*) fe_ir(f, FE_IR_RETRIEVE);
-    retr->call = call;
-    retr->index = index;
-    if (call->kind == FE_IR_CALL) {
-        FeIrCall* ircall = (FeIrCall*) call;
-        assert(index < ircall->source->returns.len);
-        FeFunctionItem* return_item = ircall->source->returns.at[index];
-        if (ret_type == FE_TYPE_VOID) {
-            ret_type = return_item->type;
-        } else if (ret_type != return_item->type) {
-            FE_FATAL(f->mod, "ret_type != return item type");
+static void place_params(FeFunc* f, FeInst* root, FeTy ty, FeComplexTy* cty, usize* index) {
+    if (ty == FE_TY_ARRAY) {
+        for_n (i, 0, cty->array.len) {
+            place_params(
+                f,
+                root,
+                cty->array.elem_ty, 
+                cty->array.complex_elem_ty,
+                index
+            );
+        }
+    } else if (ty == FE_TY_RECORD) {
+        for_n(i, 0, cty->record.fields_len) {
+            FeRecordField* field = &cty->record.fields[i];
+            place_params(f, root, field->ty, field->complex_ty, index);
         }
     } else {
-        if (ret_type == FE_TYPE_VOID) {
-            FE_FATAL(f->mod, "cannot retrieve void");
-        }
+        FeInst* param = fe_inst_new(f, 1, sizeof(FeInstProj));
+        param->kind = FE_PROJ;
+        param->ty = ty;
+
+        fe_extra(param, FeInstProj)->index = *index;
+        f->params[*index] = param;
+
+        fe_set_input(f, param, 0, root);
+
+        fe_append_end(f->entry_block, param);
+        
+        *index += 1;
     }
-    retr->base.type = ret_type;
-    return (FeIr*) retr;
 }
 
-// hasta la vista baby
-bool fe_is_ir_terminator(FeIr* inst) {
-    switch (inst->kind) {
-    case FE_IR_RETURN:
-    case FE_IR_BRANCH:
-    case FE_IR_JUMP:
-        return true;
+FeFunc* fe_func_new(FeModule* mod, FeSymbol* sym, FeFuncSig* sig, FeInstPool* ipool, FeVRegBuffer* vregs) {
+    FeFunc* f = fe_malloc(sizeof(FeFunc));
+    memset(f, 0, sizeof(*f));
+    f->sig = sig;
+    f->mod = mod;
+    f->ipool = ipool;
+    f->vregs = vregs;
+    f->sym = sym;
+    sym->func = f;
+    sym->kind = FE_SYMKIND_FUNC;
+
+    // append to function list
+    if (mod->funcs.first == nullptr) {
+        mod->funcs.first = f;
+        mod->funcs.last = f;
+    } else {
+        f->list_prev = mod->funcs.last;
+        f->list_prev->list_next = f;
+        mod->funcs.last = f;
+    }
+    
+    usize num_params = 0;
+    for_n(i, 0, sig->param_len) {
+        FeFuncParam* p = &sig->params[i];
+        num_params += count_composite_items(p->ty, p->cty);
+    }
+
+    // add initial basic block
+    f->entry_block = f->last_block = fe_block_new(f);
+
+    f->params = fe_malloc(sizeof(f->params[0]) * num_params);
+
+    // add root node
+    FeInst* root = fe_inst_new(f, 0, 0);
+    root->kind = FE__ROOT;
+    root->ty = FE_TY_VOID;
+
+    fe_append_begin(f->entry_block, root);
+
+    // adds parameter instructions
+    usize index = 0;
+    for_n(i, 0, sig->param_len) {
+        place_params(
+            f, root, 
+            sig->params[i].ty, 
+            sig->params[i].cty, 
+            &index
+        );
+    }
+
+    return f;
+}
+
+void fe_func_destroy(FeFunc *f) {
+    if (f->params) {
+        fe_free(f->params);    
+    }
+
+    // free the block list
+    while (f->entry_block) {
+        fe_block_destroy(f->entry_block);
+    }
+    
+    // free the stack
+    while (f->stack_top) {
+        fe_free(fe_stack_remove(f, f->stack_top));
+    }
+
+    // remove from linked list
+    if (f->list_next == nullptr) { // at back of list
+        f->mod->funcs.last = f->list_prev;
+    } else {
+        f->list_next->list_prev = f->list_prev;
+    }
+    if (f->list_prev == nullptr) { // at front of list
+        f->mod->funcs.first = f->list_next;
+    } else {
+        f->list_prev->list_next = f->list_next;
+    }
+    // f->list_next = NULL;
+    // f->list_prev = NULL;
+    fe_free(f);
+}
+
+FeInst* fe_func_param(FeFunc* f, u16 index) {
+    return f->params[index];
+}
+
+FeBlock** fe_list_terminator_successors(const FeTarget* t, FeInst* term, usize* len_out) {
+    if (!fe_inst_has_trait(term->kind, FE_TRAIT_TERMINATOR)) {
+        FE_CRASH("list_targets: inst %s is not a terminator", inst_name(term));
+    }
+    if (term->kind > FE__BASE_INST_END) {
+        return t->list_targets(term, len_out);
+    }
+
+    switch (term->kind) {
+    case FE_JUMP:
+        *len_out = 1;
+        return &fe_extra(term, FeInstJump)->to;
+    case FE_BRANCH:
+        *len_out = 2;
+        return &fe_extra(term, FeInstBranch)->if_true;
+    case FE_RETURN:
     default:
-        return false;
+        *len_out = 0;
+        return nullptr;
     }
 }
 
 // remove inst from its basic block
-FeIr* fe_remove_ir(FeIr* inst) {
-    inst->prev->next = inst->next;
-    inst->next->prev = inst->prev;
+FeInst* fe_inst_remove_from_block(FeInst* inst) {
+    if (inst->next) {
+        inst->next->prev = inst->prev;
+    }
+    if (inst->prev) {
+        inst->prev->next = inst->next;
+    }
+    inst->next = nullptr;
+    inst->prev = nullptr;
     return inst;
 }
 
-// move inst to before ref
-FeIr* fe_move_ir_before(FeIr* inst, FeIr* ref) {
-    if (inst == ref || ref->prev == inst) return inst;
-    fe_remove_ir(inst);
-    fe_insert_ir_before(inst, ref);
-    return inst;
+// insert 'i' before 'point' in a basic block
+FeInst* fe_insert_before(FeInst* point, FeInst* i) {
+    FeInst* p_prev = point->prev;
+    p_prev->next = i;
+    point->prev = i;
+    i->next = point;
+    i->prev = p_prev;
+    return i;
 }
 
-// move inst to before ref
-FeIr* fe_move_ir_after(FeIr* inst, FeIr* ref) {
-    if (inst == ref || ref->next == inst) return inst;
-    fe_remove_ir(inst);
-    fe_insert_ir_after(inst, ref);
-    return inst;
+// insert 'i' after 'point' in a basic block
+FeInst* fe_insert_after(FeInst* point, FeInst* i) {
+    FeInst* p_next = point->next;
+    p_next->prev = i;
+    point->next = i;
+    i->prev = point;
+    i->next = p_next;
+    return i;
 }
 
-// rewrite all uses of `from` to be uses of `to`
+// replace 'from' with 'to' in a basic block
+void fe_inst_replace_pos(FeInst* from, FeInst* to) {
+    from->next->prev = to;
+    from->prev->next = to;
+    to->next = from->next;
+    to->prev = from->prev;
+}
 
-#define rewrite_if_eq(inst, source, dest) \
-    if (inst == source) inst = dest
+FeInstChain fe_chain_new(FeInst* initial) {
+    FeInstChain chain = {0};
+    chain.begin = initial;
+    chain.end = initial;
+    return chain;
+}
 
-void fe_rewrite_uses_in_inst(FeIr* inst, FeIr* source, FeIr* dest) {
-    switch (inst->kind) {
-    case FE_IR_ADD:
-    case FE_IR_SUB:
-    case FE_IR_IMUL:
-    case FE_IR_UMUL:
-    case FE_IR_IDIV:
-    case FE_IR_UDIV:
-    case FE_IR_AND:
-    case FE_IR_OR:
-    case FE_IR_XOR:
-    case FE_IR_SHL:
-    case FE_IR_LSR:
-    case FE_IR_ASR:
-    case FE_IR_ULT:
-    case FE_IR_UGT:
-    case FE_IR_ULE:
-    case FE_IR_UGE:
-    case FE_IR_ILT:
-    case FE_IR_IGT:
-    case FE_IR_ILE:
-    case FE_IR_IGE:
-    case FE_IR_EQ:
-    case FE_IR_NE: {
-        FeIrBinop* binop = (FeIrBinop*)inst;
-        rewrite_if_eq(binop->lhs, source, dest);
-        rewrite_if_eq(binop->rhs, source, dest);
-        break;
+FeInstChain fe_chain_append_end(FeInstChain chain, FeInst* i) {
+    chain.end->next = i;
+    i->prev = chain.end;
+    chain.end = i;
+    return chain;
+}
+
+FeInstChain fe_chain_append_begin(FeInstChain chain, FeInst* i) {
+    chain.begin->prev = i;
+    i->next = chain.begin;
+    chain.begin = i;
+    return chain;
+}
+
+FeInstChain fe_chain_concat(FeInstChain front, FeInstChain back) {
+    if (front.begin == nullptr) {
+        return back;
     }
-    case FE_IR_STACK_STORE: {
-        FeIrStackStore* stack_store = (FeIrStackStore*)inst;
-        rewrite_if_eq(stack_store->value, source, dest);
-        break;
+    if (back.begin == nullptr) {
+        return front;
     }
-    case FE_IR_BRANCH: {
-        FeIrBranch* branch = (FeIrBranch*)inst;
-        rewrite_if_eq(branch->cond, source, dest);
-        break;
+
+    front.end->next = back.begin;
+    back.begin->prev = front.end;
+    front.end = back.end;
+
+    return front;
+}
+void fe_insert_chain_before(FeInst* point, FeInstChain chain) {
+    FeInst* p_prev = point->prev;
+    p_prev->next = chain.begin;
+    point->prev = chain.end;
+    chain.end->next = point;
+    chain.begin->prev = p_prev;
+}
+
+void fe_insert_chain_after(FeInst* point, FeInstChain chain) {
+    FeInst* p_next = point->next;
+    p_next->prev = chain.end;
+    point->next = chain.begin;
+    chain.begin->prev = point;
+    chain.end->next = p_next;
+}
+
+void fe_chain_replace_pos(FeInst* from, FeInstChain to) {
+    from->next->prev = to.end;
+    from->prev->next = to.begin;
+    to.end->next = from->next;
+    to.begin->prev = from->prev;
+    from->next = nullptr;
+    from->prev = nullptr;
+}
+
+void fe_chain_destroy(FeFunc* f, FeInstChain chain) {
+    for (FeInst* inst = chain.begin, *next = inst->next; inst == nullptr; inst = next, next = next->next) {
+        fe_inst_destroy(f, inst);
     }
-    case FE_IR_PHI: {
-        FeIrPhi* phi = (FeIrPhi*)inst;
-        for_range(i, 0, phi->len) {
-            rewrite_if_eq(phi->sources[i], source, dest);
+}
+
+// -------------------------------------
+// instruction builders
+// -------------------------------------
+
+void fe_set_input(FeFunc* f, FeInst* inst, u16 n, FeInst* input) {
+    FE_ASSERT(n < inst->in_len);
+    FE_ASSERT(input != nullptr); // maybe fix it to handle this case?
+    
+    FeInst* old_input = inst->inputs[n];
+
+    if (old_input != nullptr) {
+        // unordered remove inst from old_input->uses
+        usize use_index = USIZE_MAX;
+        for_n (i, 0, old_input->use_len) {
+            FeInstUse old_input_use = old_input->uses[i];
+            if (old_input_use.idx == n && FE_USE_PTR(old_input_use) == inst) {
+                use_index = i;
+                break;
+            }
         }
-        break;
+        FE_ASSERT(use_index != USIZE_MAX);
+
+        old_input->use_len -= 1;
+        old_input->uses[use_index] = old_input->uses[old_input->use_len];
     }
-    case FE_IR_RETURN: {
-        FeIrReturn* ret = (FeIrReturn*)inst;
-        for_range(i, 0, ret->len) {
-            rewrite_if_eq(ret->sources[i], source, dest);
+
+    // add inst to input's uses
+    inst->inputs[n] = input;
+    if_unlikely (input->use_cap == input->use_len) {
+        FeInstPool* pool = f->ipool;
+        
+        input->use_cap *= 2;
+        // copy uses to new larger list
+        FeInstUse* new_uses = fe_ipool_list_alloc(pool, input->use_cap);
+        memcpy(new_uses, input->uses, sizeof(new_uses[0]) * input->use_len);
+       
+        // set the top list to zero
+        memset(&new_uses[input->use_len], 0, sizeof(new_uses[0]) * input->use_len);
+        
+        // free old list
+        fe_ipool_list_free(pool, input->uses, input->use_len);
+
+        input->uses = new_uses;
+    }
+
+    input->uses[input->use_len].idx = n;
+    input->uses[input->use_len].ptr = (i64)inst;
+    input->use_len += 1;
+}
+
+void fe_set_input_null(FeInst* inst, u16 n) {
+    FE_ASSERT(n < inst->in_len);
+    FeInst* old_input = inst->inputs[n];
+
+    if (old_input != nullptr) {
+        // unordered remove inst from old_input->uses
+        usize use_index = USIZE_MAX;
+        for_n (i, 0, old_input->use_len) {
+            FeInstUse old_input_use = old_input->uses[i];
+            if (old_input_use.idx == n && FE_USE_PTR(old_input_use) == inst) {
+                use_index = i;
+                break;
+            }
         }
-        break;
+        FE_ASSERT(use_index != USIZE_MAX);
+
+        old_input->use_len -= 1;
+        old_input->uses[use_index] = old_input->uses[old_input->use_len];
+
+        // set current input to null
+        inst->inputs[n] = nullptr;
     }
-    case FE_IR_PARAM:
-    case FE_IR_STACK_ADDR:
-    case FE_IR_STACK_LOAD:
-    case FE_IR_CONST:
-    case FE_IR_JUMP:
-        break; // no inputs
+}
+
+// replace users of 'old_val' with users of 'new_val'
+usize fe_replace_uses(FeFunc* f, FeInst* old_val, FeInst* new_val) {
+    // kinda unsafe, directly manipulating inputs and use lists is not great
+    for_n (i, 0, old_val->use_len) {
+        FeInstUse old_val_use = old_val->uses[i];
+        FeInst* old_val_use_inst = FE_USE_PTR(old_val_use);
+        u16 old_val_use_input = old_val_use.idx; // which input of 'old_val_use_inst' is 'old_val'
+
+        // unlink so fe_set_input doesnt try to touch our precious use list
+        old_val_use_inst->inputs[old_val_use_input] = nullptr;
+
+        fe_set_input(f, old_val_use_inst, old_val_use_input, new_val);
+    }
+
+    usize num_replaced = old_val->use_len;
+    old_val->use_len = 0;
+    
+    return num_replaced;
+}
+
+// #include <stdio.h>
+
+FeInst* fe_inst_new(FeFunc* f, usize input_len, usize extra_size) {
+    FeInst* inst = fe_ipool_alloc(f->ipool, extra_size);
+    inst->in_len = input_len;
+    inst->id = f->max_id++;
+
+    if (input_len != 0) {
+        inst->in_cap = usize_next_pow_2(input_len);
+        inst->inputs = fe_ipool_list_alloc(f->ipool, inst->in_cap);
+        memset(inst->inputs, 0, sizeof(inst->inputs[0]) * inst->in_cap);
+    } else {
+        inst->in_cap = 0;
+        inst->inputs = nullptr;
+    }
+
+    inst->use_len = 0;
+    inst->use_cap = 2;
+    inst->uses = fe_ipool_list_alloc(f->ipool, inst->use_cap);
+    memset(inst->uses, 0, sizeof(inst->uses[0]) * inst->use_cap);
+
+    return inst;
+}
+
+void fe_inst_add_input(FeFunc* f, FeInst* inst, FeInst* input) {
+
+    // expand dong
+    if_unlikely (inst->in_len == inst->in_cap) {
+        FeInstPool* pool = f->ipool;
+
+        inst->in_cap *= 2;
+        // copy inputs to new larger list
+        FeInst** new_inputs = fe_ipool_list_alloc(pool, inst->in_cap);
+        memcpy(new_inputs, inst->inputs, sizeof(new_inputs[0]) * inst->in_len);
+
+        // set the top list to zero
+        memset(&new_inputs[input->in_len], 0, sizeof(new_inputs[0]) * input->in_len);
+
+        fe_ipool_list_free(pool, input->inputs, input->in_len);
+        inst->inputs = new_inputs;
+    }
+
+    inst->inputs[inst->in_len] = input;
+    inst->in_len++;
+}
+
+void fe_inst_destroy(FeFunc* f, FeInst* inst) {
+
+    FE_ASSERT(inst);
+    FE_ASSERT(inst->use_len == 0);
+
+    // disconnect from other nodes
+    for_n(i, 0, inst->in_len) {
+        fe_set_input_null(inst, i);
+    }
+
+    // remove from block
+    fe_inst_remove_from_block(inst);
+
+    // free inputs and uses lists
+    if (inst->inputs != nullptr) {
+        fe_ipool_list_free(f->ipool, inst->inputs, inst->in_cap);
+    }
+    fe_ipool_list_free(f->ipool, inst->uses, inst->use_cap);
+
+    // free instruction itself
+    fe_ipool_free(f->ipool, inst);
+}
+
+
+FeInst* fe_inst_proj(FeFunc* f, FeInst* inst, usize index) {
+    FeInst* i = fe_inst_new(f, 0, sizeof(FeInstProj));
+    i->kind = FE_PROJ;
+    i->ty = fe_proj_ty(inst, index);
+
+    fe_extra(i, FeInstProj)->index = index;
+
+    return i;
+}
+
+FeInst* fe_inst_const(FeFunc* f, FeTy ty, u64 val) {
+    FeInst* i = fe_inst_new(f, 0, sizeof(FeInstConst));
+    i->kind = FE_CONST;
+    i->ty = ty;
+
+    fe_extra(i, FeInstConst)->val = val;
+
+    return i;
+}
+
+FeInst* fe_inst_const_f64(FeFunc* f, f64 val) {
+    FeInst* i = fe_inst_new(f, 0, sizeof(FeInstConst));
+    i->kind = FE_CONST;
+    i->ty = FE_TY_F64;
+
+    fe_extra(i, FeInstConst)->val_f64 = val;
+
+    return i;
+}
+
+FeInst* fe_inst_const_f32(FeFunc* f, f32 val) {
+    FeInst* i = fe_inst_new(f, 0, sizeof(FeInstConst));
+    i->kind = FE_CONST;
+    i->ty = FE_TY_F32;
+
+    fe_extra(i, FeInstConst)->val_f32 = val;
+
+    return i;
+}
+
+FeInst* fe_inst_stack_addr(FeFunc* f, FeStackItem* item) {
+    FeInst* i = fe_inst_new(f, 0, sizeof(FeInstStack));
+    i->kind = FE_STACK_ADDR;
+    i->ty = f->mod->target->ptr_ty;
+
+    fe_extra(i, FeInstStack)->item = item;
+
+    return i;
+}
+
+FeInst* fe_inst_sym_addr(FeFunc* f, FeSymbol* sym) {
+    FeInst* i = fe_inst_new(f, 0, sizeof(FeInstSymAddr));
+    i->kind = FE_SYM_ADDR;
+    i->ty = f->mod->target->ptr_ty;
+
+    fe_extra(i, FeInstSymAddr)->sym = sym;
+
+    return i;
+}
+
+FeInst* fe_inst_unop(FeFunc* f, FeTy ty, FeInstKind kind, FeInst* val) {
+    FeInst* i = fe_inst_new(f, 1, sizeof(FeInstSymAddr));
+    i->kind = kind;
+    i->ty = ty;
+
+    fe_set_input(f, i, 0, 
+        val);
+
+    return i;
+}
+
+FeInst* fe_inst_binop(FeFunc* f, FeTy ty, FeInstKind kind, FeInst* lhs, FeInst* rhs) {
+    FeInst* i = fe_inst_new(f, 2, sizeof(FeInstSymAddr));
+    i->kind = kind;
+    i->ty = ty;
+
+    fe_set_input(f, i, 0, lhs);
+    fe_set_input(f, i, 1, rhs);
+
+    return i;
+}
+
+FeInst* fe_inst_load(FeFunc* f, FeTy ty, FeInst* ptr, u16 align, u8 offset) {
+    FeInst* i = fe_inst_new(f, 2, sizeof(FeInstMemop));
+    i->kind = FE_LOAD;
+    i->ty = ty;
+
+    if (align == FE_MEMOP_ALIGN_DEFAULT) {
+        align = fe_ty_get_align(ty, nullptr);
+    }
+
+    fe_set_input_null(i, 0); // no last_effect yet
+    fe_set_input(f, i, 1, ptr); // pointer
+
+    fe_extra(i, FeInstMemop)->align = align;
+    fe_extra(i, FeInstMemop)->offset = offset;
+    fe_extra(i, FeInstMemop)->alias_space = 0; // everything in the same alias space atm
+
+    return i;
+}
+
+FeInst* fe_inst_store(FeFunc* f, FeInst* ptr, FeInst* val, u16 align, u8 offset) {
+    FeInst* i = fe_inst_new(f, 3, sizeof(FeInstMemop));
+    i->kind = FE_STORE;
+    i->ty = FE_TY_VOID;
+
+    if (align == FE_MEMOP_ALIGN_DEFAULT) {
+        align = fe_ty_get_align(val->ty, nullptr);
+    }
+
+    fe_set_input_null(i, 0); // no last_effect yet
+    fe_set_input(f, i, 1, ptr); // pointer 
+    fe_set_input(f, i, 2, val); // value to store
+
+    fe_extra(i, FeInstMemop)->align = align;
+    fe_extra(i, FeInstMemop)->offset = offset;
+    fe_extra(i, FeInstMemop)->alias_space = 0; // everything in the same alias space atm
+
+    return i;
+}
+
+FeInst* fe_inst_call(FeFunc* f, FeInst* callee, FeFuncSig* sig) {
+    FeInst* i = fe_inst_new(f, 2 + sig->param_len, sizeof(FeInstMemop));
+    i->kind = FE_STORE;
+    if (sig->param_len == 0) {
+        i->ty = FE_TY_VOID;
+    } else {
+        i->ty = FE_TY_TUPLE;
+    }
+
+    fe_set_input_null(i, 0); // no last_effect yet
+    fe_set_input(f, i, 0, callee);
+
+    for_n (n, 0, sig->param_len) {
+        // fill in parameters
+        fe_set_input_null(i, n + 2);
+    }
+
+    return i;
+}
+
+void fe_call_set_arg(FeFunc* f, FeInst* call, u16 n, FeInst* arg) {
+    fe_set_input(f, call, n + 2, arg);
+}
+
+FeInst* fe_inst_return(FeFunc* f) {
+    FeInst* i = fe_inst_new(f, 1 + f->sig->return_len, sizeof(FeInstMemop));
+    i->kind = FE_RETURN;
+    i->ty = FE_TY_VOID;
+
+    fe_set_input_null(i, 0); // no last_effect yet
+
+    for_n (n, 0, f->sig->return_len) {
+        // fill in return args
+        fe_set_input_null(i, n + 1);
+    }
+
+    return i;
+}
+
+void fe_return_set_arg(FeFunc* f, FeInst* ret, u16 n, FeInst* arg) {
+    fe_set_input(f, ret, n + 1, arg);
+}
+
+FeInst* fe_inst_phi(FeFunc* f, FeTy ty, u16 expected_len) {
+    FeInst* i = fe_inst_new(f, expected_len, sizeof(FeInstPhi));
+    i->kind = FE_PHI;
+    i->ty = ty;
+    i->in_len = 0;
+
+    fe_extra(i, FeInstPhi)->blocks = fe_ipool_list_alloc(f->ipool, i->in_cap);
+
+    return i;
+}
+
+FeInst* fe_inst_mem_phi(FeFunc* f, u16 expected_len) {
+    FeInst* i = fe_inst_new(f, expected_len, sizeof(FeInstPhi));
+    i->kind = FE_MEM_PHI;
+    i->ty = FE_TY_VOID;
+    i->in_len = 0;
+
+    fe_extra(i, FeInstPhi)->blocks = fe_ipool_list_alloc(f->ipool, i->in_cap);
+
+    return i;
+}
+
+void fe_phi_add_src(FeFunc* f, FeInst* phi, FeInst* src_value, FeBlock* src_block) {
+
+    FeInstPhi* phi_data = fe_extra(phi);
+
+    if_unlikely (phi->in_len == phi->in_cap) {
+        FeInstPool* pool = f->ipool;
+
+        usize new_cap = phi->in_cap * 2;
+        // copy blocks to new larger list
+        FeBlock** new_blocks = fe_ipool_list_alloc(pool, new_cap);
+        memcpy(new_blocks, phi_data->blocks, sizeof(new_blocks[0]) * phi->in_len);
+
+        // set the top list to zero
+        memset(&new_blocks[phi->in_len], 0, sizeof(new_blocks[0]) * phi->in_len);
+
+        fe_ipool_list_free(pool, phi_data->blocks, phi->in_len);
+        phi_data->blocks = new_blocks;
+    }
+    
+    phi_data->blocks[phi->in_len] = src_block;
+
+    fe_inst_add_input(f, phi, src_value);
+}
+
+void fe_phi_remove_src(FeFunc* f, FeInst* phi, u16 n) {
+    FeInstPhi* phi_data = fe_extra(phi);
+    
+    phi->in_len -= 1;
+    phi_data->blocks[n] = phi_data->blocks[phi->in_len]; 
+    phi->inputs[n] = phi->inputs[phi->in_len];
+}
+
+FeInst* fe_inst_branch(FeFunc* f, FeInst* cond) {
+    FeInst* i = fe_inst_new(f, 1, sizeof(FeInstBranch));
+    i->kind = FE_BRANCH;
+    i->ty = FE_TY_VOID;
+
+    FE_ASSERT(cond->ty == f->mod->target->ptr_ty);
+    fe_set_input(f, i, 0, cond);
+
+    return i;
+}
+
+void fe_branch_set_true(FeFunc* f, FeInst* branch, FeBlock* block) {
+    FeInst* bookend = branch->next;
+    FE_ASSERT(bookend && "branch is not in a block");
+    FE_ASSERT(bookend->kind == FE__BOOKEND && "branch is not at the end of a block");
+
+    FeBlock* pred = fe_extra(bookend, FeInst_Bookend)->block;
+    FeInstBranch* branch_data = fe_extra(branch);
+
+    if (branch_data->if_true) {
+        fe_cfg_remove_edge(pred, branch_data->if_true);
+    }
+
+    fe_cfg_add_edge(f, pred, block);
+
+    branch_data->if_true = block;
+}
+
+void fe_branch_set_false(FeFunc* f, FeInst* branch, FeBlock* block) {
+    FeInst* bookend = branch->next;
+    FE_ASSERT(bookend && "branch is not in a block");
+    FE_ASSERT(bookend->kind == FE__BOOKEND && "branch is not at the end of a block");
+
+    FeBlock* pred = fe_extra(bookend, FeInst_Bookend)->block;
+    FeInstBranch* branch_data = fe_extra(branch);
+
+    if (branch_data->if_false) {
+        fe_cfg_remove_edge(pred, branch_data->if_false);
+    }
+
+    fe_cfg_add_edge(f, pred, block);
+
+    branch_data->if_false = block;
+}
+
+FeInst* fe_inst_jump(FeFunc* f) {
+    FeInst* i = fe_inst_new(f, 0, sizeof(FeInstBranch));
+    i->kind = FE_BRANCH;
+    i->ty = FE_TY_VOID;
+
+    return i;
+}
+
+void fe_jump_set_target(FeFunc* f, FeInst* jump, FeBlock* block) {
+    FeInst* bookend = jump->next;
+    FE_ASSERT(bookend && "jump is not in a block");
+    FE_ASSERT(bookend->kind == FE__BOOKEND && "jump is not at the end of a block");
+
+    FeBlock* pred = fe_extra(bookend, FeInst_Bookend)->block;
+    fe_cfg_add_edge(f, pred, block);
+
+    fe_extra(jump, FeInstJump)->to = block;
+}
+
+// -------------------------------------
+// instruction utlities
+// -------------------------------------
+
+FeTy fe_proj_ty(FeInst* tuple, usize index) {
+    if (tuple->ty != FE_TY_TUPLE) {
+        FE_CRASH("projection on non-tuple inst %s", inst_name(tuple));
+    }
+    switch (tuple->kind) {
+    case FE_CALL:
+        ;
+        FeInstCall* icall = fe_extra(tuple);
+        if (index < icall->sig->return_len) {
+            return fe_funcsig_return(icall->sig, index)->ty;
+        }
+        FE_CRASH("index %zu out of bounds for [0, %u)", icall->sig->return_len);
     default:
-        printf("---- %d\n", inst->kind);
-        CRASH("unhandled in rewrite_uses_in_inst");
-        break;
+        FE_CRASH("unknown inst kind (%s) %u", inst_name(tuple), tuple->kind);
     }
 }
 
-void fe_rewrite_ir_uses(FeFunction* f, FeIr* source, FeIr* dest) {
-    for_urange(i, 0, f->blocks.len) {
-        FeBasicBlock* bb = f->blocks.at[i];
-        for_fe_ir(inst, *bb) {
-            fe_rewrite_uses_in_inst(inst, source, dest);
+// -------------------------------------
+// instruction traits
+// -------------------------------------
+
+#include "short_traits.h"
+
+static FeTrait inst_traits[FE__INST_END] = {
+    [FE__ROOT] = VOL | MEM_DEF,
+    [FE_PROJ] = 0,
+    [FE_CONST] = 0,
+    [FE_STACK_ADDR] = 0,
+    [FE_SYM_ADDR] = 0,
+
+    [FE_IADD] = BINOP | INT_IN | VEC_IN | SAME_IN_OUT | SAME_INS | COMMU | ASSOC | FAST_ASSOC,
+    [FE_ISUB] = BINOP | INT_IN | VEC_IN | SAME_IN_OUT | SAME_INS,
+    [FE_IMUL] = BINOP | INT_IN | VEC_IN | SAME_IN_OUT | SAME_INS | COMMU | ASSOC | FAST_ASSOC,
+    [FE_IDIV] = BINOP | INT_IN | VEC_IN | SAME_IN_OUT | SAME_INS,
+    [FE_UDIV] = BINOP | INT_IN | VEC_IN | SAME_IN_OUT | SAME_INS,
+    [FE_IREM] = BINOP | INT_IN | VEC_IN | SAME_IN_OUT | SAME_INS,
+    [FE_UREM] = BINOP | INT_IN | VEC_IN | SAME_IN_OUT | SAME_INS,
+    [FE_AND]  = BINOP | INT_IN | VEC_IN | SAME_IN_OUT | SAME_INS | COMMU | ASSOC | FAST_ASSOC,
+    [FE_OR]   = BINOP | INT_IN | VEC_IN | SAME_IN_OUT | SAME_INS | COMMU | ASSOC | FAST_ASSOC,
+    [FE_XOR]  = BINOP | INT_IN | VEC_IN | SAME_IN_OUT | SAME_INS | COMMU | ASSOC | FAST_ASSOC,
+    [FE_SHL]  = BINOP | INT_IN | VEC_IN | SAME_IN_OUT,
+    [FE_USR]  = BINOP | INT_IN | VEC_IN | SAME_IN_OUT,
+    [FE_ISR]  = BINOP | INT_IN | VEC_IN | SAME_IN_OUT,
+    [FE_ILT]  = BINOP | INT_IN | SAME_INS | BOOL_OUT,
+    [FE_ULT]  = BINOP | INT_IN | SAME_INS | BOOL_OUT,
+    [FE_ILE]  = BINOP | INT_IN | SAME_INS | BOOL_OUT,
+    [FE_ULE]  = BINOP | INT_IN | SAME_INS | BOOL_OUT,
+    [FE_IEQ]  = BINOP | INT_IN | VEC_IN | SAME_INS | BOOL_OUT | COMMU,
+
+    [FE_FADD] = BINOP | FLT_IN | VEC_IN | SAME_IN_OUT | SAME_INS | COMMU | FAST_ASSOC,
+    [FE_FSUB] = BINOP | FLT_IN | VEC_IN | SAME_IN_OUT | SAME_INS,
+    [FE_FMUL] = BINOP | FLT_IN | VEC_IN | SAME_IN_OUT | SAME_INS | COMMU | FAST_ASSOC,
+    [FE_FDIV] = BINOP | FLT_IN | VEC_IN | SAME_IN_OUT | SAME_INS,
+    [FE_FREM] = BINOP | FLT_IN | VEC_IN | SAME_IN_OUT | SAME_INS,
+
+    [FE_MOV] = UNOP | SAME_IN_OUT | MOV_HINT,
+    [FE__MACH_MOV] = UNOP | VOL | SAME_IN_OUT | MOV_HINT,
+    [FE__MACH_UPSILON]  = UNOP | VOL | SAME_IN_OUT | MOV_HINT,
+    [FE_TRUNC] = UNOP | INT_IN,
+    [FE_SIGN_EXT] = UNOP | INT_IN,
+    [FE_ZERO_EXT] = UNOP | INT_IN,
+    [FE_BITCAST] = UNOP,
+    [FE_I2F] = UNOP | INT_IN,
+    [FE_F2I] = UNOP | FLT_IN,
+    [FE_U2F] = UNOP | INT_IN,
+    [FE_F2U] = UNOP | FLT_IN,
+
+    [FE_STORE] = VOL | MEM_USE | MEM_DEF,
+    [FE_MEM_BARRIER] = VOL | MEM_USE | MEM_DEF,
+    [FE_LOAD] = MEM_USE,
+    [FE_CALL] = MEM_USE | MEM_DEF,
+
+    [FE_UNREACHABLE] = TERM | VOL,
+    [FE_BRANCH] = TERM | VOL,
+    [FE_JUMP]   = TERM | VOL,
+    [FE_RETURN] = TERM | VOL | MEM_USE,
+
+    [FE__MACH_RETURN] = TERM | VOL,
+};
+
+FeTrait fe_inst_traits(FeInstKind kind) {
+    if (kind > FE__INST_END) return 0;
+    return inst_traits[kind];
+}
+
+bool fe_inst_has_trait(FeInstKind kind, FeTrait trait) {
+    if (kind > FE__INST_END) return false;
+    return (inst_traits[kind] & trait) != 0;
+}
+
+void fe__load_trait_table(usize start_index, const FeTrait* table, usize len) {
+    memcpy(&inst_traits[start_index], table, sizeof(table[0]) * len);
+}
+
+#define USIZE_BITS (sizeof(usize) * 8)
+
+void fe_iset_init(FeInstSet* iset) {
+    *iset = (FeInstSet){};
+    iset->id_start = UINT32_MAX;
+}
+
+bool fe_iset_contains(FeInstSet* iset, FeInst* inst) {
+    u32 id = inst->id;
+    u32 id_block = id / USIZE_BITS;
+    usize id_bit = (usize)(1) << (id % USIZE_BITS);
+
+    if_likely (iset->id_start <= id_block && id_block < iset->id_end) {
+        usize exists_block = iset->exists[id_block - iset->id_start];
+        return (exists_block & id_bit) != 0;
+    }
+    return false;
+}
+
+
+void fe_iset_push(FeInstSet* iset, FeInst* inst) {
+    u32 id = inst->id;
+    u32 id_block = id / USIZE_BITS;
+    usize id_bit = (usize)(1) << (id % USIZE_BITS);
+
+    // construct the initial state for the set centered around this inst
+    if_unlikely (iset->id_start == UINT32_MAX) {
+        iset->id_start = id_block;
+        iset->id_end   = id_block + 1;
+        iset->exists = fe_malloc(sizeof(usize));
+        // memset(iset->exists, 0, sizeof(usize));
+        iset->insts = fe_malloc(sizeof(iset->insts[0]) * USIZE_BITS);
+
+        iset->exists[0] = id_bit; 
+        iset->insts[id - iset->id_start * USIZE_BITS] = inst;
+
+        return;
+    }
+
+    // printf("push %u %p\n", id, inst);
+
+    if_likely (iset->id_start <= id_block && id_block < iset->id_end) {
+        usize exists_block = iset->exists[id_block - iset->id_start];
+        // printf("> %064lb\n", exists_block);
+        if (!(exists_block & id_bit)) {
+            exists_block |= id_bit;
+            iset->exists[id_block - iset->id_start] = exists_block;
+            iset->insts[id - iset->id_start * USIZE_BITS] = inst;
+        }
+        // printf("> %064lb\n\n", exists_block);
+        return;
+    }
+
+    if (iset->id_end <= id_block) {
+        // expand upwards
+        usize new_end = id_block + 1;
+        usize new_size = new_end - iset->id_start;
+        // we can realloc
+        iset->insts = fe_realloc(iset->insts, sizeof(FeInst*) * new_size * USIZE_BITS);
+        iset->exists = fe_realloc(iset->insts, sizeof(FeInst*) * new_size);
+        // have to memset the newly allocated '.exists' space
+        for_n (i, iset->id_end, new_end) {
+            iset->exists[i] = 0;
+        }
+        // do this more efficiently later idk
+        iset->id_end = new_end;
+        // fe_iset_push(iset, inst);
+        iset->exists[id_block] = id_bit;
+        iset->insts[id - iset->id_start * USIZE_BITS] = inst;
+    } else {
+        // expand downwards
+        FE_CRASH("fuck! implement downwards set expansion");
+    }
+
+}
+
+void fe_iset_remove(FeInstSet* iset, FeInst* inst) {
+    u32 id = inst->id;
+    u32 exists_block_index = id / USIZE_BITS;
+    usize id_bit = (usize)(1) << (id % USIZE_BITS);
+
+    if_likely (iset->id_start <= exists_block_index && exists_block_index < iset->id_end) {
+        usize exists_block = iset->exists[exists_block_index - iset->id_start];
+        if (exists_block & id_bit) {
+            iset->exists[exists_block_index - iset->id_start] = exists_block ^ id_bit;
         }
     }
 }
 
-static FeIr* get_usage(FeBasicBlock* bb, FeIr* source, FeIr* start) {
-    for_fe_ir_from(inst, start, *bb) {
-        FeIr** ir = (FeIr**)inst;
-        for (u64 j = sizeof(FeIr) / sizeof(FeIr*); j <= fe_inst_sizes[inst->kind] / sizeof(FeIr*); j++) {
-            if (ir[j] == source) return inst;
-        }
-    }
-    return NULL;
+static inline usize count_trailing_zeros(usize n) {
+#if USIZE_MAX == UINT64_MAX
+    return __builtin_ctzll(n);
+#else
+    return __builtin_ctz(n);
+#endif
 }
 
-void fe_add_ir_uses_to_worklist(FeFunction* f, FeIr* source, da(FeIrPTR) * worklist) {
-    TODO("rework this");
-    for_urange(i, 0, f->blocks.len) {
-        FeBasicBlock* bb = f->blocks.at[i];
-        FeIr* next_usage = get_usage(bb, source, 0);
-        while (next_usage != NULL) {
-            da_append(worklist, next_usage);
-            next_usage = get_usage(bb, source, next_usage->next);
+FeInst* fe_iset_pop(FeInstSet* iset) {
+
+    u32 blocks_len = iset->id_end - iset->id_start;
+    for_n (exists_block_index, 0, blocks_len) {
+
+        usize exists_block = iset->exists[exists_block_index];
+        if (exists_block == 0) {
+            // we can skip this block
+            continue;
         }
+
+        // pop the next instruction in the set
+        usize set_bit = count_trailing_zeros(exists_block);
+        // return the instruction at that position
+        FeInst* inst = iset->insts[set_bit + exists_block_index * USIZE_BITS];
+
+        // printf("pop %u %p\n", inst->id, inst);
+
+        // remove it from its 'exists' block
+        // printf("> %064lb\n", iset->exists[exists_block_index]);
+        iset->exists[exists_block_index] ^= (usize)(1) << set_bit;
+        // printf("> %064lb\n\n", iset->exists[exists_block_index]);
+
+        return inst;
     }
+
+    return nullptr;
+}
+
+void fe_iset_destroy(FeInstSet* iset) {
+    fe_free(iset->insts);
+    fe_free(iset->exists);
+    *iset = (FeInstSet){0};
 }

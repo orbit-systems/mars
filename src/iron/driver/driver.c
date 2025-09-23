@@ -1,101 +1,126 @@
-#define ORBIT_IMPLEMENTATION
-
 #include "iron/iron.h"
+#include <stdio.h>
 
-// application frontend for iron. this is not included when
-// building iron as a library or as part of mars.
+static void quick_print(FeFunc* f) {
+    FeDataBuffer db;
+    fe_db_init(&db, 512);
+    fe_emit_ir_func(&db, f, true);
+    printf("%.*s", (int)db.len, db.at);
+}
+
+FeInst* fe_solve_alias_space(FeFunc* f, u32 alias_space);
+
+FeFunc* make_store_test(FeModule* mod, FeInstPool* ipool, FeVRegBuffer* vregs) {
+    FeSection* text = fe_section_new(mod, "text", 0, FE_SECTION_EXECUTABLE);
+
+    FeTy ptr_ty = mod->target->ptr_ty;
+
+    FeFuncSig* f_sig = fe_funcsig_new(FE_CCONV_ANY, 2, 1);
+    fe_funcsig_param(f_sig, 0)->ty = ptr_ty;
+    fe_funcsig_param(f_sig, 1)->ty = ptr_ty;
+    fe_funcsig_return(f_sig, 0)->ty = ptr_ty;
+
+    // make the function and its symbol
+    FeSymbol* f_sym = fe_symbol_new(mod, "foo", 0, text, FE_BIND_GLOBAL);
+    FeFunc* f = fe_func_new(mod, f_sym, f_sig, ipool, vregs);
+
+    FeBlock* entry = f->entry_block;
+
+    FeInst* store = fe_inst_store(
+        f, 
+        fe_func_param(f, 0), 
+        fe_func_param(f, 1), 
+        FE_MEMOP_ALIGN_DEFAULT, 0
+    );
+    fe_append_end(entry, store);
+
+    FeInst* load = fe_inst_load(
+        f, 
+        ptr_ty, 
+        fe_func_param(f, 0), 
+        FE_MEMOP_ALIGN_DEFAULT, 0
+    );
+    fe_append_end(entry, load);
+
+    FeInst* zero = fe_inst_const(f, ptr_ty, 0);
+    fe_append_end(entry, zero);
+
+    FeInst* zero_store = fe_inst_store(
+        f, 
+        fe_func_param(f, 0), 
+        zero, 
+        FE_MEMOP_ALIGN_DEFAULT, 0
+    );
+    fe_append_end(entry, zero_store);
+
+    FeInst* ret = fe_inst_return(f);
+    fe_append_end(entry, ret);
+    fe_return_set_arg(f, ret, 0, load);
+    
+    fe_solve_alias_space(f, 0);
+
+    return f;
+}
+
+FeFunc* make_alg_test(FeModule* mod, FeInstPool* ipool, FeVRegBuffer* vregs) {
+    FeSection* text = fe_section_new(mod, "text", 0, FE_SECTION_EXECUTABLE);
+
+    FeTy ptr_ty = mod->target->ptr_ty;
+
+    FeFuncSig* f_sig = fe_funcsig_new(FE_CCONV_ANY, 1, 1);
+    fe_funcsig_param(f_sig, 0)->ty = ptr_ty;
+    fe_funcsig_return(f_sig, 0)->ty = ptr_ty;
+
+    // make the function and its symbol
+    FeSymbol* f_sym = fe_symbol_new(mod, "foo", 0, text, FE_BIND_GLOBAL);
+    FeFunc* f = fe_func_new(mod, f_sym, f_sig, ipool, vregs);
+
+    FeBlock* entry = f->entry_block;
+
+    FeInst* x = fe_inst_const(f, ptr_ty, 10);
+    fe_append_end(entry, x);
+
+    FeInst* shift_x = fe_inst_binop(f,
+        ptr_ty, FE_IADD, 
+        fe_func_param(f, 0),
+        x
+    );
+    fe_append_end(entry, shift_x);
+
+    FeInst* ret = fe_inst_return(f);
+    fe_append_end(entry, ret);
+    fe_return_set_arg(f, ret, 0, shift_x);
+    
+    fe_solve_alias_space(f, 0);
+
+    return f;
+}
 
 int main() {
+    fe_init_signal_handler();
+    FeInstPool ipool;
+    fe_ipool_init(&ipool);
+    FeVRegBuffer vregs;
+    fe_vrbuf_init(&vregs, 2048);
 
-    FeModule* m = fe_new_module(str("cfg"));
+    FeModule* mod = fe_module_new(FE_ARCH_XR17032, FE_SYSTEM_FREESTANDING);
 
-    {
-         FeSymbol* sym = fe_new_symbol(m, str("algsimp_test"), FE_BIND_LOCAL);
-        FeFunction* f = fe_new_function(m, sym, FE_CCONV_MARS);
-        fe_init_func_params(f, 1);
-        fe_add_func_param(f, FE_TYPE_I64);
-        fe_init_func_returns(f, 1);
-        fe_add_func_return(f, FE_TYPE_I64);
+    // FeFunc* func = make_alg_test(mod, &ipool, &vregs);
+    FeFunc* func = make_store_test(mod, &ipool, &vregs);
 
-        FeBasicBlock* bb = fe_new_basic_block(f, str("block1"));
+    quick_print(func);
+    fe_opt_local(func);
+    quick_print(func);
 
-        FeIrParam* p = (FeIrParam*)fe_append_ir(bb, fe_ir_param(f, 0));
+    fe_codegen(func);
+    quick_print(func);
 
-        FeIrConst* c1 = (FeIrConst*)fe_append_ir(bb, fe_ir_const(f, FE_TYPE_I64));
-        c1->i64 = 1;
+    // printf("------ final assembly ------\n");
 
-        FeIrConst* c2 = (FeIrConst*)fe_append_ir(bb, fe_ir_const(f, FE_TYPE_I64));
-        c2->i64 = 2;
+    // FeDataBuffer db; 
+    // fe_db_init(&db, 2048);
+    // fe_emit_asm(&db, mod);
+    // printf("%.*s", (int)db.len, db.at);
 
-        FeIr* add = fe_append_ir(bb, fe_ir_binop(f, FE_IR_ADD, (FeIr*)c1, (FeIr*)c2));
-        add->type = FE_TYPE_I64;
-
-        FeIr* add2 = fe_append_ir(bb, fe_ir_binop(f, FE_IR_ADD, (FeIr*)add, (FeIr*)c2));
-        add2->type = FE_TYPE_I64;
-
-        FeIrReturn* ret = (FeIrReturn*)fe_append_ir(bb, fe_ir_return(f));
-        ret->sources[0] = (FeIr*)add2;
-    }
-
-    if (0) {
-        FeSymbol* fn_sym = fe_new_symbol(m, str("foo"), FE_BIND_EXPORT);
-        FeFunction* fn = fe_new_function(m, fn_sym, FE_CCONV_MARS);
-
-        fe_init_func_params(fn, 1);
-        fe_add_func_param(fn, FE_TYPE_BOOL);
-
-        fe_init_func_returns(fn, 1);
-        fe_add_func_return(fn, FE_TYPE_I64);
-
-        /*
-        fn foo(x: bool) -> int {
-            mut y: int = 0;
-            if x {
-                y = 3;
-            }
-            return y;
-        }
-        */
-
-        FeStackObject* var_y = fe_new_stackobject(fn, FE_TYPE_I64);
-        
-        FeBasicBlock* entry_bb = fe_new_basic_block(fn, str("entry"));
-        FeBasicBlock* if_bb = fe_new_basic_block(fn, str("if_true"));
-        FeBasicBlock* return_bb = fe_new_basic_block(fn, str("return"));
-
-        FeIr* x_param =  fe_append_ir(entry_bb, fe_ir_param(fn, 0));
-
-        // entry bb
-        {
-            FeIrConst* zero = (FeIrConst*) fe_append_ir(entry_bb, fe_ir_const(fn, FE_TYPE_I64));
-            zero->i64 = 0ul;
-            FeIrStackStore* y_init_store = (FeIrStackStore*) fe_append_ir(entry_bb, fe_ir_stack_store(fn, var_y, (FeIr*)zero));
-            FeIr* branch = fe_append_ir(entry_bb, fe_ir_branch(fn, x_param, if_bb, return_bb));
-        }
-
-        // if bb
-        {
-            FeIrConst* three = (FeIrConst*) fe_append_ir(if_bb, fe_ir_const(fn, FE_TYPE_I64));
-            three->i64 = 3ul;
-
-            FeIrStackStore* y_store = (FeIrStackStore*) fe_append_ir(if_bb, fe_ir_stack_store(fn, var_y, (FeIr*)three));
-            FeIr* jump = fe_append_ir(if_bb, fe_ir_jump(fn, return_bb));
-
-        }
-
-        // return bb
-        {
-            FeIr* y_load = fe_append_ir(return_bb, fe_ir_stack_load(fn, var_y));
-
-            FeIrReturn* ret = (FeIrReturn*) fe_append_ir(return_bb, fe_ir_return(fn));
-            ret->sources[0] = y_load;
-        }
-    }
-
-
-    fe_sched_module_pass(m, &fe_pass_algsimp);
-
-    fe_run_all_passes(m, true);
-
-    // printstr(fe_emit_ir(m));
+    // fe_module_destroy(mod);
 }

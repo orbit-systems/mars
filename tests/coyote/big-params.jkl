@@ -1,0 +1,15 @@
+
+
+FN foo(
+    IN a: WORD, 
+    IN b: WORD, 
+    IN c: WORD, 
+    IN d: WORD, 
+    IN e: WORD, 
+    IN f: WORD, 
+    IN g: WORD, 
+    IN h: WORD, 
+    IN i: WORD, 
+): WORD
+    RETURN a + b + c + d + e + f + g + h + i
+END

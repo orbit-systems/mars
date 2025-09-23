@@ -1,0 +1,8 @@
+EXTERN FN foo(x: INT, y: WORD): WORD
+
+FN bruh()
+    z := foo(1, 2)
+    x1 := 1
+    x2 := 2
+    x : ^VOID = x1 + x2 
+END

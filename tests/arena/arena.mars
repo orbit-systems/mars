@@ -1,6 +1,0 @@
-module arena;
-
-let alloc = fn(size, align: u64) -> ^mut {
-    size = align;
-    return null;
-};

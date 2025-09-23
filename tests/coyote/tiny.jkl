@@ -1,0 +1,4 @@
+
+FN foo(IN x: UWORD): UWORD
+    RETURN x ROR 3
+END

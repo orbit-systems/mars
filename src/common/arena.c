@@ -1,80 +1,85 @@
-#include "common/orbit.h"
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
+
+#include "common/util.h"
 #include "common/arena.h"
-#include "common/alloc.h"
 
-_ArenaBlock arena_block_make(size_t size);
-void arena_block_delete(_ArenaBlock* a);
-void* arena_block_alloc(_ArenaBlock* a, size_t size, size_t align);
+#define ARENA_CHUNK_DATA_SIZE 32768
+typedef struct Arena__Chunk {
+    Arena__Chunk* prev;
+    Arena__Chunk* next;
+    usize used;
+    u8 data[ARENA_CHUNK_DATA_SIZE];
+} Arena__Chunk;
 
-typedef struct _ArenaBlock {
-    void* raw;
-    u32 offset;
-    u32 size;
-} _ArenaBlock;
-
-_ArenaBlock arena_block_make(size_t size) {
-    _ArenaBlock block;
-    block.raw = mars_alloc(size);
-    if (block.raw == NULL) {
-        CRASH("internal: arena block size %zu too big, can't allocate", size);
-    }
-    block.size = (u32)size;
-    block.offset = 0;
-    return block;
-}
-
-void arena_block_delete(_ArenaBlock* block) {
-    mars_free(block->raw);
-    *block = (_ArenaBlock){0};
-}
-
-void* arena_block_alloc(_ArenaBlock* block, size_t size, size_t align) {
-    u32 offset = block->offset;
-    u32 new_offset = align_forward(block->offset, align) + size;
-    if (new_offset > block->size) {
-        return NULL;
-    }
-    block->offset = new_offset;
-    return (void*)((size_t)block->raw + align_forward(offset, align));
-}
-
-Arena arena_make(size_t block_size) {
-    Arena al;
-    da_init(&al.list, 1);
-    al.arena_size = block_size;
-
-    _ArenaBlock initial_arena = arena_block_make(al.arena_size);
-    da_append(&al.list, initial_arena);
-
-    return al;
-}
-
-void arena_delete(Arena* al) {
-    for_urange(i, 0, (al->list.len)) {
-        arena_block_delete(&al->list.at[i]);
-    }
-    da_destroy(&al->list);
-    *al = (Arena){0};
-}
-
-void* arena_alloc(Arena* al, size_t size, size_t align) {
-    // attempt to allocate at the top arena_block;
-    void* attempt = arena_block_alloc(&al->list.at[al->list.len - 1], size, align);
-    if (attempt != NULL) return attempt; // yay!
-
-    // FUCK! we need to append another arena_block block
-    _ArenaBlock new_arena = arena_block_make(al->arena_size);
-    da_append(&al->list, new_arena);
-
-    // we're gonna try again
-    attempt = arena_block_alloc(&al->list.at[al->list.len - 1], size, align);
-    return attempt; // this should ideally never be null
-}
-
-size_t align_forward(size_t ptr, size_t align) {
-    if (!is_pow_2(align)) {
-        CRASH("internal: align is not a power of two (got %zu)\n", align);
-    }
-
+// assume align is a power of two
+static inline uintptr_t align_forward(uintptr_t ptr, uintptr_t align) {
     return (ptr + align - 1) & ~(align - 1);
+}
+
+// return nullptr if cannot allocate
+static void* chunk_alloc(Arena__Chunk* ch, usize size, usize align) {
+    usize new_used = align_forward(ch->used, align);
+    if (new_used + size > ARENA_CHUNK_DATA_SIZE) {
+        return nullptr;
+    }
+    ch->used = new_used;
+    void* mem = &ch->data[ch->used];
+    ch->used += size;
+    return mem;
+}
+
+void arena_init(Arena* arena) {
+    arena->top = malloc(sizeof(*arena->top));
+    arena->top->next = nullptr;
+    arena->top->prev = nullptr;
+    arena->top->used = 0;
+}
+
+void arena_destroy(Arena* arena) {
+    Arena__Chunk* top = arena->top;
+    // traverse up to top of the list
+    while (top->next) {
+        top = top->next;
+    }
+    // destroy any saved blocks below
+    for (Arena__Chunk* ch = top, *prev = ch->prev; ch != nullptr; ch = prev, prev = prev->prev) {
+        free(ch);
+    }
+    arena->top = nullptr;
+}
+
+void* arena_alloc(Arena* arena, usize size, usize align) {
+    void* mem = chunk_alloc(arena->top, size, align);
+    if (mem) {
+        return mem;
+    }
+
+    Arena__Chunk* new_chunk = arena->top->next;
+    if (new_chunk == NULL) {
+        new_chunk = malloc(sizeof(*new_chunk));
+        new_chunk->prev = arena->top;
+        new_chunk->next = nullptr;
+        arena->top->next = new_chunk;
+    }
+    new_chunk->used = 0;
+    arena->top = new_chunk;
+    mem = chunk_alloc(new_chunk, size, align);
+    if (mem) {
+        return mem;
+    }
+    CRASH("unable to arena alloc size %zu align %zu", size, align);
+}
+
+ArenaState arena_save(Arena* arena) {
+    return (ArenaState){
+        .top = arena->top,
+        .used = arena->top->used,
+    };
+}
+
+void arena_restore(Arena* arena, ArenaState save) {
+    arena->top = save.top;
+    arena->top->used = save.used;
 }

@@ -1,0 +1,125 @@
+(* JACKAL formal grammar by spsandwichman 
+
+    all words in UPPERCASE are jackal keywords. 
+    {} indicates repetition (0 or more)
+    [] indicates optionals (0 or 1)
+    () indicates grouping
+    things like "ident" and "literal" are not defined here but are assumed to exist
+
+    some things like nested function decls, PUBLIC/EXPORT declarations in functions, etc.
+    will be parsed as valid but eliminated during a semantic analysis phase.
+*)
+
+(* comma-separated list with optional trailing comma *)
+list<X> = [X {"," X} [","]];
+
+file = {decl};
+
+storageclass = PUBLIC | PRIVATE | EXPORT;
+
+item = ["[" expr "]" "="] expr;
+
+compound = "{" list<item> "}";
+
+decl =
+    | [storageclass] fndecl
+    | [storageclass] ident ":" type ["=" (expr | compound)]
+    | [storageclass] ident ":" "=" (expr | compound)
+    | EXTERN ident ":" type (* EXTERN parses differently so it cant go in storageclass *)
+    | EXTERN FN ["(" type ")"] ident fnproto 
+    | typedecl
+    ;
+
+param = (IN | OUT) field | "..." ident ident; (* fn and fnptr *)
+field = ident ":" type;                       (* structs and unions *)
+variant = ident | ident "=" expr;             (* enums *)
+
+fnproto = "(" list<param> ")" [":" type];
+
+fndecl = FN ["(" type ")"] ident fnproto {stmt} END;
+typedecl = 
+    | STRUCT [PACKED] ident list<field> END
+    | UNION ident list<field> END
+    | ENUM ident ":" type list<variant> END
+    | TYPE ident ":" type
+    | FNPTR ident fnproto
+    ;
+
+assignop = 
+    | "=" 
+    | "+=" | "-=" | "*=" | "/=" | "%="
+    | "&=" | "|=" | "$=" | "<<=" | ">>="
+    ;
+
+stmt = 
+    | decl
+    | expr
+    | expr assignop expr
+    | BARRIER
+    | BREAK
+    | CONTINUE
+    | LEAVE
+    | RETURN expr
+    | "@" ident       (* label *)
+    | GOTO ident
+    | NOTHING         (* blank *)
+    | IF expr THEN {stmt} (END | else)
+    | WHILE expr DO {stmt} END
+    | DO {stmt} END
+    | INSERTASM literal
+    ;
+
+else = 
+    | ELSEIF expr THEN {stmt} else
+    | ELSE {stmt} END
+    ;
+
+binop =
+    | "+" | "-" | "*" | "/" | "%" | "<<" | ">>" | "|" | "&" | "$"
+    | "!=" | "==" | "<" | ">" | "<=" | ">=" | AND | OR | ROR
+    ;
+
+expr = 
+    | expr binop expr         (* no precedence for now its ok *)
+    | unary
+    ;
+
+unop = "&" | "-" | "~" | NOT | SIZEOFVALUE;
+
+unary = 
+    | CONTAINEROF expr TO type "." ident {"." ident}
+    | CAST expr TO type
+    | unop unary
+    | atomic
+    ;
+
+atomic_terminal = 
+    | ident | literal | TRUE | FALSE | NULLPTR
+    | "(" expr ")"
+    | OFFSETOF type "." ident {"." ident}
+    | SIZEOF type
+    ;
+
+atomic = 
+    | atomic_terminal
+    | atomic "[" expr "]"
+    | atomic "^"
+    | atomic "." ident
+    | atomic "^." ident (* technically different in the parser *)
+    | atomic "(" list<argument> ")"
+    ;
+
+argument = [OUT] expr;
+
+type = 
+    | basetype
+    | basetype "[" expr "]"
+    ;
+
+basetype = 
+    | WORD | UWORD
+    | QUAD | UQUAD | LONG | ULONG | INT | UINT | BYTE | UBYTE | VOID
+    | ident
+    | "(" type ")"
+    | "^" basetype
+    ;

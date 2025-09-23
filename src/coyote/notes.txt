@@ -1,0 +1,22 @@
+integer types are pretty much suggestions everywhere except in memory and aggregates,
+where they're forced to have a consistent size. A UBYTE local variable does
+not guarantee that the value of the local is 0..=255
+
+aggregate types cannot be directly used as values. local variables can BE
+aggregates, but they cannot be directly assigned to.
+im considering adding a switch for this, like `-allow-value-aggregates` cause
+iron will handle this
+
+identifiers with all-UPPERCASE are not allowed apparently? coyote allows those 
+and i dont feel like artificially removing that rn
+TODO make all-UPPERCASE identifiers (not keywords) illegal
+
+jackal's notion of truth is 0 -> "false", else -> "true", like C. boolean operations
+are not necessarily guaranteed to produce 1 or TRUE, just a "true" non-zero value, 
+except for the order/comparison operators > < >= <=
+
+binary operators return the type of their left operand, and the right operand
+gets implicitly cast if necessary. I don't really like this but thats how
+the OG compiler works.
+and this means ALL binary operators.
++, -, *, /, %, <<, >>, |, &, ^, !=, ==, <, >, <=, >=, AND, OR
