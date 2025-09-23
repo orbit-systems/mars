@@ -1,4 +1,4 @@
-# Mars
+# The Mars Programming Language
 
 > [!WARNING]  
 > Mars and its toolchain are **work-in-progress** and not ready for production use.
