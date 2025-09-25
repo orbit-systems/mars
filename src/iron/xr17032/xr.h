@@ -67,6 +67,7 @@ typedef enum : FeInstKind {
     XR_ORI,     // Or Immediate
     XR_LUI,     // Load Upper Immediate
     XR_JALR,    // Jump And Link, Register
+    XR_ADR,     // Compute Relative Address
 
     XR_LOAD8_IO,      // Load Byte, Immediate Offset
     XR_LOAD16_IO,     // Load Int, Immediate Offset
@@ -134,12 +135,13 @@ typedef enum : FeInstKind {
     XR_P_STORE32_DIRECT, // Store Long to 32-bit Address
 
     // fake instruction for obtaining a temp register for a STORE*_DIRECT
+    // skill issue for my register allocator lmfao
     XR__STORE_DIRECT_SYMBOL,
 } XrInstKind;
 
 typedef enum : FeRegClass {
-    XR_REGCLASS_NONE = FE_REGCLASS_NONE,
     XR_REGCLASS_GPR,
+    XR_REGCLASS__COUNT,
 } XrRegClasses;
 
 typedef enum : u16 {
@@ -163,7 +165,7 @@ typedef enum : u16 {
     // stack pointer (sometimes touch!)
     XR_GPR_SP,
     
-    // link register (only touch in specific circumstances!)
+    // link register (very only sometimes touch!)
     XR_GPR_LR,
 
     XR_GPR__COUNT,

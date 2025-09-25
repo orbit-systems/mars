@@ -1002,7 +1002,6 @@ typedef enum : u8 {
 } FeRegStatus;
 
 typedef u8 FeRegClass;
-#define FE_REGCLASS_NONE 0
 
 typedef struct FeTarget {
     FeArch arch;
@@ -1010,7 +1009,6 @@ typedef struct FeTarget {
 
     FeTy ptr_ty;
 
-    // const char* (*inst_name)(FeInstKind kind, bool ir);
     FeInst** (*list_inputs)(FeInst* inst, usize* len_out);
     FeBlock** (*list_targets)(FeInst* term, usize* len_out);
 

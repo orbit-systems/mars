@@ -56,6 +56,7 @@ void fe_xr_print_inst(FeDataBuffer* db, FeFunc* f, FeInst* inst) {
     case XR_STORE16_SI: name = "xr.store16-si"; break;
     case XR_STORE32_SI: name = "xr.store32-si"; break;
     case XR_JALR:       name = "xr.jalr"; break;
+    case XR_ADR:        name = "xr.adr"; break;
 
     case XR_SHIFT: name = "xr.shift"; break;
     case XR_ADD:   name = "xr.add"; break;
@@ -200,8 +201,7 @@ FeRegStatus fe_xr_reg_status(u8 cconv, u8 regclass, u16 real) {
         return FE_REG_UNUSABLE;
     }
 }
-const u16 fe_xr_regclass_lens[] = {
-    [XR_REGCLASS_NONE] = 0,
+const u16 fe_xr_regclass_lens[XR_REGCLASS__COUNT] = {
     [XR_REGCLASS_GPR] = XR_GPR__COUNT,
 };
 

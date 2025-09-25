@@ -131,7 +131,7 @@ void fe_regalloc_basic(FeFunc* f) {
 
     FeVRegBuffer* vbuf = f->vregs;
     const FeTarget* target = f->mod->target;
-    FE_ASSERT(target->num_regclasses == 2); // including the NONE regclass
+    FE_ASSERT(target->num_regclasses == 1);
 
     calculate_liveness(f);
 

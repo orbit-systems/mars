@@ -20,7 +20,7 @@ const FeTarget* fe_make_target(FeArch arch, FeSystem system) {
     case FE_ARCH_XR17032:
         t->ptr_ty = FE_TY_I32;
         t->stack_pointer_align = 4;
-        t->num_regclasses = 2; // counting the NONE regclass
+        t->num_regclasses = XR_REGCLASS__COUNT;
         t->regclass_lens = fe_xr_regclass_lens;
         t->isel = fe_xr_isel;
         t->choose_regclass = fe_xr_choose_regclass;

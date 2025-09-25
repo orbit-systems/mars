@@ -112,8 +112,6 @@ FeInstChain fe_xr_isel(FeFunc* f, FeBlock* block, FeInst* inst) {
             return FE_EMPTY_CHAIN;
         case FE_PROJ:
             if (inst->inputs[0]->kind == FE__ROOT) {
-                // FE_CRASH("select parameter");
-
                 // figure out what parameter we're looking at.
                 usize index = fe_extra(inst, FeInstProj)->index;
                 return get_parameter(f, block, index);
@@ -128,6 +126,20 @@ FeInstChain fe_xr_isel(FeFunc* f, FeBlock* block, FeInst* inst) {
                 return fe_chain_new(sel);
             }
             FeInst* sel = xr_inst(f, XR_ADD, 2, sizeof(XrInstImm));
+            sel->ty = FE_TY_I32;
+            fe_set_input(f, sel, 0, inst->inputs[0]);
+            fe_set_input(f, sel, 0, inst->inputs[1]);
+            return fe_chain_new(sel);
+        }
+        case FE_ISUB: {
+            if (is_const_u16(inst->inputs[1])) {
+                FeInst* sel = xr_inst(f, XR_SUBI, 1, sizeof(XrInstImm));
+                sel->ty = FE_TY_I32;
+                fe_set_input(f, sel, 0, inst->inputs[0]);
+                fe_extra(sel, XrInstImm)->imm = const_val(inst->inputs[1]);
+                return fe_chain_new(sel);
+            }
+            FeInst* sel = xr_inst(f, XR_SUB, 2, sizeof(XrInstImm));
             sel->ty = FE_TY_I32;
             fe_set_input(f, sel, 0, inst->inputs[0]);
             fe_set_input(f, sel, 0, inst->inputs[1]);
@@ -154,7 +166,6 @@ FeInstChain fe_xr_isel(FeFunc* f, FeBlock* block, FeInst* inst) {
                 return chain;
             }
 
-            // FeInst* la = xr_inst(f, XR_P_LA)
             FE_CRASH("constant too big!");
         }
         case FE_STORE: {
@@ -162,6 +173,9 @@ FeInstChain fe_xr_isel(FeFunc* f, FeBlock* block, FeInst* inst) {
             FeInst* val = inst->inputs[2];
 
             // can put in small-immediate?
+            if (is_const_u5(val) && const_val(val) != 0) {
+                
+            }
 
             FeInst* store = xr_inst(f, XR_STORE32_IO, 2, sizeof(XrInstImm));
             store->ty = FE_TY_VOID;
