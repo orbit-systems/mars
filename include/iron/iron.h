@@ -1026,6 +1026,8 @@ typedef struct FeTarget {
     u64 stack_pointer_align;
 
     void (*ir_print_inst)(FeDataBuffer* db, FeFunc* f, FeInst* inst);
+
+    void (*print_text)(FeDataBuffer* db, FeModule* m);
 } FeTarget;
 
 const FeTarget* fe_make_target(FeArch arch, FeSystem system);
@@ -1040,6 +1042,8 @@ FeVReg fe_vreg_new(FeVRegBuffer* buf, FeInst* def, FeBlock* def_block, u8 class)
 FeVirtualReg* fe_vreg(FeVRegBuffer* buf, FeVReg vr);
 
 void fe_codegen(FeFunc* f);
+
+void fe_cg_print_text(FeDataBuffer* db, FeModule* mod);
 
 #ifdef __cplusplus
 }

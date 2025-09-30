@@ -1936,14 +1936,16 @@ Stmt* parse_var_decl(Parser* p, StorageKind storage) {
             advance(p);
             Expr* value = parse_initializer(p, var->ty);
             decl->var_decl.expr = value;
-            if_unlikely (!ty_compatible(decl_ty, value->ty, value->kind == EXPR_LITERAL)) {
+            // if_unlikely (!ty_compatible(decl_ty, value->ty, value->kind == EXPR_LITERAL)) {
+            //     error_at_expr(p, value, REPORT_ERROR, "type %s cannot coerce to %s",
+            //         ty_name(value->ty), ty_name(decl_ty));
+            // }
+
+            if_unlikely (!ty_can_cast(decl_ty, value->ty, value->kind == EXPR_LITERAL)) {
                 error_at_expr(p, value, REPORT_ERROR, "type %s cannot coerce to %s",
                     ty_name(value->ty), ty_name(decl_ty));
             }
-            // if_unlikely (!ty_is_scalar(value->ty)) {
-            //     error_at_expr(p, value, REPORT_ERROR, "cannot use non-scalar type %s",
-            //         ty_name(value->ty));
-            // }
+
             // this is a global declaration
             if (storage != STORAGE_LOCAL) {
                 ensure_linktime_const(p, value);

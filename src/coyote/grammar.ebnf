@@ -7,7 +7,7 @@
     things like "ident" and "literal" are not defined here but are assumed to exist
 
     some things like nested function decls, PUBLIC/EXPORT declarations in functions, etc.
-    will be parsed as valid but eliminated during a semantic analysis phase.
+    may be parsed as valid but eliminated during a semantic analysis phase.
 *)
 
 (* comma-separated list with optional trailing comma *)

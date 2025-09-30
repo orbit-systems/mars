@@ -1,13 +1,13 @@
 param_ident = "self" | "^" {reference_qualifier} "self" | ["def"] ident;
 param = param_ident {"," param_ident} [","] ":" expr;
-param_list = param {"," param} [","];
+param_list = [param {"," param} [","]];
 fun_sign = ["inline"] "fun" ident ["[" param_list "]"] "(" param_list ")" [":" expr];
 fun_decl = fun_sign block;
 
 decl_list = decl_specifier ident {"," [decl_specifier] ident} [","];
 expr_list = expr {"," expr} [","];
 decl_specifier = ("var" | "let" | "def");
-entity_decl = decl_list ":" expr_list ["=" expr_list] ";";
+decl_assign = decl_list [":" expr_list] "=" expr_list ";";
 
 block = "{" {stmt} [expr] "}";
 def_block = "def" block;
@@ -21,31 +21,39 @@ bracing_expr =
     | loop_expr
     ;
 
+paren_tuple = "(" [expr_list] ")" ;
+
 atomic_expr = 
     | literal
     | ident
+    | "undefined"
+    | "null"
     | bracing_expr
-    | "(" expr {"," expr} [","] ")"                  (* paren/tuple *)
+    | paren_tuple (* paren/tuple *)
     | atomic_expr "." ident                 
     | atomic_expr "::" ident
-    | atomic_expr "::" "[" expr {"," expr} [","] "]" (* generic *)
-    | atomic_expr "[" expr "]"
-    | atomic_expr "(" expr {"," expr} [","] ")"
+    | atomic_expr "[" expr_list "]" (* index/ *)
+    | atomic_expr paren_tuple (* function call *)
     ;
 
-unary_expr = ;
+unary_op = 
+    | atomic_ex
+    ;
+
+unary_expr = {unary_op} atomic_expr;
 
 non_bracing_expr = 
-    | 
+    | unary_expr 
+    | non_bracing_expr [binary_op] non_bracing_expr
     ;
 
 stmt = 
     | type_decl
-    | entity_decl
+    | decl_assign
     | fun_decl
     | "defer" stmt
     | ";"
-    | bracing_expr [";"]
+    | bracing_expr
     | non_bracing_expr ";"
     ;
 
@@ -87,29 +95,34 @@ type_decl =
     | enum_decl
     ;
 
+struct_qualifier = 
+    | "alignas" "(" expr ")"
+    (* | "sizeas" "(" expr ")" *)
+    | "packed"
+    | "bitpacked"
+    ;
+
 struct_decl = 
-    "packed" "struct" [ident] "{"
+    "struct" {struct_qualifier} [ident] ["(" param_list ")"] "{"
         [field_list]
 
-        {fun_decl | impl_block | type_decl | entity_decl}
+        {fun_decl | impl_block | type_decl | decl_assign}
     "}";
 
 union_decl = 
-    "union" [["inline"] "enum" ["(" expr ")"]] [ident] "{"
+    "union" [["inline"] "enum" ["(" expr ")"]] [ident] ["(" param_list ")"] "{"
         [["inline"] "common" "{" [field_list] "}"]
 
         [field_list]
 
-        ["common" "{" [field_list] "}"]
-
-        {fun_decl | impl_block | type_decl | entity_decl}
+        {fun_decl | impl_block | type_decl | decl_assign}
     "}";
 
 enum_decl = 
-    "enum" ["(" expr ")"] [ident] "{"
+    "enum" ["(" expr ")"] [ident] ["(" param_list ")"] "{"
         [ident ["=" expr] {"," ident ["=" expr]} [","]]
 
-        {fun_decl | impl_block | type_decl | entity_decl}
+        {fun_decl | impl_block | type_decl | decl_assign}
     "}";
 
 interface_decl = ;

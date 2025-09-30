@@ -1,4 +1,4 @@
-EXTERN FN foo(IN x: INT, IN y: WORD): WORD
+#INCLUDE "include2.hjk"
 
 FN bruh()
     z := foo(1, 2)
@@ -6,3 +6,4 @@ FN bruh()
     x2 := 2
     x : ^VOID = x1 + x2 
 END
+

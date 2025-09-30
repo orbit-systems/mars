@@ -1,0 +1,14 @@
+#include <stdint.h>
+extern uintptr_t foo(uintptr_t _mng_x1, uintptr_t _mng_y2);
+void bruh() {
+    uintptr_t __twr_v3;
+    uintptr_t __twr_v4;
+    uintptr_t __twr_v5;
+    uintptr_t __twr_v6;
+    __twr_v3 = (uintptr_t)(&foo);
+    __twr_v4 = 1ULL;
+    __twr_v5 = 2ULL;
+    __twr_v6 = ((uintptr_t (*)(uintptr_t, uintptr_t))__twr_v3)(__twr_v4, __twr_v5);
+    __twr_l1:;
+    _jkl_epilogue:;
+}

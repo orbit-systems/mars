@@ -815,6 +815,10 @@ static void preproc_include(Lexer* l, Vec(Token)* tokens, PreprocScope* scope) {
     // next thing should be a string literal.
 
     Token path = lex_next_raw(l);
+
+    if (path.kind != TOK_STRING) {
+        TODO("expected string");
+    }
     
 }
 
