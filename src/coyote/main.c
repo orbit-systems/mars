@@ -82,7 +82,15 @@ int main(int argc, char** argv) {
         .path = fs_from_path(&file->path),
     };
 
-    Parser p = lex_entrypoint(&f);
+    LexState lex_state;
+
+    char* cwd = fs_get_current_dir();
+    lex_state.current_dir = string_wrap(cwd);
+    lex_state.incdirs = vec_new(string, 16);
+    lex_state.libdirs = vec_new(string, 16);
+    lex_state.tokens = vec_new(Token, 512);
+
+    Parser p = lex_entrypoint(&f, &lex_state);
     p.flags = flags;
     
     // p.flags.xrsdk = true;

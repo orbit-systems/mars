@@ -1,3 +1,4 @@
+#include <string.h>
 #define _GNU_SOURCE
 
 #include "common/fs.h"
@@ -9,6 +10,12 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 
+void fs_parent_dir(FsPath* path) {
+    const char* last_slash = strrchr(path->raw, '/');
+    if (last_slash != nullptr) {
+        path->len = (usize)last_slash - (usize)path->raw;
+    }
+}
 
 bool fs_real_path(const char* path, FsPath* out) {
     if (!realpath(path, out->raw)) return true;
@@ -98,7 +105,7 @@ Vec(string) fs_dir_contents(const char* path, Vec(string)* _contents) {
     while ((dirent = readdir(d)) != nullptr) {
         if (strcmp(dirent->d_name, ".") == 0) continue;
         if (strcmp(dirent->d_name, "..") == 0) continue;
-        vec_append(&contents, string_clone(str(dirent->d_name)));
+        vec_append(&contents, string_clone(string_wrap(dirent->d_name)));
     }
 
     closedir(d);

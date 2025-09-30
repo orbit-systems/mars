@@ -684,7 +684,7 @@ void token_error(Parser* ctx, ReportKind kind, u32 start_index, u32 end_index, c
 
         ReportLine rep = {
             .kind = kind,
-            .msg = str(msg),
+            .msg = string_wrap(msg),
             .path = main_file->path,
             .src = main_file->src,
             .snippet = main_highlight,
@@ -707,7 +707,7 @@ void token_error(Parser* ctx, ReportKind kind, u32 start_index, u32 end_index, c
         };
         ReportLine rep = {
             .kind = kind,
-            .msg = str(msg),
+            .msg = string_wrap(msg),
             .path = main_file->path,
             .snippet = span,
             .src = main_file->src,

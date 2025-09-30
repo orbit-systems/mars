@@ -112,7 +112,7 @@ Vec(string) fs_dir_contents(const char* path, Vec(string)* _contents) {
     do {
         if (strcmp(data.cFileName, ".") == 0) continue;
         if (strcmp(data.cFileName, "..") == 0) continue;
-        vec_append(&contents, string_clone(str(data.cFileName)));
+        vec_append(&contents, string_clone(string_wrap(data.cFileName)));
 
     } while (FindNextFileA(search_handle, &data));
 

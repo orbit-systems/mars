@@ -238,7 +238,14 @@ typedef struct {
 
 Vec_typedef(Token);
 
-Parser lex_entrypoint(SrcFile* f);
+typedef struct {
+    Vec(Token) tokens;
+    Vec(string) incdirs;
+    Vec(string) libdirs;
+    string current_dir;
+} LexState;
+
+Parser lex_entrypoint(SrcFile* f, LexState* state);
 string tok_span(Token t);
 
 #define MAX_MACRO_ARGS 255

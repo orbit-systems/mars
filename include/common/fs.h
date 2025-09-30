@@ -37,6 +37,7 @@ typedef struct FsFile {
 
 #define fs_from_path(pathptr) (string){.len = (pathptr)->len, .raw = (pathptr)->raw}
 
+void fs_parent_dir(FsPath* path);
 bool fs_real_path(const char* path, FsPath* out);
 FsFile* fs_open(const char* path, bool create, bool overwrite);
 usize fs_read(FsFile* f, void* buf, usize len);

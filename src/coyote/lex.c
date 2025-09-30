@@ -2,6 +2,7 @@
 #include "common/strmap.h"
 #include "common/util.h"
 #include "common/vec.h"
+#include "common/fs.h"
 
 const char* token_kind[TOK__COUNT] = {
 
@@ -418,7 +419,7 @@ static Token lex_next_raw(Lexer* l) {
 
 // ------------------------- PREPROCESSOR ------------------------- 
 
-static Token lex_with_preproc(Lexer* l, Vec(Token)* tokens, PreprocScope* scope);
+static Token lex_with_preproc(Lexer* l, LexState* state, PreprocScope* scope);
 
 Vec(Token) macro_arg_pool;
 Vec(PreprocVal) preproc_val_pool;
@@ -720,7 +721,7 @@ static void preproc_macro(Lexer* l, PreprocScope* scope) {
     put_replacement_value(tok_span(name), scope, macro);
 }
 
-static void preproc_if(Lexer* l, Vec(Token)* tokens, PreprocScope* scope) {
+static void preproc_if(Lexer* l, LexState* state, PreprocScope* scope) {
     
     PreprocVal cond_val = preproc_collect_value(l, scope);
     if (cond_val.kind != PPVAL_INTEGER) {
@@ -730,7 +731,7 @@ static void preproc_if(Lexer* l, Vec(Token)* tokens, PreprocScope* scope) {
     // if this case suceeds, we include everything inside and then discard everything else
     if (case_succeeds) {
         // get the rest of this case
-        Token last = lex_with_preproc(l, tokens, scope);
+        Token last = lex_with_preproc(l, state, scope);
 
         // discard everything else until the last #END
         if (last.kind == TOK_KW_END) {
@@ -795,7 +796,7 @@ static void preproc_if(Lexer* l, Vec(Token)* tokens, PreprocScope* scope) {
         case TOK_KW_ELSE:
             ;
             // get the rest
-            Token last = lex_with_preproc(l, tokens, scope);
+            Token last = lex_with_preproc(l, state, scope);
 
             // expect END
             if (last.kind != TOK_KW_END) {
@@ -803,7 +804,7 @@ static void preproc_if(Lexer* l, Vec(Token)* tokens, PreprocScope* scope) {
             }
             break;
         case TOK_KW_ELSEIF:
-            preproc_if(l, tokens, scope);
+            preproc_if(l, state, scope);
             break;
         default:
             TODO("expected #ELSEIF, #ELSE, or #END");
@@ -811,7 +812,7 @@ static void preproc_if(Lexer* l, Vec(Token)* tokens, PreprocScope* scope) {
     }
 }
 
-static void preproc_include(Lexer* l, Vec(Token)* tokens, PreprocScope* scope) {
+static void preproc_include(Lexer* l, LexState* state, PreprocScope* scope) {
     // next thing should be a string literal.
 
     Token path = lex_next_raw(l);
@@ -819,17 +820,50 @@ static void preproc_include(Lexer* l, Vec(Token)* tokens, PreprocScope* scope) {
     if (path.kind != TOK_STRING) {
         TODO("expected string");
     }
+
+    // from CfLexPreprocessor.jkl in XR/SDK:
     
+    // Parse the include statement. We just have to consume a string. Then we
+    // construct a path depending on what the prefix is, if any. Prefixes are:
+    //
+    //  [none]  Relative to the directory containing the source file.
+    //  <inc>/  Relative to the set of incdirs provided in the command line.
+    //  <ll>/   Relative to the set of libdirs provided, which may include
+    //          a system library as appended by the host specific part of the
+    //          compiler.
+    //
+    // If we find the exact include path string in the hash set of included
+    // files, then ignore this directive.
+    
+    // printf("PATH "str_fmt"\n", path.len, tok_raw(path));
+    
+    string path_string = tok_span(path);
+
+    // TODO("");
+    if (strncmp(path_string.raw, "<inc>/", 6) == 0) {
+        TODO("incdir includes");
+    } else if (strncmp(path_string.raw, "<ll>/", 5) == 0) {
+        TODO("libdir includes");
+    } else {
+        TODO("local includes");
+        // char* path_cstring = string_concat(state->current_dir, path_string);
+        // FsPath path;
+        // bool found = fs_real_path(path_cstring, &path);
+        // if (!found) {
+
+        // }
+    }
+
 }
 
-static Token preproc_dispatch(Lexer* l, Vec(Token)* tokens, PreprocScope* scope) {
+static Token preproc_dispatch(Lexer* l, LexState* state, PreprocScope* scope) {
 
     // todo: add preproc keywords to the hash table
 
     Token t = lex_next_raw(l);
     switch (t.kind) {
     case TOK_KW_IF:
-        preproc_if(l, tokens, scope);
+        preproc_if(l, state, scope);
         break;      
     case TOK_KW_ELSE:
     case TOK_KW_ELSEIF:
@@ -841,7 +875,7 @@ static Token preproc_dispatch(Lexer* l, Vec(Token)* tokens, PreprocScope* scope)
     
     string span = tok_span(t);
     if (string_eq(span, strlit("INCLUDE"))) {
-        preproc_include(l, tokens, scope);
+        preproc_include(l, state, scope);
     } else if (string_eq(span, strlit("DEFINE"))) {
         preproc_define(l, scope);
     } else if (string_eq(span, strlit("UNDEFINE"))) {
@@ -860,7 +894,7 @@ usize emit_depth = 0;
 static PreprocScope global_scope;
 static PreprocScope local_scopes[MAX_EMIT_DEPTH];
 
-static void emit_preproc_val(PreprocVal val, Vec(Token)* tokens, PreprocScope* scope) {
+static void emit_preproc_val(PreprocVal val, LexState* state, PreprocScope* scope) {
     ++emit_depth;
     if (emit_depth > MAX_EMIT_DEPTH) {
         TODO("error: max define/macro depth reached");
@@ -873,7 +907,7 @@ static void emit_preproc_val(PreprocVal val, Vec(Token)* tokens, PreprocScope* s
             t.kind = TOK_INTEGER;
             t.len = val.len;
             t.raw = val.raw;
-            vec_append(tokens, t);
+            vec_append(&state->tokens, t);
         } else {
             UNREACHABLE;
         }
@@ -894,7 +928,7 @@ static void emit_preproc_val(PreprocVal val, Vec(Token)* tokens, PreprocScope* s
             strmap_init(&local_scope->map, 4);
         }
 
-        lex_with_preproc(&local_lexer, tokens, local_scope);
+        lex_with_preproc(&local_lexer, state, local_scope);
         // strmap_destroy(&local_scope->map);
         break;
     case PPVAL_STRING:
@@ -903,7 +937,7 @@ static void emit_preproc_val(PreprocVal val, Vec(Token)* tokens, PreprocScope* s
         t.kind = TOK_STRING;
         t.len = val.string.len;
         t.raw = val.string.raw;
-        vec_append(tokens, t);
+        vec_append(&state->tokens, t);
         break;
     default:
         UNREACHABLE;
@@ -946,7 +980,7 @@ static CompactString collect_macro_arg(Lexer* l, PreprocScope* scope) {
     return to_compact(span);
 }
 
-static void collect_macro_args_and_emit(Lexer* l, PreprocVal macro, Vec(Token)* tokens, PreprocScope* scope) {
+static void collect_macro_args_and_emit(Lexer* l, PreprocVal macro, LexState* state, PreprocScope* scope) {
     ++emit_depth;
     if (emit_depth > MAX_EMIT_DEPTH) {
         TODO("error: max define/macro depth reached");
@@ -999,7 +1033,7 @@ static void collect_macro_args_and_emit(Lexer* l, PreprocVal macro, Vec(Token)* 
 
     PreprocVal body = preproc_val_pool.at[macro.macro.body_index];
     Lexer local_lexer = lexer_from_string(from_compact(body.string));
-    lex_with_preproc(&local_lexer, tokens, local_scope);
+    lex_with_preproc(&local_lexer, state, local_scope);
 
     strmap_destroy(&local_scope->map);
     preproc_val_pool.len = saved_ppv_len; // allow reuse of pool space
@@ -1026,7 +1060,7 @@ static Token preproc_token_no_span(u8 kind) {
 }
 
 // returns the last token it sees.
-static Token lex_with_preproc(Lexer* l, Vec(Token)* tokens, PreprocScope* scope) {
+static Token lex_with_preproc(Lexer* l, LexState* state, PreprocScope* scope) {
     Token t = lex_next_raw(l);
     for (; t.kind != TOK_EOF; t = lex_next_raw(l)) {
         switch (t.kind) {
@@ -1039,17 +1073,17 @@ static Token lex_with_preproc(Lexer* l, Vec(Token)* tokens, PreprocScope* scope)
                     // string from_span;
                     // from_span.len = val.len;
                     // from_span.raw = (char*)(i64)val.raw;
-                    vec_append(tokens, preproc_token(TOK_PREPROC_MACRO_PASTE, from_compact(val.source)));
-                    collect_macro_args_and_emit(l, val, tokens, scope);
+                    vec_append(&state->tokens, preproc_token(TOK_PREPROC_MACRO_PASTE, from_compact(val.source)));
+                    collect_macro_args_and_emit(l, val, state, scope);
                     span.len = (usize)l->cursor - (usize)span.raw + (usize)l->src.raw;
-                    vec_append(tokens, preproc_token(TOK_PREPROC_PASTE_END, span));
+                    vec_append(&state->tokens, preproc_token(TOK_PREPROC_PASTE_END, span));
                 } else {
                     if (!val.is_macro_arg) {
-                        vec_append(tokens, preproc_token(TOK_PREPROC_DEFINE_PASTE, from_compact(val.source)));
+                        vec_append(&state->tokens, preproc_token(TOK_PREPROC_DEFINE_PASTE, from_compact(val.source)));
                     }
-                    emit_preproc_val(val, tokens, scope);
+                    emit_preproc_val(val, state, scope);
                     if (!val.is_macro_arg) {
-                        vec_append(tokens, preproc_token(TOK_PREPROC_PASTE_END, span));
+                        vec_append(&state->tokens, preproc_token(TOK_PREPROC_PASTE_END, span));
                     }
                 }
                 continue;
@@ -1057,7 +1091,7 @@ static Token lex_with_preproc(Lexer* l, Vec(Token)* tokens, PreprocScope* scope)
             break;
         case TOK_HASH:
             ;
-            Token t = preproc_dispatch(l, tokens, scope);
+            Token t = preproc_dispatch(l, state, scope);
             switch (t.kind) {
             case 0:
                 break;
@@ -1070,12 +1104,12 @@ static Token lex_with_preproc(Lexer* l, Vec(Token)* tokens, PreprocScope* scope)
             }
             continue;
         }
-        vec_append(tokens, t);
+        vec_append(&state->tokens, t);
     }
     return t;
 }
 
-Parser lex_entrypoint(SrcFile* f) {
+Parser lex_entrypoint(SrcFile* f, LexState* state) {
     // init keyword perfect hash table
     for (usize i = TOK__KEYWORDS_BEGIN + 1; i < TOK__KEYWORDS_END; ++i) {
         const char* keyword = token_kind[i];
@@ -1094,25 +1128,24 @@ Parser lex_entrypoint(SrcFile* f) {
     // init macro info arena
     macro_arg_pool = vec_new(Token, 128);
     preproc_val_pool = vec_new(PreprocVal, 128);
-    
-    Vec(Token) tokens = vec_new(Token, 512);
+
     Lexer l = lexer_from_string(f->src);
     l.arena = &arena;
     strmap_init(&global_scope.map, 64);
 
-    lex_with_preproc(&l, &tokens, &global_scope);
+    lex_with_preproc(&l, state, &global_scope);
 
-    vec_append(&tokens, eof_token(&l));
+    vec_append(&state->tokens, eof_token(&l));
 
     strmap_destroy(&global_scope.map);
     vec_destroy(&preproc_val_pool);
     vec_destroy(&macro_arg_pool);
 
-    vec_shrink(&tokens);
+    vec_shrink(&state->tokens);
 
     Parser ctx = {
-        .tokens = tokens.at,
-        .tokens_len = tokens.len,
+        .tokens = state->tokens.at,
+        .tokens_len = state->tokens.len,
         .sources = vecptr_new(SrcFile, 16),
         .cursor = 0,
         .arena = arena,
@@ -1125,9 +1158,9 @@ Parser lex_entrypoint(SrcFile* f) {
     
     arena_init(&ctx.entities);
 
-    for_n(i, 0, tokens.len) {
-        if (tokens.at[i].kind < TOK__PARSE_IGNORE) {
-            ctx.current = tokens.at[i];
+    for_n(i, 0, state->tokens.len) {
+        if (state->tokens.at[i].kind < TOK__PARSE_IGNORE) {
+            ctx.current = state->tokens.at[i];
             ctx.cursor = i;
             break;
         }
