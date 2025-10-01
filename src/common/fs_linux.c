@@ -10,13 +10,6 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 
-void fs_parent_dir(FsPath* path) {
-    const char* last_slash = strrchr(path->raw, '/');
-    if (last_slash != nullptr) {
-        path->len = (usize)last_slash - (usize)path->raw;
-    }
-}
-
 bool fs_real_path(const char* path, FsPath* out) {
     if (!realpath(path, out->raw)) return true;
     out->len = strlen(out->raw);

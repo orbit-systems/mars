@@ -1,9 +1,10 @@
 #INCLUDE "include2.hjk"
+#INCLUDE "include2.hjk"
 
 FN bruh()
-    z := foo(1, 2)
+    z := foo(1, NULLPTR)
     x1 := 1
     x2 := 2
-    x : ^VOID = x1 + x2 
+    x : ^BYTE = x1 + x2 
 END
 

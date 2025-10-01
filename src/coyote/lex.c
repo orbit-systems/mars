@@ -3,6 +3,7 @@
 #include "common/util.h"
 #include "common/vec.h"
 #include "common/fs.h"
+#include "coyote.h"
 
 const char* token_kind[TOK__COUNT] = {
 
@@ -499,7 +500,7 @@ static i64 eval_integer(Token t) {
     return is_negative ? -val : val;
 }
 
-static PreprocVal preproc_collect_value(Lexer* l, PreprocScope* scope) {
+static PreprocVal preproc_collect_value(Lexer* l, LexState* state, PreprocScope* scope) {
     PreprocVal v = {0};
     Token t = lex_next_raw(l);
     v.raw = t.raw;
@@ -536,28 +537,28 @@ static PreprocVal preproc_collect_value(Lexer* l, PreprocScope* scope) {
                 v.kind = PPVAL_INTEGER;
                 v.integer = replacement_exists(tok_span(ident), scope);
             } else if (string_eq(tok_span(op), strlit("STRCAT"))) {
-                PreprocVal lhs = preproc_collect_value(l, scope);
-                PreprocVal rhs = preproc_collect_value(l, scope);
+                PreprocVal lhs = preproc_collect_value(l, state, scope);
+                PreprocVal rhs = preproc_collect_value(l, state, scope);
                 if (lhs.kind != PPVAL_STRING && rhs.kind != PPVAL_STRING) {
                     TODO("error: expected string");
                 }
 
-                string newstr;
-                newstr.len = lhs.string.len + rhs.string.len;
-                newstr.raw = arena_alloc(l->arena, newstr.len, 1);
-                if (newstr.len > COMPACT_STR_MAX_LEN) {
+                if (lhs.string.len + rhs.string.len > COMPACT_STR_MAX_LEN) {
                     TODO("error: string too long");
                 }
 
-                memcpy(newstr.raw, (void*)(i64)lhs.string.raw, lhs.string.len);
-                memcpy(newstr.raw + lhs.string.len, (void*)(i64)rhs.string.raw, rhs.string.len);
+                string newstr = arena_strcat(state->arena, 
+                    from_compact(lhs.string), 
+                    from_compact(rhs.string), 
+                    false
+                );
 
                 v.kind = PPVAL_STRING;
                 v.string = to_compact(newstr);
 
             } else if (string_eq(tok_span(op), strlit("STRCMP"))) {
-                PreprocVal lhs = preproc_collect_value(l, scope);
-                PreprocVal rhs = preproc_collect_value(l, scope);
+                PreprocVal lhs = preproc_collect_value(l, state, scope);
+                PreprocVal rhs = preproc_collect_value(l, state, scope);
                 if (lhs.kind != PPVAL_STRING && rhs.kind != PPVAL_STRING) {
                     TODO("error: expected string");
                 }
@@ -569,8 +570,8 @@ static PreprocVal preproc_collect_value(Lexer* l, PreprocScope* scope) {
         } else if ((TOK_PLUS <= op.kind && op.kind <= TOK_GREATER) 
             || op.kind == TOK_KW_AND || op.kind == TOK_KW_OR) 
         {
-            PreprocVal lhs = preproc_collect_value(l, scope);
-            PreprocVal rhs = preproc_collect_value(l, scope);
+            PreprocVal lhs = preproc_collect_value(l, state, scope);
+            PreprocVal rhs = preproc_collect_value(l, state, scope);
             if (lhs.kind != PPVAL_INTEGER || rhs.kind != PPVAL_INTEGER) {
                 TODO("error: expected integer");
             }
@@ -598,14 +599,14 @@ static PreprocVal preproc_collect_value(Lexer* l, PreprocScope* scope) {
                 UNREACHABLE;
             }
         } else if (op.kind == TOK_TILDE) {
-            PreprocVal inner = preproc_collect_value(l, scope);
+            PreprocVal inner = preproc_collect_value(l, state, scope);
             if (inner.kind != PPVAL_INTEGER) {
                 TODO("error: expected integer");
             }
             v.kind = PPVAL_INTEGER;
             v.integer = ~inner.integer;
         } else if (op.kind == TOK_KW_NOT) {
-            PreprocVal inner = preproc_collect_value(l, scope);
+            PreprocVal inner = preproc_collect_value(l, state, scope);
             if (inner.kind != PPVAL_INTEGER) {
                 TODO("error: expected integer");
             }
@@ -631,7 +632,24 @@ static PreprocVal preproc_collect_value(Lexer* l, PreprocScope* scope) {
     return v;
 }
 
-static void preproc_define(Lexer* l, PreprocScope* scope) {
+static Token preproc_token(u8 kind, string span) {
+    Token t;
+    t.generated = true;
+    t.kind = kind;
+    t.raw = (i64)span.raw;
+    t.len = span.len;
+    return t;
+}
+
+static Token preproc_token_no_span(u8 kind) {
+    Token t;
+    t.generated = true;
+    t.kind = kind;
+    t.len = 0;
+    return t;
+}
+
+static void preproc_define(Lexer* l, LexState* state, PreprocScope* scope) {
     // consume name
     Token name = lex_next_raw(l);
     if (name.kind != TOK_IDENTIFIER) {
@@ -639,7 +657,7 @@ static void preproc_define(Lexer* l, PreprocScope* scope) {
     }
 
     // consume value
-    PreprocVal v = preproc_collect_value(l, scope);
+    PreprocVal v = preproc_collect_value(l, state, scope);
     v.source = (CompactString){   
         .len = name.len,
         .raw = name.raw,
@@ -662,7 +680,7 @@ static void preproc_undefine(Lexer* l, PreprocScope* scope) {
     remove_replacement(tok_span(name), scope);
 }
 
-static void preproc_macro(Lexer* l, PreprocScope* scope) {
+static void preproc_macro(Lexer* l, LexState* state, PreprocScope* scope) {
     // consume name
     Token name = lex_next_raw(l);
     if (name.kind != TOK_IDENTIFIER) {
@@ -698,7 +716,7 @@ static void preproc_macro(Lexer* l, PreprocScope* scope) {
     }
 
     // consume body
-    PreprocVal body = preproc_collect_value(l, scope);
+    PreprocVal body = preproc_collect_value(l, state, scope);
     if (body.kind != PPVAL_COMPLEX_STRING) {
         TODO("error: expected complex string (using [])");
     }
@@ -723,7 +741,7 @@ static void preproc_macro(Lexer* l, PreprocScope* scope) {
 
 static void preproc_if(Lexer* l, LexState* state, PreprocScope* scope) {
     
-    PreprocVal cond_val = preproc_collect_value(l, scope);
+    PreprocVal cond_val = preproc_collect_value(l, state, scope);
     if (cond_val.kind != PPVAL_INTEGER) {
         TODO("#IF condition is not an integer");
     }
@@ -812,6 +830,21 @@ static void preproc_if(Lexer* l, LexState* state, PreprocScope* scope) {
     }
 }
 
+static string parent_dir_substring(string path) {
+    if (path.len != 0 && path.raw[path.len - 1] == '/') {
+        path.len--;
+    }
+    isize last_slash = -1;
+    for_n_reverse (i, path.len, 0) {
+        if (path.raw[i] == '/') {
+            last_slash = i;
+            break;
+        }
+    }
+
+    return substring(path, 0, last_slash + 1);
+}
+
 static void preproc_include(Lexer* l, LexState* state, PreprocScope* scope) {
     // next thing should be a string literal.
 
@@ -822,7 +855,6 @@ static void preproc_include(Lexer* l, LexState* state, PreprocScope* scope) {
     }
 
     // from CfLexPreprocessor.jkl in XR/SDK:
-    
     // Parse the include statement. We just have to consume a string. Then we
     // construct a path depending on what the prefix is, if any. Prefixes are:
     //
@@ -835,24 +867,79 @@ static void preproc_include(Lexer* l, LexState* state, PreprocScope* scope) {
     // If we find the exact include path string in the hash set of included
     // files, then ignore this directive.
     
-    // printf("PATH "str_fmt"\n", path.len, tok_raw(path));
     
     string path_string = tok_span(path);
 
-    // TODO("");
-    if (strncmp(path_string.raw, "<inc>/", 6) == 0) {
-        TODO("incdir includes");
-    } else if (strncmp(path_string.raw, "<ll>/", 5) == 0) {
-        TODO("libdir includes");
-    } else {
-        TODO("local includes");
-        // char* path_cstring = string_concat(state->current_dir, path_string);
-        // FsPath path;
-        // bool found = fs_real_path(path_cstring, &path);
-        // if (!found) {
-
-        // }
+    if (strmap_get(&state->included_files, path_string) != STRMAP_NOT_FOUND) {
+        return; // already included
     }
+
+    const char* path_cstring = nullptr;
+    FsFile* included = nullptr;
+
+    if (strncmp(path_string.raw, "<inc>/", 5) == 0) {
+        path_string = substring(path_string, 5, path_string.len - 5);
+        
+        for_n(i, 0, state->incdirs.len) {
+            string incdir = state->incdirs.at[i];
+            
+            path_cstring = arena_strcat(state->arena,
+                incdir,
+                path_string,
+                true
+            ).raw;
+
+            included = fs_open(path_cstring, false, false);
+        }
+        if (!included) {
+            TODO("cannot find file '"str_fmt"' in include directories", str_arg(path_string));
+        }
+    } else if (strncmp(path_string.raw, "<ll>/", 4) == 0) {
+        path_string = substring(path_string, 5, path_string.len - 5);
+        
+        for_n(i, 0, state->libdirs.len) {
+            string libdir = state->libdirs.at[i];
+            
+            path_cstring = arena_strcat(state->arena,
+                libdir,
+                path_string,
+                true
+            ).raw;
+
+            included = fs_open(path_cstring, false, false);
+        }
+        if (!included) {
+            TODO("cannot find file '"str_fmt"' in library directories", str_arg(path_string));
+        }
+    } else {
+        path_cstring = arena_strcat(state->arena,
+            parent_dir_substring(state->current_file),
+            path_string,
+            true
+        ).raw;
+
+        included = fs_open(path_cstring, false, false);
+        if (!included) {
+            TODO("cannot open file '%s'", path_cstring);
+        }
+    }
+
+    string included_src = fs_read_entire(included);
+    Lexer included_lexer = lexer_from_string(included_src);
+    vec_append(&state->tokens, preproc_token(TOK_PREPROC_INCLUDE_PASTE, tok_span(path)));
+
+    lex_with_preproc(&included_lexer, state, scope);
+
+    vec_append(&state->tokens, preproc_token(TOK_PREPROC_INCLUDE_PASTE_END, tok_span(path)));
+
+    // create a SrcFile and put it in the strmap
+    SrcFile* srcfile = arena_alloc(state->arena, sizeof(SrcFile), alignof(SrcFile));
+    srcfile->path = arena_strdup(state->arena, string_make(included->path.raw, included->path.len));
+    srcfile->src = included_src;
+
+    strmap_put(&state->included_files, path_string, srcfile);
+
+    fs_close(included);
 
 }
 
@@ -877,11 +964,11 @@ static Token preproc_dispatch(Lexer* l, LexState* state, PreprocScope* scope) {
     if (string_eq(span, strlit("INCLUDE"))) {
         preproc_include(l, state, scope);
     } else if (string_eq(span, strlit("DEFINE"))) {
-        preproc_define(l, scope);
+        preproc_define(l, state, scope);
     } else if (string_eq(span, strlit("UNDEFINE"))) {
         preproc_undefine(l, scope);
     } else if (string_eq(span, strlit("MACRO"))) {
-        preproc_macro(l, scope);
+        preproc_macro(l, state, scope);
     } else {
         // TODO("error: unrecognized directive");
     }
@@ -1042,23 +1129,6 @@ static void collect_macro_args_and_emit(Lexer* l, PreprocVal macro, LexState* st
 
 // ------------------------- LEX THAT FILE DAMMIT ------------------------- 
 
-static Token preproc_token(u8 kind, string span) {
-    Token t;
-    t.generated = true;
-    t.kind = kind;
-    t.raw = (i64)span.raw;
-    t.len = span.len;
-    return t;
-}
-
-static Token preproc_token_no_span(u8 kind) {
-    Token t;
-    t.generated = true;
-    t.kind = kind;
-    t.len = 0;
-    return t;
-}
-
 // returns the last token it sees.
 static Token lex_with_preproc(Lexer* l, LexState* state, PreprocScope* scope) {
     Token t = lex_next_raw(l);
@@ -1130,7 +1200,6 @@ Parser lex_entrypoint(SrcFile* f, LexState* state) {
     preproc_val_pool = vec_new(PreprocVal, 128);
 
     Lexer l = lexer_from_string(f->src);
-    l.arena = &arena;
     strmap_init(&global_scope.map, 64);
 
     lex_with_preproc(&l, state, &global_scope);
@@ -1167,6 +1236,12 @@ Parser lex_entrypoint(SrcFile* f, LexState* state) {
     }
 
     vec_append(&ctx.sources, f);
+    for_n(i, 0, state->included_files.cap) {
+        if (state->included_files.vals[i]) {
+            SrcFile* srcfile = state->included_files.vals[i];
+            vec_append(&ctx.sources, srcfile);
+        }
+    }
 
     return ctx;
 }

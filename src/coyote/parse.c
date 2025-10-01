@@ -553,7 +553,7 @@ static usize preproc_depth(Parser* ctx, u32 index) {
         switch (t.kind) {
         case TOK_PREPROC_MACRO_PASTE:
         case TOK_PREPROC_DEFINE_PASTE:
-        case TOK_PREPROC_INCLUDE_PASTE:
+        // case TOK_PREPROC_INCLUDE_PASTE:
             depth++;
             break;
         case TOK_PREPROC_PASTE_END:
@@ -566,21 +566,37 @@ static usize preproc_depth(Parser* ctx, u32 index) {
 
 void token_error(Parser* ctx, ReportKind kind, u32 start_index, u32 end_index, const char* msg) {
     // find out if we're in a macro somewhere
-    bool inside_preproc = preproc_depth(ctx, start_index) != 0 || preproc_depth(ctx, end_index) != 0;
+    bool inside_macro = preproc_depth(ctx, start_index) != 0 || preproc_depth(ctx, end_index) != 0;
 
     Vec_typedef(ReportLine);
     Vec(ReportLine) reports = vec_new(ReportLine, 8);
 
     i32 unmatched_ends = 0;
-    for (i64 i = (i64)start_index; i > 0; --i) {
+
+    for (i64 i = (i64)start_index; i >= 0; --i) {
         Token t = ctx->tokens[i];
 
         ReportLine report = {};
         report.kind = REPORT_NOTE;
 
         switch (t.kind) {
+        case TOK_PREPROC_INCLUDE_PASTE: {
+            if (unmatched_ends != 0) {
+                unmatched_ends--;
+                break;
+            }
+            SrcFile* from = where_from(ctx, tok_span(t));
+            if (!from) {
+                CRASH("unable to locate include paste span source file");
+            }
+            report.msg = strprintf("inside included file");
+            report.path = from->path;
+            report.src = from->src;
+            report.snippet = tok_span(t);
+            vec_append(&reports, report);
+        } break;
         case TOK_PREPROC_DEFINE_PASTE:
-        case TOK_PREPROC_MACRO_PASTE:
+        case TOK_PREPROC_MACRO_PASTE: {
             if (unmatched_ends != 0) {
                 unmatched_ends--;
                 break;
@@ -594,7 +610,7 @@ void token_error(Parser* ctx, ReportKind kind, u32 start_index, u32 end_index, c
             report.src = from->src;
             report.snippet = tok_span(t);
             vec_append(&reports, report);
-            break;
+        } break;
         case TOK_PREPROC_PASTE_END:
             unmatched_ends++;
             break;
@@ -602,8 +618,9 @@ void token_error(Parser* ctx, ReportKind kind, u32 start_index, u32 end_index, c
     }
 
     // find main line snippet
-    SrcFile* main_file = ctx->sources.at[0];
-    if (inside_preproc) {
+    // SrcFile* main_file = ctx->sources.at[0];
+    SrcFile* main_file = where_from(ctx, tok_span(ctx->tokens[start_index]));
+    if (inside_macro) {
         // for_n(i, 0, reports.len) {
         //     report_line(&reports.at[i]);
         // }
@@ -695,9 +712,6 @@ void token_error(Parser* ctx, ReportKind kind, u32 start_index, u32 end_index, c
 
         report_line(&rep);
 
-        for_n(i, 0, reports.len) {
-            report_line(&reports.at[i]);
-        }
     } else {
         string start_span = tok_span(ctx->tokens[start_index]);
         string end_span = tok_span(ctx->tokens[end_index]);
@@ -714,6 +728,11 @@ void token_error(Parser* ctx, ReportKind kind, u32 start_index, u32 end_index, c
         };
 
         report_line(&rep);
+    }
+
+
+    for_n(i, 0, reports.len) {
+        report_line(&reports.at[i]);
     }
 
     if (kind == REPORT_ERROR) {

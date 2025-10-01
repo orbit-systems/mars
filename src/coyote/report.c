@@ -84,7 +84,10 @@ string snippet_line(string src, string snippet) {
     string line = snippet;
     // expand line backwards
     while (true) {
-        if (line.raw == src.raw) break;
+        if (line.raw <= src.raw) {
+            line.raw = src.raw;
+            break;
+        }
         if (*line.raw == '\n') {
             line.raw++;
             break;
@@ -92,9 +95,9 @@ string snippet_line(string src, string snippet) {
         line.raw--;
     }
     // trim leading whitespace
-    while (is_whitespace(line.raw[0])) {
-        line.raw++;
-    }
+    // while (is_whitespace(line.raw[0])) {
+    //     line.raw++;
+    // }
     // expand line forwards
     while (true) {
         if (line.raw + line.len == src.raw + src.len) break;
@@ -172,7 +175,9 @@ void report_line(ReportLine* report) {
     fprintf(stderr, Blue "%u ", line_num);
 
     if (report->reconstructed_line.raw != nullptr) {
-        print_snippet(line, report->snippet, color, line_digits + 1, strlit("in this macro invocation"));
+        print_snippet(line, report->snippet, color, line_digits + 1, 
+            strlit("in this invocation")
+        );
     } else {
         print_snippet(line, report->snippet, color, line_digits + 1, report->msg);
     }

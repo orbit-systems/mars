@@ -1,1 +1,1 @@
-EXTERN FN somewhere(x: INT, y: WORD): WORD
+EXTERN FN foo(x: INTA, y: WORD): WORD

@@ -81,7 +81,6 @@ typedef struct {
     usize cursor;
     char current;
     bool eof;
-    Arena* arena;
 } Lexer;
 
 #define LEX_MAX_TOKEN_LEN 127
@@ -187,7 +186,9 @@ enum {
         // TOK_PREPROC_MACRO_ARG_PASTE, // before an argument to a macro gets replaced in the macro's body
         TOK_PREPROC_DEFINE_PASTE, // before a define's replacement gets pasted
         TOK_PREPROC_INCLUDE_PASTE, // before a file is included
+
         TOK_PREPROC_PASTE_END, // marks the end of a paste action
+        TOK_PREPROC_INCLUDE_PASTE_END, // marks the end of a paste action
 
         TOK_NEWLINE, 
 
@@ -242,7 +243,9 @@ typedef struct {
     Vec(Token) tokens;
     Vec(string) incdirs;
     Vec(string) libdirs;
-    string current_dir;
+    string current_file;
+    Arena* arena;
+    StrMap included_files;
 } LexState;
 
 Parser lex_entrypoint(SrcFile* f, LexState* state);

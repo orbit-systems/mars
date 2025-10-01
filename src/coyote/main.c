@@ -83,12 +83,15 @@ int main(int argc, char** argv) {
     };
 
     LexState lex_state;
+    Arena arena;
+    arena_init(&arena);
 
-    char* cwd = fs_get_current_dir();
-    lex_state.current_dir = string_wrap(cwd);
     lex_state.incdirs = vec_new(string, 16);
     lex_state.libdirs = vec_new(string, 16);
     lex_state.tokens = vec_new(Token, 512);
+    lex_state.arena = &arena;
+    lex_state.current_file = arena_strdup(&arena, fs_from_path(&file->path));
+    strmap_init(&lex_state.included_files, 128);
 
     Parser p = lex_entrypoint(&f, &lex_state);
     p.flags = flags;
