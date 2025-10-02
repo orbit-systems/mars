@@ -63,8 +63,8 @@ static void print_snippet(string line, string snippet, const char* color, usize 
             fprintf(stderr, "~");
         }
     }
-    // fprintf(stderr, Reset"\n");
-    fprintf(stderr, Bold " "str_fmt Reset"\n", str_arg(msg));
+    fprintf(stderr, Reset"\n");
+    // fprintf(stderr, Bold " "str_fmt Reset"\n", str_arg(msg));
     // fprintf(stderr, Bold " "str_fmt Reset"\n", str_arg(msg));
 }
 
@@ -165,10 +165,11 @@ void report_line(ReportLine* report) {
         fprintf(stderr, " ");
     }
     fprintf(stderr, Blue"--> "Reset str_fmt":%u:%u\n", str_arg(report->path), line_num, col_num);
-    for_n(i, 0, line_digits) {
-        fprintf(stderr, " ");
-    }
-    fprintf(stderr, Blue" |\n"Reset);
+    // for_n(i, 0, line_digits) {
+    //     fprintf(stderr, " ");
+    // }
+    // fprintf(stderr, Blue" |\n"Reset);
+    // fprintf(stderr, "\n"Reset);
 
     string line = snippet_line(report->src, report->snippet);
 
@@ -191,15 +192,16 @@ void report_line(ReportLine* report) {
             fprintf(stderr, " ");
         }
         fprintf(stderr, Blue"--> "Reset "expands to: "Reset"\n");
-        for_n(i, 0, line_digits) {
-            fprintf(stderr, " ");
-        }
-        fprintf(stderr, Blue" |\n"Reset);
+        // for_n(i, 0, line_digits) {
+        //     fprintf(stderr, " ");
+        // }
+        // fprintf(stderr, Blue" |\n"Reset);
         fprintf(stderr, Blue"%u ", line_num);
         print_snippet(line, report->reconstructed_snippet, color, line_digits + 1, report->msg);
     }
-    for_n(i, 0, line_digits) {
-        fprintf(stderr, " ");
-    }
-    fprintf(stderr, Blue" |\n"Reset);
+    // for_n(i, 0, line_digits) {
+    //     fprintf(stderr, " ");
+    // }
+    // fprintf(stderr, Blue" |\n"Reset);
+    fprintf(stderr, Reset);
 }

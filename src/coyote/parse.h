@@ -10,6 +10,8 @@
 typedef enum : u8 {
     TY__INVALID,
 
+    TY_BAD, // semantic error of some kind
+
     TY_VOID,
 
     TY_BYTE,    // i8
@@ -20,7 +22,7 @@ typedef enum : u8 {
     TY_ULONG,   // u32
     TY_QUAD,    // i64
     TY_UQUAD,   // u64
-
+ 
     TY_PTR,
     TY_ARRAY,
     TY_STRUCT,
@@ -32,6 +34,7 @@ typedef enum : u8 {
     TY_ALIAS_INCOMPLETE,
     // TY_ALIAS_IN_PROGRESS,
     TY_ALIAS,
+
 } TyKind;
 
 typedef u16 TyIndex;
@@ -176,6 +179,8 @@ typedef enum : u8 {
     STMT_GOTO,
 
     STMT_UNREACHABLE,
+
+    STMT_BAD, // parse or semantic error of some kind
 } StmtKind;
 
 typedef enum : u8 {
@@ -283,6 +288,8 @@ typedef enum : u8 {
     EXPR_DEREF_MEMBER,  // foo^.bar
     EXPR_MEMBER,        // foo.bar
     EXPR_CALL,          // foo(bar, baz)
+
+    EXPR_BAD, // parse or semantic error of some kind
 } ExprKind;
 
 typedef struct Expr {

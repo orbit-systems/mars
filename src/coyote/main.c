@@ -12,9 +12,9 @@ thread_local const char* filepath = nullptr;
 thread_local FlagSet flags = {};
 
 static void print_help() {
-    puts("coyote path/file.jkl [options]");
+    puts("coyote [path/file.jkl] [options]");
     puts(" --help              Display this info.");
-    puts(" --version           Display version and copyright information.");
+    puts(" --version           Display version information.");
     puts(" --xrsdk             Warn on code that would not compile with the");
     puts("                     original XR/SDK compiler.");
     puts(" --error-on-warn     Turn warnings into errors.");
@@ -37,7 +37,8 @@ static void print_help() {
 }
 
 static void print_version() {
-    printf("Coyote v%d.%d using Iron v%d.%d\n", COYOTE_MAJOR, COYOTE_MINOR, FE_VERSION_MAJOR, FE_VERSION_MINOR);
+    printf("Coyote v%d.%d\n", COYOTE_MAJOR, COYOTE_MINOR);
+    printf("Iron   v%d.%d\n", FE_VERSION_MAJOR, FE_VERSION_MINOR);
 }
 
 static void parse_args(int argc, char** argv) {
@@ -45,8 +46,8 @@ static void parse_args(int argc, char** argv) {
         print_help();
         exit(0);
     }
-    filepath = argv[1];
-    for_n(i, 2, argc) {
+    // filepath = argv[1];
+    for_n(i, 1, argc) {
         char* arg = argv[i];
         if (strcmp(arg, "--help") == 0) {
             print_help();
@@ -60,9 +61,11 @@ static void parse_args(int argc, char** argv) {
             flags.preproc = true;
         } else if (strcmp(arg, "--error-on-warn") == 0) {
             flags.error_on_warn = true;
-        } else {
+        } else if (arg[0] == '-') {
             printf("unknown flag '%s'\n", arg);
             exit(1);
+        } else {
+            filepath = arg;
         }
     }
 }

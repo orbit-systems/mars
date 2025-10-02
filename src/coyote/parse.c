@@ -136,6 +136,7 @@ static void vec_char_print_num(Vec(char)* v, u64 val) {
 static void _ty_name(Vec(char)* v, TyIndex t) {
     switch (TY_KIND(t)) {
     case TY__INVALID: vec_char_append_str(v, "!!!"); return;
+    case TY_BAD:     vec_char_append_str(v, "(error)"); return;
     case TY_VOID:     vec_char_append_str(v, "VOID"); return;
     case TY_BYTE:     vec_char_append_str(v, "BYTE"); return;
     case TY_UBYTE:    vec_char_append_str(v, "UBYTE"); return;
@@ -553,7 +554,6 @@ static usize preproc_depth(Parser* ctx, u32 index) {
         switch (t.kind) {
         case TOK_PREPROC_MACRO_PASTE:
         case TOK_PREPROC_DEFINE_PASTE:
-        // case TOK_PREPROC_INCLUDE_PASTE:
             depth++;
             break;
         case TOK_PREPROC_PASTE_END:
@@ -612,6 +612,7 @@ void token_error(Parser* ctx, ReportKind kind, u32 start_index, u32 end_index, c
             vec_append(&reports, report);
         } break;
         case TOK_PREPROC_PASTE_END:
+        case TOK_PREPROC_INCLUDE_PASTE_END:
             unmatched_ends++;
             break;
         }
@@ -621,9 +622,6 @@ void token_error(Parser* ctx, ReportKind kind, u32 start_index, u32 end_index, c
     // SrcFile* main_file = ctx->sources.at[0];
     SrcFile* main_file = where_from(ctx, tok_span(ctx->tokens[start_index]));
     if (inside_macro) {
-        // for_n(i, 0, reports.len) {
-        //     report_line(&reports.at[i]);
-        // }
 
         string main_highlight = {};
         for_n(i, end_index, ctx->tokens_len) {
@@ -865,7 +863,7 @@ i64 eval_integer_oct(Parser* p, const char* raw, u32 len, u32 index) {
         if ('0' <= c && c <= '8') {
             val += c - '0';
         } else {
-            parse_error(p, index, index, REPORT_ERROR, "invalid hexidecimal digit '%c'", c);
+            parse_error(p, index, index, REPORT_ERROR, "invalid octal digit '%c'", c);
         }
     }
     return val;
