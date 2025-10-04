@@ -1,0 +1,8 @@
+
+FN foo1
+END
+
+x: INT = 0xF
+
+FN foo2(a: INT)
+END

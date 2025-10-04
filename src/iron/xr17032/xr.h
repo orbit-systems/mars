@@ -182,22 +182,4 @@ extern const u8 fe_xr_extra_size_table[];
 extern const FeTrait fe_xr_trait_table[];
 extern const u16 fe_xr_regclass_lens[];
 
-// small representation for the disassembler and assembler to work with
-
-typedef struct {
-    u8 opcode;
-    u8 ra;
-    u8 rb;
-    u8 rc;
-    union {    
-        u32 imm;
-        struct {
-            u8 shamt;
-            u8 xsh;
-            u8 funct;
-        };
-    };
-} XrMachInst;
-#define XR_MACH_INST_NULL (XrMachInst){0}
-
 #endif

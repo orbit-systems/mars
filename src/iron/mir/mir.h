@@ -8,7 +8,6 @@
 #include <assert.h>
 
 typedef struct FeMirSection FeMirSection;
-
 typedef struct {u32 _;} FeMirStringIndex;
 
 typedef enum : u8 {
@@ -16,14 +15,9 @@ typedef enum : u8 {
     FE_MIR_SYMKIND_DATA,
     FE_MIR_SYMKIND_FUNCTION,
     
-    // symbol associated with a section,
-    // not necessarily anything inside it.
-    FE_MIR_SYMKIND_SECTION,
-
     // not associated with any section,
     // does not undergo relocation.
     FE_MIR_SYMKIND_ABSOLUTE,
-
 } FeMirSymbolKind;
 
 typedef enum : u8 {
@@ -43,8 +37,73 @@ typedef struct {
     u64 value; // offset from section it's defined in
 } FeMirSymbol;
 
-typedef enum : u16 {
-    MIR_RELOC_EXTRA_ADDEND,
+typedef enum : u8 {
+    FE_MIR_SECTION_EXEC   = 1 << 0,
+    FE_MIR_SECTION_READ   = 1 << 1,
+    FE_MIR_SECTION_WRITE  = 1 << 2,
+
+    FE_MIR_SECTION_BLANK  = 1 << 3,
+    FE_MIR_SECTION_PINNED = 1 << 4,
+} FeMirSectionFlags;
+
+Vec_typedef(u8);
+
+typedef struct FeMirSection {
+    FeMirStringIndex name;
+    FeMirSectionFlags flags;
+    u16 alignment;
+
+    u64 virt_addr;
+} FeMirSection;
+#define FE_MIR_NULL_SECTION 0
+
+typedef enum : u8 {
+    // an alignment directive.
+    FE_MIR_ELEM_ALIGN,
+    
+    // a label that connects to a symbol
+    FE_MIR_ELEM_LABEL,
+    FE_MIR_ELEM_LOCAL_LABEL,
+
+    // 
+    FE_MIR_ELEM_RELOC,
+
+    // a large length of bytes
+    FE_MIR_ELEM_BYTES,
+
+    FE_MIR_ELEM_D8,
+    FE_MIR_ELEM_D16,
+    FE_MIR_ELEM_D32,
+    FE_MIR_ELEM_D64,
+
+    // a block of adjacent target instructions,
+    // allocated in the elem_extras buffer.
+    FE_MIR_ELEM_INST_BLOCK,
+} FeMirElementKind;
+
+typedef struct FeMirElement {
+    FeMirElementKind kind;
+
+    // required byte alignment
+    u8 byte_align;
+
+    // size in bytes
+    u16 byte_size;
+
+    // byte offset from start of section
+    u32 byte_offset;
+
+    // 32 bits of whatever else is needed
+    u32 opaque_extra;
+} FeMirElement;
+
+typedef struct FeMirElementInstBlock {
+    u32 len;
+    u32 insts[]; // need to cast to inst type first
+} FeMirElementInstBlock;
+
+typedef enum : u8 {
+    MIR_RELOC__ADDEND,
 
     MIR_RELOC_PTR64,
     MIR_RELOC_PTR32,
@@ -58,55 +117,37 @@ typedef enum : u16 {
     MIR_RELOC_XR_FAR_LONG,  // XR far-long access psuedo-inst
 } FeMirRelocKind;
 
+typedef struct {u32 _;} MirRelocIndex;
+#define MIR_RELOC_NONE (MirRelocIndex){0}
+
 typedef struct {
     FeMirRelocKind kind;
-    // offset into section.
-    u32 offset;
+    bool uses_addend;
     u32 symbol_index;
-} FeMirReloc;
+} MirRelocation;
 
-typedef union {
-    FeMirRelocKind _kind; // shadow for layout
-    u32 low;
-    u32 high;
-} FeMirRelocExtraAddend;
-static_assert(sizeof(FeMirRelocExtraAddend) <= sizeof(FeMirReloc));
-static_assert(alignof(FeMirRelocExtraAddend) <= alignof(FeMirReloc));
-
-typedef enum : u8 {
-    FE_MIR_SECTION_EXEC   = 1 << 0,
-    FE_MIR_SECTION_READ   = 1 << 1,
-    FE_MIR_SECTION_WRITE  = 1 << 2,
-
-    FE_MIR_SECTION_BLANK  = 1 << 3,
-} FeMirSectionFlags;
-
-Vec_typedef(FeMirReloc);
-Vec_typedef(u8);
-
-typedef struct FeMirSection {
-    FeMirStringIndex name;
-    FeMirSectionFlags flags;
-    u16 alignment;
-
-    u64 virt_addr;
-
-    Vec(FeMirReloc) relocs;
-    Vec(u8) bytes;
-} FeMirSection;
-#define FE_MIR_NULL_SECTION 0
+typedef struct {
+    // shadow MirRelocation.kind for layout compatibility
+    FeMirRelocKind _kind;
+    u32 addend;
+} MirRelocationAddend;
+static_assert(sizeof(MirRelocation) == sizeof(MirRelocationAddend));
+static_assert(alignof(MirRelocation) == alignof(MirRelocationAddend));
 
 typedef enum : u8 {
     // standard object file
     FE_MIR_OBJ_RELOCATABLE,
+
     // shared library
     FE_MIR_OBJ_SHARED,
+
     // executable file
     FE_MIR_OBJ_EXECUTABLE,
 } FeMirObjectKind;
 
 Vec_typedef(FeMirSection);
 Vec_typedef(FeMirSymbol);
+Vec_typedef(u32);
 
 #define FE_MIR_NULL_SYMBOL 0
 
@@ -118,10 +159,9 @@ typedef struct {
     Vec(u8) string_pool;
     Vec(FeMirSection) sections;
     Vec(FeMirSymbol) symbols;
-    // // when assembling, local symbols (not to be confused with private symbols)
-    // // are kept in a small are at the top of the '.symbols' list. These are erased
-    // // when a new non-local symbol is added.
-    // u32 last_nonlocal_sym;
+    Vec(FeMirSymbol) relocations;
+
+    Vec(u32) elem_extras;
     
     u32 entry_symbol; // only relevant for executable objects
 
@@ -132,38 +172,5 @@ FeMirObject* fe_mir_new_object(FeMirObjectKind kind);
 FeMirSection* fe_mir_new_section(FeMirObject* obj, const char* name, u32 name_len, FeMirSectionFlags flags);
 
 FeMirStringIndex fe_mir_intern_string(FeMirObject* obj, const char* name, u32 len);
-
-typedef struct {
-    FeMirStringIndex name;
-    // offset from last-defined symbol's value
-    u32 offset;
-} FeMirLocalLabel;
-
-// if any local label fixups exist when a new nonlocal label is defined,
-// something has gone wrong!
-typedef struct {
-    FeMirRelocKind kind;
-    // offset into section.
-    u32 offset;
-} FeMirLocalLabelFixup;
-
-Vec_typedef(FeMirLocalLabel);
-Vec_typedef(FeMirLocalLabelFixup);
-
-typedef struct {
-    FeMirObject* obj;
-
-    // current section
-    FeMirSection* section;
-
-    Vec(FeMirLocalLabel) local_labels;
-    Vec(FeMirLocalLabelFixup) local_label_fixups;
-
-    // index of last non_local symbol inside the current section.
-    u32 last_nonlocal;
-
-    u64 current_addr;
-
-} FeMirAssemblerContext;
 
 #endif // FE_MIR_H

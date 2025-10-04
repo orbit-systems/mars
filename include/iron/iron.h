@@ -13,6 +13,7 @@ extern "C" {
 #include <string.h>
 #include <stdint.h>
 #include <limits.h>
+#include <stdalign.h>
 
 #if __STDC_VERSION__ <= 201710L 
     #error Iron is a C23 library!
@@ -213,7 +214,6 @@ typedef enum: u8 {
     FE_ARCH_X64 = 1,
     FE_ARCH_ARM64,
 
-    // esoteric
     FE_ARCH_XR17032,
     // FE_ARCH_FOX32,
     // FE_ARCH_APHELION,
@@ -225,7 +225,8 @@ typedef enum: u8 {
 
 typedef enum : u8 {
     // pass parameters however iron sees fit
-    // likely picks based on target
+    // may not have stable ABI, dangerous for
+    // public/extern functions
     FE_CCONV_ANY = 0,
 
     // os specific
@@ -235,14 +236,14 @@ typedef enum : u8 {
         FE_CCONV_STDCALL,
 
     // language-specific
-        // standard c calling convention on the corresponding target
+        // standard c calling convention on target
         FE_CCONV_C,
-        // jackal (xr17032) calling convention
+        // jackal calling convention on target
         FE_CCONV_JACKAL,
 } FeCallConv;
 
 // -------------------------------------
-// iron IR
+// Iron IR
 // -------------------------------------
 
 typedef enum: u8 {

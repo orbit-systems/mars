@@ -1,3 +1,6 @@
+// static pointers are suitable to be used as compile-time-known
+// values (since they're resolved at link-time) but they cannot be
+// dereferenced or used as a value at compile-time.
 pub struct Vec(T: type, A: ^static std::Allocator) {
     data: [^]T,
     len, cap: usize,
@@ -5,7 +8,7 @@ pub struct Vec(T: type, A: ^static std::Allocator) {
     pub fun new(capacity: usize): self {
         let cap = builtin:max(capacity, 2);
         let len = 0;
-        let data = A.alloc(sizeof T * capacity) orelse unreachable;
+        let data = A.alloc(sizeof T * capacity).?;
 
         .{data, len, cap}
     }
@@ -14,7 +17,7 @@ pub struct Vec(T: type, A: ^static std::Allocator) {
     fun ensure_capacity(^self, min: usize) {
         if self.cap < min {
             self.cap = min + min >> 1;
-            self.data = A.realloc(self.data, sizeof T * capacity);
+            self.data = A.realloc(self.data, sizeof T * capacity).?;
         }
     }
 

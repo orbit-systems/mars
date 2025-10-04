@@ -94,10 +94,10 @@ string snippet_line(string src, string snippet) {
         }
         line.raw--;
     }
-    // trim leading whitespace
-    // while (is_whitespace(line.raw[0])) {
-    //     line.raw++;
-    // }
+    // trim leading newlines ig
+    while (line.raw[0] == '\n') {
+        line.raw++;
+    }
     // expand line forwards
     while (true) {
         if (line.raw + line.len == src.raw + src.len) break;
