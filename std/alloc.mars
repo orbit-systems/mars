@@ -1,0 +1,19 @@
+pub enum Error {
+    // allocator has run out of memory.
+    OutOfMemory,
+
+    // allocator has not run out of memory,
+    // but the requested allocation is too big.
+    // this is for things like bump or pool allocators,
+    // which may only be able to fulfill requests of a 
+    // certain size.
+    TooBig,
+}
+
+def Ptr = builtin::types::Pointer;
+
+pub interface Allocator {
+    pub fun alloc(^self, def P: Ptr, count: usize): Error?P;
+    pub fun realloc[P: Ptr](^self, old: P, new_count: usize): Error?P;
+    pub fun free[P: Ptr](^self, ptr: P);
+}

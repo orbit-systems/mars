@@ -1,10 +1,11 @@
 #include <stdio.h>
 
-#include "coyote.h"
-
 #include "common/util.h"
+
+#include "coyote.h"
 #include "lex.h"
 #include "parse.h"
+#include "irgen.h"
 
 #include "iron/iron.h"
 
@@ -16,24 +17,24 @@ static void print_help() {
     puts(" --help              Display this info.");
     puts(" --version           Display version information.");
     puts(" --xrsdk             Warn on code that would not compile with the");
-    puts("                     original XR/SDK compiler.");
+    puts("                       original XR/SDK compiler.");
     puts(" --error-on-warn     Turn warnings into errors.");
     puts(" --preproc,          Only perform the preprocessor. This strips");
-    puts("                     all hygenic macro scope information and may");
-    puts("                     not produce re-compilable code.");
+    puts("                       all hygenic macro scope information and may");
+    puts("                       not produce re-compilable code.");
     puts(" --incdir=/path/     Add a directory to search for INCLUDE");
-    puts("                     directives with '<inc>/'");
+    puts("                       directives with '<inc>/'");
     puts(" --libdir=/path/     Add a directory to search for INCLUDE");
-    puts("                     directives with '<ll>/'");
+    puts("                       directives with '<ll>/'");
     puts(" --arch=...          Specify the target architecture:");
-    puts("                      xr17032");
-    puts("                      fox32");
-    puts("                      x86_64/x64");
-    puts("                      aarch64");
+    puts("                       x86-64/x64");
+    puts("                       aarch64/arm64");
+    puts("                       xr17032");
+    puts("                       fox32");
     puts(" --system=...        Specify the target system:");
-    puts("                      freestanding/none");
-    puts("                      linux");
-    puts("                      windows");
+    puts("                       freestanding/none");
+    puts("                       linux");
+    puts("                       windows");
 }
 
 static void print_version() {
@@ -127,4 +128,6 @@ int main(int argc, char** argv) {
     }
 
     CompilationUnit cu = parse_unit(&p);
+
+    FeModule* m = irgen(&cu);
 }

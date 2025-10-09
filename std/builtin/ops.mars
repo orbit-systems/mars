@@ -1,0 +1,125 @@
+// arithmetic ops
+
+interface Add(Rhs: type) {
+    def Result: type;
+    fun op(self, rhs: Rhs): Result;
+}
+
+interface AssignAdd(Rhs: type) {
+    fun op(^self, rhs: Rhs);
+}
+
+interface Sub(Rhs: type) {
+    def Result: type;
+    fun op(self, rhs: Rhs): Result;
+}
+
+interface AssignSub(Rhs: type) {
+    fun op(^self, rhs: Rhs);
+}
+
+interface Neg {
+    def Result: type;
+    fun op(self): Result;
+}
+
+interface Mul(Rhs: type) {
+    def Result: type;
+    fun op(self, rhs: Rhs): Result;
+}
+
+interface AssignMul(Rhs: type) {
+    fun op(^self, rhs: Rhs);
+}
+
+interface Div(Rhs: type) {
+    def Result: type;
+    fun op(self, rhs: Rhs): Result;
+}
+
+interface AssignDiv(Rhs: type) {
+    fun op(^self, rhs: Rhs);
+}
+
+interface Rem(Rhs: type) {
+    def Result: type;
+    fun op(self, rhs: Rhs): Result;
+}
+
+interface AssignRem(Rhs: type) {
+    fun op(^self, rhs: Rhs);
+}
+
+// bitwise ops
+
+interface And(Rhs: type) {
+    def Result: type;
+    fun op(self, rhs: Rhs): Result;
+}
+
+interface AssignAnd(Rhs: type) {
+    fun op(^self, rhs: Rhs);
+}
+
+interface Or(Rhs: type) {
+    def Result: type;
+    fun op(self, rhs: Rhs): Result;
+}
+
+interface AssignOr(Rhs: type) {
+    fun op(^self, rhs: Rhs);
+}
+
+interface Xor(Rhs: type) {
+    def Result: type;
+    fun op(self, rhs: Rhs): Result;
+}
+
+interface AssignXor(Rhs: type) {
+    fun op(^self, rhs: Rhs);
+}
+
+interface Not {
+    def Result: type;
+    fun op(self): Result;
+}
+
+interface Shl(Rhs: type) {
+    def Result: type;
+    fun op(self, rhs: Rhs): Result;
+}
+
+interface AssignShl(Rhs: type) {
+    fun op(^self, rhs: Rhs);
+}
+
+interface Shr(Rhs: type) {
+    def Result: type;
+    fun op(self, rhs: Rhs): Result;
+}
+
+interface AssignShr(Rhs: type) {
+    fun op(^self, rhs: Rhs);
+}
+
+// conversion
+
+interface As(T: type) {
+    fun op(self): T;
+}
+
+interface ImplicitAs(T: type) {
+    fun op(self): T;
+}
+
+// miscellaneous
+
+interface Index(Index: type) {
+    def Result: type;
+    fun op(^self, idx: Index): ^Result;
+}
+
+interface Deref {
+    def Result: type;
+    fun op(^self): ^Result;
+}

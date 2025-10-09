@@ -45,7 +45,7 @@ void ty_init() {
     }
     memset(tybuf.ptrs, 0, sizeof(tybuf.ptrs[0]) * tybuf.cap);
     
-    for_n_eq(i, TY_VOID, TY_UQUAD) {
+    for_n_eq(i, 0, TY_UQUAD) {
         TY(i,  TyBase)->kind = i;
 
         // init pointer cache
@@ -1049,10 +1049,25 @@ TyIndex parse_type(Parser* p, bool allow_incomplete) {
     return left;
 }
 
-static bool is_lvalue(Expr* e) {
+static bool is_assignable(Expr* e) {
     switch (e->kind) {
     case EXPR_ENTITY:
         return e->entity->kind == ENTKIND_VAR;
+    case EXPR_DEREF:
+    case EXPR_DEREF_MEMBER:
+    case EXPR_MEMBER:
+    case EXPR_PTR_INDEX:
+    case EXPR_ARRAY_INDEX:
+        return true;
+    default:
+        return false;
+    }
+}
+
+static bool is_lvalue(Expr* e) {
+    switch (e->kind) {
+    case EXPR_ENTITY:
+        return e->entity->kind == ENTKIND_VAR || e->entity->kind == ENTKIND_FN;
     case EXPR_DEREF:
     case EXPR_DEREF_MEMBER:
     case EXPR_MEMBER:
@@ -1325,8 +1340,8 @@ Expr* parse_atom(Parser* p) {
                     advance(p);
                     arg = parse_expr(p);
                     // out_arg must be an lvalue (assignable)
-                    if_unlikely(!is_lvalue(arg)) {
-                        error_at_expr(p, arg, REPORT_ERROR, "OUT argument must be an l-value");
+                    if_unlikely(!is_assignable(arg)) {
+                        error_at_expr(p, arg, REPORT_ERROR, "OUT argument must be an assignable l-value");
                     }
                 } else {
                     arg = parse_expr(p);
@@ -2007,8 +2022,8 @@ Stmt* parse_var_decl(Parser* p, StorageKind storage) {
 Stmt* parse_stmt_assign(Parser* p, u8 assign_kind, Expr* left_expr) {
     Stmt* assign = new_stmt(p, assign_kind, assign);
     assign->assign.lhs = left_expr;
-    if_unlikely (!is_lvalue(left_expr)) {
-        error_at_expr(p, left_expr, REPORT_ERROR, "expression is not an l-value");
+    if_unlikely (!is_assignable(left_expr)) {
+        error_at_expr(p, left_expr, REPORT_ERROR, "expression is not an assignable l-value");
     }
 
     advance(p);
@@ -2454,6 +2469,7 @@ Stmt* parse_fn_decl(Parser* p, u8 storage) {
     u32 ident_pos = p->cursor;
     string identifier = tok_span(p->current);
     Entity* fn = get_or_create(p, identifier);
+    fn->kind = ENTKIND_FN;
     // if (fn->storage == STORAGE_EXTERN && storage == STORAGE_PRIVATE) {
     //     parse_error(p, fn->decl->token_index, fn->decl->token_index, REPORT_NOTE, "previous EXTERN declaration");
     //     parse_error(p, ident_pos, ident_pos, REPORT_ERROR, "previously EXTERN function cannot be PRIVATE");

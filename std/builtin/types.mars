@@ -1,0 +1,59 @@
+import builtin::ops;
+
+// interfaces which describe the behavior of built-in types
+// 'sealed' means that they cannot be implemented in other modules.
+
+interface sealed Pointer {
+    require ops::Deref;
+    require ops::As(usize);
+
+    pub def Child = (self as ops::Deref)::Result;
+
+    pub def align: usize;
+    pub def offset: usize;
+    pub def is_const: bool;
+    pub def is_allowzero: bool;
+    pub def is_noalias: bool;
+    pub def is_static: bool;
+}
+
+interface sealed Integer {
+    require Arithmetic(self);
+    require Bits(self);
+}
+
+interface sealed Float {
+    require Arithmetic(self);
+}
+
+interface Arithmetic(Rhs: type) {
+    require ops::Add(Rhs), ops::AssignAdd(Rhs);
+    require ops::Sub(Rhs), ops::AssignSub(Rhs);
+    require ops::Neg;
+    require ops::Mul(Rhs), ops::AssignMul(Rhs);
+    require ops::Div(Rhs), ops::AssignDiv(Rhs);
+    require ops::Rem(Rhs), ops::AssignRem(Rhs);
+}
+
+interface Bits(Rhs: type) {
+    require ops::And(Rhs), ops::AssignAnd(Rhs);
+    require ops::Or(Rhs), ops::AssignOr(Rhs);
+    require ops::Xor(Rhs), ops::AssignXor(Rhs);
+    require ops::Not;
+    require ops::Shl(Rhs), ops::AssignShl(Rhs);
+    require ops::Shr(Rhs), ops::AssignShr(Rhs);
+}
+
+// interfaces for builtin data structure layout
+
+interface InlineOptional {
+    fun new_null(): self;
+    fun is_null(self): bool;
+}
+
+// for holding an enum optional tag with an 
+// underlying integer equal to or smaller than integer type T
+interface InlineEnumOptional(T: builtin::types::Integer) {
+    fun set_tag(^self, tag: T);
+    fun get_tag(self): T;
+}

@@ -1,23 +1,35 @@
-// static pointers are suitable to be used as compile-time-known
-// values (since they're resolved at link-time) but they cannot be
-// dereferenced or used as a value at compile-time.
-pub struct Vec(T: type, A: ^static std::Allocator) {
+// takes a comptime-known static reference to an allocator.
+pub struct Vec[A: std::Allocator](T: type, allocator: ^static A) {
     data: [^]T,
     len, cap: usize,
 
     pub fun new(capacity: usize): self {
-        let cap = builtin:max(capacity, 2);
-        let len = 0;
-        let data = A.alloc(sizeof T * capacity).?;
+        var vec: self = undefined;
+        vec.init(capacity);
+        vec
+    }
 
-        .{data, len, cap}
+    pub fun init(^self, capacity: usize) {
+        self.cap = builtin:max(capacity, 2);
+        self.len = 0;
+        self.data = allocator.alloc([^]T, cap).?;
+    }
+
+    pub fun deinit(^self) {
+        self.cap = 0;
+        self.len = 0;
+        allocator.free(self.data);
+    }
+
+    pub fn reserve(^self, additional: usize) {
+        self.ensure_capacity(self.len + additional);
     }
 
     // ensure capacity is at least "min"
     fun ensure_capacity(^self, min: usize) {
         if self.cap < min {
             self.cap = min + min >> 1;
-            self.data = A.realloc(self.data, sizeof T * capacity).?;
+            self.data = allocator.realloc(self.data, cap).?;
         }
     }
 
@@ -75,6 +87,26 @@ pub struct Vec(T: type, A: ^static std::Allocator) {
         builtin::move(&self.data[index + items.len], &self.data[index], self.len - index);
         builtin::copy(&self.data[index], items.data, items.len);
         self.len += items.len;
+    }
+
+    pub fun remove_ordered(^self, index: usize) {
+        if index == items.len - 1 {
+            self.len -= 1;
+            return;
+        }
+
+        builtin::move(&self.data[index], &self.data[index + 1], self.len - 1 - index);
+        self.len -= 1;
+    }
+
+    pub fun remove_unordered(^self, index: usize) {
+        if index == items.len - 1 {
+            self.len -= 1;
+            return;
+        }
+
+        self.data[index] = self.data[self.len - 1];
+        self.len -= 1;
     }
 
     impl builtin::ops::Index(usize) {
