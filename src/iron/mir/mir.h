@@ -8,14 +8,29 @@
 #include <assert.h>
 
 typedef struct FeMirSection FeMirSection;
+typedef struct FeMirRelocation FeMirRelocation;
+typedef struct FeMirSymbol FeMirSymbol;
+// type-safe buffer indices
+typedef struct {u32 _;} FeMirSectionIndex;
 typedef struct {u32 _;} FeMirStringIndex;
+typedef struct {u32 _;} FeMirSymbolIndex;
+typedef struct {u32 _;} FeMirRelocIndex;
+typedef struct {u32 _;} FeMirExtraIndex;
+#define FE_MIR_NULL_SECTION (FeMirSectionIndex){0}
+#define FE_MIR_NULL_STRING  (FeMirStringIndex){0}
+#define FE_MIR_NULL_SYMBOL  (FeMirSymbolIndex){0}
+#define FE_MIR_NULL_RELOC   (FeMirRelocIndex){0}
+
+Vec_typedef(FeMirSection);
+Vec_typedef(FeMirRelocation);
+Vec_typedef(FeMirSymbol);
+Vec_typedef(u32);
 
 typedef enum : u8 {
     FE_MIR_SYMKIND_NONE = 0,
     FE_MIR_SYMKIND_DATA,
     FE_MIR_SYMKIND_FUNCTION,
     
-    // not associated with any section,
     // does not undergo relocation.
     FE_MIR_SYMKIND_ABSOLUTE,
 } FeMirSymbolKind;
@@ -29,33 +44,13 @@ typedef enum : u8 {
     FE_MIR_SYMBIND_PUBLIC_WEAK,
 } FeMirSymbolBinding;
 
-typedef struct {
+typedef struct FeMirSymbol {
     u16 section_index;
     FeMirSymbolKind kind;
     FeMirSymbolBinding binding;
     FeMirStringIndex name;
     u64 value; // offset from section it's defined in
 } FeMirSymbol;
-
-typedef enum : u8 {
-    FE_MIR_SECTION_EXEC   = 1 << 0,
-    FE_MIR_SECTION_READ   = 1 << 1,
-    FE_MIR_SECTION_WRITE  = 1 << 2,
-
-    FE_MIR_SECTION_BLANK  = 1 << 3,
-    FE_MIR_SECTION_PINNED = 1 << 4,
-} FeMirSectionFlags;
-
-Vec_typedef(u8);
-
-typedef struct FeMirSection {
-    FeMirStringIndex name;
-    FeMirSectionFlags flags;
-    u16 alignment;
-
-    u64 virt_addr;
-} FeMirSection;
-#define FE_MIR_NULL_SECTION 0
 
 typedef enum : u8 {
     // an alignment directive.
@@ -65,7 +60,7 @@ typedef enum : u8 {
     FE_MIR_ELEM_LABEL,
     FE_MIR_ELEM_LOCAL_LABEL,
 
-    // 
+    // a relocation at this location.
     FE_MIR_ELEM_RELOC,
 
     // a large length of bytes
@@ -91,48 +86,76 @@ typedef struct FeMirElement {
     u16 byte_size;
 
     // byte offset from start of section
-    u32 byte_offset;
+    // this is filled in by the MIR builder
+    // and should not be directy modified.
+    u32 _byte_offset;
 
     // 32 bits of whatever else is needed
-    u32 opaque_extra;
+    union {
+        FeMirExtraIndex index;
+        FeMirStringIndex string;
+        FeMirRelocIndex reloc;
+        FeMirSymbolIndex symbol;
+        u32 bits;
+    } extra;
 } FeMirElement;
 
-typedef struct FeMirElementInstBlock {
+typedef struct FeMirInstBlock {
     u32 len;
     u32 insts[]; // need to cast to inst type first
-} FeMirElementInstBlock;
+} FeMirInstBlock;
 
 typedef enum : u8 {
-    MIR_RELOC__ADDEND,
+    FE_MIR_SECTION_EXEC   = 1 << 0,
+    FE_MIR_SECTION_READ   = 1 << 1,
+    FE_MIR_SECTION_WRITE  = 1 << 2,
 
-    MIR_RELOC_PTR64,
-    MIR_RELOC_PTR32,
-    MIR_RELOC_PTR64_UNALIGNED,
-    MIR_RELOC_PTR32_UNALIGNED,
+    FE_MIR_SECTION_BLANK  = 1 << 3,
+} FeMirSectionFlags;
 
-    MIR_RELOC_XR_BRANCH,    // branch target
-    MIR_RELOC_XR_ABSJ,      // XR absolute jump
-    MIR_RELOC_XR_LA,        // XR LA pseudo-inst
-    MIR_RELOC_XR_FAR_INT,   // XR far-int access psuedo-inst
-    MIR_RELOC_XR_FAR_LONG,  // XR far-long access psuedo-inst
+Vec_typedef(u8);
+Vec_typedef(FeMirElement);
+
+typedef struct FeMirSection {
+    FeMirStringIndex name;
+    FeMirSectionFlags flags;
+    u16 alignment;
+
+    Vec(FeMirElement) elems;
+
+    u64 virt_addr;
+} FeMirSection;
+
+typedef enum : u8 {
+    FE_MIR_RELOC__ADDEND,
+
+    FE_MIR_RELOC_PTR64,
+    FE_MIR_RELOC_PTR32,
+    FE_MIR_RELOC_PTR64_UNALIGNED,
+    FE_MIR_RELOC_PTR32_UNALIGNED,
+
+    FE_MIR_RELOC_XR_BRANCH,     // branch target
+    FE_MIR_RELOC_XR_ABSJ,       // XR absolute jump
+    FE_MIR_RELOC_XR_LA,         // XR LA pseudo-inst
+    FE_MIR_RELOC_XR_FAR_INT,    // XR far-int access psuedo-inst
+    FE_MIR_RELOC_XR_FAR_LONG,   // XR far-long access psuedo-inst
+
+    FE_MIR_RELOC__COUNT,
 } FeMirRelocKind;
 
-typedef struct {u32 _;} MirRelocIndex;
-#define MIR_RELOC_NONE (MirRelocIndex){0}
-
-typedef struct {
+typedef struct FeMirRelocation {
     FeMirRelocKind kind;
     bool uses_addend;
-    u32 symbol_index;
-} MirRelocation;
+    FeMirSymbolIndex symbol;
+} FeMirRelocation;
 
-typedef struct {
-    // shadow MirRelocation.kind for layout compatibility
+typedef struct FeMirRelocationAddend {
+    // shadow FeMirRelocation.kind for layout compatibility
     FeMirRelocKind _kind;
     u32 addend;
-} MirRelocationAddend;
-static_assert(sizeof(MirRelocation) == sizeof(MirRelocationAddend));
-static_assert(alignof(MirRelocation) == alignof(MirRelocationAddend));
+} FeMirRelocationAddend;
+static_assert(sizeof(FeMirRelocation) == sizeof(FeMirRelocationAddend));
+static_assert(alignof(FeMirRelocation) == alignof(FeMirRelocationAddend));
 
 typedef enum : u8 {
     // standard object file
@@ -145,12 +168,6 @@ typedef enum : u8 {
     FE_MIR_OBJ_EXECUTABLE,
 } FeMirObjectKind;
 
-Vec_typedef(FeMirSection);
-Vec_typedef(FeMirSymbol);
-Vec_typedef(u32);
-
-#define FE_MIR_NULL_SYMBOL 0
-
 typedef struct {
     FeMirObjectKind kind;
     FeArch arch;
@@ -159,18 +176,28 @@ typedef struct {
     Vec(u8) string_pool;
     Vec(FeMirSection) sections;
     Vec(FeMirSymbol) symbols;
-    Vec(FeMirSymbol) relocations;
+    Vec(FeMirRelocation) relocations;
 
     Vec(u32) elem_extras;
     
-    u32 entry_symbol; // only relevant for executable objects
+    // only relevant for executable objects
+    FeMirSymbolIndex entry_symbol;
 
     FeArena arena;
 } FeMirObject;
 
-FeMirObject* fe_mir_new_object(FeMirObjectKind kind);
-FeMirSection* fe_mir_new_section(FeMirObject* obj, const char* name, u32 name_len, FeMirSectionFlags flags);
+FeMirObject* fe_mir_object_new(FeMirObjectKind kind);
+FeMirSection* fe_mir_section_new(FeMirObject* obj, const char* name, u32 name_len, FeMirSectionFlags flags);
 
 FeMirStringIndex fe_mir_intern_string(FeMirObject* obj, const char* name, u32 len);
+
+// all of these may be invalidated when (obj) is modified in some way
+void* fe_mir_extra_ptr(FeMirObject* obj, FeMirExtraIndex index);
+const char* fe_mir_string_ptr(FeMirObject* obj, FeMirStringIndex index);
+FeMirSymbol* fe_mir_symbol_ptr(FeMirObject* obj, FeMirSymbolIndex index);
+FeMirRelocation* fe_mir_reloc_ptr(FeMirObject* obj, FeMirRelocIndex index);
+
+FeMirElement* fe_mir_elem_new(FeMirObject* obj, FeMirSection* sec);
+FeMirElement* fe_mir_elem_new(FeMirObject* obj, FeMirSection* sec);
 
 #endif // FE_MIR_H

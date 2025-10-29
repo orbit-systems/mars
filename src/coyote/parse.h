@@ -32,7 +32,6 @@ typedef enum : u8 {
     TY_FN,
 
     TY_ALIAS_INCOMPLETE,
-    // TY_ALIAS_IN_PROGRESS,
     TY_ALIAS,
 
 } TyKind;
@@ -141,6 +140,9 @@ typedef struct Entity {
         Stmt* decl;
         u64 variant_value;
     };
+
+    // for locals, irgen uses this for the stack slot index
+    u32 index;
 } Entity;
 
 typedef enum : u8 {
@@ -195,7 +197,7 @@ typedef struct StmtList {
     Stmt** stmts;
 } StmtList;
 
-typedef struct Stmt {
+struct Stmt {
     StmtKind kind;
     ReturnKind retkind;
     u32 token_index;
@@ -239,7 +241,7 @@ typedef struct Stmt {
 
         Entity* goto_;
     };
-} Stmt;
+};
 
 typedef enum : u8 {
     EXPR_ADD,
@@ -354,5 +356,14 @@ typedef struct CompilationUnit {
 } CompilationUnit;
 
 CompilationUnit parse_unit(Parser* p);
+
+typedef struct TypeBuffer {
+    TyBufSlot* at;
+    TyIndex* ptrs;
+    u32 len;
+    u32 cap;
+} TypeBuffer;
+
+extern thread_local TypeBuffer tybuf;
 
 #endif // PARSE_H

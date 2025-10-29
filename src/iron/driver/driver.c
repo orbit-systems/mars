@@ -8,8 +8,6 @@ static void quick_print(FeFunc* f) {
     printf("%.*s", (int)db.len, db.at);
 }
 
-FeInst* fe_solve_alias_space(FeFunc* f, u32 alias_space);
-
 FeFunc* make_store_test(FeModule* mod, FeInstPool* ipool, FeVRegBuffer* vregs) {
     FeSection* text = fe_section_new(mod, "text", 0, FE_SECTION_EXECUTABLE);
 
@@ -57,7 +55,7 @@ FeFunc* make_store_test(FeModule* mod, FeInstPool* ipool, FeVRegBuffer* vregs) {
     fe_append_end(entry, ret);
     fe_return_set_arg(f, ret, 0, load);
     
-    fe_solve_alias_space(f, 0);
+    fe_solve_mem_pessimistic(f);
 
     return f;
 }
@@ -91,7 +89,7 @@ FeFunc* make_alg_test(FeModule* mod, FeInstPool* ipool, FeVRegBuffer* vregs) {
     fe_append_end(entry, ret);
     fe_return_set_arg(f, ret, 0, shift_x);
     
-    fe_solve_alias_space(f, 0);
+    fe_solve_mem_pessimistic(f);
 
     return f;
 }

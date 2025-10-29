@@ -210,7 +210,7 @@ usize fe_ty_get_align(FeTy ty, FeComplexTy* cty);
 // architecture/ABI stuff
 // -------------------------------------
 
-typedef enum: u8 {
+typedef enum FeArch : u8 {
     FE_ARCH_X64 = 1,
     FE_ARCH_ARM64,
 
@@ -219,11 +219,11 @@ typedef enum: u8 {
     // FE_ARCH_APHELION,
 } FeArch;
 
-typedef enum: u8 {
+typedef enum FeSystem : u8 {
     FE_SYSTEM_FREESTANDING = 1,
 } FeSystem;
 
-typedef enum : u8 {
+typedef enum FeCallConv : u8 {
     // pass parameters however iron sees fit
     // may not have stable ABI, dangerous for
     // public/extern functions
@@ -246,7 +246,7 @@ typedef enum : u8 {
 // Iron IR
 // -------------------------------------
 
-typedef enum: u8 {
+typedef enum FeSymbolBinding : u8 {
     FE_BIND_LOCAL,
     FE_BIND_GLOBAL,
     FE_BIND_WEAK,
@@ -258,7 +258,7 @@ typedef enum: u8 {
     FE_BIND_EXTERN,
 } FeSymbolBinding;
 
-typedef enum: u8 {
+typedef enum FeSymbolKind : u8 {
     FE_SYMKIND_NONE = 0,
     FE_SYMKIND_FUNC,
     FE_SYMKIND_DATA,
@@ -291,8 +291,8 @@ typedef struct FeFuncSig {
 } FeFuncSig;
 
 typedef struct FeFunc {
-    FeFuncSig* sig;
     FeSymbol* sym;
+    FeFuncSig* sig;
     FeModule* mod;
 
     u32 max_id;
@@ -312,6 +312,11 @@ typedef struct FeFunc {
     FeStackItem* stack_bottom;
 } FeFunc;
 
+typedef struct FeStaticData {
+    FeSymbol* sym;
+    FeComplexTy* ty; 
+} FeStaticData;
+
 typedef struct FeSymTab {
     struct {
         FeCompactStr name;
@@ -326,7 +331,7 @@ FeSymbol* fe_symtab_get(FeSymTab* st, const char* data, u16 len);
 void fe_symtab_remove(FeSymTab* st, const char* data, u16 len);
 void fe_symtab_destroy(FeSymTab* st);
 
-typedef enum: u8 {
+typedef enum FeSectionFlags : u8 {
     FE_SECTION_WRITEABLE   = 1 << 0,
     FE_SECTION_EXECUTABLE  = 1 << 1,
     FE_SECTION_THREADLOCAL = 1 << 2,
@@ -394,7 +399,7 @@ typedef struct FeBlock {
     for (FeInst* inst = (blockptr)->bookend->prev, *_prev_ = inst->prev; inst->kind != FE__BOOKEND; inst = _prev_, _prev_ = _prev_->prev)
 
 typedef u16 FeInstKind;
-typedef enum: FeInstKind {
+typedef enum FeInstKindGeneric : FeInstKind {
     // Bookend
     FE__BOOKEND = 1,
 
@@ -413,7 +418,6 @@ typedef enum: FeInstKind {
     // FeInstStack
     FE_STACK_ADDR,
 
-    // FeInstBinop
     // {lhs, rhs}
     FE_IADD,
     FE_ISUB,
@@ -436,7 +440,6 @@ typedef enum: FeInstKind {
     FE_FDIV,
     FE_FREM,
 
-    // FeInstUnop
     // {src}
     FE_MOV,
     FE__MACH_MOV, // mostly for hardcoding register clobbers
@@ -514,14 +517,14 @@ typedef enum: FeInstKind {
 // if possible, bit-pack uses
 #ifdef FE_HOST_X64
     typedef struct FeInstUse {
-        u64 idx : 16; // shouldn't need more than this...
+        u64 idx : 16; // REALLY shouldn't need more than this...
         i64 ptr : 48;
     } FeInstUse;
     static_assert(sizeof(FeInstUse) == 8);
     #define FE_USE_PTR(use) ((FeInst*)(i64)(use).ptr)
 #else
     typedef struct FeInstUse {
-        usize idx;
+        u16 idx;
         FeInst* ptr;
     } FeInstUse;
     #define FE_USE_PTR(use) (use).ptr
@@ -550,19 +553,19 @@ typedef struct FeInst {
     usize extra[];
 } FeInst;
 
-typedef enum : u8 {
+typedef enum FeInlineAsmParamKind : u8 {
     FE_ASM_SCRATCH = 0b00, // used when an register needs to be picked but is neither IN nor OUT
     FE_ASM_IN      = 0b01,
     FE_ASM_OUT     = 0b10,
     FE_ASM_INOUT   = 0b11,
 } FeInlineAsmParamKind;
 
-typedef struct {
+typedef struct FeInlineAsmParam {
     FeTy ty; // target chooses register class from provided type
     FeInlineAsmParamKind kind;
 } FeInlineAsmParam;
 
-typedef struct {
+typedef struct FeInstInlineAsm {
     /*
         a: in, b: out, c: inout, d: inout, e: in, f: out
     ==
@@ -571,7 +574,6 @@ typedef struct {
     u16 num_params;
     bool mem_use;
     bool mem_def;
-    u32 alias_space;
 
     /* regular assembly text (no labels allowed)
         - use `#{N}` to designate spots for registers
@@ -581,7 +583,7 @@ typedef struct {
     FeInlineAsmParam params[];
 } FeInstInlineAsm;
 
-typedef struct {
+typedef struct FeInlineAsmAnalysis {
     // analysis
     bool mem_def : 1;
     bool mem_use : 1;
@@ -624,7 +626,6 @@ typedef struct {
     // amount that the provided pointer is offset from
     // the provided alignment
     u8  offset;
-    u32 alias_space;
 } FeInstMemop;
 
 typedef struct {
@@ -664,7 +665,7 @@ FeStackItem* fe_stack_append_top(FeFunc* f, FeStackItem* item);
 FeStackItem* fe_stack_remove(FeFunc* f, FeStackItem* item);
 u32 fe_stack_calculate_size(FeFunc* f);
 
-typedef enum : u16 {
+typedef enum FeTrait : u16 {
     // x op y == y op x
     FE_TRAIT_COMMUTATIVE      = 1u << 0,
     // (x op y) op z == x op (y op z)
@@ -742,6 +743,8 @@ void fe_inst_replace_pos(FeInst* from, FeInst* to);
 // might need to allocate
 void fe_cfg_add_edge(FeFunc* f, FeBlock* pred, FeBlock* succ);
 void fe_cfg_remove_edge(FeBlock* pred, FeBlock* succ);
+
+FeInst* fe_solve_mem_pessimistic(FeFunc* f);
 
 // -------------------------------------
 // instruction chains

@@ -1,7 +1,7 @@
 #include "common/util.h"
 #include "iron/iron.h"
 
-// various post-regalloc optimizations
+// various generic post-regalloc optimizations
 
 static bool try_mov_elim(FeFunc* f, FeInstSet* wlist, FeInst* mov) {
     if (!fe_inst_has_trait(mov->kind, FE_TRAIT_REG_MOV_HINT)) {

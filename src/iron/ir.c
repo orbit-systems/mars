@@ -905,7 +905,6 @@ FeInst* fe_inst_load(FeFunc* f, FeTy ty, FeInst* ptr, u16 align, u8 offset) {
 
     fe_extra(i, FeInstMemop)->align = align;
     fe_extra(i, FeInstMemop)->offset = offset;
-    fe_extra(i, FeInstMemop)->alias_space = 0; // everything in the same alias space atm
 
     return i;
 }
@@ -925,7 +924,6 @@ FeInst* fe_inst_store(FeFunc* f, FeInst* ptr, FeInst* val, u16 align, u8 offset)
 
     fe_extra(i, FeInstMemop)->align = align;
     fe_extra(i, FeInstMemop)->offset = offset;
-    fe_extra(i, FeInstMemop)->alias_space = 0; // everything in the same alias space atm
 
     return i;
 }

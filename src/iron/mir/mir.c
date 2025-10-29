@@ -20,46 +20,75 @@ FeMirStringIndex fe_mir_intern_string(FeMirObject* obj, const char* name, u32 le
     return (FeMirStringIndex){pos};
 }
 
-FeMirObject* fe_mir_new_object(FeMirObjectKind kind) {
+// use a hashmap later
+FeMirSymbolIndex fe_mir_symbol_lookup(FeMirObject* obj, const char* name, u32 len) {
+    for_n (i, 1, obj->symbols.len) {
+        const char* sym_name = fe_mir_string(obj, obj->symbols.at[i].name);
+
+        if (strncmp(sym_name, name, len) == 0 && sym_name[len] == '\0') {
+            return (FeMirSymbolIndex){i};
+        }
+    }
+    return FE_MIR_NULL_SYMBOL;
+}
+
+#define ADDR_AS(insts, T) ((T*)&(insts))
+
+FeMirRelocIndex fe_mir_reloc_new(FeMirObject* obj, FeMirRelocKind kind, FeMirSymbolIndex sym) {
+    u32 i = obj->relocations.len;
+    vec_append(&obj->relocations, (FeMirRelocation){});
+    return (FeMirRelocIndex){i};
+}
+
+FeMirRelocIndex fe_mir_reloc_new_with_addend(FeMirObject* obj, FeMirRelocKind kind, FeMirSymbolIndex sym, u32 addend) {
+    u32 i = obj->relocations.len;
+    vec_reserve(&obj->relocations, 2);
+    obj->relocations.len += 2;
+
+    FeMirRelocationAddend* addend_reloc = (void*)&(obj->relocations.at[i + 1]);
+    addend_reloc->_kind = FE_MIR_RELOC__ADDEND;
+    addend_reloc->addend = addend;
+
+    return (FeMirRelocIndex){i};
+}
+
+FeMirObject* fe_mir_object_new(FeMirObjectKind kind) {
     FeMirObject* obj = fe_zalloc(sizeof(*obj));
 
     obj->kind = kind;
 
-    // init string table
-    vec_init(&obj->string_pool, 512);
-    // zero so that null string indexes map to a string of length zero.
+    // init string pool
+    vec_init(&obj->string_pool, 256);
+    // immediate null terminator so the null string index 
+    // maps to a string of length zero.
     vec_append(&obj->string_pool, 0); 
+
+    vec_init(&obj->sections, 8);
 
     // init symbol list
     vec_init(&obj->symbols, 32);
-    // entry for null symbol indexes
+    // null entry for null symbol index
     vec_append(&obj->symbols, (FeMirSymbol){0});
 
+    // init relocation buffer
+    vec_init(&obj->relocations, 128);
+    // null entry for null relocation index
+    vec_append(&obj->relocations, (FeMirRelocation){0});
 
-    vec_init(&obj->sections, 8);
 
     fe_arena_init(&obj->arena);
 
     return obj;
 }
 
-// use a hashmap later
-u32 fe_mir_symbol_lookup(FeMirObject* obj, const char* name, u32 len) {
-    for_n (i, 1, obj->symbols.len) {
-        const char* sym_name = fe_mir_string(obj, obj->symbols.at[i].name);
 
-        if (strncmp(sym_name, name, len) == 0 && sym_name[len] == '\0') {
-            return i;
-        }
-    }
-    return 0;
-}
-
-FeMirSection* fe_mir_new_section(FeMirObject* obj, const char* name, u32 name_len, FeMirSectionFlags flags) {
+FeMirSection* fe_mir_section_new(FeMirObject* obj, const char* name, u32 name_len, FeMirSectionFlags flags) {
     
     FeMirSection* section = fe_zalloc(sizeof(*section));
     section->flags = flags;
     section->name = fe_mir_intern_string(obj, name, name_len);
+
+    vec_init(&section->elems, 128);
 
     return section;
 }

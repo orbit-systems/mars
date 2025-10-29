@@ -1,4 +1,4 @@
 
-FN foo(IN x: UWORD): UWORD
-    RETURN x ROR 3
+FN foo(): UWORD
+    RETURN 3
 END

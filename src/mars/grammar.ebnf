@@ -1,3 +1,6 @@
+digit = '0' | '1' | '2' | '3' | '4' 
+      | '5' | '6' | '7' | '8' | '9';
+
 param_ident = "self" | "^" {reference_qualifier} "self" | ["def"] ident;
 param = param_ident {"," param_ident} [","] ":" expr;
 param_list = [param {"," param} [","]];
@@ -37,7 +40,8 @@ atomic_expr =
     ;
 
 unary_op = 
-    | atomic_ex
+    | "-"
+    | "&"
     ;
 
 unary_expr = {unary_op} atomic_expr;
@@ -47,14 +51,16 @@ non_bracing_expr =
     | non_bracing_expr [binary_op] non_bracing_expr
     ;
 
+defer_stmt = "defer" stmt;
+
 stmt = 
     | type_decl
     | decl_assign
     | fun_decl
-    | "defer" stmt
-    | ";"
+    | defer_stmt
     | bracing_expr
     | non_bracing_expr ";"
+    | ";"
     ;
 
 expr = 
@@ -73,8 +79,18 @@ reference_qualifier =
 
 sentinel = ":" expr;
 
-ty_expr = 
+ty_expr_terminal = 
     | ident
+    | 'i' digit {digit}
+    | 'u' digit {digit}
+    | 'f' digit {digit}
+    | "void"
+    | "noreturn"
+    ;
+
+ty_expr = 
+    | ty_expr_terminal
+    | "(" expr {"," expr} [","] ")" (* paren/tuple *)
     | "^"                     {reference_qualifier} ty_expr    (* pointer *)
     | "[" "^"  [sentinel] "]" {reference_qualifier} ty_expr    (* slice pointer *)
     | "["      [sentinel] "]" {reference_qualifier} ty_expr    (* slice *)

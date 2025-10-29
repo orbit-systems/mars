@@ -26,12 +26,7 @@ static void vec_char_append_many(Vec(char)* vec, const char* data, usize len) {
     }
 }
 
-thread_local static struct {
-    TyBufSlot* at;
-    TyIndex* ptrs;
-    u32 len;
-    u32 cap;
-} tybuf = {nullptr, nullptr, 0, 0};
+thread_local TypeBuffer tybuf;
 
 #define TY(index, T) ((T*)&tybuf.at[index])
 #define TY_KIND(index) ((TyBase*)&tybuf.at[index])->kind

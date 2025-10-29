@@ -19,8 +19,6 @@ typedef struct {
             u8 funct;
         };
     };
-
-    MirRelocIndex relocation;
 } FeMirXrInst;
 static_assert(alignof(FeMirXrInst) <= 4);
 

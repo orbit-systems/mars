@@ -108,10 +108,6 @@ interface As(T: type) {
     fun op(self): T;
 }
 
-interface ImplicitAs(T: type) {
-    fun op(self): T;
-}
-
 // miscellaneous
 
 interface Index(Index: type) {
@@ -123,3 +119,4 @@ interface Deref {
     def Result: type;
     fun op(^self): ^Result;
 }
+
