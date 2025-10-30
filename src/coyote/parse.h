@@ -5,6 +5,8 @@
 #include "coyote.h"
 #include "lex.h"
 
+#include "iron/iron.h"
+
 // ----------------- TYPES AND SHIT ----------------- 
 
 typedef enum : u8 {
@@ -141,8 +143,10 @@ typedef struct Entity {
         u64 variant_value;
     };
 
-    // for locals, irgen uses this for the stack slot index
-    u32 index;
+    // for locals, irgen uses this for the stackaddr pointer
+    FeTy fe_ty;
+    FeComplexTy* fe_cty;
+    void* extra;
 } Entity;
 
 typedef enum : u8 {
@@ -197,6 +201,8 @@ typedef struct StmtList {
     Stmt** stmts;
 } StmtList;
 
+VecPtr_typedef(Entity);
+
 struct Stmt {
     StmtKind kind;
     ReturnKind retkind;
@@ -217,6 +223,7 @@ struct Stmt {
         struct {
             Entity* fn;
             StmtList body;
+            VecPtr(Entity) parameters;
         } fn_decl;
 
         struct {
@@ -342,8 +349,6 @@ typedef struct Expr {
 Stmt* parse_stmt(Parser* p);
 Expr* parse_expr(Parser* p);
 TyIndex parse_type(Parser* p, bool allow_incomplete);
-
-VecPtr_typedef(Entity);
 
 typedef struct CompilationUnit {
     Arena arena;

@@ -52,13 +52,13 @@ static usize load_or_store_width(FeInst* inst) {
 }
 
 
-// return true of [x_start, x_end) overlaps with [y_start, y_end)
+// return true if [x_start, x_end) overlaps with [y_start, y_end)
 static inline bool ranges_overlap_right_excl(usize x_start, usize x_end, usize y_start, usize y_end) {
     return x_start < y_end && y_start < x_end;
 }
 
 typedef struct {
-    FeInst* ptr;
+    FeInst* root;
     usize offset;
 } PtrOffset;
 
@@ -85,6 +85,7 @@ static PtrOffset trace_ptr_offset(FeInst* ptr) {
 
 /*
     - symaddrs of different symbols will never alias each other
+    - stackaddrs of different slots will never alias each other
     - pointers from a NOALIAS will never alias other pointers in a function
     - non-overlapping offsets from the same pointer will never alias each other
 */
@@ -96,10 +97,27 @@ static bool pointers_may_overlap(FeInst* ptr1, usize width1, FeInst* ptr2, usize
     PtrOffset source2 = trace_ptr_offset(ptr2);
 
     // offsets from symbol addresses
-    if (source1.ptr->kind == FE_SYM_ADDR && source2.ptr->kind == FE_SYM_ADDR) {
+    if (source1.root->kind == FE_SYM_ADDR && source2.root->kind == FE_SYM_ADDR) {
         // not the same symbol, definitely wont alias
-        if (fe_extra(source1.ptr, FeInstSymAddr)->sym != fe_extra(source2.ptr, FeInstSymAddr)->sym) {
-            return true;
+        if (fe_extra(source1.root, FeInstSymAddr)->sym != 
+            fe_extra(source2.root, FeInstSymAddr)->sym
+        ) {
+            return false;
+        }
+        // these locations will only alias each other
+        // IF their access ranges overlap.
+        return ranges_overlap_right_excl(
+            source1.offset, source1.offset + width1, 
+            source2.offset, source2.offset + width2
+        );
+    }
+
+    if (source1.root->kind == FE_STACK_ADDR && source2.root->kind == FE_STACK_ADDR) {
+        // not the same symbol, definitely wont alias
+        if (fe_extra(source1.root, FeInstStack)->item != 
+            fe_extra(source2.root, FeInstStack)->item
+        ) {
+            return false;
         }
         // these locations will only alias each other
         // IF their access ranges overlap.
@@ -110,7 +128,7 @@ static bool pointers_may_overlap(FeInst* ptr1, usize width1, FeInst* ptr2, usize
     }
 
     // offsets from the same pointer
-    if (source1.ptr == source2.ptr) {
+    if (source1.root == source2.root) {
         // these locations will only alias each other
         // IF their access ranges overlap.
         return ranges_overlap_right_excl(
@@ -119,16 +137,77 @@ static bool pointers_may_overlap(FeInst* ptr1, usize width1, FeInst* ptr2, usize
         );
     }
 
-    // TODO this is a pessimistic answer since we're not smart enough yet
+    // TODO this is a pessimistic answer since we're not smart enough yet :(
+    return true;
+}
+
+
+static bool immediate_uses_escape(FeInst* ptr) {
+    for_n(i, 0, ptr->use_len) {
+        FeInst* use = FE_USE_PTR(ptr->uses[i]);
+        usize use_index = ptr->uses[i].idx;
+
+        // figure out of this use is an escaping use
+        switch (use->kind) {
+        case FE_STORE:
+            // the store is using it as a value
+            if (use_index == 2) {
+                return true;
+            }
+            break;
+        case FE_CALL:
+            // the call is using it as a parameter
+            if (use_index >= 2) {
+                return true;
+            }
+            break;
+        case FE_IADD:
+        case FE_ISUB:
+            return immediate_uses_escape(use);
+        default:
+            break;
+        }
+    }
+
+    return false;
+}
+
+static bool pointer_may_escape(FeFunc* f, FeInst* ptr) {
+    // get 'root' pointer
+    FeInst* root = trace_ptr_offset(ptr).root;
+
+    if (root->kind == FE_STACK_ADDR) {
+        return immediate_uses_escape(ptr);
+    }
+
     return true;
 }
 
 // returns true if i1 may cause aliasing effects to i2, or vice versa.
 bool fe_insts_may_alias(FeFunc* f, FeInst* i1, FeInst* i2) {
+    if (i1->kind == FE__ROOT || i2->kind == FE__ROOT) {
+        return true;
+    }
+
     if (i1->kind == FE_CALL || i2->kind == FE_CALL) {
         // calls always create 'choke points' in the memory space
         // only further analysis of a function can relax this
+        // (analysis which we don't currently do)
         return true;
+    }
+
+    if (i1->kind == FE_RETURN) {
+        // this is the return instruction. 
+        // it only aliases pointers that escape
+        // (stack stores that do not escape dont affect it)
+
+        if (!is_load_or_store(i2)) {
+            return true;
+        }
+        
+        FeInst* ptr = i2->inputs[1];
+    
+        return pointer_may_escape(f, ptr);
     }
 
     if (is_load_or_store(i1) && is_load_or_store(i2)) {

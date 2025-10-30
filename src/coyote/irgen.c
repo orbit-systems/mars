@@ -121,10 +121,54 @@ static FeInst* irgen_expr_literal(IRGen* ig, Expr* expr) {
     return lit;
 }
 
+static FeInst* irgen_expr_entity(IRGen* ig, Expr* expr) {
+    switch (expr->entity->storage) {
+    case STORAGE_LOCAL: {
+        expr->entity->fe_ty = select_iron_type(expr->ty).ty;
+
+        FeInst* load = fe_append_end(ig->b, fe_inst_load(
+            ig->f, 
+            expr->entity->fe_ty,
+            expr->entity->extra,
+            FE_MEMOP_ALIGN_DEFAULT,
+            0
+        ));
+        return load;
+    } break;
+    default:
+        UNREACHABLE;
+    }
+}
+
+static FeInst* irgen_expr_integer_binop(IRGen* ig, Expr* expr) {
+    FeInst* lhs = irgen_expr(ig, expr->binary.lhs);
+    FeInst* rhs = irgen_expr(ig, expr->binary.rhs);
+
+    FeInstKindGeneric kind;
+    switch (expr->kind) {
+    case EXPR_ADD:
+        kind = FE_IADD;
+        break;
+    case EXPR_SUB:
+        kind = FE_ISUB;
+        break;
+    default:
+        UNREACHABLE;
+    }
+
+    FeInst* binop = fe_append_end(ig->b, fe_inst_binop(ig->f, lhs->ty, kind, lhs, rhs));
+    return binop;
+}
+
 static FeInst* irgen_expr(IRGen* ig, Expr* expr) {
     switch (expr->kind) {
     case EXPR_LITERAL:
         return irgen_expr_literal(ig, expr);
+    case EXPR_ENTITY:
+        return irgen_expr_entity(ig, expr);
+    case EXPR_ADD:
+    case EXPR_SUB:
+        return irgen_expr_integer_binop(ig, expr);
     default:
         UNREACHABLE;
     }
@@ -151,8 +195,27 @@ static void irgen_stmt(IRGen* ig, Stmt* stmt) {
 }
 
 static void irgen_function(IRGen* ig) {
-    // TODO create stack slots for local variables
     Stmt* function_decl = ig->e->decl;
+
+    // generate stack slots for parameters
+    for_n(i, 0, function_decl->fn_decl.parameters.len) {
+        Entity* entity = function_decl->fn_decl.parameters.at[i];
+        
+        // TODO dont recalculate this, get it from earlier somewhere
+        TySelectResult iron_ty = select_iron_type(entity->ty);        
+        FeStackItem* stack_slot = fe_stack_append_top(ig->f, fe_stack_item_new(iron_ty.ty, iron_ty.cty));
+        // entity->extra = stack_slot;
+
+        FeInst* stackaddr = fe_append_end(ig->b, fe_inst_stack_addr(ig->f, stack_slot));
+        entity->extra = stackaddr;
+
+        // store into the stack slot
+        FeInst* store = fe_append_end(ig->b, fe_inst_store(ig->f, 
+            stackaddr, 
+            fe_func_param(ig->f, i), 
+            FE_MEMOP_ALIGN_DEFAULT, 0
+        ));
+    }
 
     // generate each statement in turn
     for_n(i, 0, function_decl->fn_decl.body.len) {

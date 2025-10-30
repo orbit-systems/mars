@@ -117,6 +117,19 @@ FeInstChain fe_xr_isel(FeFunc* f, FeBlock* block, FeInst* inst) {
                 return get_parameter(f, block, index);
             }
             FE_CRASH("unknown proj selection");
+        case FE_STACK_ADDR: {
+            FeStackItem* item = fe_extra(inst, FeInstStack)->item;
+            
+            FeInst* sp = mach_reg(f, block, XR_GPR_SP);
+            FeInst* add = xr_inst(f, XR_ADDI, 1, sizeof(XrInstImm));
+            add->ty = FE_TY_I32;
+            fe_set_input(f, add, 0, sp);
+            fe_extra(add, XrInstImm)->imm = item->_offset;
+
+            FeInstChain chain = fe_chain_new(sp);
+            chain = fe_chain_append_end(chain, add);
+            return chain;
+        }
         case FE_IADD: {
             if (is_const_u16(inst->inputs[1])) {
                 FeInst* sel = xr_inst(f, XR_ADDI, 1, sizeof(XrInstImm));
@@ -128,7 +141,7 @@ FeInstChain fe_xr_isel(FeFunc* f, FeBlock* block, FeInst* inst) {
             FeInst* sel = xr_inst(f, XR_ADD, 2, sizeof(XrInstImm));
             sel->ty = FE_TY_I32;
             fe_set_input(f, sel, 0, inst->inputs[0]);
-            fe_set_input(f, sel, 0, inst->inputs[1]);
+            fe_set_input(f, sel, 1, inst->inputs[1]);
             return fe_chain_new(sel);
         }
         case FE_ISUB: {
@@ -142,7 +155,7 @@ FeInstChain fe_xr_isel(FeFunc* f, FeBlock* block, FeInst* inst) {
             FeInst* sel = xr_inst(f, XR_SUB, 2, sizeof(XrInstImm));
             sel->ty = FE_TY_I32;
             fe_set_input(f, sel, 0, inst->inputs[0]);
-            fe_set_input(f, sel, 0, inst->inputs[1]);
+            fe_set_input(f, sel, 1, inst->inputs[1]);
             return fe_chain_new(sel);
         }
         case FE_CONST: {

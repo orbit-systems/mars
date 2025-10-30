@@ -134,10 +134,17 @@ int main(int argc, char** argv) {
     FeDataBuffer db;
     fe_db_init(&db, 512);
     for_funcs(func, m) {
+        fe_emit_ir_func(&db, func, true);
+    }
+    printf("%.*s", (int)db.len, db.at);
+    
+    db.len = 0;
+    for_funcs(func, m) {
         fe_opt_local(func);
         fe_emit_ir_func(&db, func, true);
     }
     printf("%.*s", (int)db.len, db.at);
+
     
     db.len = 0;
     for_funcs(func, m) {

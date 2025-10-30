@@ -745,6 +745,7 @@ void fe_cfg_add_edge(FeFunc* f, FeBlock* pred, FeBlock* succ);
 void fe_cfg_remove_edge(FeBlock* pred, FeBlock* succ);
 
 FeInst* fe_solve_mem_pessimistic(FeFunc* f);
+bool fe_insts_may_alias(FeFunc* f, FeInst* i1, FeInst* i2);
 
 // -------------------------------------
 // instruction chains
@@ -832,9 +833,11 @@ typedef struct FeInstSet {
 } FeInstSet;
 
 void fe_iset_init(FeInstSet* iset);
+void fe_iset_destroy(FeInstSet* iset);
 void fe_iset_push(FeInstSet* iset, FeInst* inst);
 FeInst* fe_iset_pop(FeInstSet* iset);
-void fe_iset_destroy(FeInstSet* iset);
+bool fe_iset_contains(FeInstSet* iset, FeInst* inst);
+void fe_iset_remove(FeInstSet* iset, FeInst* inst);
 
 // -------------------------------------
 // allocation

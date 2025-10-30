@@ -2492,17 +2492,21 @@ Stmt* parse_fn_decl(Parser* p, u8 storage) {
         fn_decl->fn_decl.fn = fn;
         fn->decl = fn_decl;
 
+        TyFn* fn_type = TY(decl_ty, TyFn);
+
+        fn_decl->fn_decl.parameters = vecptr_new(Entity, fn_type->len);
+
         p->current_function = fn;
 
         enter_scope(p);
 
         // define parameters
-        TyFn* fn_type = TY(decl_ty, TyFn);
         for_n(i, 0, fn_type->len - 1) {
             Ty_FnParam* param = &fn_type->params[i];
             Entity* param_entity = new_entity(p, from_compact(param->name), ENTKIND_VAR);
             param_entity->ty = param->ty;
             param_entity->storage = param->out ? STORAGE_OUT_PARAM : STORAGE_LOCAL;
+            vec_append(&fn_decl->fn_decl.parameters, param_entity);
         }
         if (fn_type->variadic) {
             Ty_FnParam* param = &fn_type->params[fn_type->len - 1];
@@ -2512,11 +2516,14 @@ Stmt* parse_fn_decl(Parser* p, u8 storage) {
             Entity* argc_entity = new_entity(p, from_compact(param->varargs.argc), ENTKIND_VAR);
             argc_entity->storage = STORAGE_LOCAL;
             argc_entity->ty = target_uword;
+            vec_append(&fn_decl->fn_decl.parameters, argv_entity);
+            vec_append(&fn_decl->fn_decl.parameters, argc_entity);
         } else if (fn_type->len != 0) {
             Ty_FnParam* param = &fn_type->params[fn_type->len - 1];
             Entity* param_entity = new_entity(p, from_compact(param->name), ENTKIND_VAR);
             param_entity->ty = param->ty;
             param_entity->storage = param->out ? STORAGE_OUT_PARAM : STORAGE_LOCAL;
+            vec_append(&fn_decl->fn_decl.parameters, param_entity);
         }
 
         u32 stmts_start = dynbuf_start();

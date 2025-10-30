@@ -114,6 +114,11 @@ void fe_xr_print_inst(FeDataBuffer* db, FeFunc* f, FeInst* inst) {
             fe_db_writef(db, fe_compstr_fmt, fe_compstr_arg(symname));
         }
         break;
+    case XR_SHIFT ... XR_MOD:
+        fe__emit_ir_ref(db, f, inst->inputs[0]);
+        fe_db_writef(db, ", ");
+        fe__emit_ir_ref(db, f, inst->inputs[1]);
+        break;
     case XR_ADDI ... XR_JALR:
         fe__emit_ir_ref(db, f, inst->inputs[0]);
         fe_db_writef(db, ", %u", fe_extra(inst, XrInstImm)->imm);

@@ -433,7 +433,7 @@ void fe_emit_ir_func(FeDataBuffer* db, FeFunc* f, bool fancy) {
     
     // write stack frame
     u32 stack_counter = 1;
-    for (FeStackItem* item = f->stack_top; item != nullptr; item = item->next) {
+    for (FeStackItem* item = f->stack_bottom; item != nullptr; item = item->next) {
         item->flags = stack_counter;
         fe_db_writef(db, "    s%d: ", stack_counter);
         print_ty(db, item->ty, item->complex_ty);
@@ -447,7 +447,7 @@ void fe_emit_ir_func(FeDataBuffer* db, FeFunc* f, bool fancy) {
         fe_db_writecstr(db, "\n");
         
         // print live-in set if present
-        if (block->live) {
+        if (block->live && block->live->in_len > 0) {
             fe_db_writecstr(db, "  in ");
             for_n(i, 0, block->live->in_len) {
                 FeVReg in = block->live->in[i];
@@ -464,7 +464,7 @@ void fe_emit_ir_func(FeDataBuffer* db, FeFunc* f, bool fancy) {
             print_inst(f, db, inst);
         }
         // print live-in set if present
-        if (block->live) {
+        if (block->live && block->live->out_len > 0) {
             fe_db_writecstr(db, "  out ");
             for_n(i, 0, block->live->out_len) {
                 FeVReg out = block->live->out[i];

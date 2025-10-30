@@ -34,4 +34,7 @@ static TySelectResult select_iron_type(TyIndex ty_index);
 static FeFuncSig* generate_signature(CompilationUnit* cu, FeModule* m, Entity* e);
 static void irgen_function(IRGen* ig);
 
+static FeInst* irgen_expr(IRGen* ig, Expr* expr);
+static void irgen_stmt(IRGen* ig, Stmt* stmt);
+
 #endif // IRGEN_H

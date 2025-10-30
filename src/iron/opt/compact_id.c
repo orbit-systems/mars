@@ -4,8 +4,8 @@
 // compact node and block ids for smaller worklists and maps
 
 void fe_opt_compact_ids(FeFunc* f) {
-    FeInst** insts = fe_malloc(f->max_id * sizeof(insts[0]));
-    FeBlock** blocks = fe_malloc(f->max_block_id * sizeof(blocks[0]));
+    FeInst** insts = fe_zalloc(f->max_id * sizeof(insts[0]));
+    FeBlock** blocks = fe_zalloc(f->max_block_id * sizeof(blocks[0]));
 
     
     for_blocks(block, f) {

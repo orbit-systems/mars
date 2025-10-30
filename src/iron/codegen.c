@@ -153,6 +153,5 @@ void fe_codegen(FeFunc* f) {
     }
 
     fe_regalloc_basic(f);
-
     fe_opt_post_regalloc(f);
 }

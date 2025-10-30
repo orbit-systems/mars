@@ -3,6 +3,8 @@
 
 // various local transformations
 
+static bool try_all(FeFunc* f, FeInstSet* wlist, FeInst* inst);
+
 static void push_uses(FeInstSet* wlist, FeInst* inst) {
     for_n(i, 0, inst->use_len) {
         fe_iset_push(wlist, FE_USE_PTR(inst->uses[i]));
@@ -195,6 +197,10 @@ static bool try_identity_binop(FeFunc* f, FeInstSet* wlist, FeInst* inst) {
 
     switch (inst->kind) {
     case FE_IADD:
+        if (is_const(rhs, 0)) {
+            replace = lhs;
+        }
+        break;
     case FE_ISUB:
         if (is_const(rhs, 0)) {
             replace = lhs;
@@ -382,6 +388,43 @@ static bool try_commute(FeFunc* f, FeInstSet* wlist, FeInst* inst) {
     return true;
 }
 
+static bool try_alias_relax(FeFunc* f, FeInstSet* wlist, FeInst* inst) {
+    if (!fe_inst_has_trait(inst->kind, FE_TRAIT_MEM_USE)) {
+        return false;
+    }
+
+    for_n(i, 0, inst->use_len) {
+        // this is dangerous...
+        // try to force users to be processed first 
+        // BUT only if they were eventually going to be processed anyway
+        FeInst* use = FE_USE_PTR(inst->uses[i]);
+        if (fe_iset_contains(wlist, use)) {
+            fe_iset_remove(wlist, use);
+            fe_iset_push(wlist, inst);
+            return try_all(f, wlist, use);
+        }
+    }
+
+    if (!fe_insts_may_alias(f, inst, inst->inputs[0])) {
+        fe_iset_push(wlist, inst->inputs[0]->inputs[0]);
+        fe_iset_push(wlist, inst->inputs[0]);
+        fe_iset_push(wlist, inst);
+
+        fe_set_input(f, inst, 0, inst->inputs[0]->inputs[0]);
+
+        if (fe_inst_has_trait(inst->kind, FE_TRAIT_MEM_DEF)) {
+            for_n(i, 0, inst->use_len) {
+                FeInst* use = FE_USE_PTR(inst->uses[i]);
+                fe_iset_push(wlist, use);
+            }
+        }
+        
+        return true;
+    }
+
+    return false;
+}
+
 void fe_opt_tdce(FeFunc* f) {
     FeInstSet wlist;
     fe_iset_init(&wlist);
@@ -404,6 +447,19 @@ void fe_opt_tdce(FeFunc* f) {
     fe_iset_destroy(&wlist);
 }
 
+static bool try_all(FeFunc* f, FeInstSet* wlist, FeInst* inst) {
+    return try_tdce(f, wlist, inst)
+        || try_commute(f, wlist, inst)
+        || try_reassoc(f, wlist, inst)
+        || try_strength_binop(f, wlist, inst)
+        || try_identity_binop(f, wlist, inst)
+        || try_consteval_binop(f, wlist, inst)
+        || try_load_elim(f, wlist, inst)
+        || try_store_elim(f, wlist, inst)
+        || try_alias_relax(f, wlist, inst)
+    ;
+}
+
 void fe_opt_local(FeFunc* f) {
     FeInstSet wlist;
     fe_iset_init(&wlist);
@@ -420,16 +476,7 @@ void fe_opt_local(FeFunc* f) {
             break;
         }
 
-        bool opts = false
-            || try_tdce(f, &wlist, inst)
-            || try_commute(f, &wlist, inst)
-            || try_reassoc(f, &wlist, inst)
-            || try_strength_binop(f, &wlist, inst)
-            || try_identity_binop(f, &wlist, inst)
-            || try_consteval_binop(f, &wlist, inst)
-            || try_load_elim(f, &wlist, inst)
-            || try_store_elim(f, &wlist, inst)
-        ;
+        try_all(f, &wlist, inst);
     }
 
     fe_iset_destroy(&wlist);

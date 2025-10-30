@@ -220,12 +220,12 @@ void fe_regalloc_basic(FeFunc* f) {
     }
 
     // debug print interference graph
-    for_n(vr, 0, vbuf->len) {
-        ColorNode* cnode = &color_nodes[vr];
-        for_n(i, 0, cnode->len) {
-            printf("interference %zu ~> %d\n", vr, cnode->interferes[i]);
-        }
-    }
+    // for_n(vr, 0, vbuf->len) {
+    //     ColorNode* cnode = &color_nodes[vr];
+    //     for_n(i, 0, cnode->len) {
+    //         printf("interference %zu ~> %d\n", vr, cnode->interferes[i]);
+    //     }
+    // }
 
     // color!
     // if (false)
@@ -249,8 +249,8 @@ void fe_regalloc_basic(FeFunc* f) {
         }
 
         // we gotta chose a register that doesnt interfere with anything already allocated.
-        for_n(real_candidate, 0, target->regclass_lens[1]) {
-            if (target->reg_status(f->sig->cconv, 1, real_candidate) == FE_REG_UNUSABLE) {
+        for_n(real_candidate, 0, target->regclass_lens[cnode->this->class]) {
+            if (target->reg_status(f->sig->cconv, cnode->this->class, real_candidate) == FE_REG_UNUSABLE) {
                 // cant touch this, we gotta continue
                 continue;
             }

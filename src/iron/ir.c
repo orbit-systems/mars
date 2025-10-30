@@ -1160,8 +1160,8 @@ static FeTrait inst_traits[FE__INST_END] = {
     [FE_U2F] = UNOP | INT_IN,
     [FE_F2U] = UNOP | FLT_IN,
 
-    [FE_STORE] = VOL | MEM_USE | MEM_DEF,
-    [FE_MEM_BARRIER] = VOL | MEM_USE | MEM_DEF,
+    [FE_STORE] = MEM_USE | MEM_DEF,
+    [FE_MEM_BARRIER] = MEM_USE | MEM_DEF,
     [FE_LOAD] = MEM_USE,
     [FE_CALL] = MEM_USE | MEM_DEF,
 
