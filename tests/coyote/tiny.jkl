@@ -1,4 +1,9 @@
-
-FN foo(IN x: UWORD, IN y: UWORD): UWORD
-    RETURN x - y + y
+FN foo(IN p: UWORD): UWORD
+    p = p + 2
+    IF p THEN
+        IF p THEN
+            p = p - 1
+        END
+    END
+    RETURN p
 END

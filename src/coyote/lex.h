@@ -200,7 +200,6 @@ static_assert(TOK__COUNT < (1 << 8));
 
 extern const char* token_kind[TOK__COUNT];
 
-VecPtr_typedef(SrcFile);
 typedef struct ParseScope ParseScope;
 typedef struct ParseScope {
     StrMap map;
@@ -225,7 +224,7 @@ typedef struct {
     ParseScope* global_scope;
     ParseScope* current_scope;
 
-    VecPtr(SrcFile) sources;
+    Vec(SrcFile*) sources;
 
     Entity* current_function;
 
@@ -237,7 +236,6 @@ typedef struct {
     FlagSet flags;
 } Parser;
 
-Vec_typedef(Token);
 
 typedef struct {
     Vec(Token) tokens;
@@ -302,7 +300,6 @@ typedef struct {
     };
 } PreprocVal;
 
-Vec_typedef(PreprocVal);
 
 typedef enum : u8 {
     REPORT_ERROR,

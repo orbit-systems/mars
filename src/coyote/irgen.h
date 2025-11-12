@@ -22,7 +22,12 @@ typedef struct {
     // current block
     FeBlock* b;
 
+    FeAliasMap* amap;
 
+    struct {
+        FeAliasCategory stack;
+        FeAliasCategory memory;
+    } alias;
 } IRGen;
 
 typedef struct {
@@ -30,11 +35,11 @@ typedef struct {
     FeComplexTy* cty;
 } TySelectResult;
 
-static TySelectResult select_iron_type(TyIndex ty_index);
-static FeFuncSig* generate_signature(CompilationUnit* cu, FeModule* m, Entity* e);
+static TySelectResult select_iron_type(IRGen* ig, TyIndex ty_index);
+static FeFuncSig* generate_signature(IRGen* ig);
 static void irgen_function(IRGen* ig);
 
-static FeInst* irgen_expr(IRGen* ig, Expr* expr);
+static FeInst* irgen_value(IRGen* ig, Expr* expr);
 static void irgen_stmt(IRGen* ig, Stmt* stmt);
 
 #endif // IRGEN_H

@@ -21,11 +21,6 @@ typedef struct {u32 _;} FeMirExtraIndex;
 #define FE_MIR_NULL_SYMBOL  (FeMirSymbolIndex){0}
 #define FE_MIR_NULL_RELOC   (FeMirRelocIndex){0}
 
-Vec_typedef(FeMirSection);
-Vec_typedef(FeMirRelocation);
-Vec_typedef(FeMirSymbol);
-Vec_typedef(u32);
-
 typedef enum : u8 {
     FE_MIR_SYMKIND_NONE = 0,
     FE_MIR_SYMKIND_DATA,
@@ -113,8 +108,6 @@ typedef enum : u8 {
     FE_MIR_SECTION_BLANK  = 1 << 3,
 } FeMirSectionFlags;
 
-Vec_typedef(u8);
-Vec_typedef(FeMirElement);
 
 typedef struct FeMirSection {
     FeMirStringIndex name;

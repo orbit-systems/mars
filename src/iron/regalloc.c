@@ -2,8 +2,8 @@
 #include <stdio.h>
 
 bool is_canon_def(FeVirtualReg* inst_out, FeInst* inst) {
-    // upsilons are a kind of fake move/definition that get created during codegen as inputs for phi nodes.
-    return (inst->kind == FE__MACH_UPSILON || inst_out->def == inst);
+    return (inst->kind == FE__MACH_UPSILON)
+        || inst_out->def == inst;
 }
 
 static bool add_live_in(FeBlockLiveness* lv, FeVReg vr) {
@@ -86,7 +86,7 @@ static void calculate_liveness(FeFunc* f) {
                     changed |= add_live_out(block->live, succ_live_in);
                     // if not defined in this block, add it block.in
                     FeVirtualReg* succ_live_in_vr = fe_vreg(f->vregs, succ_live_in);
-                    if (!succ_live_in_vr->is_phi_out && succ_live_in_vr->def_block != block) {
+                    if (!succ_live_in_vr->is_phi_input && succ_live_in_vr->def_block != block) {
                         changed |= add_live_in(block->live, succ_live_in);
                     }
                 }
@@ -95,37 +95,61 @@ static void calculate_liveness(FeFunc* f) {
     }
 }
 
-typedef struct {
+typedef struct ColorNode {
     FeVirtualReg* this;
-    
     FeVReg* interferes;
-    u32 len;
+    FeVReg* hints;
+    u16 inter_len;
+    u16 hint_len;
+    FeVReg vr;
 } ColorNode;
 
-
 static void add_interference(ColorNode* cnode, FeVReg interferes) {
-    for_n(i, 0, cnode->len) {
+    for_n(i, 0, cnode->inter_len) {
         if (cnode->interferes[i] == interferes) {
             return;
         }
     }
 
-    cnode->interferes[cnode->len] = interferes;
-    cnode->len += 1;
+    cnode->interferes[cnode->inter_len] = interferes;
+    cnode->inter_len += 1;
 }
 
-// try to take a hint, return true if taken, false if not taken
-static bool try_vr_hint(FeVRegBuffer* vbuf, ColorNode* cnode) {
-    // return false;
-    for_n(i, 0, cnode->len) {
-        if (vbuf->at[cnode->interferes[i]].real == vbuf->at[cnode->this->hint].real) {
-            return false;
+static void remove_interference(ColorNode* cnode, FeVReg interferes) {
+    for_n(i, 0, cnode->inter_len) {
+        if (cnode->interferes[i] == interferes) {
+            cnode->interferes[i] = cnode->interferes[--cnode->inter_len];
+            return;
+        }
+    }
+}
+
+static void add_hint(ColorNode* cnode, FeVReg hint) {
+    for_n(i, 0, cnode->hint_len) {
+        if (cnode->hints[i] == hint) {
+            return;
         }
     }
 
-    cnode->this->real = vbuf->at[cnode->this->hint].real;
-    return true;
+    cnode->hints[cnode->hint_len] = hint;
+    cnode->hint_len += 1;
 }
+
+// try to take a hint, return true if taken, false if not taken
+// static bool try_vr_hint(FeVRegBuffer* vbuf, ColorNode* cnode) {
+//     if (vbuf->at[cnode->this->hint].real == FE_VREG_REAL_UNASSIGNED) {
+//         return false;
+//     }
+
+//     for_n(i, 0, cnode->inter_len) {
+//         if (vbuf->at[cnode->interferes[i]].real == vbuf->at[cnode->this->hint].real) {
+//             return false;
+//         }
+//     }
+
+//     cnode->this->real = vbuf->at[cnode->this->hint].real;
+//     return true;
+// }
 
 void fe_regalloc_basic(FeFunc* f) {
 
@@ -135,6 +159,18 @@ void fe_regalloc_basic(FeFunc* f) {
 
     calculate_liveness(f);
 
+    // all of this is horribly inefficient
+    // i just want it to work right now
+    ColorNode* color_nodes = fe_malloc(vbuf->len * sizeof(ColorNode));
+
+    for_n(i, 0, vbuf->len) {
+        color_nodes[i].this = &vbuf->at[i];
+        color_nodes[i].hints = fe_malloc(vbuf->len * sizeof(FeVReg));
+        color_nodes[i].interferes = fe_malloc(vbuf->len * sizeof(FeVReg));
+        color_nodes[i].inter_len = 0;
+        color_nodes[i].hint_len = 0;
+    }
+
     // hints!
     for_blocks(block, f) {
         for_inst(inst, block) {
@@ -142,27 +178,15 @@ void fe_regalloc_basic(FeFunc* f) {
                 continue;
             }
 
-            FeVirtualReg* inst_vr = fe_vreg(f->vregs, inst->vr_def);
+            // FeVirtualReg* inst_vr = fe_vreg(f->vregs, inst->vr_def);
 
             // hint input and output to each other
             FeInst* input = inst->inputs[0];
-            FeVirtualReg* input_vr = fe_vreg(f->vregs, input->vr_def);
+            // FeVirtualReg* input_vr = fe_vreg(f->vregs, input->vr_def);
 
-            inst_vr->hint = input->vr_def;
-            input_vr->hint = inst->vr_def;
+            add_hint(&color_nodes[inst->vr_def], input->vr_def);
+            add_hint(&color_nodes[input->vr_def], inst->vr_def);
         }
-    }
-
-    ColorNode* color_nodes = fe_malloc(vbuf->len * sizeof(ColorNode));
-    // memset(color_nodes, 0, vbuf->len * sizeof(ColorNode));
-
-    // all of this is horribly inefficient
-    // i just want it to work right now
-
-    for_n(i, 0, vbuf->len) {
-        color_nodes[i].this = &vbuf->at[i];
-        color_nodes[i].interferes = fe_malloc(vbuf->len * sizeof(FeVReg));
-        color_nodes[i].len = 0;
     }
 
     bool* live_now = fe_malloc(vbuf->len * sizeof(bool));
@@ -191,9 +215,10 @@ void fe_regalloc_basic(FeFunc* f) {
         }
 
         for_inst_reverse(inst, block) {
-            // if we come across the 'canon' definition of a vreg, end its life
+            // if we come across a canonical definition of a vreg, end its life
             FeVReg vr = inst->vr_def;
             if (vr != FE_VREG_NONE && is_canon_def(&vbuf->at[vr], inst)) {
+                // printf("end %d at inst %s\n", vr, fe_inst_name(target, inst->kind));
                 live_now[vr] = false;
             }
             
@@ -201,6 +226,7 @@ void fe_regalloc_basic(FeFunc* f) {
             for_n(i, 0, inst->in_len) {
                 FeInst* inst_input = inst->inputs[i];
                 if (inst_input->vr_def != FE_VREG_NONE) {
+                    // printf("begin %d at inst %s\n", inst_input->vr_def, fe_inst_name(target, inst->kind));
                     live_now[inst_input->vr_def] = true;
                 }
             }
@@ -219,33 +245,91 @@ void fe_regalloc_basic(FeFunc* f) {
         }
     }
 
+    // remove interferences that are also hints
+    for_n(vr, 0, vbuf->len) {
+        ColorNode* cnode = &color_nodes[vr];
+        for_n(h, 0, cnode->hint_len) {
+            FeVReg hint = cnode->hints[h];
+            remove_interference(cnode, hint);
+        }
+    }
+
     // debug print interference graph
     // for_n(vr, 0, vbuf->len) {
     //     ColorNode* cnode = &color_nodes[vr];
-    //     for_n(i, 0, cnode->len) {
+    //     for_n(i, 0, cnode->inter_len) {
     //         printf("interference %zu ~> %d\n", vr, cnode->interferes[i]);
     //     }
     // }
-
+    
     // color!
-    // if (false)
+    
+
+    FeCompactMap cnodes;
+    fe_cmap_init(&cnodes);
+    
     for_n(vr, 0, vbuf->len) {
         ColorNode* cnode = &color_nodes[vr];
-
-        // printf("vr %zu hint %d\n", vr, cnode->this->hint);
+        // if (cnode->hint_len == 0) {
+        //     continue;
+        // }
+        fe_cmap_put(&cnodes, vr, (uintptr_t)cnode);
+    }
+    
+    while (true) {
+        ColorNode* cnode = (ColorNode*)fe_cmap_pop_next(&cnodes);
+        if (cnode == nullptr) {
+            break;
+        }
 
         // skip if pre-colored
         if (cnode->this->real != FE_VREG_REAL_UNASSIGNED) {
             continue;
         }
 
+        bool exit_early = false;
         // attempt to take hint if exists
-        if (cnode->this->hint != FE_VREG_NONE) {
-            // AND the hint isnt already assigned to something
-            if (try_vr_hint(vbuf, cnode)) {
-                // chosen!
-                continue;
+        for_n (hi, 0, cnode->hint_len) {
+            FeVReg hint = cnode->hints[hi];
+
+            if (vbuf->at[hint].real != FE_VREG_REAL_UNASSIGNED) {
+                // take the hint.
+
+                // to take the hint, we have to see if it interferes with anything.
+                bool can_take_hint = true;
+                for_n(i, 0, cnode->inter_len) {
+                    if (vbuf->at[cnode->interferes[i]].real == vbuf->at[hint].real) {
+                        // hint cannot be taken because it interferes with already colored things
+                        can_take_hint = false;
+                        break;
+                    }
+                }
+
+                if (!can_take_hint) {
+                    continue;
+                }
+
+
+                cnode->this->real = vbuf->at[hint].real;
+                for_n(i, 0, cnode->hint_len) {
+                    fe_cmap_put(&cnodes, 
+                        cnode->hints[i],
+                        (uintptr_t) &color_nodes[cnode->hints[i]]
+                    );
+                }
+                exit_early = true;
+                break;
+            } else {
+                // hinted vreg hasnt been colored yet.
+                // wait for it to be colored ONLY if it will be colored later.
+                if (fe_cmap_contains_key(&cnodes, hint)) {
+                    exit_early = true;
+                    break;
+                }
             }
+        }
+        if (exit_early) {
+            continue;
         }
 
         // we gotta chose a register that doesnt interfere with anything already allocated.
@@ -256,7 +340,7 @@ void fe_regalloc_basic(FeFunc* f) {
             }
             // printf("try alloc %zu\n", real_candidate);
 
-            for_n(i, 0, cnode->len) {
+            for_n(i, 0, cnode->inter_len) {
 
                 ColorNode* interferes = &color_nodes[cnode->interferes[i]];
                 if (interferes->this->real == FE_VREG_REAL_UNASSIGNED) {
@@ -278,6 +362,12 @@ void fe_regalloc_basic(FeFunc* f) {
         }
         if (cnode->this->real == FE_VREG_REAL_UNASSIGNED) {
             FE_CRASH("failed to allocate register");
+        }
+        for_n(i, 0, cnode->hint_len) {
+            fe_cmap_put(&cnodes, 
+                cnode->hints[i],
+                (uintptr_t) &color_nodes[cnode->hints[i]]
+            );
         }
     }
 

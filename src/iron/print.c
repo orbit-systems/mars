@@ -107,6 +107,7 @@ static const char* inst_name[FE__BASE_INST_END] = {
 
     [FE_PHI] = "phi",
     [FE_MEM_PHI] = "mem-phi",
+    [FE_MEM_MERGE] = "mem-merge",
 
     [FE_CALL] = "call",
 };
@@ -180,6 +181,16 @@ void fe__emit_ir_block_label(FeDataBuffer* db, FeFunc* f, FeBlock* ref) {
     if (should_ansi) fe_db_writecstr(db, "\x1b[0m");
 }
 
+void fe__emit_vreg_def(FeDataBuffer* db, FeFunc* f, FeVReg vr) {
+        fe_db_writef(db, "v%u", vr);
+
+        // BAD ASSUMPTION
+        if (fe_vreg(f->vregs, vr)->real != FE_VREG_REAL_UNASSIGNED) {
+            FeVirtualReg* vreg = fe_vreg(f->vregs, vr);
+            fe_db_writef(db, "/%s", f->mod->target->reg_name(vreg->class, vreg->real));
+        }
+}
+
 void fe__emit_ir_ref(FeDataBuffer* db, FeFunc* f, FeInst* ref) {
     if (ref == nullptr) {
         if (should_ansi) {
@@ -204,13 +215,8 @@ void fe__emit_ir_ref(FeDataBuffer* db, FeFunc* f, FeInst* ref) {
 
     fe_db_writef(db, "%%%u", ref->id);
     if (ref->vr_def != FE_VREG_NONE) {
-        // BAD ASSUMPTION
-        if (fe_vreg(f->vregs, ref->vr_def)->real == FE_VREG_REAL_UNASSIGNED) {
-            fe_db_writef(db, "/v%u", ref->vr_def);
-        } else {
-            FeVirtualReg* vr = fe_vreg(f->vregs, ref->vr_def);
-            fe_db_writef(db, "/%s", f->mod->target->reg_name(vr->class, vr->real));
-        }
+        fe_db_writecstr(db, "/");
+        fe__emit_vreg_def(db, f, ref->vr_def);
     }
     if (should_ansi) fe_db_writecstr(db, "\x1b[0m");
 }
@@ -278,9 +284,9 @@ static void print_inst(FeFunc* f, FeDataBuffer* db, FeInst* inst) {
         break;
     case FE_RETURN:
         ;
-        fe_db_writecstr(db, "[");
+        fe_db_writecstr(db, "^");
         fe__emit_ir_ref(db, f, inst->inputs[0]);
-        fe_db_writecstr(db, "] ");
+        fe_db_writecstr(db, ", ");
         for_n(i, 1, inst->in_len) {
             if (i != 1) fe_db_writecstr(db, ", ");
             fe__emit_ir_ref(db, f, inst->inputs[i]);
@@ -288,9 +294,9 @@ static void print_inst(FeFunc* f, FeDataBuffer* db, FeInst* inst) {
         break;
     case FE_CALL:
         ;
-        fe_db_writecstr(db, "[");
+        fe_db_writecstr(db, "^");
         fe__emit_ir_ref(db, f, inst->inputs[0]);
-        fe_db_writecstr(db, "] ");
+        fe_db_writecstr(db, ", ");
         for_n(i, 1, inst->in_len) {
             if (i != 1) fe_db_writecstr(db, ", ");
             fe__emit_ir_ref(db, f, inst->inputs[i]);
@@ -339,9 +345,9 @@ static void print_inst(FeFunc* f, FeDataBuffer* db, FeInst* inst) {
     case FE_LOAD:
         ;
         FeInstMemop* load = fe_extra(inst);
-        fe_db_writecstr(db, "[");
+        fe_db_writecstr(db, "^");
         fe__emit_ir_ref(db, f, inst->inputs[0]);
-        fe_db_writecstr(db, "] ");
+        fe_db_writecstr(db, ", ");
 
         fe__emit_ir_ref(db, f, inst->inputs[1]);
         fe_db_writef(db, " align(%u)", load->align);
@@ -352,15 +358,44 @@ static void print_inst(FeFunc* f, FeDataBuffer* db, FeInst* inst) {
     case FE_STORE:
         ;
         FeInstMemop* store = fe_extra(inst);
-        fe_db_writecstr(db, "[");
+        fe_db_writecstr(db, "^");
         fe__emit_ir_ref(db, f, inst->inputs[0]);
-        fe_db_writecstr(db, "] ");
+        fe_db_writecstr(db, ", ");
         fe__emit_ir_ref(db, f, inst->inputs[1]);
         fe_db_writecstr(db, ", ");
         fe__emit_ir_ref(db, f, inst->inputs[2]);
         fe_db_writef(db, " align(%u)", store->align);
         if (store->offset) {
             fe_db_writef(db, " offset(%u) ", store->offset);
+        }
+        break;
+    case FE_MEM_BARRIER:
+        fe_db_writecstr(db, "^");
+        fe__emit_ir_ref(db, f, inst->inputs[0]);
+        break;
+    case FE_MEM_PHI:
+        ;
+        FeInstPhi* memphi = fe_extra(inst);
+        for_n(i, 0, inst->in_len) {
+            if (i != 0) {
+                fe_db_writecstr(db, ", ");
+            }
+            FeBlock* src_block = memphi->blocks[i];
+            FeInst* src = inst->inputs[i];
+            fe__emit_ir_block_label(db, f, src_block);
+            fe_db_writecstr(db, " ^");
+            fe__emit_ir_ref(db, f, src);
+        }
+        break;
+    case FE_MEM_MERGE:
+        ;
+        for_n(i, 0, inst->in_len) {
+            if (i != 0) {
+                fe_db_writecstr(db, ", ");
+            }
+            FeInst* src = inst->inputs[i];
+            fe_db_writecstr(db, "^");
+            fe__emit_ir_ref(db, f, src);
         }
         break;
     case FE_CONST:
@@ -411,8 +446,6 @@ void fe_emit_ir_func(FeDataBuffer* db, FeFunc* f, bool fancy) {
         fe_db_writecstr(db, " ");
         for_n(i, 0, f->sig->param_len) {
             if (i != 0) fe_db_writecstr(db, ", ");
-            // fe__emit_ir_ref(db, f, fe_func_param(f, i));
-            // fe_db_writecstr(db, ": ");
             fe_db_writecstr(db, ty_name[fe_funcsig_param(f->sig, i)->ty]);
         }
     }
@@ -441,19 +474,24 @@ void fe_emit_ir_func(FeDataBuffer* db, FeFunc* f, bool fancy) {
         stack_counter++;
     }
 
+    bool print_liveness = false;
+
     for_blocks(block, f) {
         fe_db_writecstr(db, "  ");
         fe__emit_ir_block_label(db, f, block);
         fe_db_writecstr(db, "\n");
         
         // print live-in set if present
-        if (block->live && block->live->in_len > 0) {
-            fe_db_writecstr(db, "  in ");
+        if (print_liveness && block->live && block->live->in_len > 0) {
+            fe_db_writecstr(db, "   [live-in ");
             for_n(i, 0, block->live->in_len) {
+                if (i != 0) {
+                    fe_db_writecstr(db, ", ");
+                }
                 FeVReg in = block->live->in[i];
-                fe_db_writef(db, "vr%u, ", in);
+                fe__emit_vreg_def(db, f, in);
             }
-            fe_db_writecstr(db, "\n");
+            fe_db_writecstr(db, "]\n");
         }
 
         for_inst(inst, block) {            
@@ -464,13 +502,17 @@ void fe_emit_ir_func(FeDataBuffer* db, FeFunc* f, bool fancy) {
             print_inst(f, db, inst);
         }
         // print live-in set if present
-        if (block->live && block->live->out_len > 0) {
-            fe_db_writecstr(db, "  out ");
+        if (print_liveness && block->live && block->live->out_len > 0) {
+            fe_db_writecstr(db, "   [live-out ");
             for_n(i, 0, block->live->out_len) {
+                if (i != 0) {
+                    fe_db_writecstr(db, ", ");
+                }
                 FeVReg out = block->live->out[i];
-                fe_db_writef(db, "vr%u, ", out);
+                fe__emit_vreg_def(db, f, out);
+                
             }
-            fe_db_writecstr(db, "\n");
+            fe_db_writecstr(db, "]\n");
         }
     }
     fe_db_writecstr(db, "}\n");

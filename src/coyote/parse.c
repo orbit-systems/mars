@@ -11,7 +11,6 @@
 #include "coyote.h"
 #include "lex.h"
 
-Vec_typedef(char);
 
 static void vec_char_append_str(Vec(char)* vec, const char* data) {
     usize len = strlen(data);
@@ -226,11 +225,14 @@ static void _ty_name(Vec(char)* v, TyIndex t) {
 const char* ty_name(TyIndex t) {
     Vec(char) buf = vec_new(char, 16);
     _ty_name(&buf, t);
-    vec_append(&buf, 0);
-    return buf.at;
+    char* newstr = malloc(vec_len(buf) + 1);
+    memcpy(buf, newstr, vec_len(buf));
+    newstr[vec_len(buf)] = 0;
+    vec_destroy(&buf);
+    return newstr;
 }
 
-static bool ty_is_scalar(TyIndex t) {
+bool ty_is_scalar(TyIndex t) {
     if_unlikely (t == TY_VOID) {
         return false;
     }
@@ -244,7 +246,7 @@ static bool ty_is_scalar(TyIndex t) {
     return ty_kind == TY_PTR || ty_kind == TY_ENUM;
 }
 
-static bool ty_is_integer(TyIndex t) {
+bool ty_is_integer(TyIndex t) {
     if (t == TY_VOID) {
         return false;
     }
@@ -261,7 +263,7 @@ static bool ty_is_integer(TyIndex t) {
     return false;
 }
 
-static bool ty_is_signed(TyIndex t) {
+bool ty_is_signed(TyIndex t) {
     switch (t) {
     case TY_BYTE:
     case TY_INT:
@@ -279,7 +281,7 @@ thread_local static TyIndex target_word  = TY_LONG;
 thread_local static TyIndex target_uword = TY_ULONG;
 #define TY_VOIDPTR (TY_VOID + TY_PTR)
 
-static usize ty_size(TyIndex t) {
+usize ty_size(TyIndex t) {
     switch (t) {
     case TY_VOID: return 0;
     case TY_BYTE:
@@ -483,25 +485,24 @@ void exit_scope(Parser* p) {
 
 // general dynamic buffer for parsing shit
 
-VecPtr_typedef(void);
-static thread_local VecPtr(void) dynbuf;
+static thread_local Vec(void*) dynbuf;
 
 static inline usize dynbuf_start() {
-    return dynbuf.len;
+    return vec_len(dynbuf);
 }
 
 static inline void dynbuf_restore(usize start) {
-    dynbuf.len = start;
+    vec_len(dynbuf) = start;
 }
 
 static inline usize dynbuf_len(usize start) {
-    return dynbuf.len - start;
+    return vec_len(dynbuf) - start;
 }
 
 static inline void** dynbuf_to_arena(Parser* p, usize start) {
-    usize len = dynbuf.len - start;
+    usize len = vec_len(dynbuf) - start;
     void** items = arena_alloc(&p->arena, len * sizeof(items[0]), alignof(void*));
-    memcpy(items, &dynbuf.at[start], len * sizeof(items[0]));
+    memcpy(items, &dynbuf[start], len * sizeof(items[0]));
     return items;
 }
 
@@ -533,8 +534,8 @@ static bool token_is_within(SrcFile* f, char* raw) {
 }
 
 static SrcFile* where_from(Parser* ctx, string span) {
-    for_n (i, 0, ctx->sources.len) {
-        SrcFile* f = ctx->sources.at[i];
+    for_n (i, 0, vec_len(ctx->sources)) {
+        SrcFile* f = ctx->sources[i];
         if (token_is_within(f, span.raw)) {
             return f;
         }
@@ -563,7 +564,6 @@ void token_error(Parser* ctx, ReportKind kind, u32 start_index, u32 end_index, c
     // find out if we're in a macro somewhere
     bool inside_macro = preproc_depth(ctx, start_index) != 0 || preproc_depth(ctx, end_index) != 0;
 
-    Vec_typedef(ReportLine);
     Vec(ReportLine) reports = vec_new(ReportLine, 8);
 
     i32 unmatched_ends = 0;
@@ -659,7 +659,7 @@ void token_error(Parser* ctx, ReportKind kind, u32 start_index, u32 end_index, c
         Token last_token = {};
         for_n_eq(i, expanded_snippet_begin_index, expanded_snippet_end_index) {
             if (i == start_index) {
-                expanded_snippet_highlight_start = expanded_snippet.len;
+                expanded_snippet_highlight_start = vec_len(expanded_snippet);
             }
             Token t = ctx->tokens[i];
             if (TOK__PARSE_IGNORE < t.kind) {
@@ -678,17 +678,17 @@ void token_error(Parser* ctx, ReportKind kind, u32 start_index, u32 end_index, c
             
             vec_char_append_many(&expanded_snippet, tok_raw(t), t.len);
             if (i == end_index) {
-                expanded_snippet_highlight_len = expanded_snippet.len - expanded_snippet_highlight_start;
+                expanded_snippet_highlight_len = vec_len(expanded_snippet) - expanded_snippet_highlight_start;
             }
             last_token = t;
         }
 
         string src = {
-            .raw = expanded_snippet.at,
-            .len = expanded_snippet.len,
+            .raw = expanded_snippet,
+            .len = vec_len(expanded_snippet),
         };
         string snippet = {
-            .raw = expanded_snippet.at + expanded_snippet_highlight_start,
+            .raw = expanded_snippet + expanded_snippet_highlight_start,
             .len = expanded_snippet_highlight_len,
         };
 
@@ -724,8 +724,8 @@ void token_error(Parser* ctx, ReportKind kind, u32 start_index, u32 end_index, c
     }
 
 
-    for_n(i, 0, reports.len) {
-        report_line(&reports.at[i]);
+    for_n(i, 0, vec_len(reports)) {
+        report_line(&reports[i]);
     }
 
     if (kind == REPORT_ERROR) {
@@ -2249,13 +2249,17 @@ Stmt* parse_stmt(Parser* p) {
         advance(p);
         return unreachable_;
     case TOK_KW_BREAK:
-        Stmt* continue_ = new_stmt(p, STMT_CONTINUE, nothing);
-        advance(p);
-        return continue_;
-    case TOK_KW_CONTINUE:
         Stmt* break_ = new_stmt(p, STMT_BREAK, nothing);
         advance(p);
         return break_;
+    case TOK_KW_CONTINUE:
+        Stmt* continue_ = new_stmt(p, STMT_CONTINUE, nothing);
+        advance(p);
+        return continue_;
+    case TOK_KW_BARRIER:
+        Stmt* barrier = new_stmt(p, STMT_BARRIER, nothing);
+        advance(p);
+        return barrier;
     case TOK_IDENTIFIER:
         if (peek(p, 1).kind == TOK_COLON) {
             return parse_var_decl(p, STORAGE_LOCAL);
@@ -2494,7 +2498,7 @@ Stmt* parse_fn_decl(Parser* p, u8 storage) {
 
         TyFn* fn_type = TY(decl_ty, TyFn);
 
-        fn_decl->fn_decl.parameters = vecptr_new(Entity, fn_type->len);
+        fn_decl->fn_decl.parameters = vec_new(Entity*, fn_type->len);
 
         p->current_function = fn;
 
@@ -2860,7 +2864,7 @@ CompilationUnit parse_unit(Parser* p) {
 
     global_scope = p->global_scope;
 
-    dynbuf = vecptr_new(void, 256);
+    dynbuf = vec_new(void*, 256);
 
     while (p->current.kind != TOK_EOF) {
         parse_global_decl(p);

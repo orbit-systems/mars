@@ -451,13 +451,13 @@ static PreprocVal get_replacement_value(string key, PreprocScope* scope) {
         }
         return (PreprocVal){.kind = PPVAL_NONE};
     }
-    return preproc_val_pool.at[val];
+    return preproc_val_pool[val];
 }
 
 static void put_replacement_value(string key, PreprocScope* scope, PreprocVal val) {
     vec_append(&preproc_val_pool, val);
     // place at innermost scope
-    strmap_put(&scope->map, key, (void*)(preproc_val_pool.len - 1));
+    strmap_put(&scope->map, key, (void*)(uintptr_t)(vec_len(preproc_val_pool) - 1));
 }
 
 static CompactString preproc_collect_complex_string(Lexer* l) {
@@ -697,7 +697,7 @@ static void preproc_macro(Lexer* l, LexState* state, PreprocScope* scope) {
 
     // consume param list
     usize params_len = 0;
-    usize macro_params_index = macro_arg_pool.len;
+    usize macro_params_index = vec_len(macro_arg_pool);
     for (Token t = lex_next_raw(l); t.kind != TOK_CLOSE_PAREN; t = lex_next_raw(l)) {
         if (t.kind != TOK_IDENTIFIER) {
             TODO("error: expected identifier");
@@ -721,7 +721,7 @@ static void preproc_macro(Lexer* l, LexState* state, PreprocScope* scope) {
         TODO("error: expected complex string (using [])");
     }
     vec_append(&preproc_val_pool, body);
-    usize body_index = preproc_val_pool.len - 1;
+    usize body_index = vec_len(preproc_val_pool) - 1;
 
     PreprocVal macro = {
         .kind = PPVAL_MACRO,
@@ -880,8 +880,8 @@ static void preproc_include(Lexer* l, LexState* state, PreprocScope* scope) {
     if (strncmp(path_string.raw, "<inc>/", 5) == 0) {
         path_string = substring(path_string, 5, path_string.len - 5);
         
-        for_n(i, 0, state->incdirs.len) {
-            string incdir = state->incdirs.at[i];
+        for_n(i, 0, vec_len(state->incdirs)) {
+            string incdir = state->incdirs[i];
             
             path_cstring = arena_strcat(state->arena,
                 incdir,
@@ -897,8 +897,8 @@ static void preproc_include(Lexer* l, LexState* state, PreprocScope* scope) {
     } else if (strncmp(path_string.raw, "<ll>/", 4) == 0) {
         path_string = substring(path_string, 5, path_string.len - 5);
         
-        for_n(i, 0, state->libdirs.len) {
-            string libdir = state->libdirs.at[i];
+        for_n(i, 0, vec_len(state->libdirs)) {
+            string libdir = state->libdirs[i];
             
             path_cstring = arena_strcat(state->arena,
                 libdir,
@@ -1091,7 +1091,7 @@ static void collect_macro_args_and_emit(Lexer* l, PreprocVal macro, LexState* st
         TODO("error: expected (");
     }
 
-    usize saved_ppv_len = preproc_val_pool.len;
+    usize saved_ppv_len = vec_len(preproc_val_pool);
 
     if (macro.macro.params_len == 0) {
         Token t = lex_next_raw(l);
@@ -1112,18 +1112,18 @@ static void collect_macro_args_and_emit(Lexer* l, PreprocVal macro, LexState* st
             if (arg_len >= macro.macro.params_len) {
                 TODO("error: too many parameters, expected %u", macro.macro.params_len);
             }
-            string param_name = tok_span(macro_arg_pool.at[macro.macro.params_index + arg_len]);
+            string param_name = tok_span(macro_arg_pool[macro.macro.params_index + arg_len]);
             put_replacement_value(param_name, local_scope, arg);
             ++arg_len;
         }
     }
 
-    PreprocVal body = preproc_val_pool.at[macro.macro.body_index];
+    PreprocVal body = preproc_val_pool[macro.macro.body_index];
     Lexer local_lexer = lexer_from_string(from_compact(body.string));
     lex_with_preproc(&local_lexer, state, local_scope);
 
     strmap_destroy(&local_scope->map);
-    preproc_val_pool.len = saved_ppv_len; // allow reuse of pool space
+    vec_len(preproc_val_pool) = saved_ppv_len; // allow reuse of pool space
     --emit_depth;
 }
 
@@ -1213,9 +1213,9 @@ Parser lex_entrypoint(SrcFile* f, LexState* state) {
     vec_shrink(&state->tokens);
 
     Parser ctx = {
-        .tokens = state->tokens.at,
-        .tokens_len = state->tokens.len,
-        .sources = vecptr_new(SrcFile, 16),
+        .tokens = state->tokens,
+        .tokens_len = vec_len(state->tokens),
+        .sources = vec_new(SrcFile*, 16),
         .cursor = 0,
         .arena = arena,
     };
@@ -1227,9 +1227,9 @@ Parser lex_entrypoint(SrcFile* f, LexState* state) {
     
     arena_init(&ctx.entities);
 
-    for_n(i, 0, state->tokens.len) {
-        if (state->tokens.at[i].kind < TOK__PARSE_IGNORE) {
-            ctx.current = state->tokens.at[i];
+    for_n(i, 0, vec_len(state->tokens)) {
+        if (state->tokens[i].kind < TOK__PARSE_IGNORE) {
+            ctx.current = state->tokens[i];
             ctx.cursor = i;
             break;
         }

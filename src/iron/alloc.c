@@ -22,7 +22,9 @@ static u8 extra_size_table[FE__INST_END] = {
     [FE_BRANCH] = sizeof(FeInstBranch),
     [FE_JUMP] = sizeof(FeInstJump),
     [FE_RETURN] = 0,
-    [FE_PHI ... FE_MEM_PHI] = sizeof(FeInstPhi),
+    [FE_PHI] = sizeof(FeInstPhi),
+    [FE_MEM_PHI] = sizeof(FeInstPhi),
+    [FE_MEM_MERGE] = 0,
     [FE_CALL] = sizeof(FeInstCall),
     [FE__MACH_REG] = 0,
     [FE__MACH_RETURN] = 0,
@@ -86,18 +88,18 @@ static FeInst* init_inst(FeInst* inst) {
 
 static void* ipool_alloc_raw(FeInstPool* pool, usize slots) {
     // try to allocate on the front block
-    if (pool->top->used + slots <= IPOOL_CHUNK_DATA_SIZE) {
+    if (pool->top->used + slots < IPOOL_CHUNK_DATA_SIZE) {
         // allocate on this block!
         FeInst* inst = (FeInst*)&pool->top->data[pool->top->used];
         pool->top->used += slots;
         return init_inst(inst);
-    } 
+    }
     // we need to make a new block and allocate on this.
     Fe__InstPoolChunk* new_chunk = ipool_new_chunk();
     new_chunk->next = pool->top;
     pool->top = new_chunk;
     new_chunk->used = slots;
-    return &new_chunk->data;;
+    return &new_chunk->data;
 }
 
 FeInst* fe_ipool_alloc(FeInstPool* pool, usize extra_size) {

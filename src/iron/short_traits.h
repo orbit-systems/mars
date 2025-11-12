@@ -3,7 +3,7 @@
 
 #include "iron/iron.h"
 
-enum : u16 {
+enum : u32 {
     COMMU       = FE_TRAIT_COMMUTATIVE,
     // if something is associative, it is also fast-associative.
     ASSOC       = FE_TRAIT_ASSOCIATIVE,
@@ -23,8 +23,9 @@ enum : u16 {
     BINOP       = FE_TRAIT_BINOP,
     UNOP        = FE_TRAIT_UNOP,
 
-    MEM_USE     = FE_TRAIT_MEM_USE,
     MEM_DEF     = FE_TRAIT_MEM_DEF,
+    MEM_S_USE   = FE_TRAIT_MEM_SINGLE_USE,
+    MEM_M_USE   = FE_TRAIT_MEM_MULTI_USE,
 };
 
 

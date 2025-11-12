@@ -96,7 +96,7 @@ typedef float    f32;
 
 #define FE_CRASH(fmt, ...) fe_runtime_crash("crash in %s() at %s:%zu -> " fmt, __func__, __FILE__, __LINE__ __VA_OPT__(,) __VA_ARGS__)
 
-#define FE_ASSERT(cond) if (!(cond)) fe_runtime_crash("assert (" #cond ") failed in %s() at %s:%zu", __func__, __FILE__, __LINE__)
+#define FE_ASSERT(cond) if (!(cond)) fe_runtime_crash("FE_ASSERT(" #cond ") failed in %s() at %s:%zu", __func__, __FILE__, __LINE__)
 
 // -------------------------------------
 // predefs!
@@ -295,8 +295,8 @@ typedef struct FeFunc {
     FeFuncSig* sig;
     FeModule* mod;
 
-    u32 max_id;
-    u32 max_block_id;
+    u32 id_count;
+    u32 block_count;
     FeInstPool* ipool;
     FeVRegBuffer* vregs;
 
@@ -462,7 +462,7 @@ typedef enum FeInstKindGeneric : FeInstKind {
     // {last_mem, ptr, val}
     FE_STORE,
 
-    // FeInstMemop
+    // (void)
     FE_MEM_BARRIER,
 
     // (void)
@@ -485,6 +485,10 @@ typedef enum FeInstKindGeneric : FeInstKind {
     // {src1, src2, ...}
     FE_PHI,
     FE_MEM_PHI,
+
+    // void
+    // {last_mem1, last_mem2, ...}
+    FE_MEM_MERGE,
 
     // FeInstCall
     // {last_mem, ptr, src1, src2, ...}
@@ -665,7 +669,7 @@ FeStackItem* fe_stack_append_top(FeFunc* f, FeStackItem* item);
 FeStackItem* fe_stack_remove(FeFunc* f, FeStackItem* item);
 u32 fe_stack_calculate_size(FeFunc* f);
 
-typedef enum FeTrait : u16 {
+typedef enum FeTrait : u32 {
     // x op y == y op x
     FE_TRAIT_COMMUTATIVE      = 1u << 0,
     // (x op y) op z == x op (y op z)
@@ -696,10 +700,12 @@ typedef enum FeTrait : u16 {
     FE_TRAIT_BINOP            = 1u << 12,
     // is an algebraic unary operation
     FE_TRAIT_UNOP             = 1u << 13,
-    // first input is a memory effect
-    FE_TRAIT_MEM_USE          = 1u << 14,
     // creates a memory effect
-    FE_TRAIT_MEM_DEF          = 1u << 15,
+    FE_TRAIT_MEM_DEF          = 1u << 14,
+    // first input is a memory effect
+    FE_TRAIT_MEM_SINGLE_USE   = 1u << 15,
+    // ALL inputs are memory effects
+    FE_TRAIT_MEM_MULTI_USE    = 1u << 16,
 } FeTrait;
 
 FeTrait fe_inst_traits(FeInstKind kind);
@@ -744,7 +750,77 @@ void fe_inst_replace_pos(FeInst* from, FeInst* to);
 void fe_cfg_add_edge(FeFunc* f, FeBlock* pred, FeBlock* succ);
 void fe_cfg_remove_edge(FeBlock* pred, FeBlock* succ);
 
-FeInst* fe_solve_mem_pessimistic(FeFunc* f);
+// -------------------------------------
+// worklist
+// -------------------------------------
+
+typedef struct FeCompactMap {
+    uintptr_t* values;
+    usize* exists;
+    u32 id_start;
+    u32 id_end;
+} FeCompactMap;
+
+void fe_cmap_init(FeCompactMap* cmap);
+void fe_cmap_destroy(FeCompactMap* cmap);
+void fe_cmap_put(FeCompactMap* cmap, u32 key, uintptr_t val);
+uintptr_t* fe_cmap_get(FeCompactMap* cmap, u32 key);
+uintptr_t fe_cmap_pop_next(FeCompactMap* cmap);
+bool fe_cmap_contains_key(FeCompactMap* cmap, u32 key);
+void fe_cmap_remove(FeCompactMap* cmap, u32 key);
+
+typedef struct FeInstSet {
+    FeCompactMap _;
+} FeInstSet;
+
+static inline void fe_iset_init(FeInstSet* iset) {
+    fe_cmap_init(&iset->_);
+}
+
+static inline void fe_iset_destroy(FeInstSet* iset) {
+    fe_cmap_destroy(&iset->_);
+}
+
+static inline void fe_iset_push(FeInstSet* iset, FeInst* inst) {
+    fe_cmap_put(&iset->_, inst->id, (uintptr_t)inst);
+}
+
+static inline FeInst* fe_iset_pop(FeInstSet* iset) {
+    return (FeInst*) fe_cmap_pop_next(&iset->_);
+}
+
+static inline bool fe_iset_contains(FeInstSet* iset, FeInst* inst) {
+    return fe_cmap_contains_key(&iset->_, inst->id);
+}
+
+static inline void fe_iset_remove(FeInstSet* iset, FeInst* inst) {
+    fe_cmap_remove(&iset->_, inst->id);
+}
+
+// -------------------------------------
+// aliasing
+// -------------------------------------
+
+typedef struct FeAliasMap {
+    FeCompactMap cmap;
+    usize num_cat;
+} FeAliasMap;
+
+typedef struct FeAliasCategory {
+    u32 _;
+} FeAliasCategory;
+static_assert(sizeof(FeAliasCategory) <= sizeof(uintptr_t));
+
+void fe_amap_init(FeAliasMap* amap);
+void fe_amap_destroy(FeAliasMap* amap);
+FeAliasCategory fe_amap_new_category(FeAliasMap* amap);
+void fe_amap_add(FeAliasMap* amap, u32 inst_id, FeAliasCategory cat);
+usize fe_amap_get_len(FeAliasMap* amap, u32 inst_id);
+FeAliasCategory* fe_amap_get(FeAliasMap* amap, u32 inst_id);
+
+void fe_solve_mem(FeFunc* f, FeAliasMap* amap);
+void fe_solve_mem_root(FeFunc* f);
+void fe_solve_mem_pessimistic(FeFunc* f);
 bool fe_insts_may_alias(FeFunc* f, FeInst* i1, FeInst* i2);
 
 // -------------------------------------
@@ -776,6 +852,7 @@ void fe_chain_destroy(FeFunc* f, FeInstChain chain);
 usize fe_replace_uses(FeFunc* f, FeInst* old_val, FeInst* new_val);
 void fe_set_input(FeFunc* f, FeInst* inst, u16 n, FeInst* input);
 void fe_set_input_null(FeInst* inst, u16 n);
+void fe_add_input(FeFunc* f, FeInst* inst, FeInst* input);
 
 // not really for external use
 FeInst* fe_inst_new(FeFunc* f, usize input_len, usize extra_size);
@@ -797,6 +874,8 @@ FeInst* fe_inst_branch(FeFunc* f, FeInst* cond);
 FeInst* fe_inst_jump(FeFunc* f);
 FeInst* fe_inst_phi(FeFunc* f, FeTy ty, u16 expected_len);
 FeInst* fe_inst_mem_phi(FeFunc* f, u16 expected_len);
+FeInst* fe_inst_mem_merge(FeFunc* f, u16 expected_len);
+FeInst* fe_inst_mem_barrier(FeFunc* f);
 
 void fe_call_set_arg(FeFunc* f, FeInst* call, u16 n, FeInst* arg) ;
 void fe_return_set_arg(FeFunc* f, FeInst* ret, u16 n, FeInst* arg);
@@ -820,24 +899,6 @@ FeTy fe_proj_ty(FeInst* tuple, usize index);
 // check this assumption with some sort
 // with a runtime init function
 #define FE__INST_EXTRA_MAX_SIZE sizeof(FeInstBranch)
-
-// -------------------------------------
-// worklist
-// -------------------------------------
-
-typedef struct FeInstSet {
-    FeInst** insts;
-    usize* exists;
-    u32 id_start;
-    u32 id_end;
-} FeInstSet;
-
-void fe_iset_init(FeInstSet* iset);
-void fe_iset_destroy(FeInstSet* iset);
-void fe_iset_push(FeInstSet* iset, FeInst* inst);
-FeInst* fe_iset_pop(FeInstSet* iset);
-bool fe_iset_contains(FeInstSet* iset, FeInst* inst);
-void fe_iset_remove(FeInstSet* iset, FeInst* inst);
 
 // -------------------------------------
 // allocation
@@ -989,8 +1050,8 @@ typedef struct FeBlockLiveness {
 typedef struct FeVirtualReg {
     u8 class;
     u16 real;
-    bool is_phi_out;
-    FeVReg hint;
+    bool is_phi_input;
+    // FeVReg hint;
 
     FeInst* def;
     FeBlock* def_block;
@@ -1020,6 +1081,7 @@ typedef struct FeTarget {
     FeBlock** (*list_targets)(FeInst* term, usize* len_out);
 
     FeInstChain (*isel)(FeFunc* f, FeBlock* block, FeInst* inst);
+    void (*post_regalloc_reduce)(FeFunc* f);
     void (*pre_regalloc_opt)(FeFunc* f);
     void (*final_touchups)(FeFunc* f);
 

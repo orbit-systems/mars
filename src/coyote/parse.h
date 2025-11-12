@@ -107,6 +107,10 @@ typedef struct {
 
 void ty_init();
 
+bool ty_is_signed(TyIndex t);
+bool ty_is_integer(TyIndex t);
+bool ty_is_scalar(TyIndex t);
+
 // ------------------- PARSE/SEMA ------------------- 
 
 void token_error(Parser* ctx, ReportKind kind, u32 start_index, u32 end_index, const char* msg);
@@ -201,7 +205,6 @@ typedef struct StmtList {
     Stmt** stmts;
 } StmtList;
 
-VecPtr_typedef(Entity);
 
 struct Stmt {
     StmtKind kind;
@@ -223,7 +226,7 @@ struct Stmt {
         struct {
             Entity* fn;
             StmtList body;
-            VecPtr(Entity) parameters;
+            Vec(Entity*) parameters;
         } fn_decl;
 
         struct {
@@ -357,7 +360,7 @@ typedef struct CompilationUnit {
     Token* tokens;
     u32 tokens_len;
 
-    VecPtr(SrcFile) sources;
+    Vec(SrcFile*) sources;
 } CompilationUnit;
 
 CompilationUnit parse_unit(Parser* p);

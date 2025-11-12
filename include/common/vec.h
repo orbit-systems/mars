@@ -1,64 +1,37 @@
 #ifndef VEC_H
 #define VEC_H
 
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 
-#define Vec(type) _Vec_##type
-#define VecPtr(type) _VecPtr_##type
-#define Vec_typedef(type) typedef struct Vec(type) { \
-    type * at; \
-    size_t len; \
-    size_t cap; \
-} Vec(type)
+typedef struct VecHeader {
+    uint32_t len;
+    uint32_t cap;
+} VecHeader;
 
-#define VecPtr_typedef(type) typedef struct VecPtr(type) { \
-    type ** at; \
-    size_t len; \
-    size_t cap; \
-} VecPtr(type)
+#define _assert_ptr_ptr(pp) (((void)**(pp)), (pp))
 
-// basically just Vec(void)
-typedef struct _VecGeneric {
-    void * at;
-    size_t len;
-    size_t cap;
-} _VecGeneric;
+#define Vec(T) T*
+#define vec_stride(vec) sizeof(*(vec))
+#define vec_header(vec) ((VecHeader*)((char*)vec - sizeof(VecHeader)))
+#define vec_len(vec) vec_header(vec)->len
+#define vec_cap(vec) vec_header(vec)->cap
+#define vec_clear(vecptr) vec_len(*_assert_ptr_ptr(vecptr)) = 0
 
-_VecGeneric* _vec_new(size_t stride, size_t initial_cap);
-
-void _vec_init(_VecGeneric* v, size_t stride, size_t initial_cap);
-void _vec_reserve(_VecGeneric* v, size_t stride, size_t slots);
-void _vec_expand_if_necessary(_VecGeneric* v, size_t stride);
-void _vec_destroy(_VecGeneric* v);
-void _vec_shrink(_VecGeneric* v, size_t stride);
-
-#define vec_stride(v) sizeof(*(v)->at)
-#define vec_new(type, initial_cap) (*(Vec(type)*) _vec_new(sizeof(type), initial_cap))
-#define vecptr_new(type, initial_cap) (*(VecPtr(type)*) _vec_new(sizeof(type*), initial_cap))
-
-#define vec_init(v, initial_cap) _vec_init((_VecGeneric*)v, vec_stride(v), initial_cap)
-
-#define vec_append(v, element) do { \
-    _vec_expand_if_necessary((_VecGeneric*)(v), vec_stride((v)));\
-    (v)->at[(v)->len++] = (element); \
+#define vec_new(T, initial_cap) ((Vec(T)) _vec_new(sizeof(T), initial_cap))
+#define vec_reserve(vecptr, slots) _vec_reserve((void**)_assert_ptr_ptr(vecptr), vec_stride(*vecptr), slots)
+#define vec_append(vecptr, item) do { \
+    _vec_reserve1((void**)_assert_ptr_ptr(vecptr), vec_stride(*vecptr)); \
+    (*vecptr)[vec_len(*vecptr)++] = (item); \
 } while (0)
+#define vec_shrink(vecptr) _vec_shrink((void**)_assert_ptr_ptr(vecptr), vec_stride(*vecptr))
+#define vec_destroy(vecptr) _vec_destroy((void**)_assert_ptr_ptr(vecptr))
 
-#define vec_append_many(v, elements, len) do { \
-    _vec_reserve((_VecGeneric*)(v), vec_stride((v)), (len));\
-    memcpy(&(v)->at[(v)->len], (elements), (len) * vec_stride((v))); \
-} while (0)
-#define vec_reserve(v, num_slots) _vec_reserve((_VecGeneric*)(v), vec_stride((v)), num_slots)
-
-#define vec_pop(v) ((v)->at[--(v)->len])
-#define vec_pop_front(v) ((v)->at[--(v)->len])
-
-#define vec_clear(v) (v)->len = 0
-#define vec_destroy(v) _vec_destroy((_VecGeneric*)v)
-#define vec_shrink(v) _vec_shrink((_VecGeneric*)v, vec_stride((v)))
-
-#define for_vec(decl, vec) \
-    for (size_t _index = 0, _keep = 1; _index < (vec)->len; ++_index, _keep = !_keep) \
-    for (decl = &(vec)->at[_index]; _keep; _keep = !_keep)
+Vec(void) _vec_new(size_t stride, size_t initial_cap);
+void _vec_reserve(Vec(void)* v, size_t stride, size_t slots);
+void _vec_reserve1(Vec(void)* v, size_t stride);
+void _vec_shrink(Vec(void)* v, size_t stride);
+void _vec_destroy(Vec(void)* v);
 
 #endif // VEC_H

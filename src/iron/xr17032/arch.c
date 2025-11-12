@@ -133,12 +133,31 @@ void fe_xr_print_inst(FeDataBuffer* db, FeFunc* f, FeInst* inst) {
         fe__emit_ir_ref(db, f, inst->inputs[1]);
         fe_db_writef(db, ", %u", fe_extra(inst, XrInstImm)->imm);
         break;
+    case XR_STORE8_SI ... XR_STORE32_SI:
+        fe__emit_ir_ref(db, f, inst->inputs[0]);
+        fe_db_writef(db, ", %u", fe_extra(inst, XrInstImm)->imm);
+        fe_db_writef(db, ", val %u", fe_extra(inst, XrInstImm)->small);
+        break;
     case XR_STORE8_RO ... XR_STORE32_RO:
         fe__emit_ir_ref(db, f, inst->inputs[0]);
         fe_db_writecstr(db, ", ");
         fe__emit_ir_ref(db, f, inst->inputs[1]);
         fe_db_writecstr(db, ", ");
         fe__emit_ir_ref(db, f, inst->inputs[2]);
+        break;
+    case XR_BEQ ... XR_BPO:
+        fe__emit_ir_ref(db, f, inst->inputs[0]);
+        fe_db_writecstr(db, ", ");
+        fe__emit_ir_block_label(db, f, fe_extra(inst, XrInstBranch)->if_true);
+        fe_db_writecstr(db, " (else ");
+        fe__emit_ir_block_label(db, f, fe_extra(inst, FeInstBranch)->if_false);
+        fe_db_writecstr(db, ")");
+        break;
+    case XR_P_B:
+        fe__emit_ir_block_label(db, f, fe_extra(inst, XrInstJump)->target);
+        break;
+    case XR_P_MOV:
+        fe__emit_ir_ref(db, f, inst->inputs[0]);
         break;
     case XR_P_RET:
     case XR_P_NOP:

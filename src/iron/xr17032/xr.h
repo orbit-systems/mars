@@ -37,8 +37,12 @@ typedef struct {
 
 typedef struct {
     FeBlock* if_true;
-    FeBlock* if_false; // "fake" branch target
+    FeBlock* fake_if_false; // "fake" branch target
 } XrInstBranch;
+
+typedef struct {
+    FeBlock* target;
+} XrInstJump;
 
 typedef enum : FeInstKind {
     XR__INVALID = FE__XR_INST_BEGIN,
@@ -172,6 +176,7 @@ typedef enum : u16 {
 } XrGpr;
 
 FeInstChain fe_xr_isel(FeFunc* f, FeBlock* block, FeInst* inst);
+void fe_xr_post_regalloc_reduce(FeFunc* f);
 FeRegClass fe_xr_choose_regclass(FeInstKind kind, FeTy ty);
 void fe_xr_print_inst(FeDataBuffer* db, FeFunc* f, FeInst* inst);
 

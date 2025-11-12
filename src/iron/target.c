@@ -23,6 +23,7 @@ const FeTarget* fe_make_target(FeArch arch, FeSystem system) {
         t->num_regclasses = XR_REGCLASS__COUNT;
         t->regclass_lens = fe_xr_regclass_lens;
         t->isel = fe_xr_isel;
+        t->post_regalloc_reduce = fe_xr_post_regalloc_reduce;
         t->choose_regclass = fe_xr_choose_regclass;
         t->ir_print_inst = fe_xr_print_inst;
         t->reg_name = fe_xr_reg_name;

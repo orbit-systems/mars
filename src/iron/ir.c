@@ -242,7 +242,7 @@ FeBlock* fe_block_new(FeFunc* f) {
     FeBlock* block = fe_malloc(sizeof(*block));
     memset(block, 0, sizeof(*block));
 
-    block->id = f->max_block_id++;
+    block->id = f->block_count++;
 
     // init predecessor list
     block->pred_len = 0;
@@ -257,7 +257,8 @@ FeBlock* fe_block_new(FeFunc* f) {
     block->func = f;
     
     // adds initial bookend instruction to block
-    FeInst* bookend = fe_ipool_alloc(f->ipool, sizeof(FeInst_Bookend));
+    FeInst* bookend = fe_inst_new(f, 0, sizeof(FeInst_Bookend));
+    // FeInst* bookend = fe_ipool_alloc(f->ipool, sizeof(FeInst_Bookend));
     bookend->kind = FE__BOOKEND;
     bookend->ty = FE_TY_VOID;
     bookend->next = bookend;
@@ -292,6 +293,9 @@ void fe_block_destroy(FeBlock *block) {
     } else {
         f->entry_block = block->list_next;
     }
+
+    FE_ASSERT(block->pred_len == 0);
+    FE_ASSERT(block->succ_len == 0);
 
     for_inst(inst, block) {
         fe_inst_destroy(f, inst);
@@ -744,15 +748,15 @@ usize fe_replace_uses(FeFunc* f, FeInst* old_val, FeInst* new_val) {
 FeInst* fe_inst_new(FeFunc* f, usize input_len, usize extra_size) {
     FeInst* inst = fe_ipool_alloc(f->ipool, extra_size);
     inst->in_len = input_len;
-    inst->id = f->max_id++;
+    inst->id = f->id_count++;
 
-    if (input_len != 0) {
-        inst->in_cap = usize_next_pow_2(input_len);
-        inst->inputs = fe_ipool_list_alloc(f->ipool, inst->in_cap);
-        memset(inst->inputs, 0, sizeof(inst->inputs[0]) * inst->in_cap);
-    } else {
+    if (input_len == 0) {
         inst->in_cap = 0;
         inst->inputs = nullptr;
+    } else {
+        inst->in_cap = max(input_len, usize_next_pow_2(input_len));
+        inst->inputs = fe_ipool_list_alloc(f->ipool, inst->in_cap);
+        memset(inst->inputs, 0, sizeof(inst->inputs[0]) * inst->in_cap);
     }
 
     inst->use_len = 0;
@@ -763,7 +767,7 @@ FeInst* fe_inst_new(FeFunc* f, usize input_len, usize extra_size) {
     return inst;
 }
 
-void fe_inst_add_input(FeFunc* f, FeInst* inst, FeInst* input) {
+void fe_add_input(FeFunc* f, FeInst* inst, FeInst* input) {
 
     // expand dong
     if_unlikely (inst->in_len == inst->in_cap) {
@@ -781,8 +785,8 @@ void fe_inst_add_input(FeFunc* f, FeInst* inst, FeInst* input) {
         inst->inputs = new_inputs;
     }
 
-    inst->inputs[inst->in_len] = input;
     inst->in_len++;
+    fe_set_input(f, inst, inst->in_len - 1, input);
 }
 
 void fe_inst_destroy(FeFunc* f, FeInst* inst) {
@@ -971,6 +975,14 @@ void fe_return_set_arg(FeFunc* f, FeInst* ret, u16 n, FeInst* arg) {
     fe_set_input(f, ret, n + 1, arg);
 }
 
+FeInst* fe_inst_mem_barrier(FeFunc* f) {
+    FeInst* i = fe_inst_new(f, 1, 0);
+    i->kind = FE_MEM_BARRIER;
+    i->ty = FE_TY_VOID;
+
+    return i;
+}
+
 FeInst* fe_inst_phi(FeFunc* f, FeTy ty, u16 expected_len) {
     FeInst* i = fe_inst_new(f, expected_len, sizeof(FeInstPhi));
     i->kind = FE_PHI;
@@ -989,6 +1001,15 @@ FeInst* fe_inst_mem_phi(FeFunc* f, u16 expected_len) {
     i->in_len = 0;
 
     fe_extra(i, FeInstPhi)->blocks = fe_ipool_list_alloc(f->ipool, i->in_cap);
+
+    return i;
+}
+
+FeInst* fe_inst_mem_merge(FeFunc* f, u16 expected_len) {
+    FeInst* i = fe_inst_new(f, expected_len, 0);
+    i->kind = FE_MEM_MERGE;
+    i->ty = FE_TY_VOID;
+    i->in_len = 0;
 
     return i;
 }
@@ -1014,7 +1035,7 @@ void fe_phi_add_src(FeFunc* f, FeInst* phi, FeInst* src_value, FeBlock* src_bloc
     
     phi_data->blocks[phi->in_len] = src_block;
 
-    fe_inst_add_input(f, phi, src_value);
+    fe_add_input(f, phi, src_value);
 }
 
 void fe_phi_remove_src(FeFunc* f, FeInst* phi, u16 n) {
@@ -1025,12 +1046,17 @@ void fe_phi_remove_src(FeFunc* f, FeInst* phi, u16 n) {
     phi->inputs[n] = phi->inputs[phi->in_len];
 }
 
+#include <stdio.h>
+
 FeInst* fe_inst_branch(FeFunc* f, FeInst* cond) {
     FeInst* i = fe_inst_new(f, 1, sizeof(FeInstBranch));
     i->kind = FE_BRANCH;
     i->ty = FE_TY_VOID;
 
-    FE_ASSERT(cond->ty == f->mod->target->ptr_ty);
+    fe_extra(i, FeInstBranch)->if_false = nullptr;
+    fe_extra(i, FeInstBranch)->if_true = nullptr;
+
+    FE_ASSERT(cond->ty == FE_TY_BOOL);
     fe_set_input(f, i, 0, cond);
 
     return i;
@@ -1072,7 +1098,7 @@ void fe_branch_set_false(FeFunc* f, FeInst* branch, FeBlock* block) {
 
 FeInst* fe_inst_jump(FeFunc* f) {
     FeInst* i = fe_inst_new(f, 0, sizeof(FeInstBranch));
-    i->kind = FE_BRANCH;
+    i->kind = FE_JUMP;
     i->ty = FE_TY_VOID;
 
     return i;
@@ -1117,6 +1143,7 @@ FeTy fe_proj_ty(FeInst* tuple, usize index) {
 #include "short_traits.h"
 
 static FeTrait inst_traits[FE__INST_END] = {
+    [FE__BOOKEND] = VOL,
     [FE__ROOT] = VOL | MEM_DEF,
     [FE_PROJ] = 0,
     [FE_CONST] = 0,
@@ -1160,15 +1187,20 @@ static FeTrait inst_traits[FE__INST_END] = {
     [FE_U2F] = UNOP | INT_IN,
     [FE_F2U] = UNOP | FLT_IN,
 
-    [FE_STORE] = MEM_USE | MEM_DEF,
-    [FE_MEM_BARRIER] = MEM_USE | MEM_DEF,
-    [FE_LOAD] = MEM_USE,
-    [FE_CALL] = MEM_USE | MEM_DEF,
+    [FE_PHI] = SAME_IN_OUT | MOV_HINT,
+
+    [FE_MEM_PHI] = MEM_M_USE | MEM_DEF,
+    [FE_MEM_MERGE] = MEM_M_USE | MEM_DEF,
+    [FE_MEM_BARRIER] = MEM_S_USE | MEM_DEF,
+    [FE_STORE] = MEM_S_USE | MEM_DEF,
+    [FE_LOAD] = MEM_S_USE,
+
+    [FE_CALL] = MEM_S_USE | MEM_DEF,
 
     [FE_UNREACHABLE] = TERM | VOL,
     [FE_BRANCH] = TERM | VOL,
     [FE_JUMP]   = TERM | VOL,
-    [FE_RETURN] = TERM | VOL | MEM_USE,
+    [FE_RETURN] = TERM | VOL | MEM_S_USE,
 
     [FE__MACH_RETURN] = TERM | VOL,
 };
@@ -1185,136 +1217,4 @@ bool fe_inst_has_trait(FeInstKind kind, FeTrait trait) {
 
 void fe__load_trait_table(usize start_index, const FeTrait* table, usize len) {
     memcpy(&inst_traits[start_index], table, sizeof(table[0]) * len);
-}
-
-#define USIZE_BITS (sizeof(usize) * 8)
-
-void fe_iset_init(FeInstSet* iset) {
-    *iset = (FeInstSet){};
-    iset->id_start = UINT32_MAX;
-}
-
-bool fe_iset_contains(FeInstSet* iset, FeInst* inst) {
-    u32 id = inst->id;
-    u32 id_block = id / USIZE_BITS;
-    usize id_bit = (usize)(1) << (id % USIZE_BITS);
-
-    if_likely (iset->id_start <= id_block && id_block < iset->id_end) {
-        usize exists_block = iset->exists[id_block - iset->id_start];
-        return (exists_block & id_bit) != 0;
-    }
-    return false;
-}
-
-
-void fe_iset_push(FeInstSet* iset, FeInst* inst) {
-    u32 id = inst->id;
-    u32 id_block = id / USIZE_BITS;
-    usize id_bit = (usize)(1) << (id % USIZE_BITS);
-
-    // construct the initial state for the set centered around this inst
-    if_unlikely (iset->id_start == UINT32_MAX) {
-        iset->id_start = id_block;
-        iset->id_end   = id_block + 1;
-        iset->exists = fe_malloc(sizeof(usize));
-        // memset(iset->exists, 0, sizeof(usize));
-        iset->insts = fe_malloc(sizeof(iset->insts[0]) * USIZE_BITS);
-
-        iset->exists[0] = id_bit; 
-        iset->insts[id - iset->id_start * USIZE_BITS] = inst;
-
-        return;
-    }
-
-    // printf("push %u %p\n", id, inst);
-
-    if_likely (iset->id_start <= id_block && id_block < iset->id_end) {
-        usize exists_block = iset->exists[id_block - iset->id_start];
-        // printf("> %064lb\n", exists_block);
-        if (!(exists_block & id_bit)) {
-            exists_block |= id_bit;
-            iset->exists[id_block - iset->id_start] = exists_block;
-            iset->insts[id - iset->id_start * USIZE_BITS] = inst;
-        }
-        // printf("> %064lb\n\n", exists_block);
-        return;
-    }
-
-    if (iset->id_end <= id_block) {
-        // expand upwards
-        usize new_end = id_block + 1;
-        usize new_size = new_end - iset->id_start;
-        // we can realloc
-        iset->insts = fe_realloc(iset->insts, sizeof(FeInst*) * new_size * USIZE_BITS);
-        iset->exists = fe_realloc(iset->insts, sizeof(FeInst*) * new_size);
-        // have to memset the newly allocated '.exists' space
-        for_n (i, iset->id_end, new_end) {
-            iset->exists[i] = 0;
-        }
-        // do this more efficiently later idk
-        iset->id_end = new_end;
-        // fe_iset_push(iset, inst);
-        iset->exists[id_block] = id_bit;
-        iset->insts[id - iset->id_start * USIZE_BITS] = inst;
-    } else {
-        // expand downwards
-        FE_CRASH("fuck! implement downwards set expansion");
-    }
-
-}
-
-void fe_iset_remove(FeInstSet* iset, FeInst* inst) {
-    u32 id = inst->id;
-    u32 exists_block_index = id / USIZE_BITS;
-    usize id_bit = (usize)(1) << (id % USIZE_BITS);
-
-    if_likely (iset->id_start <= exists_block_index && exists_block_index < iset->id_end) {
-        usize exists_block = iset->exists[exists_block_index - iset->id_start];
-        if (exists_block & id_bit) {
-            iset->exists[exists_block_index - iset->id_start] = exists_block ^ id_bit;
-        }
-    }
-}
-
-static inline usize count_trailing_zeros(usize n) {
-#if USIZE_MAX == UINT64_MAX
-    return __builtin_ctzll(n);
-#else
-    return __builtin_ctz(n);
-#endif
-}
-
-FeInst* fe_iset_pop(FeInstSet* iset) {
-
-    u32 blocks_len = iset->id_end - iset->id_start;
-    for_n (exists_block_index, 0, blocks_len) {
-
-        usize exists_block = iset->exists[exists_block_index];
-        if (exists_block == 0) {
-            // we can skip this block
-            continue;
-        }
-
-        // pop the next instruction in the set
-        usize set_bit = count_trailing_zeros(exists_block);
-        // return the instruction at that position
-        FeInst* inst = iset->insts[set_bit + exists_block_index * USIZE_BITS];
-
-        // printf("pop %u %p\n", inst->id, inst);
-
-        // remove it from its 'exists' block
-        // printf("> %064lb\n", iset->exists[exists_block_index]);
-        iset->exists[exists_block_index] ^= (usize)(1) << set_bit;
-        // printf("> %064lb\n\n", iset->exists[exists_block_index]);
-
-        return inst;
-    }
-
-    return nullptr;
-}
-
-void fe_iset_destroy(FeInstSet* iset) {
-    fe_free(iset->insts);
-    fe_free(iset->exists);
-    *iset = (FeInstSet){0};
 }
