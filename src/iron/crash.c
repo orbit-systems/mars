@@ -69,7 +69,7 @@
     __debugbreak();
 #endif
 
-    exit(-1);
+    __builtin_trap();
 }
 
 #if !defined(_WIN32) && !defined(__CYGWIN__)
@@ -79,14 +79,8 @@ static void signal_handler(int sig, siginfo_t* info, void* ucontext) {
     case SIGSEGV:
         FE_CRASH("segfault at addr 0x%lx", (long)info->si_addr);
         break;
-    case SIGINT:
-        printf("debug interrupt caught");
-        break;
     case SIGFPE:
         FE_CRASH("fatal arithmetic exception");
-        break;
-    case SIGABRT:
-        FE_CRASH("sigabrt lmao");
         break;
     default:
         FE_CRASH("unhandled signal %s caught", strsignal(sig));

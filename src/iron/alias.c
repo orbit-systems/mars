@@ -270,7 +270,7 @@ static void recursive_solve(FeFunc* f, FeBlock* b, FeBlock* pred, FeAliasMap* am
             for_n(i, 0, num_aliases) {
                 fe_phi_add_src(f, inst, latest_def[aliases[i]._], pred);
             }
-        } if (is_multi_use) {
+        } else if (is_multi_use) {
             for_n(i, 0, num_aliases) {
                 fe_add_input(f, inst, latest_def[aliases[i]._]);
             }
@@ -283,15 +283,22 @@ static void recursive_solve(FeFunc* f, FeBlock* b, FeBlock* pred, FeAliasMap* am
         }
     }
 
-
     for_n(i, 0, b->succ_len) {
         FeBlock* succ = b->succ[i];
         if (succ->flags) {
             // visited before! we fill out the phis and then keep going
-            FE_ASSERT(false);
+            for_inst(phi, succ) {
+                if (phi->kind != FE_MEM_PHI) {
+                    continue;
+                }
+
+                FE_ASSERT(fe_amap_get_len(amap, phi->id) == 1);
+                FeAliasCategory cat = fe_amap_get(amap, phi->id)[0];
+                fe_phi_add_src(f, phi, latest_def[cat._], b);
+            }
         } else {
             FeInst* latest_def_next[amap->num_cat];
-            memcpy (latest_def_next, latest_def, sizeof(FeInst*) * amap->num_cat);
+            memcpy(latest_def_next, latest_def, sizeof(FeInst*) * amap->num_cat);
 
             recursive_solve(f, succ, b, amap, latest_def_next);
         }

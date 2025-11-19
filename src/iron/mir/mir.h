@@ -191,6 +191,5 @@ FeMirSymbol* fe_mir_symbol_ptr(FeMirObject* obj, FeMirSymbolIndex index);
 FeMirRelocation* fe_mir_reloc_ptr(FeMirObject* obj, FeMirRelocIndex index);
 
 FeMirElement* fe_mir_elem_new(FeMirObject* obj, FeMirSection* sec);
-FeMirElement* fe_mir_elem_new(FeMirObject* obj, FeMirSection* sec);
 
 #endif // FE_MIR_H

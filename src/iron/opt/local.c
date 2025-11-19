@@ -5,7 +5,6 @@
 // this has ballooned into everything lmfao
 
 static bool try_all(FeFunc* f, FeInstSet* wlist, FeInst* inst);
-static bool try_memory(FeFunc* f, FeInstSet* wlist, FeInst* inst);
 
 static void push_uses(FeInstSet* wlist, FeInst* inst) {
     for_n(i, 0, inst->use_len) {
@@ -471,12 +470,13 @@ static bool try_alias_relax(FeFunc* f, FeInstSet* wlist, FeInst* inst) {
         if (fe_iset_contains(wlist, use)) {
             fe_iset_remove(wlist, use);
             fe_iset_push(wlist, inst);
-            return try_memory(f, wlist, use);
+            // return try_memory(f, wlist, use);
+            return try_all(f, wlist, use);
         }
     }
 
-    if (!fe_insts_may_alias(f, inst, inst->inputs[0])) {
-        if (fe_inst_has_trait(inst->inputs[0]->kind, FE_TRAIT_MEM_SINGLE_USE)) {
+    if (fe_inst_has_trait(inst->inputs[0]->kind, FE_TRAIT_MEM_SINGLE_USE)) {
+        if (!fe_insts_may_alias(f, inst, inst->inputs[0])) {
             fe_iset_push(wlist, inst->inputs[0]->inputs[0]);
             fe_iset_push(wlist, inst->inputs[0]);
             fe_iset_push(wlist, inst);
@@ -505,6 +505,7 @@ static bool try_alias_relax(FeFunc* f, FeInstSet* wlist, FeInst* inst) {
             }
             if (changed) {
                 fe_iset_push(wlist, mem_phi);
+                push_uses(wlist, mem_phi);
             }
 
             return changed;
@@ -561,9 +562,9 @@ static bool try_alias_relax(FeFunc* f, FeInstSet* wlist, FeInst* inst) {
     return false;
 }
 
-static bool try_phi_reduce(FeFunc* f, FeInstSet* wlist, FeInst* inst) {
+static bool try_phi_merge_reduce(FeFunc* f, FeInstSet* wlist, FeInst* inst) {
 
-    if (!(inst->kind == FE_PHI || inst->kind == FE_MEM_PHI)) {
+    if (inst->kind != FE_PHI && inst->kind != FE_MEM_MERGE && inst->kind != FE_MEM_PHI) {
         return false;
     }
 
@@ -591,42 +592,6 @@ static bool try_phi_reduce(FeFunc* f, FeInstSet* wlist, FeInst* inst) {
     return false;
 }
 
-// static bool try_cfg_reduce(FeFunc* f, FeInstSet* wlist, FeInst* inst) {
-
-// }
-
-// static usize inst_hash(FeInst* inst) {
-//     // FE_CRASH("todo");
-//     return 0;
-// }
-
-// static bool value_number(FeFunc* f, FeInstSet* wlist, FeInst* inst, FeCompactMap* value_numbers) {
-
-//     usize hash = inst_hash(inst);
-
-//     // this is kinda shit for performance, 
-//     // i should design a better sparse map
-//     fe_cmap_put(value_numbers, hash, (uintptr_t)inst);
-
-//     // value numbering never fails
-//     return true;
-// }
-
-static bool try_all_vn(FeFunc* f, FeInstSet* wlist, FeInst* inst, FeCompactMap* value_numbers) {
-    return false
-        || try_all(f, wlist, inst)
-        // || value_number(f, wlist, inst, value_numbers)
-    ;
-}
-
-static bool try_memory(FeFunc* f, FeInstSet* wlist, FeInst* inst) {
-    return false
-        || try_load_elim(f, wlist, inst)
-        || try_store_elim(f, wlist, inst)
-        || try_alias_relax(f, wlist, inst)
-    ;
-}
-
 static bool try_all(FeFunc* f, FeInstSet* wlist, FeInst* inst) {
     return false
         || try_tdce(f, wlist, inst)
@@ -635,7 +600,7 @@ static bool try_all(FeFunc* f, FeInstSet* wlist, FeInst* inst) {
         || try_strength_binop(f, wlist, inst)
         || try_identity_binop(f, wlist, inst)
         || try_consteval_binop(f, wlist, inst)
-        || try_phi_reduce(f, wlist, inst)
+        || try_phi_merge_reduce(f, wlist, inst)
         || try_load_elim(f, wlist, inst)
         || try_store_elim(f, wlist, inst)
         || try_alias_relax(f, wlist, inst)
@@ -645,9 +610,6 @@ static bool try_all(FeFunc* f, FeInstSet* wlist, FeInst* inst) {
 void fe_opt_local(FeFunc* f) {
     FeInstSet wlist;
     fe_iset_init(&wlist);
-
-    FeCompactMap value_numbers;
-    fe_cmap_init(&value_numbers);
 
     for_blocks(block, f) {
         fe_iset_push(&wlist, block->bookend);
@@ -662,7 +624,7 @@ void fe_opt_local(FeFunc* f) {
             break;
         }
 
-        try_all_vn(f, &wlist, inst, &value_numbers);
+        try_all(f, &wlist, inst);
     }
     fe_iset_destroy(&wlist);
 

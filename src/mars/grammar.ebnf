@@ -4,8 +4,8 @@ digit = '0' | '1' | '2' | '3' | '4'
 param_ident = "self" | "^" {reference_qualifier} "self" | ["def"] ident;
 param = param_ident {"," param_ident} [","] ":" expr;
 param_list = [param {"," param} [","]];
-fun_sign = ["inline"] "fun" ident ["[" param_list "]"] "(" param_list ")" [":" expr];
-fun_decl = fun_sign block;
+fun_signature = ["inline"] "fun" ident ["[" param_list "]"] "(" param_list ")" [":" expr];
+fun_decl = fun_signature block;
 
 decl_list = decl_specifier ident {"," [decl_specifier] ident} [","];
 expr_list = expr {"," expr} [","];
@@ -141,4 +141,7 @@ enum_decl =
         {fun_decl | impl_block | type_decl | decl_assign}
     "}";
 
-interface_decl = ;
+
+interface_decl = "interface" ["sealed"] ident ["(" param_list ")"] "{"
+        {fun_signature}
+    "}";

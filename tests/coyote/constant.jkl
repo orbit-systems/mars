@@ -1,0 +1,4 @@
+
+FN const(): UWORD
+    RETURN 0xFFFFFFF0
+END

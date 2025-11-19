@@ -5,17 +5,17 @@
 #include "iron/iron.h"
 
 typedef union {
-    usize imm;
+    u32 imm;
     FeSymbol* sym;
-} XrInstImmOrSym;
+} XrInstImm32OrSym;
 
-static inline bool xr_immsym_is_imm(XrInstImmOrSym* immsym) {
+static inline bool xr_immsym_is_imm(XrInstImm32OrSym* immsym) {
     return immsym->imm & 1;
 }
-static inline u32 xr_immsym_imm_val(XrInstImmOrSym* immsym) {
+static inline u32 xr_immsym_imm_val(XrInstImm32OrSym* immsym) {
     return (u32)(immsym->imm >> 1);
 }
-static inline void xr_immsym_set_imm(XrInstImmOrSym* immsym, u32 imm) {
+static inline void xr_immsym_set_imm(XrInstImm32OrSym* immsym, u32 imm) {
     immsym->imm = (1 | (imm << 1));
 }
 

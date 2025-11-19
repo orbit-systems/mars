@@ -2,6 +2,7 @@
 *.a
 *.d
 *.exe
+*.out
 
 .vscode
 build

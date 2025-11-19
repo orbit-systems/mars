@@ -778,10 +778,10 @@ void fe_add_input(FeFunc* f, FeInst* inst, FeInst* input) {
         FeInst** new_inputs = fe_ipool_list_alloc(pool, inst->in_cap);
         memcpy(new_inputs, inst->inputs, sizeof(new_inputs[0]) * inst->in_len);
 
-        // set the top list to zero
-        memset(&new_inputs[input->in_len], 0, sizeof(new_inputs[0]) * input->in_len);
+        // set the top list to nulls
+        memset(&new_inputs[inst->in_len], 0, sizeof(new_inputs[0]) * inst->in_len);
 
-        fe_ipool_list_free(pool, input->inputs, input->in_len);
+        fe_ipool_list_free(pool, inst->inputs, inst->in_len);
         inst->inputs = new_inputs;
     }
 
@@ -995,6 +995,7 @@ FeInst* fe_inst_phi(FeFunc* f, FeTy ty, u16 expected_len) {
 }
 
 FeInst* fe_inst_mem_phi(FeFunc* f, u16 expected_len) {
+    expected_len = max(expected_len, 2);
     FeInst* i = fe_inst_new(f, expected_len, sizeof(FeInstPhi));
     i->kind = FE_MEM_PHI;
     i->ty = FE_TY_VOID;

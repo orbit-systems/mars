@@ -1,11 +1,11 @@
 
 FN foo(IN ptr: ^UWORD): UWORD
-    ptr^ = 10
-    ptr^ = 20
-    ptr^ = ptr^ + 30
+    ptr^ = 1
+    ptr^ = 2
     BARRIER
-    ptr^ = ptr^ + 40 - ptr^
-    ptr^ = 50 - ptr^
-    ptr^ = ptr^ + ptr^ + 60
+    ptr^ = ptr^ + 3
+    ptr^ = ptr^ + 4 - ptr^
+    ptr^ = 5 - ptr^
+    ptr^ = ptr^ + ptr^ + 6
     RETURN ptr^
 END

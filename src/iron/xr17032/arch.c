@@ -109,7 +109,7 @@ void fe_xr_print_inst(FeDataBuffer* db, FeFunc* f, FeInst* inst) {
         if (xr_immsym_is_imm(fe_extra(inst))) {
             fe_db_writef(db, "0x%llx", xr_immsym_imm_val(fe_extra(inst)));
         } else {
-            FeSymbol* sym = fe_extra(inst, XrInstImmOrSym)->sym;
+            FeSymbol* sym = fe_extra(inst, XrInstImm32OrSym)->sym;
             FeCompactStr symname = sym->name;
             fe_db_writef(db, fe_compstr_fmt, fe_compstr_arg(symname));
         }
@@ -152,6 +152,15 @@ void fe_xr_print_inst(FeDataBuffer* db, FeFunc* f, FeInst* inst) {
         fe_db_writecstr(db, " (else ");
         fe__emit_ir_block_label(db, f, fe_extra(inst, FeInstBranch)->if_false);
         fe_db_writecstr(db, ")");
+        break;
+    case XR_P_LA:
+        if (xr_immsym_is_imm(fe_extra(inst))) {
+            fe_db_writef(db, "%u", xr_immsym_imm_val(fe_extra(inst)));
+        } else {
+            FeSymbol* sym = fe_extra(inst, XrInstImm32OrSym)->sym;
+            FeCompactStr symname = sym->name;
+            fe_db_writef(db, fe_compstr_fmt, fe_compstr_arg(symname));
+        }
         break;
     case XR_P_B:
         fe__emit_ir_block_label(db, f, fe_extra(inst, XrInstJump)->target);
@@ -233,12 +242,13 @@ const u16 fe_xr_regclass_lens[XR_REGCLASS__COUNT] = {
 #define S(x) [x - FE__XR_INST_BEGIN]
 
 const u8 fe_xr_extra_size_table[FE__XR_INST_END - FE__XR_INST_BEGIN] = {
-    R(XR_J, XR_JAL) = sizeof(XrInstImmOrSym),
+    R(XR_J, XR_JAL) = sizeof(XrInstImm32OrSym),
     R(XR_BEQ, XR_BPO) = sizeof(XrInstBranch),
     R(XR_ADDI, XR_JALR) = sizeof(XrInstImm),
     R(XR_SHIFT, XR_SC) = 0,
     R(XR_MB, XR_SYS) = 0,
     R(XR_MFCR, XR_RFE) = sizeof(XrInstImm),
+    S(XR_P_LA) = sizeof(XrInstImm32OrSym)
 };
 
 #include "../short_traits.h"

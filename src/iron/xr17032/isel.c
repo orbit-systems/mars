@@ -27,7 +27,7 @@ static bool is_const_u5(FeInst* inst) {
         return false;
     }
     u64 val = fe_extra(inst, FeInstConst)->val;
-    return (val & 0xFFFF) == val;
+    return (val & 0b11111) == val;
 }
 
 static bool is_const_zero(FeInst* inst) {
@@ -185,7 +185,16 @@ FeInstChain fe_xr_isel(FeFunc* f, FeBlock* block, FeInst* inst) {
                 return chain;
             }
 
-            FE_CRASH("constant too big! for now....");
+            // create addi with LA and zero
+            FeInst* zero = mach_reg(f, block, XR_GPR_ZERO);
+            FeInst* la = xr_inst(f, XR_P_LA, 1, sizeof(XrInstImm32OrSym));
+            la->ty = FE_TY_I32;
+            xr_immsym_set_imm(fe_extra(la, XrInstImm32OrSym), (u32)const_val(inst));
+            fe_set_input(f, la, 0, zero);
+
+            FeInstChain chain = fe_chain_new(zero);
+            chain = fe_chain_append_end(chain, la);
+            return chain;
         }
 
         // ARITHMETIC

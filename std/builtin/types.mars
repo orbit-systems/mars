@@ -19,7 +19,7 @@ interface sealed Pointer {
 
 interface sealed Integer {
     require Arithmetic(self);
-    require Bits(self);
+    require BitLogic(self);
 }
 
 interface sealed Float {
@@ -35,7 +35,7 @@ interface Arithmetic(Rhs: type) {
     require ops::Rem(Rhs), ops::AssignRem(Rhs);
 }
 
-interface Bits(Rhs: type) {
+interface BitLogic(Rhs: type) {
     require ops::And(Rhs), ops::AssignAnd(Rhs);
     require ops::Or(Rhs), ops::AssignOr(Rhs);
     require ops::Xor(Rhs), ops::AssignXor(Rhs);

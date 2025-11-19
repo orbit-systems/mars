@@ -170,12 +170,34 @@ static void print_inst_ty(FeDataBuffer* db, FeInst* inst) {
 }
 
 void fe__emit_ir_stack_label(FeDataBuffer* db, FeStackItem* item) {
+    if (item == nullptr) {
+        if (should_ansi) {
+            fe_db_writecstr(db, "\x1b[90m");
+        }
+        fe_db_writecstr(db, "null:");
+        if (should_ansi) {
+            fe_db_writecstr(db, "\x1b[0m");
+        }
+        return;
+    }
+
     if (should_ansi) fe_db_writef(db, "\x1b[%dm", ansi(item->flags));
     fe_db_writef(db, "s%u", item->flags);
     if (should_ansi) fe_db_writecstr(db, "\x1b[0m");
 }
 
 void fe__emit_ir_block_label(FeDataBuffer* db, FeFunc* f, FeBlock* ref) {
+    if (ref == nullptr) {
+        if (should_ansi) {
+            fe_db_writecstr(db, "\x1b[90m");
+        }
+        fe_db_writecstr(db, "null:");
+        if (should_ansi) {
+            fe_db_writecstr(db, "\x1b[0m");
+        }
+        return;
+    }
+
     if (should_ansi) fe_db_writef(db, "\x1b[%dm", ansi(ref->id));
     fe_db_writef(db, "%u:", ref->id);
     if (should_ansi) fe_db_writecstr(db, "\x1b[0m");
@@ -255,6 +277,22 @@ static void print_inst(FeFunc* f, FeDataBuffer* db, FeInst* inst) {
         }
         fe_db_writecstr(db, " = ");
     }
+    // if (inst->use_len != 0) {
+    //     fe__emit_ir_ref(db, f, inst);
+    // } else {
+    //     if (should_ansi) {
+    //         fe_db_writecstr(db, "\x1b[90m");
+    //     }
+    //     fe_db_writef(db, "(%%%u)", inst->id);
+    //     if (should_ansi) {
+    //         fe_db_writecstr(db, "\x1b[0m");
+    //     }
+    // }
+    // if (inst->ty != FE_TY_VOID) {
+    //     fe_db_writef(db, ": ");
+    //     print_inst_ty(db, inst);
+    // }
+    // fe_db_writecstr(db, " = ");
     
     if (inst->kind < FE__BASE_INST_END) {
         const char* name = inst_name[inst->kind];
