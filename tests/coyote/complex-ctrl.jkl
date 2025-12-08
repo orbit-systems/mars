@@ -1,0 +1,15 @@
+FN if(): UWORD
+    y := 0
+
+    IF y THEN
+        WHILE y DO
+            IF y THEN
+                WHILE y DO
+                    y = 2
+                END
+            END
+        END
+    END
+
+    RETURN y
+END

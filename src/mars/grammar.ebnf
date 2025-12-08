@@ -2,10 +2,10 @@ digit = '0' | '1' | '2' | '3' | '4'
       | '5' | '6' | '7' | '8' | '9';
 
 param_ident = "self" | "^" {reference_qualifier} "self" | ["def"] ident;
-param = param_ident {"," param_ident} [","] ":" expr;
-param_list = [param {"," param} [","]];
-fun_signature = ["inline"] "fun" ident ["[" param_list "]"] "(" param_list ")" [":" expr];
-fun_decl = fun_signature block;
+params_of_ty = param_ident {"," param_ident} [","] ":" expr;
+param_list = [params_of_ty {"," params_of_ty} [","]];
+fun_signature = "fun" ["inline" | "noinline"] ident ["[" param_list "]"] "(" param_list ")" [":" expr];
+fun_decl = ["pub"] fun_signature block;
 
 decl_list = decl_specifier ident {"," [decl_specifier] ident} [","];
 expr_list = expr {"," expr} [","];
@@ -15,28 +15,44 @@ decl_assign = decl_list [":" expr_list] "=" expr_list ";";
 block = "{" {stmt} [expr] "}";
 def_block = "def" block;
 
+
+if_expr_brace = "if" expr block
+if_expr_then = "if" expr "then" expr
+
+else_expr_brace = expr "else" block
+else_expr = expr "else" expr
+
+switch_expr = "switch" expr {switch_case}
+switch_case = "case" expr block
+
+while_expr = "while" expr block
+
 bracing_expr = 
     | block
     | def_block
-    | if_expr
+    | if_expr_brace
+    | else_expr_brace
     | switch_expr
     | while_expr
-    | loop_expr
     ;
 
-paren_tuple = "(" [expr_list] ")" ;
+paren_or_tuple = "(" [expr_list] ")" ;
 
 atomic_expr = 
     | literal
     | ident
     | "undefined"
     | "null"
+    | "self"
+    | "Self"
     | bracing_expr
-    | paren_tuple (* paren/tuple *)
+    | paren_or_tuple (* paren/tuple *)
+    | "." ident                 
+    | "::" ident
     | atomic_expr "." ident                 
     | atomic_expr "::" ident
-    | atomic_expr "[" expr_list "]" (* index/ *)
-    | atomic_expr paren_tuple (* function call *)
+    | atomic_expr "[" expr_list "]" (* index *)
+    | atomic_expr paren_or_tuple (* function call *)
     ;
 
 unary_op = 
@@ -44,7 +60,11 @@ unary_op =
     | "&"
     ;
 
-unary_expr = {unary_op} atomic_expr;
+unary_expr = 
+    | {unary_op} atomic_expr
+    | if_expr_then
+    | else_expr
+    ;
 
 non_bracing_expr = 
     | unary_expr 
@@ -77,43 +97,49 @@ reference_qualifier =
     | "offsetas" "(" expr ")"
     ;
 
+optional_qualifer = 
+    | "noinline"
+    ;
+
 sentinel = ":" expr;
 
+ty_expr = 
+    | ty_expr_terminal
+    | "(" expr {"," expr} [","] ")"                            (* paren/tuple *)
+    | "^"                       {reference_qualifier} ty_expr  (* pointer *)
+    | "[" ["^"]  [sentinel] "]" {reference_qualifier} ty_expr  (* slice [pointer] *)
+    | "[" expr   [sentinel] "]" ty_expr                        (* array *)
+    | "fun" ["[" param_list "]"] "(" param_list ")" [":" expr] (* function type *)
+    | "?" {optional_qualifer} ty_expr                          (* optional *)
+    | ty_expr "?" {optional_qualifer} ty_expr                  (* enum optional *)
+    ;
+
 ty_expr_terminal = 
-    | ident
+    | atomic_expr
     | 'i' digit {digit}
     | 'u' digit {digit}
     | 'f' digit {digit}
     | "void"
     | "noreturn"
-    ;
-
-ty_expr = 
-    | ty_expr_terminal
-    | "(" expr {"," expr} [","] ")" (* paren/tuple *)
-    | "^"                     {reference_qualifier} ty_expr    (* pointer *)
-    | "[" "^"  [sentinel] "]" {reference_qualifier} ty_expr    (* slice pointer *)
-    | "["      [sentinel] "]" {reference_qualifier} ty_expr    (* slice *)
-    | "[" expr [sentinel] "]" ty_expr                          (* array *)
-    | "fun" ["[" param_list "]"] "(" param_list ")" [":" expr] (* function type *)
+    | "Self"
     ;
 
 field_ty = expr | type_decl;
-field = 
+field_group = 
     | ident {"," ident} [","] ":" field_ty
     | "enum"
     ;
-field_list = field {"," field} [","];
 
-type_decl = 
+field_list = field_group {"," field_group} [","];
+
+type_decl = ["pub"] (
     | struct_decl
     | union_decl
     | enum_decl
-    ;
+    );
 
 struct_qualifier = 
     | "alignas" "(" expr ")"
-    (* | "sizeas" "(" expr ")" *)
     | "packed"
     | "bitpacked"
     ;

@@ -1,65 +1,66 @@
-// takes a comptime-known static reference to an allocator.
+def AllocErr = std::Allocator::Err;
+
 pub struct Vec[A: std::Allocator](E: type, S: builtin::types::Integer, allocator: ^static A) {
     data: [^]E,
     len, cap: S,
 
-    pub fun new(capacity: S): self {
-        var vec: self = undefined;
-        vec.init(capacity);
+    pub fun new(capacity: S): AllocErr?Self {
+        var vec: Self = undefined;
+        vec.init(capacity).?;
         vec
     }
 
-    pub fun init(^self, capacity: S) {
-        self.cap = builtin:max(capacity, 2);
+    pub fun init(^self, capacity: S): AllocErr?void {
+        self.cap = builtin::max(capacity, 2);
         self.len = 0;
         self.data = allocator.alloc([^]E, cap).?;
     }
 
-    pub fun deinit(^self) {
+    pub fun destroy(^self) {
         self.cap = 0;
         self.len = 0;
         allocator.free(self.data);
     }
 
-    pub fn reserve(^self, additional: S) {
+    pub fn reserve(^self, additional: S): AllocErr?void {
         self.ensure_capacity(self.len + additional);
     }
 
     // ensure capacity is at least "min"
-    fun ensure_capacity(^self, min: S) {
+    fun ensure_capacity(^self, min: S): AllocErr?void {
         if self.cap < min {
             self.cap = min + min >> 1;
             self.data = allocator.realloc(self.data, cap).?;
         }
     }
 
-    pub fun append(^self, item: E) {
-        self.ensure_capacity(self.len + 1);
+    pub fun append(^self, item: E): AllocErr?void {
+        self.ensure_capacity(self.len + 1).?;
         self.data[self.len] = item;
         self.len += 1;
     }
 
-    pub fun append_many(^self, items: []const E) {
-        self.ensure_capacity(self.len + items.len);
-        builtin::copy(&self.data[self.len], items.data, items.len);
+    pub fun append_many(^self, items: []const E): AllocErr?void {
+        self.ensure_capacity(self.len + items.len).?;
+        builtin::copy_front(&self.data[self.len], items.data, items.len);
         self.len += items.len;
     }
 
-    pub fun prepend(^self, item: E) {
-        self.ensure_capacity(self.len + 1);
+    pub fun prepend(^self, item: E): AllocErr?void {
+        self.ensure_capacity(self.len + 1).?;
         builtin::copy_back(&self.data[1], self.data, self.len);
         self.data[0] = item;
         self.len += 1;
     }
     
-    pub fun prepend_many(^self, items: []const E) {
-        self.ensure_capacity(self.len + 1);
+    pub fun prepend_many(^self, items: []const E): AllocErr?void {
+        self.ensure_capacity(self.len + 1).?;
         builtin::copy_back(&self.data[items.len], self.data, self.len);
-        builtin::copy(self.data, items.data, items.len);
+        builtin::copy_front(self.data, items.data, items.len);
         self.len += items.len;
     }
 
-    pub fun insert(^self, index: S, item: E) {
+    pub fun insert(^self, index: S, item: E): AllocErr?void {
         if index == 0 {
             self.prepend(item);
             return;
@@ -68,13 +69,13 @@ pub struct Vec[A: std::Allocator](E: type, S: builtin::types::Integer, allocator
             self.append(item);
             return;
         }
-        self.ensure_capacity(self.len + 1);
+        self.ensure_capacity(self.len + 1).?;
         builtin::copy_back(&self.data[index + 1], &self.data[index], self.len - index);
         self.data[index] = item;
         self.len += 1;
     }
 
-    pub fun insert_many(^self, index: S, items: []const E) {
+    pub fun insert_many(^self, index: S, items: []const E): AllocErr?void {
         if index == 0 {
             self.prepend_many(items);
             return;
@@ -83,9 +84,9 @@ pub struct Vec[A: std::Allocator](E: type, S: builtin::types::Integer, allocator
             self.append_many(items);
             return;
         }
-        self.ensure_capacity(self.len + items.len);
+        self.ensure_capacity(self.len + items.len).?;
         builtin::copy_back(&self.data[index + items.len], &self.data[index], self.len - index);
-        builtin::copy(&self.data[index], items.data, items.len);
+        builtin::copy_front(&self.data[index], items.data, items.len);
         self.len += items.len;
     }
 
@@ -111,7 +112,7 @@ pub struct Vec[A: std::Allocator](E: type, S: builtin::types::Integer, allocator
 
     impl builtin::ops::Index(usize) {
         pub def Result = E;
-        pub fun op(self, i: usize): ^Result {
+        pub fun op(^self, i: usize): ^Result {
             &self.data[i]
         }
     }

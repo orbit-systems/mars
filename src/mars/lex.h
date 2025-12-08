@@ -1,0 +1,159 @@
+#ifndef MARS_LEX_H
+#define MARS_LEX_H
+
+#include "compiler.h"
+
+typedef enum TokenKind : u8 {
+    TOK_INVALID,
+
+    TOK_EOF,
+    TOK_NEWLINE,
+
+    TOK_OPEN_PAREN,    // (
+    TOK_CLOSE_PAREN,   // )
+    TOK_OPEN_BRACE,    // {
+    TOK_CLOSE_BRACE,   // }
+    TOK_OPEN_BRACKET,  // [
+    TOK_CLOSE_BRACKET, // ]
+
+    TOK_HASH,        // #
+    TOK_COLON,       // :
+    TOK_COLON_COLON, // ::
+    TOK_COMMA,       // ,
+    TOK_DOT,         // .
+    TOK_CARET,       // ^
+    TOK_EXCLAM,      // !
+    TOK_QUESTION,    // ?
+
+    TOK_EQ,         // =
+    TOK_PLUS_EQ,    // +=
+    TOK_MINUS_EQ,   // -=
+    TOK_MUL_EQ,     // *=
+    TOK_DIV_EQ,     // /=
+    TOK_REM_EQ,     // %=
+    TOK_AND_EQ,     // &=
+    TOK_OR_EQ,      // |=
+    TOK_LSHIFT_EQ,  // <<=
+    TOK_RSHIFT_EQ,  // >>=
+    TOK_TIDLE_EQ,   // ~=
+
+    TOK_PLUS,       // +
+    TOK_MINUS,      // -
+    TOK_MUL,        // *
+    TOK_DIV,        // /
+    TOK_REM,        // %
+    TOK_AND,        // &
+    TOK_OR,         // |
+    TOK_LSHIFT,     // <<
+    TOK_RSHIFT,     // >>
+    TOK_TILDE,      // ~
+
+    TOK_EQ_EQ,      // ==
+    TOK_NOT_EQ,     // !=
+    TOK_LESS_EQ,    // <=
+    TOK_GREATER_EQ, // >=
+    TOK_LESS,       // <
+    TOK_GREATER,    // >
+
+    TOK_RARROW,     // ->
+    TOK_LARROW,     // <-
+    TOK_ARROW,      // <->
+
+    TOK_RANGE,      // ..
+    TOK_RANGE_EQ,   // ..=
+
+    TOK_IDENT,
+    TOK_INT_LITERAL,
+    TOK_FLOAT_LITERAL,
+    TOK_CHAR_LITERAL,
+    TOK_STRING_LITERAL,
+
+    TOK_IINT_TYPE,
+    TOK_UINT_TYPE,
+    TOK_FLOAT_TYPE,
+
+    TOK_K_UNDERSCORE,
+
+    TOK_K_SIZEOF,
+    TOK_K_BITSIZEOF,
+    TOK_K_ALIGNOF,
+    TOK_K_OFFSETOF,
+
+    TOK_K_PUB,
+
+    TOK_K_DEF,
+    TOK_K_LET,
+    TOK_K_VAR,
+
+    TOK_K_IF,
+    TOK_K_THEN,
+    TOK_K_ELSE,
+    TOK_K_SWITCH,
+    TOK_K_CASE,
+    TOK_K_WHILE,
+    TOK_K_DEFER,
+
+    TOK_K_UNREACHABLE,
+    TOK_K_RETURN,
+    TOK_K_BREAK,
+
+    TOK_K_UNDEFINED,
+    TOK_K_NULL,
+    TOK_K_TRUE,
+    TOK_K_FALSE,
+    TOK_K_SELF,
+
+    TOK_K_INLINE,
+    TOK_K_NOINLINE,
+    TOK_K_COMMON,
+    TOK_K_SEALED,
+    TOK_K_CONST,
+    TOK_K_STATIC,
+    TOK_K_NOALIAS,
+    TOK_K_ALLOWZERO,
+    TOK_K_ALIGNAS,
+    TOK_K_OFFSETAS,
+    TOK_K_PACKED,
+    TOK_K_BITPACKED,
+
+    TOK_K_VOID,
+    TOK_K_TYPE,
+    TOK_K_NORETURN,
+    TOK_K_SELF_TYPE,
+    TOK_K_ISIZE,
+    TOK_K_USIZE,
+
+    TOK_K_STRUCT,
+    TOK_K_UNION,
+    TOK_K_ENUM,
+    TOK_K_INTERFACE,
+} TokenKind;
+
+#ifdef __x86_64__
+    typedef struct Token {
+        u16 kind : 15;
+        bool bad : 1;
+        i64 raw : 48;
+    } Token;
+#else
+    typedef struct Token {
+        TokenKind kind;
+        bool bad;
+        char* raw;
+    } Token;
+#endif
+
+static inline const char* token_start(Token t) {
+    return (const char*)(isize)t.raw;
+}
+
+typedef struct Lexer {
+    Vec(Token) tokens;
+    Vec(Token) unclosed_delimiters;
+    usize cursor;
+
+    string source; // copy from current_file for easy access
+    SourceFileId current_file;
+} Lexer;
+
+#endif // MARS_LEX_H

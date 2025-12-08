@@ -1,0 +1,7 @@
+FN gvn(IN p: ^UWORD): UWORD
+    RETURN (p^ + p^) 
+         + (p^ + p^) 
+         + (p^ + p^) 
+         + (p^ + p^) 
+         + (p^ + p^)
+END

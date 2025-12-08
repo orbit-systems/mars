@@ -73,9 +73,9 @@ void fe_codegen(FeFunc* f) {
     struct {
         FeInst* from;
         FeInstChain selected;
-    }* value_map = fe_malloc(sizeof(value_map[0]) * f->id_count);
-    memset(value_map, 0, sizeof(value_map[0]) * f->id_count);
-    usize value_map_len = f->id_count;
+    }* value_map = fe_malloc(sizeof(value_map[0]) * f->next_id);
+    memset(value_map, 0, sizeof(value_map[0]) * f->next_id);
+    usize value_map_len = f->next_id;
 
     // isel
     for_blocks(block, f) {

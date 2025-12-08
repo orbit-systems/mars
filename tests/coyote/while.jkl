@@ -1,0 +1,9 @@
+FN while(): UWORD
+    x := 0
+
+    WHILE x DO
+        x = x + 1
+    END
+
+    RETURN x
+END

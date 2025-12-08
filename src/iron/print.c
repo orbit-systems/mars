@@ -277,23 +277,6 @@ static void print_inst(FeFunc* f, FeDataBuffer* db, FeInst* inst) {
         }
         fe_db_writecstr(db, " = ");
     }
-    // if (inst->use_len != 0) {
-    //     fe__emit_ir_ref(db, f, inst);
-    // } else {
-    //     if (should_ansi) {
-    //         fe_db_writecstr(db, "\x1b[90m");
-    //     }
-    //     fe_db_writef(db, "(%%%u)", inst->id);
-    //     if (should_ansi) {
-    //         fe_db_writecstr(db, "\x1b[0m");
-    //     }
-    // }
-    // if (inst->ty != FE_TY_VOID) {
-    //     fe_db_writef(db, ": ");
-    //     print_inst_ty(db, inst);
-    // }
-    // fe_db_writecstr(db, " = ");
-    
     if (inst->kind < FE__BASE_INST_END) {
         const char* name = inst_name[inst->kind];
         

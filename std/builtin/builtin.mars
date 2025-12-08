@@ -1,0 +1,5 @@
+def Ptr = builtin::types::Pointer;
+
+pub fun copy_front[P: Ptr](dst, src: P, len: usize) undefined;
+pub fun copy_back[P: Ptr](dst, src: P, len: usize) undefined;
+pub fun copy[P: Ptr](dst, src: P, len: usize) undefined;

@@ -1,4 +1,4 @@
-// arithmetic ops
+// arithmetic
 
 interface Add(Rhs: type) {
     def Result: type;
@@ -50,7 +50,7 @@ interface AssignRem(Rhs: type) {
     fun op(^self, rhs: Rhs);
 }
 
-// bitwise ops
+// bitwise logic
 
 interface And(Rhs: type) {
     def Result: type;
@@ -100,6 +100,16 @@ interface Shr(Rhs: type) {
 
 interface AssignShr(Rhs: type) {
     fun op(^self, rhs: Rhs);
+}
+
+// comparison
+
+interface Eq(Rhs: type) {
+    fun eq(^self, rhs: Rhs): bool;
+
+    fun ne(^self, rhs: Rhs): bool {
+        !(self as Eq).eq()
+    }
 }
 
 // conversion

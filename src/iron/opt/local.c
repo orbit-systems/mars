@@ -71,7 +71,6 @@ static bool load_elim_phi(FeFunc* f, FeInstSet* wlist, FeInst* dependent_phi, Fe
 
     fe_iset_push(wlist, dependent_phi);
     push_uses(wlist, dependent_phi);
-
     
     fe_iset_push(wlist, load);
     fe_iset_push(wlist, phi);
@@ -578,6 +577,7 @@ static bool try_phi_merge_reduce(FeFunc* f, FeInstSet* wlist, FeInst* inst) {
     bool all_inputs_same = true;
     for_n(i, 1, inst->in_len) {
         if (inst->inputs[0] != inst->inputs[i]) {
+            // check
             all_inputs_same = false;
             break;
         }
@@ -586,6 +586,39 @@ static bool try_phi_merge_reduce(FeFunc* f, FeInstSet* wlist, FeInst* inst) {
         push_uses(wlist, inst);
         fe_replace_uses(f, inst, inst->inputs[0]);
         fe_inst_destroy(f, inst);
+        return true;
+    }
+
+    return false;
+}
+
+static bool try_phi_elim(FeFunc* f, FeInstSet* wlist, FeInst* inst) {
+    if (inst->kind != FE_PHI && inst->kind != FE_MEM_PHI) {
+        return false;
+    }
+
+
+    FeInst* other = nullptr;
+    for_n(i, 0, inst->in_len) {
+        if (inst->inputs[i] != inst) {
+            other = inst->inputs[i];
+            break;
+        }
+    }
+
+    bool all_inputs_self_or_other = true;
+    for_n(i, 0, inst->in_len) {
+        if (inst->inputs[i] != inst && inst->inputs[i] != other) {
+            all_inputs_self_or_other = false;
+            break;
+        }
+    }
+
+    if (all_inputs_self_or_other) {
+        push_uses(wlist, inst);
+        fe_iset_push(wlist, other);
+        fe_replace_uses(f, inst, other);
+        fe_iset_push(wlist, inst);
         return true;
     }
 
@@ -601,6 +634,7 @@ static bool try_all(FeFunc* f, FeInstSet* wlist, FeInst* inst) {
         || try_identity_binop(f, wlist, inst)
         || try_consteval_binop(f, wlist, inst)
         || try_phi_merge_reduce(f, wlist, inst)
+        || try_phi_elim(f, wlist, inst)
         || try_load_elim(f, wlist, inst)
         || try_store_elim(f, wlist, inst)
         || try_alias_relax(f, wlist, inst)

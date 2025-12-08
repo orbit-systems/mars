@@ -1,0 +1,3 @@
+module sub;
+
+def X = 1;

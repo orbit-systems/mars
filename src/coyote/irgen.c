@@ -107,7 +107,6 @@ FeModule* irgen(CompilationUnit* cu) {
         irgen_function(ig);
     }
 
-
     return ig->m;
 }
 
@@ -264,7 +263,7 @@ static AddrInfo irgen_addr(IRGen* ig, Expr* expr) {
     }
 }
 
-static void irgen_stmt_return(IRGen* ig, Stmt* stmt) {
+static StmtInfo irgen_stmt_return(IRGen* ig, Stmt* stmt) {
     assert(ig->f->sig->return_len == 1);
 
     FeInst* ret_expr = irgen_value(ig, stmt->expr);
@@ -274,9 +273,11 @@ static void irgen_stmt_return(IRGen* ig, Stmt* stmt) {
     );
     FeInst* ret = fe_append_end(ig->b, fe_inst_return(ig->f));
     fe_return_set_arg(ig->f, ret, 0, ret_expr);
+
+    return STMTINFO(true);
 }
 
-static void irgen_stmt_vardecl(IRGen* ig, Stmt* stmt) {
+static StmtInfo irgen_stmt_vardecl(IRGen* ig, Stmt* stmt) {
     Entity* var = stmt->var_decl.var;
     
     // create stack slot
@@ -300,9 +301,11 @@ static void irgen_stmt_vardecl(IRGen* ig, Stmt* stmt) {
         0
     ));
     fe_amap_add(ig->amap, store->id, ig->alias.stack);
+
+    return STMTINFO(false);
 }
 
-static void irgen_stmt_assign(IRGen* ig, Stmt* stmt) {
+static StmtInfo irgen_stmt_assign(IRGen* ig, Stmt* stmt) {
     Expr* lhs = stmt->assign.lhs;
     Expr* rhs = stmt->assign.rhs;
     
@@ -314,9 +317,13 @@ static void irgen_stmt_assign(IRGen* ig, Stmt* stmt) {
 
     FeInst* store = fe_append_end(ig->b, fe_inst_store(ig->f, addr.val, value, FE_MEMOP_ALIGN_DEFAULT, 0));
     fe_amap_add(ig->amap, store->id, addr.cat);
+
+    return STMTINFO(false);
 }
 
-static void irgen_stmt_if(IRGen* ig, Stmt* stmt) {
+static StmtInfo irgen_stmt_if(IRGen* ig, Stmt* stmt) {
+    assert(stmt->if_.else_ == nullptr);
+
     // Expr* cond = stmt->if_.cond;
     FeInst* cond = irgen_value(ig, stmt->if_.cond);
     
@@ -331,55 +338,116 @@ static void irgen_stmt_if(IRGen* ig, Stmt* stmt) {
         cond = eq;
     }
 
-    FeInst* branch = fe_append_end(ig->b, fe_inst_branch(ig->f, cond));
+    FeBlock* branch_block = ig->b;
 
     FeBlock* true_block = fe_block_new(ig->f);
 
-
+    bool true_diverges = false;
     // codegen on true block
     ig->b = true_block;
     for_n(i, 0, stmt->if_.block.len) {
         Stmt* substmt = stmt->if_.block.stmts[i];
-        irgen_stmt(ig, substmt);
+        true_diverges = irgen_stmt(ig, substmt).diverges;
+        if (true_diverges) {
+            break;
+        }
     }
-    
+    FeBlock* true_end = ig->b;
+
     FeBlock* false_block = fe_block_new(ig->f);
+
+    FeInst* branch = fe_append_end(branch_block, fe_inst_branch(ig->f, cond));
+
     fe_branch_set_false(ig->f, branch, true_block);
     fe_branch_set_true(ig->f, branch, false_block);
 
-    // jump to false block
-    FeInst* jump_back = fe_append_end(ig->b, fe_inst_jump(ig->f));
-    fe_jump_set_target(ig->f, jump_back, false_block);
-
+    if (!true_diverges) {
+        // jump from true block to false block
+        FeInst* jump_back = fe_append_end(true_end, fe_inst_jump(ig->f));
+        fe_jump_set_target(ig->f, jump_back, false_block);
+    }
+    
     // continue to codegen on false block
     ig->b = false_block;
-    assert(stmt->if_.else_ == nullptr);
+
+    return STMTINFO(false);
 }
 
+static StmtInfo irgen_stmt_while(IRGen* ig, Stmt* stmt) {
 
-static void irgen_stmt_barrier(IRGen* ig, Stmt* stmt) {
+    FeBlock* condition_block = fe_block_new(ig->f);
+
+    FeInst* into_condition = fe_append_end(ig->b, fe_inst_jump(ig->f));
+    fe_jump_set_target(ig->f, into_condition, condition_block);
+
+    ig->b = condition_block;
+
+    // generate condition
+    FeInst* cond = irgen_value(ig, stmt->while_.cond);
+    
+    if (cond->ty != FE_TY_BOOL) {
+        FeInst* zero = fe_append_end(ig->b, fe_inst_const(ig->f, cond->ty, 0));
+        FeInst* eq = fe_append_end(ig->b, fe_inst_binop(ig->f, 
+            FE_TY_BOOL, 
+            FE_IEQ, 
+            cond, 
+            zero
+        ));
+        cond = eq;
+    }
+
+    FeBlock* loop_block = fe_block_new(ig->f);
+    ig->b = loop_block;
+
+    bool loop_diverges = false;
+    for_n(i, 0, stmt->while_.block.len) {
+        Stmt* substmt = stmt->while_.block.stmts[i];
+        loop_diverges = irgen_stmt(ig, substmt).diverges;
+        if (loop_diverges) {
+            break;
+        }
+    }
+    FeBlock* loop_end = ig->b;
+
+    if (!loop_diverges) {
+        // jump from loop end to condition block
+        FeInst* jump_back = fe_append_end(loop_end, fe_inst_jump(ig->f));
+        fe_jump_set_target(ig->f, jump_back, condition_block);
+    }
+
+    FeBlock* break_block = fe_block_new(ig->f);
+
+    FeInst* branch = fe_append_end(condition_block, fe_inst_branch(ig->f, cond));
+
+    fe_branch_set_false(ig->f, branch, loop_block);
+    fe_branch_set_true(ig->f, branch, break_block);
+
+    ig->b = break_block;
+
+    return STMTINFO(false);
+}
+
+static StmtInfo irgen_stmt_barrier(IRGen* ig, Stmt* stmt) {
     FeInst* vol_effect = fe_append_end(ig->b, fe_inst_mem_barrier(ig->f));
     fe_amap_add(ig->amap, vol_effect->id, ig->alias.memory);
 
+    return STMTINFO(false);
 }
 
-static void irgen_stmt(IRGen* ig, Stmt* stmt) {
+static StmtInfo irgen_stmt(IRGen* ig, Stmt* stmt) {
     switch (stmt->kind) {
     case STMT_BARRIER:
-        irgen_stmt_barrier(ig, stmt);
-        break;
+        return irgen_stmt_barrier(ig, stmt);
     case STMT_RETURN:
-        irgen_stmt_return(ig, stmt);
-        break;
+        return irgen_stmt_return(ig, stmt);
     case STMT_VAR_DECL:
-        irgen_stmt_vardecl(ig, stmt);
-        break;
+        return irgen_stmt_vardecl(ig, stmt);
     case STMT_ASSIGN:
-        irgen_stmt_assign(ig, stmt);
-        break;
+        return irgen_stmt_assign(ig, stmt);
     case STMT_IF:
-        irgen_stmt_if(ig, stmt);
-        break;
+        return irgen_stmt_if(ig, stmt);
+    case STMT_WHILE:
+        return irgen_stmt_while(ig, stmt);
     default:
         UNREACHABLE;
     }
@@ -420,6 +488,9 @@ static void irgen_function(IRGen* ig) {
         Stmt* stmt = function_decl->fn_decl.body.stmts[i];
         irgen_stmt(ig, stmt);
     }
+
+    // fe_opt_reorder_blocks_rpo(ig->f);
+    fe_construct_domtree(ig->f);
 
     fe_solve_mem(ig->f, &amap);
 

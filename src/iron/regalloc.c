@@ -105,6 +105,10 @@ typedef struct ColorNode {
 } ColorNode;
 
 static void add_interference(ColorNode* cnode, FeVReg interferes) {
+    if (cnode->vr == interferes) {
+        return;
+    }
+    
     for_n(i, 0, cnode->inter_len) {
         if (cnode->interferes[i] == interferes) {
             return;
@@ -124,7 +128,11 @@ static void remove_interference(ColorNode* cnode, FeVReg interferes) {
     }
 }
 
-static void add_hint(ColorNode* cnode, FeVReg hint) {
+static void add_hint(ColorNode* cnodes, ColorNode* cnode, FeVReg hint) {
+    // if (cnode->vr == hint) {
+    //     return;
+    // }
+
     for_n(i, 0, cnode->hint_len) {
         if (cnode->hints[i] == hint) {
             return;
@@ -133,6 +141,10 @@ static void add_hint(ColorNode* cnode, FeVReg hint) {
 
     cnode->hints[cnode->hint_len] = hint;
     cnode->hint_len += 1;
+
+    for_n(i, 0, cnode->hint_len - 1) {
+        add_hint(cnodes, &cnodes[cnode->hints[i]], hint);
+    }
 }
 
 // try to take a hint, return true if taken, false if not taken
@@ -184,8 +196,13 @@ void fe_regalloc_basic(FeFunc* f) {
             FeInst* input = inst->inputs[0];
             // FeVirtualReg* input_vr = fe_vreg(f->vregs, input->vr_def);
 
-            add_hint(&color_nodes[inst->vr_def], input->vr_def);
-            add_hint(&color_nodes[input->vr_def], inst->vr_def);
+            FeVReg src = input->vr_def;
+            FeVReg dst = inst->vr_def;
+            ColorNode* src_n = &color_nodes[src];
+            ColorNode* dst_n = &color_nodes[dst];
+
+            add_hint(color_nodes, dst_n, src);
+            add_hint(color_nodes, src_n, dst);
         }
     }
 
@@ -267,19 +284,26 @@ void fe_regalloc_basic(FeFunc* f) {
 
     FeCompactMap cnodes;
     fe_cmap_init(&cnodes);
+
+    FeCompactMap high_priority_cnodes;
+    fe_cmap_init(&high_priority_cnodes);
     
     for_n(vr, 0, vbuf->len) {
         ColorNode* cnode = &color_nodes[vr];
-        // if (cnode->hint_len == 0) {
-        //     continue;
-        // }
+        if (cnode->hint_len) {
+            fe_cmap_put(&high_priority_cnodes, vr, (uintptr_t)cnode);
+        }
         fe_cmap_put(&cnodes, vr, (uintptr_t)cnode);
     }
     
     while (true) {
-        ColorNode* cnode = (ColorNode*)fe_cmap_pop_next(&cnodes);
+        ColorNode* cnode;
+        cnode = (ColorNode*)fe_cmap_pop_next(&high_priority_cnodes);
         if (cnode == nullptr) {
-            break;
+            cnode = (ColorNode*)fe_cmap_pop_next(&cnodes);
+            if (cnode == nullptr) {
+                break;
+            }
         }
 
         // skip if pre-colored
@@ -309,10 +333,9 @@ void fe_regalloc_basic(FeFunc* f) {
                     continue;
                 }
 
-
                 cnode->this->real = vbuf->at[hint].real;
                 for_n(i, 0, cnode->hint_len) {
-                    fe_cmap_put(&cnodes, 
+                    fe_cmap_put(&high_priority_cnodes, 
                         cnode->hints[i],
                         (uintptr_t) &color_nodes[cnode->hints[i]]
                     );
@@ -322,7 +345,9 @@ void fe_regalloc_basic(FeFunc* f) {
             } else {
                 // hinted vreg hasnt been colored yet.
                 // wait for it to be colored ONLY if it will be colored later.
-                if (fe_cmap_contains_key(&cnodes, hint)) {
+                if (fe_cmap_contains_key(&high_priority_cnodes, hint) || 
+                    fe_cmap_contains_key(&cnodes, hint)) 
+                {
                     exit_early = true;
                     break;
                 }
@@ -364,7 +389,7 @@ void fe_regalloc_basic(FeFunc* f) {
             FE_CRASH("failed to allocate register");
         }
         for_n(i, 0, cnode->hint_len) {
-            fe_cmap_put(&cnodes, 
+            fe_cmap_put(&high_priority_cnodes, 
                 cnode->hints[i],
                 (uintptr_t) &color_nodes[cnode->hints[i]]
             );

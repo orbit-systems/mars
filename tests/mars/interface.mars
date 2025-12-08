@@ -1,0 +1,13 @@
+interface Flatten {
+    pub fun flat(self): isize;
+}
+
+struct Bar {
+    x, y, z: isize,
+
+    impl Flatten {
+        pub fun flat(self): isize {
+            self.x + self.y + self.z
+        }
+    }
+}
