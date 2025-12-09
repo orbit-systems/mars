@@ -70,7 +70,7 @@ bin/cobalt: bin/libiron.a $(COBALT_OBJECTS)
 .PHONY: mars
 mars: bin/mars
 bin/mars: bin/libiron.a $(MARS_OBJECTS)
-	@$(LD) $(LDFLAGS) $(MARS_OBJECTS) -o bin/mars -Lbin -liron
+	@$(LD) $(LDFLAGS) $(MARS_OBJECTS) -o bin/mars -Lbin -liron -lm
 
 .PHONY: iron-test
 iron-test: bin/iron-test

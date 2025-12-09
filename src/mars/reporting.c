@@ -5,6 +5,7 @@
 #include "common/ansi.h"
 
 #include <stdio.h>
+#include <math.h>
 
 // this is some of the worst code i've ever written
 // but it works
@@ -85,12 +86,10 @@ static void render_snippet_start(
 }
 
 static usize digits_of_num(usize num) {
-    int digits = 1;
-    while (num >= 10) {
-        digits += 1;
-        num /= 10;
+    if (num == 0) {
+        return 1;
     }
-    return digits;
+    return 1 + (usize) log10((f64) num);
 }
 
 static void render_line(
@@ -109,11 +108,7 @@ static void render_line(
 
     // trim weird characters
     {
-        bool b = true;
-        while (b) {
-            if (source_line.len == 0) {
-                break;
-            }
+        while (source_line.len != 0) {
             switch (source_line.raw[0]) {
             case '\n':
             case '\r':
@@ -122,15 +117,11 @@ static void render_line(
                 source_line.len -= 1;
                 break;
             default:
-                b = false;
-                break;
+                goto trim_end;
             }
         }
-        b = true;
-        while (b) {
-            if (source_line.len == 0) {
-                break;
-            }
+        trim_end:
+        while (source_line.len != 0) {
             switch (source_line.raw[source_line.len - 1]) {
             case '\n':
             case '\r':
@@ -138,10 +129,10 @@ static void render_line(
                 source_line.len -= 1;
                 break;
             default:
-                b = false;
-                break;
+                goto trim_done;
             }
         }
+        trim_done:
 
     }
 
@@ -167,6 +158,7 @@ static void render_line(
                 break;
             }
         }
+
         if (elem == nullptr) {
             fprintf(out, " ");
         } else {
@@ -260,18 +252,18 @@ static void render_line(
                 if (mline_endings[k].gutter_pos == j) {
                     auto elem = &mline_endings[k];
                     fprintf(out, Blue"|"Reset);
-                    goto get_outta_here;
+                    goto gutter_render_finish;
                 }
             }
             for_n(k, 0, vec_len(gutter_elems)) {
                 if (gutter_elems[k].pos == j && gutter_elems->extend) {
                     auto elem = &gutter_elems[k];
                     fprintf(out, Blue"|"Reset);
-                    goto get_outta_here;
+                    goto gutter_render_finish;
                 }
             }
             fprintf(out, " ");
-            get_outta_here:
+            gutter_render_finish:
         }
 
         if (ending->label_kind == REPORT_LABEL_PRIMARY) {
@@ -324,7 +316,7 @@ static void render_line(
                         fprintf(out, Blue);
                     }
                     fprintf(out, "|"Reset);
-                    goto get_outta_here2;
+                    goto gutter_render_finish2;
                 }
             }
             for_n(k, 0, vec_len(gutter_elems)) {
@@ -339,11 +331,11 @@ static void render_line(
                         fprintf(out, Blue);
                     }
                     fprintf(out, "|"Reset);
-                    goto get_outta_here2;
+                    goto gutter_render_finish2;
                 }
             }
             fprintf(out, " ");
-            get_outta_here2:
+            gutter_render_finish2:
         }
 
         if (start->label_kind == REPORT_LABEL_PRIMARY) {
@@ -409,8 +401,6 @@ void report_render(
 
         ReportLabel* first_label = labels_of_file[0];
 
-
-
         bool snippet_start = false;
         usize line_count = 0;
         usize line_num = 0;
@@ -439,13 +429,7 @@ void report_render(
 
         usize outer_width = digits_of_num(vec_len(lines));
 
-        render_snippet_start(out, source_path, line_num, col_num, outer_width);
-        if (r->vertical_pad) {
-            for_n(i, 0, outer_width + 1) {
-                fprintf(out, " ");
-            }
-            fprintf(out, Blue"|"Reset"\n");
-        }
+        usize single_line_labels = 0;
 
         usize max_gutter_width = 0;
         for_n(i, 0, vec_len(lines)) {
@@ -458,24 +442,12 @@ void report_render(
             for_n(i, 0, vec_len(labels_of_file)) {
                 ReportLabel* label = labels_of_file[i];
 
-                // if the line is fully contained in the label, it's a gutter element
-                if (ranges_contained( start, start + len, label->start, label->end)) {
-                    if (label->gutter_pos == USIZE_MAX) {
-                        max_gutter_width += 1;
-                        label->gutter_pos -= 1;
-                    }
-                    continue;
+                // if the label is fully contained in the line, it's a single-line label
+                if (ranges_contained(label->start, label->end, start, start + len)) {
+                    single_line_labels += 1;
                 }
 
-                // if the label ends inside the line, it's a mline_ending
-                if ((start <= label->end && label->end <= start + len) && !(start <= label->start && label->start <= start + len)) {
-                    if (label->gutter_pos == USIZE_MAX) {
-                        max_gutter_width += 1;
-                        label->gutter_pos -= 1;
-                    }
-                    continue;
-                }
-
+                // if the label only starts inside the line, it's a mline_start
                 if ((start <= label->start && label->start <= start + len) && 
                     !(start <= label->end && label->end <= start + len) &&
                     !ranges_contained(label->start, label->end, start, start + len)
@@ -487,7 +459,16 @@ void report_render(
                     continue;
                 }
             }
+        }
 
+        bool vertical_pad = single_line_labels != 1 || max_gutter_width != 0;
+
+        render_snippet_start(out, source_path, line_num, col_num, outer_width);
+        if (vertical_pad) {
+            for_n(i, 0, outer_width + 1) {
+                fprintf(out, " ");
+            }
+            fprintf(out, Blue"|"Reset"\n");
         }
         
         Vec(GutterElement) gutter_elems = vec_new(GutterElement, 16);
@@ -613,7 +594,7 @@ void report_render(
         vec_destroy(&mline_starts);
         vec_destroy(&slines);
         
-        if (r->vertical_pad) {
+        if (vertical_pad) {
             for_n(i, 0, outer_width + 1) {
                 fprintf(out, " ");
             }
@@ -647,8 +628,7 @@ void report_render(
 Report* report_new(
     ReportKind kind, 
     string message, 
-    const Vec(SourceFile) sources,
-    bool vertical_pad
+    const Vec(SourceFile) sources
 ) {
     Report* r = malloc(sizeof(*r));
     r->kind = kind;
@@ -656,7 +636,6 @@ Report* report_new(
     r->labels = vec_new(ReportLabel, 4);
     r->notes = vec_new(string, 4);
     r->sources = sources;
-    r->vertical_pad = vertical_pad;
 
     return r;
 }

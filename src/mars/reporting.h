@@ -26,7 +26,6 @@ typedef struct ReportLabel {
 
 typedef struct Report {
     ReportKind kind;
-    bool vertical_pad;
     string message;
     Vec(ReportLabel) labels;
     Vec(string) notes;
@@ -36,9 +35,9 @@ typedef struct Report {
 Report* report_new(
     ReportKind kind, 
     string message, 
-    const Vec(SourceFile) sources,
-    bool vertical_pad
+    const Vec(SourceFile) sources
 );
+
 void report_destroy(Report* r);
 
 void report_add_label(
@@ -49,6 +48,7 @@ void report_add_label(
     usize end,
     string message
 );
+
 void report_add_note(Report* r, string note);
 
 void report_render(

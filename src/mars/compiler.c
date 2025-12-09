@@ -6,7 +6,6 @@
 #include "reporting.h"
 
 int main() {
-
     SourceFile src = {
         .full_path = strlit("foo.mars"),
         .source = strlit(
@@ -36,8 +35,7 @@ int main() {
     auto report = report_new(
         REPORT_ERROR, 
         strlit("`else` value has incompatible type"), 
-        files,
-        true
+        files
     );
 
     report_add_label(report,

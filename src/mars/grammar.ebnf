@@ -16,16 +16,16 @@ block = "{" {stmt} [expr] "}";
 def_block = "def" block;
 
 
-if_expr_brace = "if" expr block
-if_expr_then = "if" expr "then" expr
+if_expr_brace = "if" expr block;
+if_expr_then = "if" expr "then" expr;
 
-else_expr_brace = expr "else" block
-else_expr = expr "else" expr
+else_expr_brace = expr "else" block;
+else_expr = expr "else" expr;
 
-switch_expr = "switch" expr {switch_case}
-switch_case = "case" expr block
+switch_expr = "switch" expr {switch_case};
+switch_case = "case" expr block;
 
-while_expr = "while" expr block
+while_expr = "while" expr block;
 
 bracing_expr = 
     | block
