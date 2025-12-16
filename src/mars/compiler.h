@@ -31,6 +31,7 @@ typedef struct MarsCompiler {
     /// All the source files being processed by the compiler at the moment.
     Vec(SourceFile) files;
 
+    /// All reports that accumulate throughout the compilation process.
     Vec(struct Report*) reports;
 
     /// Storage for data that persists across the entire compilation.

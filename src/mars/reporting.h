@@ -9,11 +9,13 @@
 
 #include <stdio.h>
 
+/// Kind/severity of a report.
 typedef enum ReportKind: u8 {
     REPORT_ERROR,
     REPORT_WARNING,
 } ReportKind;
 
+/// Kind/purpose of label inside of a report.
 typedef enum ReportLabelKind: u8 {
     REPORT_LABEL_PRIMARY,
     REPORT_LABEL_SECONDARY,

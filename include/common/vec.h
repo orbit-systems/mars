@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+/// Information about a vector that sits behind the element array.
 typedef struct VecHeader {
     uint32_t len;
     uint32_t cap;
@@ -39,7 +40,7 @@ typedef struct VecHeader {
 #define vec_shrink(vecptr) _vec_shrink((void**)_vec_assert_ptr_ptr(vecptr), vec_stride(*vecptr))
 /// Destroy and deallocate vector `vecptr`
 #define vec_destroy(vecptr) _vec_destroy((void**)_vec_assert_ptr_ptr(vecptr))
-
+/// Peek at the last element of a vector.
 #define vec_peek(vec) (vec)[vec_len(vec)-1]
 
 Vec(void) _vec_new(size_t stride, size_t initial_cap);

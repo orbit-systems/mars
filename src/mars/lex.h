@@ -4,8 +4,9 @@
 #include "compiler.h"
 #include "reporting.h"
 
+/// The kind/type of a token.
 typedef enum TokenKind : u8 {
-    TOK_INVALID,
+    TOK_INVALID = 0,
 
     TOK_EOF,
     TOK_NEWLINE,
@@ -93,6 +94,7 @@ typedef enum TokenKind : u8 {
     TOK_K_CASE,
     TOK_K_WHILE,
     TOK_K_DEFER,
+    TOK_K_TRY,
 
     TOK_K_UNREACHABLE,
     TOK_K_RETURN,
@@ -182,7 +184,7 @@ typedef struct Lexer {
     /// ( [ {
     Vec(Token) unclosed_delimiters;
 
-
+    /// The compiler instance this lexer was spawned from.
     MarsCompiler* marsc;
 
 } Lexer;
