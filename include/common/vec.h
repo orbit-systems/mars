@@ -5,9 +5,24 @@
 #include <stdlib.h>
 #include <string.h>
 
+
+///
+/// +--------+--------+--------+--------+--------+--------+
+/// | header | vec[0] | vec[1] | vec[2] |  ....  | vec[N] |
+/// +--------+--------+--------+--------+--------+--------+
+/// ^         ^ Vec(T) given to you
+/// |
+/// Start of allocated memory
+/// 
+/// Every `Vec(T)` has a `VecHeader` that sits behind it in memory.
+/// This header is where the allocated memory really starts, and
+/// `Vec(T)` is just a pointer to where the element array starts.
+
 /// Information about a vector that sits behind the element array.
 typedef struct VecHeader {
+    /// The vector's length (currently used space).
     uint32_t len;
+    /// The vector's allocated capacity.
     uint32_t cap;
 } VecHeader;
 
