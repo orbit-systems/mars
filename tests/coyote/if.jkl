@@ -1,0 +1,8 @@
+FN if(IN x: UWORD): UWORD
+    y := 0
+    IF x THEN
+        y = 1
+    END
+
+    RETURN y
+END

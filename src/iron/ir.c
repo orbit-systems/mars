@@ -242,7 +242,8 @@ FeBlock* fe_block_new(FeFunc* f) {
     FeBlock* block = fe_malloc(sizeof(*block));
     memset(block, 0, sizeof(*block));
 
-    block->id = f->block_count++;
+    block->id = f->next_block_id++;
+    f->num_blocks++;
 
     // init predecessor list
     block->pred_len = 0;
@@ -281,6 +282,7 @@ FeBlock* fe_block_new(FeFunc* f) {
 
 void fe_block_destroy(FeBlock *block) {
     FeFunc* f = block->func;
+    f->num_blocks--;
 
     // remove from linked list
     if (block->list_next) {
@@ -748,7 +750,7 @@ usize fe_replace_uses(FeFunc* f, FeInst* old_val, FeInst* new_val) {
 FeInst* fe_inst_new(FeFunc* f, usize input_len, usize extra_size) {
     FeInst* inst = fe_ipool_alloc(f->ipool, extra_size);
     inst->in_len = input_len;
-    inst->id = f->id_count++;
+    inst->id = f->next_id++;
 
     if (input_len == 0) {
         inst->in_cap = 0;
@@ -1178,7 +1180,7 @@ static FeTrait inst_traits[FE__INST_END] = {
 
     [FE_MOV] = UNOP | SAME_IN_OUT | MOV_HINT,
     [FE__MACH_MOV] = UNOP | VOL | SAME_IN_OUT | MOV_HINT,
-    [FE__MACH_UPSILON]  = UNOP | VOL | SAME_IN_OUT | MOV_HINT,
+    [FE__MACH_UPSILON]  = UNOP | VOL | SAME_IN_OUT,
     [FE_TRUNC] = UNOP | INT_IN,
     [FE_SIGN_EXT] = UNOP | INT_IN,
     [FE_ZERO_EXT] = UNOP | INT_IN,

@@ -1,6 +1,8 @@
 #ifndef ORBIT_UTIL_H
 #define ORBIT_UTIL_H
 
+#include <stdio.h>
+
 #if defined(_WIN32)
     #define OS_WINDOWS
 #elif defined(__linux__)

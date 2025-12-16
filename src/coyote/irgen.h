@@ -39,7 +39,15 @@ static TySelectResult select_iron_type(IRGen* ig, TyIndex ty_index);
 static FeFuncSig* generate_signature(IRGen* ig);
 static void irgen_function(IRGen* ig);
 
+
+typedef struct {
+    bool diverges;
+} StmtInfo;
+#define STMTINFO(...) (StmtInfo){__VA_ARGS__}
+
+
+
 static FeInst* irgen_value(IRGen* ig, Expr* expr);
-static void irgen_stmt(IRGen* ig, Stmt* stmt);
+static StmtInfo irgen_stmt(IRGen* ig, Stmt* stmt);
 
 #endif // IRGEN_H

@@ -295,8 +295,9 @@ typedef struct FeFunc {
     FeFuncSig* sig;
     FeModule* mod;
 
-    u32 id_count;
-    u32 block_count;
+    u32 next_id;
+    u32 next_block_id;
+    u32 num_blocks;
     FeInstPool* ipool;
     FeVRegBuffer* vregs;
 
@@ -381,6 +382,10 @@ typedef struct FeBlock {
 
     FeBlock** pred;
     FeBlock** succ;
+
+    // immediate dominator
+    // AKA parent in domtree
+    FeBlock* idom;
 
     // liveness info
     FeBlockLiveness* live;
@@ -751,7 +756,7 @@ void fe_cfg_add_edge(FeFunc* f, FeBlock* pred, FeBlock* succ);
 void fe_cfg_remove_edge(FeBlock* pred, FeBlock* succ);
 
 // -------------------------------------
-// worklist
+// worklist/CompactMap
 // -------------------------------------
 
 typedef struct FeCompactMap {
@@ -796,6 +801,33 @@ static inline bool fe_iset_contains(FeInstSet* iset, FeInst* inst) {
 static inline void fe_iset_remove(FeInstSet* iset, FeInst* inst) {
     fe_cmap_remove(&iset->_, inst->id);
 }
+
+// -------------------------------------
+// SparseMap
+// -------------------------------------
+
+
+typedef struct FeSparsePair {
+    uintptr_t key;
+    uintptr_t value;
+} FeSparsePair;
+
+typedef struct FeSparseMap {
+    // uintptr_t* values;
+    // uintptr_t* keys;
+    FeSparsePair* map;
+    u32 cap;
+    u32 size;
+} FeSparseMap;
+
+void fe_smap_init(FeSparseMap* smap, u32 initial_cap);
+void fe_smap_destroy(FeSparseMap* smap);
+
+void fe_smap_put(FeSparseMap* smap, uintptr_t key, uintptr_t value);
+bool fe_smap_contains(FeSparseMap* smap, uintptr_t key);
+FeSparsePair* fe_smap_get(FeSparseMap* smap, uintptr_t key);
+uintptr_t fe_smap_remove(FeSparseMap* smap, uintptr_t key);
+
 
 // -------------------------------------
 // aliasing
@@ -974,10 +1006,13 @@ typedef struct {
 
 FeVerifyReportList fe_verify_module(FeModule* m);
 
+// len(output_array) >= f->next_block_id
+void fe_write_blocks_rpo(FeFunc* f, FeBlock** output_array, bool renumber);
+void fe_construct_domtree(FeFunc* f);
+void fe_opt_reorder_blocks_rpo(FeFunc* f);
 void fe_opt_local(FeFunc* f);
 void fe_opt_tdce(FeFunc* f);
 void fe_opt_compact_ids(FeFunc* f);
-
 void fe_opt_post_regalloc(FeFunc* f);
 
 // -------------------------------------

@@ -41,19 +41,13 @@ bool string_ends_with(string source, string ending) {
 }
 
 string string_alloc(size_t len) {
-    #ifdef CSTRING_COMPATIBILITY_MODE
-    char* raw = malloc(len + 1);
-    #else
     char* raw = malloc(len);
-    #endif
 
     if (raw == nullptr) return NULL_STR;
 
     memset(raw, '\0', len);
 
-    #ifdef CSTRING_COMPATIBILITY_MODE
     raw[len] = '\0';
-    #endif
 
     return (string){raw, len};
 

@@ -1,0 +1,7 @@
+FN if_diverge(IN x: UWORD): UWORD
+    IF x THEN
+        RETURN 1
+    END
+
+    RETURN 0
+END

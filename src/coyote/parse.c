@@ -2115,6 +2115,7 @@ static Stmt* parse_while(Parser* p) {
 
     enter_scope(p);
     while_->while_.block = parse_stmt_block(p);
+    while_->while_.cond = cond;
     while_->retkind = while_->while_.block.retkind;
     // if (cond->kind == EXPR_LITERAL && cond->literal) {
     //     while_->retkind = RETKIND_YES;

@@ -31,8 +31,9 @@ WEAK void _vec_reserve1(Vec(void)* v, size_t stride) {
 }
 
 WEAK void _vec_shrink(Vec(void)* v, size_t stride) {
-
+    
 }
+
 WEAK void _vec_destroy(Vec(void)* v) {
     free(vec_header(*v));
     *v = nullptr;

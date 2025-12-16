@@ -481,7 +481,7 @@ static bool insts_may_alias(FeFunc* f, FeInst* i1, FeInst* i2) {
 
     if (i1->kind == FE_MEM_PHI) {
         for_n(i, 0, i1->in_len) {
-            if (fe_insts_may_alias(f, i1->inputs[i], i2)) {
+            if (insts_may_alias(f, i1->inputs[i], i2)) {
                 return true;
             }
         }

@@ -1,0 +1,5 @@
+pub import "submodule.mars"
+
+import "external_lib.mars"
+
+let y = sub::X;

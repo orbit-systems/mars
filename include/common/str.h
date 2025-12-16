@@ -5,10 +5,6 @@
 
 // strings and string-related utils.
 
-// #define CSTRING_COMPATIBILITY_MODE
-// allocates an extra character for null termination outside of the string bounds.
-// probably recommended if you interface a lot with standard C APIs and dont want clone_to_cstring allocations everywhere.
-
 typedef struct string {
     char*  raw;
     size_t len;
