@@ -18,7 +18,7 @@
 #elif defined(OS_LINUX)
     #include <limits.h>
 #else
-    #error "buh"
+    #error "Unsupported OS. Go harass sandwichman about it."
 #endif
 
 typedef struct FsPath {
@@ -35,7 +35,7 @@ typedef struct FsFile {
     FsPath path;
 } FsFile;
 
-#define fs_from_path(pathptr) (string){.len = (pathptr)->len, .raw = (pathptr)->raw}
+#define fs_strref_from_path(pathptr) (string){.len = (pathptr)->len, .raw = (pathptr)->raw}
 
 bool fs_real_path(const char* path, FsPath* out);
 FsFile* fs_open(const char* path, bool create, bool overwrite);

@@ -7,24 +7,41 @@
 #include "common/str.h"
 #include "common/arena.h"
 
-// A source file the compiler is analyzing.
+#if __STDC_HOSTED__ && (defined(__x86_64__) || defined(__aarch64__))
+    /// Pointers are sign-extended from 48-bits.
+    #define HOST_POINTER_48_BITS
+#endif
+
+/// An opaque handle used to refer to a source file with a MarsCompiler.
+typedef struct SourceFileId {u32 _;} SourceFileId;
+
+/// A source file the compiler is analyzing.
 typedef struct SourceFile {
-    string full_path;
+    /// The absolute path to the source file.
+    string path;
+    /// The full source text.
     string source;
 } SourceFile;
 
-// A handle used to refer to a source file.
-typedef struct SourceFileId {u32 _;} SourceFileId;
-
-// An instance of the Mars compiler.
+/// An instance of the Mars compiler.
 typedef struct MarsCompiler {
+    /// Full path of the current working directory.
+    string working_dir;
 
-    // all the source files being processed by the compiler at the moment.
+    /// All the source files being processed by the compiler at the moment.
     Vec(SourceFile) files;
 
-    // data that persists across the entire compilation.
-    // not the only arena (more to be added).
+    Vec(struct Report*) reports;
+
+    /// Storage for data that persists across the entire compilation.
+    /// Examples include persistent strings, file paths, etc.
     Arena permanent;
 } MarsCompiler;
+
+/// Create a new mars compiler instance.
+MarsCompiler* marsc_new();
+
+// Load a file into MarsCompiler `marsc`.
+SourceFileId marsc_get_file(MarsCompiler* marsc, string path);
 
 #endif // MARS_COMPILER_H

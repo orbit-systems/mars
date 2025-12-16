@@ -7,9 +7,8 @@
 #include <stdio.h>
 #include <math.h>
 
-// this is some of the worst code i've ever written
-// but it works
-// don't judge
+// question not the dark magic that
+// lights your home and keeps you safe
 
 typedef struct GutterElement {
     usize pos;
@@ -183,7 +182,7 @@ static void render_line(
         for_n(j, 0, outer_width) {
             fprintf(out, " ");
         }
-        fprintf(out, Blue"| "Reset);
+        fprintf(out, Blue"|"Reset);
         if (gutter_width > 0) {
             fprintf(out, " ");
         }
@@ -385,17 +384,20 @@ void report_render(
         SourceFileId id = label->id;
         vec_clear(&labels_of_file);
 
+        // now we have all the labels, we just have to do shit
+        string source_text = (*r->sources)[id._].source;
+        string source_path = (*r->sources)[id._].path;
+
+
         for_n(j, i, vec_len(r->labels)) {
             ReportLabel* label = &r->labels[j];
+
             if (label->id._ == id._) {
                 label->skip = true;
                 vec_append(&labels_of_file, label);
             }
         }
 
-        // now we have all the labels, we just have to do shit
-        string source_text = r->sources[id._].source;
-        string source_path = r->sources[id._].full_path;
 
         vec_clear(&lines);
 
@@ -415,14 +417,17 @@ void report_render(
                 .raw = &source_text.raw[start],
             };
 
-            if (!snippet_start && ranges_overlap(start, start + len, first_label->start, first_label->start + 1)) {
-                col_num = label->start - start + 2;
+            if (!snippet_start && ranges_overlap(start, start + len + 1, first_label->start, first_label->start + 1)) {
+                col_num = label->start - start + 1;
                 line_num = line_count + 1;
                 snippet_start = true;
             }
 
             start += len; // skip newline we just found
             line_count += 1;
+
+            // account for dumbass shit
+            line.len += 1;
 
             vec_append(&lines, line);
         }
@@ -447,11 +452,30 @@ void report_render(
                     single_line_labels += 1;
                 }
 
+                // if the line is fully contained in the label, it's a gutter element
+                if (ranges_contained( start, start + len, label->start, label->end - 1)) {
+                    
+                    if (label->gutter_pos == USIZE_MAX) {
+                        max_gutter_width += 1;
+                        label->gutter_pos -= 1;
+                    }
+                    continue;
+                }
+
                 // if the label only starts inside the line, it's a mline_start
-                if ((start <= label->start && label->start <= start + len) && 
-                    !(start <= label->end && label->end <= start + len) &&
+                if ((start <= label->start && label->start < start + len) && 
+                    !(start <= label->end && label->end < start + len) &&
                     !ranges_contained(label->start, label->end, start, start + len)
                 ) {
+                    if (label->gutter_pos == USIZE_MAX) {
+                        max_gutter_width += 1;
+                        label->gutter_pos -= 1;
+                    }
+                    continue;
+                }
+
+                // // if the label ends inside the line, it's a mline_ending
+                if ((start <= label->end && label->end <= start + len) && !(start <= label->start && label->start <= start + len)) {
                     if (label->gutter_pos == USIZE_MAX) {
                         max_gutter_width += 1;
                         label->gutter_pos -= 1;
@@ -495,6 +519,7 @@ void report_render(
                 ReportLabel* label = labels_of_file[i];
 
                 // if the label is fully contained in the line, it's a single-line label
+                // printf("%zu - %zu\n%zu - %zu\n", label->start, label->end, start, start + len);
                 if (ranges_contained(label->start, label->end, start, start + len)) {
                     SingleLine sline = {
                         .label_kind = label->kind,
@@ -508,11 +533,11 @@ void report_render(
                 }
 
                 // if the line is fully contained in the label, it's a gutter element
-                if (ranges_contained( start, start + len, label->start, label->end)) {
+                if (ranges_contained( start, start + len, label->start, label->end - 1)) {
                     // find gutter slot
-                    // if (label->gutter_pos == USIZE_MAX - 1) {
-                    //     label->gutter_pos = --pos;
-                    // }
+                    if (label->gutter_pos == USIZE_MAX - 1) {
+                        label->gutter_pos = --pos;
+                    }
                     assert(label->gutter_pos < max_gutter_width);
                     GutterElement gutter = {
                         .label_kind = label->kind,
@@ -525,8 +550,8 @@ void report_render(
                 }
 
                 // if the label only starts inside the line, it's a mline_start
-                if ((start <= label->start && label->start <= start + len) && 
-                    !(start <= label->end && label->end <= start + len) &&
+                if ((start <= label->start && label->start < start + len) && 
+                    !(start <= label->end && label->end < start + len) &&
                     !ranges_contained(label->start, label->end, start, start + len)
                 ) {
                     // find gutter slot
@@ -549,10 +574,10 @@ void report_render(
                 // if the label ends inside the line, it's a mline_ending
                 if ((start <= label->end && label->end <= start + len) && !(start <= label->start && label->start <= start + len)) {
                     // find gutter slot
-                    // if (label->gutter_pos == USIZE_MAX - 1) {
-                    //     label->gutter_pos = --pos;
+                    if (label->gutter_pos == USIZE_MAX - 1) {
+                        label->gutter_pos = --pos;
 
-                    // }
+                    }
                     assert(label->gutter_pos < max_gutter_width);
                     GutterElement gutter = {
                         .label_kind = label->kind,
@@ -627,12 +652,12 @@ void report_render(
 
 Report* report_new(
     ReportKind kind, 
-    string message, 
-    const Vec(SourceFile) sources
+    string message,
+    Vec(SourceFile) const* sources
 ) {
     Report* r = malloc(sizeof(*r));
     r->kind = kind;
-    r->message = message;
+    r->message = string_clone(message);
     r->labels = vec_new(ReportLabel, 4);
     r->notes = vec_new(string, 4);
     r->sources = sources;
@@ -640,8 +665,13 @@ Report* report_new(
     return r;
 }
 void report_destroy(Report* r) {
+    for_n(i, 0, vec_len(r->labels)) {
+        string_free(r->labels[i].message);
+    }
+
     vec_destroy(&r->labels);
     vec_destroy(&r->notes);
+    string_free(r->message);
     *r = (Report){};
 }
 
@@ -657,7 +687,7 @@ void report_add_label(Report* r,
         .id = id,
         .start = start,
         .end = end,
-        .message = message,
+        .message = string_clone(message),
         .skip = false,
         .gutter_pos = USIZE_MAX,
     };

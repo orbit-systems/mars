@@ -74,7 +74,7 @@ FeModule* irgen(CompilationUnit* cu) {
             continue;
         }
 
-        FeSymbolBinding bind;
+        FeSymbolBinding bind = FE_BIND_GLOBAL;
         switch (e->storage) {
         case STORAGE_PUBLIC:
             bind = FE_BIND_GLOBAL;

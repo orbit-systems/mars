@@ -1,60 +1,46 @@
-#include <stdio.h>
-
 #include "compiler.h"
-#include "lex.h"
-
 #include "reporting.h"
 
-int main() {
-    SourceFile src = {
-        .full_path = strlit("foo.mars"),
-        .source = strlit(
-            "let y = if x == 0 {\n"
-            "    \"hello there\"\n"
-            "} else {\n"
-            "    100\n"
-            "};\n"
-        ),
+#include "common/fs.h"
+#include "common/str.h"
+#include "common/vec.h"
+
+#include <stdio.h>
+
+
+MarsCompiler* marsc_new() {
+    MarsCompiler* c = malloc(sizeof(*c));
+
+    arena_init(&c->permanent);
+
+    const char* working_dir = fs_get_current_dir();
+    c->working_dir = arena_strdup(&c->permanent, string_wrap(working_dir));
+    c->files = vec_new(SourceFile, 16);
+    c->reports = vec_new(Report*, 16);
+
+    return c;
+}
+
+SourceFileId marsc_get_file(MarsCompiler* marsc, string path) {
+    char buf_c[path.len + 1];
+    memcpy(buf_c, path.raw, path.len);
+    buf_c[path.len] = '\0';
+    FsFile* file = fs_open(buf_c, false, false);
+
+    if (file == nullptr) {
+        printf("could not open file '%s'\n", buf_c);
+        exit(0);
+    }
+
+    SourceFile srcfile = {
+        .source = fs_read_entire(file),
+        .path = arena_strdup(&marsc->permanent, (string){
+            .len = file->path.len,
+            .raw = file->path.raw,
+        })
     };
-    SourceFileId src_id = {0};
-    SourceFile src2 = {
-        .full_path = strlit("fart.mars"),
-        .source = strlit(
-            "let y = if x == 0 {\n"
-            "    \"hiiii there\"\n"
-            "} else {\n"
-            "    124\n"
-            "};\n"
-        ),
-    };
-    SourceFileId src2_id = {1};
-    auto files = vec_new(SourceFile, 1);
-    vec_append(&files, src);
-    vec_append(&files, src2);
 
-    auto report = report_new(
-        REPORT_ERROR, 
-        strlit("`else` value has incompatible type"), 
-        files
-    );
+    vec_append(&marsc->files, srcfile);
 
-    report_add_label(report,
-        REPORT_LABEL_PRIMARY,
-        src_id,
-        50, 53,
-        strlit("expected `[:0]const u8`, got `isize`")
-    );
-    
-    report_add_label(report,
-        REPORT_LABEL_SECONDARY,
-        src_id,
-        8, 38,
-        strlit("this is of type `?[:0]const u8`")
-    );
-
-    report_add_note(report, strlit(
-        "`else` follows type rule `?T else T` and returns `T`"
-    ));
-
-    report_render(stdout, report);
+    return (SourceFileId){vec_len(marsc->files) - 1};
 }

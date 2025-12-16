@@ -8,10 +8,6 @@ IRON_SRC_PATHS = \
 COYOTE_SRC_PATHS = \
 	src/coyote/*.c \
 	src/common/*.c \
-
-COBALT_SRC_PATHS = \
-	src/cobalt/*.c \
-	src/common/*.c \
 	
 MARS_SRC_PATHS = \
 	src/mars/*.c \
@@ -23,9 +19,6 @@ IRON_OBJECTS = $(IRON_SRC:src/%.c=build/%.o)
 COYOTE_SRC = $(wildcard $(COYOTE_SRC_PATHS))
 COYOTE_OBJECTS = $(COYOTE_SRC:src/%.c=build/%.o)
 
-COBALT_SRC = $(wildcard $(COBALT_SRC_PATHS))
-COBALT_OBJECTS = $(COBALT_SRC:src/%.c=build/%.o)
-
 MARS_SRC = $(wildcard $(MARS_SRC_PATHS))
 MARS_OBJECTS = $(MARS_SRC:src/%.c=build/%.o)
 
@@ -35,7 +28,9 @@ LD = gcc
 INCLUDEPATHS = -Iinclude/
 ASANFLAGS = -fsanitize=undefined -fsanitize=address
 CFLAGS = -std=gnu23 -fwrapv -fno-strict-aliasing
-WARNINGS = -Wall -Wimplicit-fallthrough -Wno-override-init -Wno-enum-compare -Wno-unused -Wno-enum-conversion -Wno-discarded-qualifiers -Wno-strict-aliasing
+WARNINGS = \
+	-Wall -Wimplicit-fallthrough -Wmaybe-uninitialized \
+	-Wno-override-init -Wno-enum-compare -Wno-unused -Wno-enum-conversion -Wno-discarded-qualifiers -Wno-strict-aliasing
 ALLFLAGS = $(CFLAGS) $(WARNINGS)
 OPT = -g3 -O0
 
@@ -50,9 +45,11 @@ ifdef ASAN_ENABLE
 	LDFLAGS += $(ASANFLAGS)
 endif
 
-FILE_NUM = 0
+
+.PHONY: all
+all: coyote mars iron-test libiron
+
 build/%.o: src/%.c
-	$(eval FILE_NUM=$(shell echo $$(($(FILE_NUM)+1))))
 	$(shell echo 1>&2 -e "Compiling \e[1m$<\e[0m")
 	
 	@$(CC) -c -o $@ $< -MD $(INCLUDEPATHS) $(ALLFLAGS) $(OPT)
@@ -61,11 +58,6 @@ build/%.o: src/%.c
 coyote: bin/coyote
 bin/coyote: bin/libiron.a $(COYOTE_OBJECTS)
 	@$(LD) $(LDFLAGS) $(COYOTE_OBJECTS) -o bin/coyote -Lbin -liron
-
-.PHONY: cobalt
-cobalt: bin/cobalt
-bin/cobalt: bin/libiron.a $(COBALT_OBJECTS)
-	@$(LD) $(LDFLAGS) $(COBALT_OBJECTS) -o bin/cobalt -Lbin -liron
 
 .PHONY: mars
 mars: bin/mars
@@ -93,16 +85,14 @@ clean:
 	@mkdir bin/
 	@mkdir -p $(dir $(IRON_OBJECTS))
 	@mkdir -p $(dir $(COYOTE_OBJECTS))
-	@mkdir -p $(dir $(COBALT_OBJECTS))
 	@mkdir -p $(dir $(MARS_OBJECTS))
 
 -include $(IRON_OBJECTS:.o=.d)
 -include $(COYOTE_OBJECTS:.o=.d)
--include $(COBALT_OBJECTS:.o=.d)
 -include $(MARS_OBJECTS:.o=.d)
 
 # generate compile commands with bear if u got it!!! 
 # very good highly recommended ʕ·ᴥ·ʔ
 .PHONY: bear-gen-cc
 bear-gen-cc: clean
-	bear -- $(MAKE) coyote iron-test
+	bear -- $(MAKE) all iron-test

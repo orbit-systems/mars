@@ -83,7 +83,7 @@ int main(int argc, char** argv) {
 
     SrcFile f = {
         .src = fs_read_entire(file),
-        .path = fs_from_path(&file->path),
+        .path = fs_strref_from_path(&file->path),
     };
 
     LexState lex_state;
@@ -94,7 +94,7 @@ int main(int argc, char** argv) {
     lex_state.libdirs = vec_new(string, 16);
     lex_state.tokens = vec_new(Token, 512);
     lex_state.arena = &arena;
-    lex_state.current_file = arena_strdup(&arena, fs_from_path(&file->path));
+    lex_state.current_file = arena_strdup(&arena, fs_strref_from_path(&file->path));
     strmap_init(&lex_state.included_files, 128);
 
     Parser p = lex_entrypoint(&f, &lex_state);
