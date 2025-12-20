@@ -5,7 +5,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-
 ///
 /// +--------+--------+--------+--------+--------+--------+
 /// | header | vec[0] | vec[1] | vec[2] |  ....  | vec[N] |
@@ -29,6 +28,7 @@ typedef struct VecHeader {
 /// Small utility to catch errors where someone passes
 /// the vector by value instead of by reference
 #define _vec_assert_ptr_ptr(pp) (((void)**(pp)), (pp))
+#define _vec_assert_ptr(ptr) (((void)*(ptr)), (ptr))
 
 /// Vector (array list) of type T.
 #define Vec(T) T*
@@ -50,6 +50,14 @@ typedef struct VecHeader {
 #define vec_append(vecptr, item) do { \
     _vec_reserve1((void**)_vec_assert_ptr_ptr(vecptr), vec_stride(*vecptr)); \
     (*vecptr)[vec_len(*vecptr)++] = (item); \
+} while (0)
+/// Append `len` items from array/pointer `items` to vector `vecptr`.
+/// \note `*vecptr` may become resized and invalidated during the 
+///        execution of this function, so it should not be used as an argument to `items`.
+#define vec_append_many(vecptr, items, len) do { \
+    _vec_reserve((void**)_vec_assert_ptr_ptr(vecptr), vec_stride(*vecptr), len); \
+    memcpy(&(*vecptr)[vec_len(*vecptr)], _vec_assert_ptr(items), vec_stride(*vecptr)*len); \
+    vec_len(*vecptr) += len; \
 } while (0)
 /// reallocate the vector `vecptr` such that its capapcity is equal to its length. 
 #define vec_shrink(vecptr) _vec_shrink((void**)_vec_assert_ptr_ptr(vecptr), vec_stride(*vecptr))
