@@ -64,7 +64,7 @@ typedef float    f32;
     #define fe_compstr(data_, len_) ((FeCompactStr){.data = (i64)(char*)(data_), .len = (len_)})
     #define fe_compstr_data(compstr) ((char*)(i64)(compstr).data)
     #define fe_compstr_fmt "%.*s"
-    #define fe_compstr_arg(compstr) (compstr).data, (char*)(i64)(compstr).data
+    #define fe_compstr_arg(compstr) (compstr).len, (char*)(i64)(compstr).data
 #else
     // fallback to regular string
     typedef struct FeCompactStr {
@@ -316,6 +316,7 @@ typedef struct FeFunc {
 typedef struct FeStaticData {
     FeSymbol* sym;
     FeComplexTy* ty; 
+    /// TODO make this actually real lmao
 } FeStaticData;
 
 typedef struct FeSymTab {
@@ -335,8 +336,9 @@ void fe_symtab_destroy(FeSymTab* st);
 typedef enum FeSectionFlags : u8 {
     FE_SECTION_WRITEABLE   = 1 << 0,
     FE_SECTION_EXECUTABLE  = 1 << 1,
-    FE_SECTION_THREADLOCAL = 1 << 2,
-    FE_SECTION_COMMON      = 1 << 3,
+    FE_SECTION_BLANK       = 1 << 2,
+    FE_SECTION_THREADLOCAL = 1 << 3,
+    FE_SECTION_COMMON      = 1 << 4,
 } FeSectionFlags;
 
 typedef struct FeSection {
@@ -828,7 +830,6 @@ bool fe_smap_contains(FeSparseMap* smap, uintptr_t key);
 FeSparsePair* fe_smap_get(FeSparseMap* smap, uintptr_t key);
 uintptr_t fe_smap_remove(FeSparseMap* smap, uintptr_t key);
 
-
 // -------------------------------------
 // aliasing
 // -------------------------------------
@@ -1147,7 +1148,7 @@ FeVirtualReg* fe_vreg(FeVRegBuffer* buf, FeVReg vr);
 
 void fe_codegen(FeFunc* f);
 
-void fe_cg_print_text(FeDataBuffer* db, FeModule* mod);
+void fe_codegen_print_text(FeDataBuffer* db, FeModule* mod);
 
 #ifdef __cplusplus
 }

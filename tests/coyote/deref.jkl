@@ -2,9 +2,9 @@
 FN foo(IN ptr: ^UWORD): UWORD
     ptr^ = 1
     ptr^ = 2
-    BARRIER
     ptr^ = ptr^ + 3
     ptr^ = ptr^ + 4 - ptr^
+    BARRIER
     ptr^ = 5 - ptr^
     ptr^ = ptr^ + ptr^ + 6
     RETURN ptr^

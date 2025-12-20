@@ -213,6 +213,7 @@ typedef struct FlagSet {
     bool xrsdk: 1;
     bool error_on_warn: 1;
     bool preproc: 1;
+    bool passes: 1;
 } FlagSet;
 
 typedef struct {

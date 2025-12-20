@@ -1,5 +1,6 @@
 #include <stdio.h>
 
+#include "common/fs.h"
 #include "common/util.h"
 
 #include "coyote.h"
@@ -35,6 +36,7 @@ static void print_help() {
     puts("                       freestanding/none");
     puts("                       linux");
     puts("                       windows");
+    puts(" --passes            Emit pass information to stdout.");
 }
 
 static void print_version() {
@@ -60,6 +62,8 @@ static void parse_args(int argc, char** argv) {
             flags.xrsdk = true;
         } else if (strcmp(arg, "--preproc") == 0) {
             flags.preproc = true;
+        } else if (strcmp(arg, "--passes") == 0) {
+            flags.passes = true;
         } else if (strcmp(arg, "--error-on-warn") == 0) {
             flags.error_on_warn = true;
         } else if (arg[0] == '-') {
@@ -99,7 +103,7 @@ int main(int argc, char** argv) {
 
     Parser p = lex_entrypoint(&f, &lex_state);
     p.flags = flags;
-    
+
     // p.flags.xrsdk = true;
     // p.flags.error_on_warn = true;
 
@@ -133,24 +137,48 @@ int main(int argc, char** argv) {
 
     FeDataBuffer db;
     fe_db_init(&db, 512);
-    for_funcs(func, m) {
-        fe_emit_ir_func(&db, func, true);
+    if (flags.passes) {
+        for_funcs(func, m) {
+            fe_emit_ir_func(&db, func, true);
+        }
+        printf("%.*s", (int)db.len, db.at);
     }
-    printf("%.*s", (int)db.len, db.at);
 
     db.len = 0;
     for_funcs(func, m) {
         fe_opt_local(func);
-        fe_emit_ir_func(&db, func, true);
     }
-    printf("%.*s", (int)db.len, db.at);
+    if (flags.passes) {
+        for_funcs(func, m) {
+            fe_emit_ir_func(&db, func, true);
+        }
+        printf("%.*s", (int)db.len, db.at);
+    }
     
     
-    db.len = 0;
-    for_funcs(func, m) {
+    db.len = 0;for_funcs(func, m) {
         fe_codegen(func);
-        fe_emit_ir_func(&db, func, true);
     }
-    printf("%.*s", (int)db.len, db.at);
-    
+    if (flags.passes) {
+        for_funcs(func, m) {
+            fe_emit_ir_func(&db, func, true);
+        }
+        printf("%.*s", (int)db.len, db.at);
+    }
+    db.len = 0;
+
+    fe_codegen_print_text(&db, m);
+    if (flags.passes) {
+        printf("%.*s", (int)db.len, db.at);
+    }
+
+
+    string out_path = arena_strcat(&arena, lex_state.current_file, strlit(".s"), true);
+
+    FsFile* outfile = fs_open(out_path.raw, true, true);
+
+    fs_write(outfile, db.at, db.len);
+
+    fs_close(outfile);
+    fs_destroy(outfile);
 }
