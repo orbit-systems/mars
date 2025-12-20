@@ -50,7 +50,7 @@ endif
 all: coyote mars iron-test libiron
 
 build/%.o: src/%.c
-	$(shell echo 1>&2 -e "Compiling \e[1m$<\e[0m")
+	$(shell echo 1>&2 -e "Compiling $<")
 	
 	@$(CC) -c -o $@ $< -MD $(INCLUDEPATHS) $(ALLFLAGS) $(OPT)
 

@@ -61,7 +61,7 @@ typedef enum : FeInstKind {
     XR_BPE,     // Branch Parity Even (lowest bit 0)
     XR_BPO,     // Branch Parity Odd (lowest bit 1)
 
-    // Immediate Operate
+    // Immediate Operate (XrInstImm)
     XR_ADDI,    // Add Immediate
     XR_SUBI,    // Subtract Immediate
     XR_SLTI,    // Set Less Than Immediate
