@@ -61,7 +61,7 @@ typedef enum : FeInstKind {
     XR_BPE,     // Branch Parity Even (lowest bit 0)
     XR_BPO,     // Branch Parity Odd (lowest bit 1)
 
-    // Immediate Operate
+    // Immediate Operate (XrInstImm)
     XR_ADDI,    // Add Immediate
     XR_SUBI,    // Subtract Immediate
     XR_SLTI,    // Set Less Than Immediate
@@ -111,10 +111,12 @@ typedef enum : FeInstKind {
     XR_SC,      // Store Conditional
 
     // void
+    XR_PAUSE,   // Pause
     XR_MB,      // Memory Barrier
     XR_WMB,     // Write Memory Barrier
     XR_BRK,     // Breakpoint
     XR_SYS,     // System Service
+
 
     // Privileged Instructions
     XR_MFCR,    // Move From Control Register
@@ -182,6 +184,8 @@ void fe_xr_print_inst(FeDataBuffer* db, FeFunc* f, FeInst* inst);
 
 const char* fe_xr_reg_name(u8 regclass, u16 real);
 FeRegStatus fe_xr_reg_status(u8 cconv, u8 regclass, u16 real);
+
+void fe_xr_print_text(FeDataBuffer* db, FeModule* m);
 
 extern const u8 fe_xr_extra_size_table[];
 extern const FeTrait fe_xr_trait_table[];

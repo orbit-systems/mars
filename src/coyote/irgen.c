@@ -1,4 +1,5 @@
 #include "irgen.h"
+#include "iron/iron.h"
 #include "lex.h"
 #include "parse.h"
 #include "common/strmap.h"
@@ -24,6 +25,7 @@ FeModule* irgen(CompilationUnit* cu) {
     ig->default_text = fe_section_new(ig->m, "text", 4, FE_SECTION_EXECUTABLE);
     ig->default_data = fe_section_new(ig->m, "data", 4, FE_SECTION_WRITEABLE);
     ig->default_rodata = fe_section_new(ig->m, "rodata", 6, 0);
+    ig->default_rodata = fe_section_new(ig->m, "bss", 6, FE_SECTION_BLANK);
 
     // printf("\nFUNCTIONS:\n");
     // for_n(i, 0, cu->top_scope->map.cap) {
@@ -93,7 +95,7 @@ FeModule* irgen(CompilationUnit* cu) {
 
         // FeSection* section = e->kind == ENTKIND_FN ? default_text : default_data;
         FeSection* section = ig->default_text;
-        FeSymbol* sym = fe_symbol_new(ig->m, from_compact(e->name).raw, e->name.len, section, bind);
+        FeSymbol* sym = fe_symbol_new(ig->m, from_compact(e->name).raw, from_compact(e->name).len, section, bind);
     
         ig->e = e;
 

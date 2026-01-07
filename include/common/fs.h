@@ -41,6 +41,7 @@ bool fs_real_path(const char* path, FsPath* out);
 FsFile* fs_open(const char* path, bool create, bool overwrite);
 usize fs_read(FsFile* f, void* buf, usize len);
 string fs_read_entire(FsFile* f);
+usize fs_write(FsFile* f, void* buf, usize len);
 void fs_close(FsFile* f);
 void fs_destroy(FsFile* f);
 

@@ -40,10 +40,16 @@ FsFile* fs_open(const char* path, bool create, bool overwrite) {
     return f;
 }
 
+usize fs_write(FsFile* f, void* buf, usize len) {
+    isize num_written = write(f->handle, buf, len);
+    if (num_written == -1) return 0;
+    return (usize) num_written;
+}
+
 usize fs_read(FsFile* f, void* buf, usize len) {
     isize num_read = read(f->handle, buf, len);
     if (num_read == -1) return 0;
-    return num_read;
+    return (usize) num_read;
 }
 
 string fs_read_entire(FsFile* f) {

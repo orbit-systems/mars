@@ -186,7 +186,6 @@ typedef struct Lexer {
 
     /// The compiler instance this lexer was spawned from.
     MarsCompiler* marsc;
-
 } Lexer;
 
 /// Create a lexer on source file `file` attached to compiler instance `marsc`.

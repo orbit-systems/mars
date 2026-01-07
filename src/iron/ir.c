@@ -31,10 +31,6 @@ void fe_module_destroy(FeModule* mod) {
     fe_free(mod);
 }
 
-// void fe_section_destroy(FeSection* section) {
-
-// }
-
 FeSection* fe_section_new(FeModule* m, const char* name, u16 len, FeSectionFlags flags) {
     FeSection* section = fe_malloc(sizeof(*section));
     memset(section, 0, sizeof(*section));

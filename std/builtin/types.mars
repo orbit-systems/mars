@@ -44,16 +44,12 @@ interface BitLogic(Rhs: type) {
     require ops::Shr(Rhs), ops::AssignShr(Rhs);
 }
 
-// interfaces for builtin data structure layout
-
 interface InlineOptional {
-    fun new_null(): self;
-    fun is_null(self): bool;
+    inline fun new_null(): Self;
+    inline fun is_null(self): bool;
 }
 
-// for holding an enum optional tag with an 
-// underlying integer equal to or smaller than integer type T
 interface InlineEnumOptional(T: builtin::types::Integer) {
-    fun set_tag(^self, tag: T);
-    fun get_tag(self): T;
+    inline fun set_tag(^self, tag: T);
+    inline fun get_tag(self): T;
 }

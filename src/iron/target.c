@@ -28,6 +28,7 @@ const FeTarget* fe_make_target(FeArch arch, FeSystem system) {
         t->ir_print_inst = fe_xr_print_inst;
         t->reg_name = fe_xr_reg_name;
         t->reg_status = fe_xr_reg_status;
+        t->print_text = fe_xr_print_text;
 
         fe__load_extra_size_table(FE__XR_INST_BEGIN, fe_xr_extra_size_table, FE__XR_INST_END - FE__XR_INST_BEGIN);
         fe__load_trait_table(FE__XR_INST_BEGIN, fe_xr_trait_table, FE__XR_INST_END - FE__XR_INST_BEGIN);

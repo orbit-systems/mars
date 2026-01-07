@@ -168,3 +168,7 @@ void fe_codegen(FeFunc* f) {
 
     fe_opt_post_regalloc(f);
 }
+
+void fe_codegen_print_text(FeDataBuffer* db, FeModule* mod) {
+    mod->target->print_text(db, mod);
+}

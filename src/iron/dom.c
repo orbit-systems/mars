@@ -55,24 +55,24 @@ void fe_construct_domtree(FeFunc* f) {
         }
     }
 
-    printf("digraph {\n");
-    printf("  subgraph cfg {\n");
-    for_n(i, 0, f->num_blocks) {
-        FeBlock* b = blocks_rpo[i];
-        for_n(j, 0, b->succ_len) {
-            FeBlock* succ = b->succ[j];
-            printf("    b%d -> b%d\n", b->id, succ->id);
-        }
-    }
-    printf("  }\n");
+    // printf("digraph {\n");
+    // printf("  subgraph cfg {\n");
+    // for_n(i, 0, f->num_blocks) {
+    //     FeBlock* b = blocks_rpo[i];
+    //     for_n(j, 0, b->succ_len) {
+    //         FeBlock* succ = b->succ[j];
+    //         printf("    b%d -> b%d\n", b->id, succ->id);
+    //     }
+    // }
+    // printf("  }\n");
 
-    printf("  subgraph domtree {\n");
-    printf("    edge [style=\"dashed\"]\n");
-    printf("    edge [color=blue]\n");
-    for_n(i, 1, f->num_blocks) {
-        FeBlock* b = blocks_rpo[i];
-        printf("    b%d -> b%d \n", b->id, b->idom->id);
-    }
-    printf("  }\n");
-    printf("}\n");
+    // printf("  subgraph domtree {\n");
+    // printf("    edge [style=\"dashed\"]\n");
+    // printf("    edge [color=blue]\n");
+    // for_n(i, 1, f->num_blocks) {
+    //     FeBlock* b = blocks_rpo[i];
+    //     printf("    b%d -> b%d \n", b->id, b->idom->id);
+    // }
+    // printf("  }\n");
+    // printf("}\n");
 }
