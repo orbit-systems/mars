@@ -140,8 +140,6 @@ static void print_regular_binop_imm(FeDataBuffer* db, FeVRegBuffer* vrbuf, FeIns
     fe_db_writef(db, ", %zu", imm_extra->imm);
 }
 
-#include <stdio.h>
-
 static void print_inst(FeDataBuffer* db, FeFunc* f, FeInst* inst) {
     FeVRegBuffer* vrbuf = f->vregs;
 

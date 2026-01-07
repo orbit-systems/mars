@@ -1,0 +1,23 @@
+STRUCT Foo
+    b: BYTE,
+    ptr: ^VOID,
+END
+
+STRUCT PACKED PackedFoo
+    b: BYTE,
+    ptr: ^VOID,
+END
+
+
+var := 10
+
+foo : Foo = {
+    [b] = TRUE,
+    [ptr] = &var,
+}
+
+packed_foo : PackedFoo = {
+    [b] = TRUE,
+    [ptr] = &var,
+}
+
