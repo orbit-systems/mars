@@ -1,0 +1,13 @@
+struct Complex(T: Scalar) {
+    real, imag: T,
+    //...
+}
+
+// implement Complex(T) + T for every T
+impl [T: Scalar] builtin::ops::Add(T) for Complex(T) {
+    def Result = self;
+
+    fun op(self, other: T): Result {
+        Self.{ self.real + other, self.imag }
+    }
+}

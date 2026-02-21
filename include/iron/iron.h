@@ -15,7 +15,7 @@ extern "C" {
 #include <limits.h>
 #include <stdalign.h>
 
-#if __STDC_VERSION__ <= 201710L 
+#if __STDC_VERSION__ <= 201710L
     #error Iron is a C23 library!
 #endif
 
@@ -90,9 +90,11 @@ typedef float    f32;
 #define fe_zalloc(size) memset(fe_malloc(size), 0, size);
 
 // simple ++n loop
-#ifndef for_n
-    #define for_n(iterator, start, end) for (usize iterator = (start); iterator < (end); ++iterator)
+#ifdef for_n
+#undef for_n
 #endif
+
+#define for_n(iterator, start, end) for (isize iterator = (start); iterator < (end); ++iterator)
 
 #define FE_CRASH(fmt, ...) fe_runtime_crash("crash in %s() at %s:%zu -> " fmt, __func__, __FILE__, __LINE__ __VA_OPT__(,) __VA_ARGS__)
 
@@ -164,7 +166,7 @@ typedef enum: u8 {
     FE_TY_I64x4  = FE_TY_VEC(FE_TY_V256, FE_TY_I64),
     FE_TY_F32x8  = FE_TY_VEC(FE_TY_V256, FE_TY_F32),
     FE_TY_F64x4  = FE_TY_VEC(FE_TY_V256, FE_TY_F64),
-    
+
     FE_TY_I8x64  = FE_TY_VEC(FE_TY_V512, FE_TY_I8),
     FE_TY_I16x32 = FE_TY_VEC(FE_TY_V512, FE_TY_I16),
     FE_TY_I32x16 = FE_TY_VEC(FE_TY_V512, FE_TY_I32),
@@ -201,6 +203,9 @@ typedef struct FeRecordField {
     u16 offset;
     FeComplexTy* complex_ty; // if applicable
 } FeRecordField;
+
+FeComplexTy* fe_ty_record_new(u32 fields_len);
+FeComplexTy* fe_ty_array_new(u32 array_len, FeTy elem_ty, FeComplexTy* elem_cty);
 
 // if ty is not a complex type, cty should be nullptr
 usize fe_ty_get_size(FeTy ty, FeComplexTy* cty);
@@ -305,7 +310,7 @@ typedef struct FeFunc {
 
     FeBlock* entry_block;
     FeBlock* last_block;
-    
+
     FeFunc* list_next;
     FeFunc* list_prev;
 
@@ -315,7 +320,7 @@ typedef struct FeFunc {
 
 typedef struct FeStaticData {
     FeSymbol* sym;
-    FeComplexTy* ty; 
+    FeComplexTy* ty;
     /// TODO make this actually real lmao
 } FeStaticData;
 
@@ -428,7 +433,7 @@ typedef enum FeInstKindGeneric : FeInstKind {
     // {lhs, rhs}
     FE_IADD,
     FE_ISUB,
-    FE_IMUL, 
+    FE_IMUL,
     FE_IDIV, FE_UDIV,
     FE_IREM, FE_UREM,
     FE_AND,
@@ -436,11 +441,11 @@ typedef enum FeInstKindGeneric : FeInstKind {
     FE_XOR,
     FE_SHL,
     FE_USR, FE_ISR,
-    
+
     FE_ILT, FE_ULT,
     FE_ILE, FE_ULE,
     FE_IEQ,
-    
+
     FE_FADD,
     FE_FSUB,
     FE_FMUL,
@@ -544,7 +549,7 @@ typedef enum FeInstKindGeneric : FeInstKind {
 typedef struct FeInst {
     FeInstKind kind;
     FeTy ty;
-    
+
     u16 use_len;
     u16 use_cap;
     u16 in_len;
@@ -553,7 +558,7 @@ typedef struct FeInst {
     u32 flags;
     u32 id;
     FeVReg vr_def;
-    
+
     FeInstUse* uses;
     FeInst** inputs;
 
@@ -580,7 +585,7 @@ typedef struct FeInstInlineAsm {
     /*
         a: in, b: out, c: inout, d: inout, e: in, f: out
     ==
-        (a, c, d, e) -> (c, d, f)  
+        (a, c, d, e) -> (c, d, f)
     */
     u16 num_params;
     bool mem_use;
@@ -662,15 +667,15 @@ typedef struct FeStackItem {
     FeStackItem* next; // points to top
     FeStackItem* prev; // points to bottom
 
-    FeComplexTy* complex_ty;
-    FeTy ty;
+    u32 size;
+    u16 align;
 
     u16 flags;
 
     u32 _offset;
 } FeStackItem;
 
-FeStackItem* fe_stack_item_new(FeTy ty, FeComplexTy* cty);
+FeStackItem* fe_stack_item_new(u32 size, u16 align);
 FeStackItem* fe_stack_append_bottom(FeFunc* f, FeStackItem* item);
 FeStackItem* fe_stack_append_top(FeFunc* f, FeStackItem* item);
 FeStackItem* fe_stack_remove(FeFunc* f, FeStackItem* item);
@@ -690,7 +695,7 @@ typedef enum FeTrait : u32 {
     FE_TRAIT_TERMINATOR       = 1u << 4,
     // output type = first input type
     FE_TRAIT_SAME_IN_OUT_TY   = 1u << 5,
-    // all input types must be the same type  
+    // all input types must be the same type
     FE_TRAIT_SAME_INPUT_TYS   = 1u << 6,
     // all input types must be integers
     FE_TRAIT_INT_INPUT_TYS    = 1u << 7,
@@ -1075,7 +1080,7 @@ typedef struct FeBlockLiveness {
 
     u16 in_len;
     u16 in_cap;
-    
+
     u16 out_len;
     u16 out_cap;
 
@@ -1124,7 +1129,7 @@ typedef struct FeTarget {
     FeRegClass (*choose_regclass)(FeInstKind kind, FeTy ty);
     const char* (*reg_name)(u8 regclass, u16 real);
     FeRegStatus (*reg_status)(u8 cconv, u8 regclass, u16 real);
-    
+
     u8 num_regclasses;
     const u16* regclass_lens;
 

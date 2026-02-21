@@ -8,11 +8,13 @@ static inline usize align_forward_p2(usize value, usize align) {
     return (value + (align - 1)) & ~(align - 1);
 }
 
-FeStackItem* fe_stack_item_new(FeTy ty, FeComplexTy* cty) {
+FeStackItem* fe_stack_item_new(u32 size, u16 align) {
     FeStackItem* item = fe_zalloc(sizeof(FeStackItem));
     item->_offset = FE_STACK_OFFSET_UNDEF;
-    item->ty = ty;
-    item->complex_ty = cty;
+    // item->ty = ty;
+    // item->complex_ty = cty;
+    item->size = size;
+    item->align = align;
 
     return item;
 }
@@ -67,8 +69,10 @@ u32 fe_stack_calculate_size(FeFunc* f) {
 
     FeStackItem* item = f->stack_bottom;
     while (item != nullptr) {
-        usize size  = fe_ty_get_size(item->ty, item->complex_ty);
-        usize align = fe_ty_get_align(item->ty, item->complex_ty);
+        // usize size  = fe_ty_get_size(item->ty, item->complex_ty);
+        // usize align = fe_ty_get_align(item->ty, item->complex_ty);
+        usize size  = item->size;
+        usize align = item->align;
 
         item->_offset = stack_size;
         stack_size = align_forward_p2(stack_size, align);

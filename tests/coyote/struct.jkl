@@ -1,0 +1,11 @@
+STRUCT Foo
+    X : BYTE,
+    Y : WORD,
+END
+
+FN bruh()
+    f: Foo
+
+    f.X = 1
+    f.Y = 2
+END

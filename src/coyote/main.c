@@ -86,7 +86,7 @@ int main(int argc, char** argv) {
     }
 
     SrcFile f = {
-        .src = fs_read_entire(file),
+        .src = fs_read_entire(file, true),
         .path = fs_strref_from_path(&file->path),
     };
 
@@ -154,8 +154,8 @@ int main(int argc, char** argv) {
         }
         printf("%.*s", (int)db.len, db.at);
     }
-    
-    
+
+
     db.len = 0;for_funcs(func, m) {
         fe_codegen(func);
     }

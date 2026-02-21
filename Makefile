@@ -1,3 +1,8 @@
+BUILD_DIR = build
+
+# libcommon config
+export COMMON_OUT_DIR=../$(BUILD_DIR)
+
 IRON_SRC_PATHS = \
 	src/iron/*.c \
 	src/iron/opt/*.c \
@@ -8,7 +13,7 @@ IRON_SRC_PATHS = \
 COYOTE_SRC_PATHS = \
 	src/coyote/*.c \
 	src/common/*.c \
-	
+
 MARS_SRC_PATHS = \
 	src/mars/*.c \
 	src/common/*.c \
@@ -22,10 +27,10 @@ COYOTE_OBJECTS = $(COYOTE_SRC:src/%.c=build/%.o)
 MARS_SRC = $(wildcard $(MARS_SRC_PATHS))
 MARS_OBJECTS = $(MARS_SRC:src/%.c=build/%.o)
 
-CC = gcc
-LD = gcc
+CC ?= gcc
+LD = $(CC)
 
-INCLUDEPATHS = -Iinclude/
+INCLUDEPATHS = -Iinclude/ -Icommon/include/
 ASANFLAGS = -fsanitize=undefined -fsanitize=address
 CFLAGS = -std=gnu23 -fwrapv -fno-strict-aliasing
 WARNINGS = \
@@ -45,32 +50,37 @@ ifdef ASAN_ENABLE
 	LDFLAGS += $(ASANFLAGS)
 endif
 
+#include configuration file, if present
+-include config.mk
 
 .PHONY: all
 all: coyote mars iron-test libiron
 
+bin/libcommon.a:
+	$(MAKE) -C common
+	cp $(BUILD_DIR)/libcommon.a bin/libcommon.a
+
 build/%.o: src/%.c
 	$(shell echo 1>&2 -e "Compiling $<")
-	
 	@$(CC) -c -o $@ $< -MD $(INCLUDEPATHS) $(ALLFLAGS) $(OPT)
 
 .PHONY: coyote
 coyote: bin/coyote
 bin/coyote: bin/libiron.a $(COYOTE_OBJECTS)
-	@$(LD) $(LDFLAGS) $(COYOTE_OBJECTS) -o bin/coyote -Lbin -liron
+	@$(LD) $(LDFLAGS) $(COYOTE_OBJECTS) -o bin/coyote -Lbin -liron -lcommon
 
 .PHONY: mars
 mars: bin/mars
 bin/mars: bin/libiron.a $(MARS_OBJECTS)
-	@$(LD) $(LDFLAGS) $(MARS_OBJECTS) -o bin/mars -Lbin -liron -lm
+	@$(LD) $(LDFLAGS) $(MARS_OBJECTS) -o bin/mars -Lbin -liron -lm -lcommon
 
 .PHONY: iron-test
 iron-test: bin/iron-test
 bin/iron-test: bin/libiron.a src/iron/driver/driver.c
-	@$(CC) src/iron/driver/driver.c -o bin/iron-test $(INCLUDEPATHS) $(CFLAGS) $(OPT) -Lbin -liron
+	@$(CC) src/iron/driver/driver.c -o bin/iron-test $(INCLUDEPATHS) $(CFLAGS) $(OPT) -Lbin -liron -lcommon
 
-bin/libiron.o: $(IRON_OBJECTS)
-	@$(LD) $(LDFLAGS) $(IRON_OBJECTS) -r -o bin/libiron.o
+bin/libiron.o: $(IRON_OBJECTS) bin/libcommon.a
+	@$(LD) $(LDFLAGS) $(IRON_OBJECTS) -r -o bin/libiron.o -Lbin -lcommon
 
 .PHONY: libiron
 libiron: bin/libiron.a
@@ -91,7 +101,7 @@ clean:
 -include $(COYOTE_OBJECTS:.o=.d)
 -include $(MARS_OBJECTS:.o=.d)
 
-# generate compile commands with bear if u got it!!! 
+# generate compile commands with bear if u got it!!!
 # very good highly recommended ʕ·ᴥ·ʔ
 .PHONY: bear-gen-cc
 bear-gen-cc: clean

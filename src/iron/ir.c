@@ -1,4 +1,5 @@
 #include "common/util.h"
+#include "common/portability.h"
 
 #include "iron/iron.h"
 #include <string.h>
@@ -24,7 +25,7 @@ FeModule* fe_module_new(FeArch arch, FeSystem system) {
 void fe_module_destroy(FeModule* mod) {
     // destroy the functions
     while (mod->funcs.first) {
-        fe_func_destroy(mod->funcs.first);  
+        fe_func_destroy(mod->funcs.first);
     }
 
     fe_free((void*)mod->target);
@@ -85,7 +86,7 @@ usize fe_ty_get_align(FeTy ty, FeComplexTy *cty) {
         }
         return fe_ty_get_align(cty->array.elem_ty, cty->array.complex_elem_ty);
     case FE_TY_RECORD: {
-        if (cty != nullptr) {
+        if (cty == nullptr) {
             FE_CRASH("ty is record but no FeComplexTy was provided");
         }
         usize align = 1;
@@ -252,7 +253,7 @@ FeBlock* fe_block_new(FeFunc* f) {
     block->succ = fe_ipool_list_alloc(f->ipool, block->succ_cap);
 
     block->func = f;
-    
+
     // adds initial bookend instruction to block
     FeInst* bookend = fe_inst_new(f, 0, sizeof(FeInst_Bookend));
     // FeInst* bookend = fe_ipool_alloc(f->ipool, sizeof(FeInst_Bookend));
@@ -299,22 +300,22 @@ void fe_block_destroy(FeBlock *block) {
         fe_inst_destroy(f, inst);
     }
     fe_inst_destroy(f, block->bookend);
-    
+
     fe_ipool_list_free(f->ipool, block->pred, block->pred_cap);
     fe_ipool_list_free(f->ipool, block->succ, block->succ_cap);
-    
+
     fe_free(block);
 }
 
 FeInstChain fe_chain_from_block(FeBlock* block) {
     FeInstChain chain;
-    
+
     // extract it from the block's inst list
     chain.begin = block->bookend->next;
     chain.end = block->bookend->prev;
     chain.begin->prev = nullptr;
     chain.end->next = nullptr;
-    
+
     // remove it from the block
     block->bookend->next = block->bookend;
     block->bookend->prev = block->bookend;
@@ -363,7 +364,7 @@ void fe_cfg_remove_edge(FeBlock* pred, FeBlock* succ) {
             // unordered remove
             succ->pred[i] = succ->pred[--succ->pred_len];
             break;
-        } 
+        }
     }
 }
 
@@ -384,7 +385,7 @@ static inline usize usize_log2(usize x) {
 static usize count_composite_items(FeTy ty, FeComplexTy* cty) {
     if (ty == FE_TY_ARRAY) {
         return cty->array.len * count_composite_items(
-            cty->array.elem_ty, 
+            cty->array.elem_ty,
             cty->array.complex_elem_ty
         );
     } else if (ty == FE_TY_RECORD) {
@@ -404,7 +405,7 @@ static void place_params(FeFunc* f, FeInst* root, FeTy ty, FeComplexTy* cty, usi
             place_params(
                 f,
                 root,
-                cty->array.elem_ty, 
+                cty->array.elem_ty,
                 cty->array.complex_elem_ty,
                 index
             );
@@ -425,7 +426,7 @@ static void place_params(FeFunc* f, FeInst* root, FeTy ty, FeComplexTy* cty, usi
         fe_set_input(f, param, 0, root);
 
         fe_append_end(f->entry_block, param);
-        
+
         *index += 1;
     }
 }
@@ -450,7 +451,7 @@ FeFunc* fe_func_new(FeModule* mod, FeSymbol* sym, FeFuncSig* sig, FeInstPool* ip
         f->list_prev->list_next = f;
         mod->funcs.last = f;
     }
-    
+
     usize num_params = 0;
     for_n(i, 0, sig->param_len) {
         FeFuncParam* p = &sig->params[i];
@@ -473,9 +474,9 @@ FeFunc* fe_func_new(FeModule* mod, FeSymbol* sym, FeFuncSig* sig, FeInstPool* ip
     usize index = 0;
     for_n(i, 0, sig->param_len) {
         place_params(
-            f, root, 
-            sig->params[i].ty, 
-            sig->params[i].cty, 
+            f, root,
+            sig->params[i].ty,
+            sig->params[i].cty,
             &index
         );
     }
@@ -485,14 +486,14 @@ FeFunc* fe_func_new(FeModule* mod, FeSymbol* sym, FeFuncSig* sig, FeInstPool* ip
 
 void fe_func_destroy(FeFunc *f) {
     if (f->params) {
-        fe_free(f->params);    
+        fe_free(f->params);
     }
 
     // free the block list
     while (f->entry_block) {
         fe_block_destroy(f->entry_block);
     }
-    
+
     // free the stack
     while (f->stack_top) {
         fe_free(fe_stack_remove(f, f->stack_top));
@@ -654,7 +655,7 @@ void fe_chain_destroy(FeFunc* f, FeInstChain chain) {
 void fe_set_input(FeFunc* f, FeInst* inst, u16 n, FeInst* input) {
     FE_ASSERT(n < inst->in_len);
     FE_ASSERT(input != nullptr); // maybe fix it to handle this case?
-    
+
     FeInst* old_input = inst->inputs[n];
 
     if (old_input != nullptr) {
@@ -677,15 +678,15 @@ void fe_set_input(FeFunc* f, FeInst* inst, u16 n, FeInst* input) {
     inst->inputs[n] = input;
     if_unlikely (input->use_cap == input->use_len) {
         FeInstPool* pool = f->ipool;
-        
+
         input->use_cap *= 2;
         // copy uses to new larger list
         FeInstUse* new_uses = fe_ipool_list_alloc(pool, input->use_cap);
         memcpy(new_uses, input->uses, sizeof(new_uses[0]) * input->use_len);
-       
+
         // set the top list to zero
         memset(&new_uses[input->use_len], 0, sizeof(new_uses[0]) * input->use_len);
-        
+
         // free old list
         fe_ipool_list_free(pool, input->uses, input->use_len);
 
@@ -737,7 +738,7 @@ usize fe_replace_uses(FeFunc* f, FeInst* old_val, FeInst* new_val) {
 
     usize num_replaced = old_val->use_len;
     old_val->use_len = 0;
-    
+
     return num_replaced;
 }
 
@@ -876,7 +877,7 @@ FeInst* fe_inst_unop(FeFunc* f, FeTy ty, FeInstKind kind, FeInst* val) {
     i->kind = kind;
     i->ty = ty;
 
-    fe_set_input(f, i, 0, 
+    fe_set_input(f, i, 0,
         val);
 
     return i;
@@ -921,7 +922,7 @@ FeInst* fe_inst_store(FeFunc* f, FeInst* ptr, FeInst* val, u16 align, u8 offset)
     }
 
     fe_set_input_null(i, 0); // no last_effect yet
-    fe_set_input(f, i, 1, ptr); // pointer 
+    fe_set_input(f, i, 1, ptr); // pointer
     fe_set_input(f, i, 2, val); // value to store
 
     fe_extra(i, FeInstMemop)->align = align;
@@ -1031,7 +1032,7 @@ void fe_phi_add_src(FeFunc* f, FeInst* phi, FeInst* src_value, FeBlock* src_bloc
         fe_ipool_list_free(pool, phi_data->blocks, phi->in_len);
         phi_data->blocks = new_blocks;
     }
-    
+
     phi_data->blocks[phi->in_len] = src_block;
 
     fe_add_input(f, phi, src_value);
@@ -1039,9 +1040,9 @@ void fe_phi_add_src(FeFunc* f, FeInst* phi, FeInst* src_value, FeBlock* src_bloc
 
 void fe_phi_remove_src(FeFunc* f, FeInst* phi, u16 n) {
     FeInstPhi* phi_data = fe_extra(phi);
-    
+
     phi->in_len -= 1;
-    phi_data->blocks[n] = phi_data->blocks[phi->in_len]; 
+    phi_data->blocks[n] = phi_data->blocks[phi->in_len];
     phi->inputs[n] = phi->inputs[phi->in_len];
 }
 

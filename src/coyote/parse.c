@@ -3,13 +3,13 @@
 #include <string.h>
 #include <stdarg.h>
 
-#include "parse.h"
 #include "common/str.h"
 #include "common/strmap.h"
 #include "common/util.h"
 #include "common/vec.h"
 #include "coyote.h"
 #include "lex.h"
+#include "parse.h"
 
 
 static void vec_char_append_str(Vec(char)* vec, const char* data) {
@@ -38,7 +38,7 @@ void ty_init() {
         tybuf.ptrs = malloc(sizeof(tybuf.ptrs[0]) * tybuf.cap);
     }
     memset(tybuf.ptrs, 0, sizeof(tybuf.ptrs[0]) * tybuf.cap);
-    
+
     for_n_eq(i, 0, TY_UQUAD) {
         TY(i,  TyBase)->kind = i;
 
@@ -58,7 +58,7 @@ static TyIndex ty__allocate(usize size, bool align64) {
     if (align64 && (tybuf.len & 1)) {
         tybuf.len += 1; // pad to 64
     }
-    
+
     if_unlikely (tybuf.len + slots > tybuf.cap) {
         tybuf.cap += tybuf.cap << 1;
         tybuf.at = realloc(tybuf.at, sizeof(tybuf.at[0]) * tybuf.cap);
@@ -84,7 +84,7 @@ static TyIndex ty_get_ptr(TyIndex t) {
         TyIndex ptr = ty_allocate(TyPtr);
         TY(ptr, TyPtr)->kind = TY_PTR;
         TY(ptr, TyPtr)->to = t;
-        
+
         tybuf.ptrs[t] = ptr;
         return ptr;
     } else {
@@ -160,31 +160,32 @@ static void _ty_name(Vec(char)* v, TyIndex t) {
     case TY_FN: {
         vec_char_append_str(v, "FN(");
         TyFn* fn = TY(t, TyFn);
-        for_n(i, 0, fn->len - 1) {
-            Ty_FnParam* param = &fn->params[i];
-            vec_char_append_str(v, param->out ? "OUT " : "");
-            string name = from_compact(param->name);
-            vec_char_append_many(v, name.raw, name.len);
-            vec_char_append_str(v, ": ");
-            _ty_name(v, param->ty);
-            vec_char_append_str(v, ", ");
-        }
-        if (fn->variadic) {
-            Ty_FnParam* param = &fn->params[fn->len - 1];
-            vec_char_append_str(v, "... ");
-            string argv = from_compact(param->varargs.argv);
-            string argc = from_compact(param->varargs.argc);
-            vec_char_append_many(v, argv.raw, argv.len);
-            vec_char_append_str(v, " ");
-            vec_char_append_many(v, argc.raw, argc.len);
-        } else {
-            Ty_FnParam* param = &fn->params[fn->len - 1];
-            vec_char_append_str(v, param->out ? "OUT " : "");
-            string name = from_compact(param->name);
-            vec_char_append_many(v, name.raw, name.len);
-            vec_char_append_str(v, ": ");
-            _ty_name(v, param->ty);
-
+        if (fn->len != 0) {
+            for_n(i, 0, fn->len - 1) {
+                Ty_FnParam* param = &fn->params[i];
+                vec_char_append_str(v, param->out ? "OUT " : "");
+                string name = from_compact(param->name);
+                vec_char_append_many(v, name.raw, name.len);
+                vec_char_append_str(v, ": ");
+                _ty_name(v, param->ty);
+                vec_char_append_str(v, ", ");
+            }
+            if (fn->variadic) {
+                Ty_FnParam* param = &fn->params[fn->len - 1];
+                vec_char_append_str(v, "... ");
+                string argv = from_compact(param->varargs.argv);
+                string argc = from_compact(param->varargs.argc);
+                vec_char_append_many(v, argv.raw, argv.len);
+                vec_char_append_str(v, " ");
+                vec_char_append_many(v, argc.raw, argc.len);
+            } else {
+                Ty_FnParam* param = &fn->params[fn->len - 1];
+                vec_char_append_str(v, param->out ? "OUT " : "");
+                string name = from_compact(param->name);
+                vec_char_append_many(v, name.raw, name.len);
+                vec_char_append_str(v, ": ");
+                _ty_name(v, param->ty);
+            }
         }
 
         vec_char_append_str(v, ")");
@@ -194,7 +195,7 @@ static void _ty_name(Vec(char)* v, TyIndex t) {
         }
 
     } return;
-    default: 
+    default:
         // attempt to find a matching alias
         // scuffed af lmao
         for_n(i, 0, global_scope->map.cap) {
@@ -223,10 +224,10 @@ static void _ty_name(Vec(char)* v, TyIndex t) {
 }
 
 const char* ty_name(TyIndex t) {
-    Vec(char) buf = vec_new(char, 16);
+    Vec(char) buf = vec_new(char, 64);
     _ty_name(&buf, t);
     char* newstr = malloc(vec_len(buf) + 1);
-    memcpy(buf, newstr, vec_len(buf));
+    memcpy(newstr, buf, vec_len(buf));
     newstr[vec_len(buf)] = 0;
     vec_destroy(&buf);
     return newstr;
@@ -239,7 +240,7 @@ bool ty_is_scalar(TyIndex t) {
     if_likely (t < TY_PTR) {
         return true;
     }
-    
+
     t = ty_unwrap_alias(t);
 
     u8 ty_kind = TY(t, TyBase)->kind;
@@ -375,7 +376,7 @@ static bool ty_equal(TyIndex t1, TyIndex t2) {
         for_n(i, 0, fn1->len - 1) {
             Ty_FnParam p1 = fn1->params[i];
             Ty_FnParam p2 = fn2->params[i];
-            
+
             if (p1.out != p2.out) {
                 return false;
             }
@@ -399,7 +400,7 @@ static bool ty_equal(TyIndex t1, TyIndex t2) {
         } else if (fn1->len != 0) {
             Ty_FnParam p1 = fn1->params[fn1->len - 1];
             Ty_FnParam p2 = fn2->params[fn1->len - 1];
-            
+
             if (p1.out != p2.out) {
                 return false;
             }
@@ -424,7 +425,7 @@ static bool ty_can_cast(TyIndex dst, TyIndex src, bool src_is_constant) {
 
     dst = ty_unwrap_alias_or_enum(dst);
     src = ty_unwrap_alias_or_enum(src);
-    
+
     if (ty_is_scalar(dst) && ty_is_scalar(src)) {
         // signedness cannot mix
         return true;
@@ -630,7 +631,7 @@ void token_error(Parser* ctx, ReportKind kind, u32 start_index, u32 end_index, c
         // vec_append(&reports, main_line_report);
 
         // construct the line
-        u32 expanded_snippet_begin_index = start_index;    
+        u32 expanded_snippet_begin_index = start_index;
         while (true) {
             u8 kind = ctx->tokens[expanded_snippet_begin_index].kind;
             if (kind == TOK_NEWLINE) {
@@ -675,7 +676,7 @@ void token_error(Parser* ctx, ReportKind kind, u32 start_index, u32 end_index, c
                     }
                 }
             }
-            
+
             vec_char_append_many(&expanded_snippet, tok_raw(t), t.len);
             if (i == end_index) {
                 expanded_snippet_highlight_len = vec_len(expanded_snippet) - expanded_snippet_highlight_start;
@@ -888,7 +889,7 @@ i64 eval_integer(Parser* p, Token t, u32 index) {
     } else {
         val = eval_integer_dec(p, raw, len, index);
     }
-    
+
     return is_negative ? -val : val;
 }
 
@@ -1107,13 +1108,13 @@ Expr* parse_atom_terminal(Parser* p) {
     case TOK_KW_ALIGNOF:
         atom = new_expr(p, EXPR_LITERAL, target_uword, literal);
         advance(p);
-        TyIndex type = parse_type(p, false); 
+        TyIndex type = parse_type(p, false);
         atom->literal = ty_align(type);
         break;
     case TOK_KW_SIZEOF:
         atom = new_expr(p, EXPR_LITERAL, target_uword, literal);
         advance(p);
-        type = parse_type(p, false); 
+        type = parse_type(p, false);
         atom->literal = ty_size(type);
         break;
     case TOK_STRING:
@@ -1126,11 +1127,11 @@ Expr* parse_atom_terminal(Parser* p) {
         ;
         Entity* entity = get_entity(p, span);
         if_unlikely (entity == nullptr) {
-            parse_error(p, p->cursor, p->cursor, REPORT_ERROR, 
+            parse_error(p, p->cursor, p->cursor, REPORT_ERROR,
                 "symbol does not exist");
         }
         if_unlikely (entity->kind == ENTKIND_TYPE) {
-            parse_error(p, p->cursor, p->cursor, REPORT_ERROR, 
+            parse_error(p, p->cursor, p->cursor, REPORT_ERROR,
                 "entity is a type");
         }
 
@@ -1145,7 +1146,7 @@ Expr* parse_atom_terminal(Parser* p) {
         advance(p);
         break;
     default:
-        parse_error(p, p->cursor, p->cursor, REPORT_ERROR, 
+        parse_error(p, p->cursor, p->cursor, REPORT_ERROR,
             "expected expression");
     }
 
@@ -1168,7 +1169,7 @@ Expr* parse_atom(Parser* p) {
                 advance(p);
                 Expr* index = parse_expr(p);
                 if_unlikely (!ty_is_integer(index->ty)) {
-                    parse_error(p, expr_leftmost_token(left), p->cursor, REPORT_ERROR, 
+                    parse_error(p, expr_leftmost_token(left), p->cursor, REPORT_ERROR,
                         "index type %s is not an integer", ty_name(left->ty));
                 }
                 atom->binary.rhs = index;
@@ -1180,14 +1181,14 @@ Expr* parse_atom(Parser* p) {
                 advance(p);
                 Expr* index = parse_expr(p);
                 if_unlikely (!ty_is_integer(index->ty)) {
-                    parse_error(p, expr_leftmost_token(left), p->cursor, REPORT_ERROR, 
+                    parse_error(p, expr_leftmost_token(left), p->cursor, REPORT_ERROR,
                         "index type %s is not an integer", ty_name(left->ty));
                 }
                 atom->binary.rhs = index;
                 expect(p, TOK_CLOSE_BRACKET);
                 advance(p);
             } else {
-                parse_error(p, expr_leftmost_token(left), p->cursor, REPORT_ERROR, 
+                parse_error(p, expr_leftmost_token(left), p->cursor, REPORT_ERROR,
                     "cannot index type %s", ty_name(left->ty));
             }
         } break;
@@ -1197,12 +1198,12 @@ Expr* parse_atom(Parser* p) {
             }
             left = atom;
             if_unlikely (TY_KIND(left->ty) != TY_PTR) {
-                parse_error(p, expr_leftmost_token(left), p->cursor, REPORT_ERROR, 
+                parse_error(p, expr_leftmost_token(left), p->cursor, REPORT_ERROR,
                     "cannot dereference type %s", ty_name(left->ty));
             }
             TyIndex ptr_target = ty_get_ptr_target(left->ty);
             // if_unlikely (!ty_is_scalar(ptr_target)) {
-            //     parse_error(p, expr_leftmost_token(left), p->cursor, REPORT_ERROR, 
+            //     parse_error(p, expr_leftmost_token(left), p->cursor, REPORT_ERROR,
             //         "cannot use non-scalar type %s", ty_name(ptr_target));
             // }
             atom = new_expr(p, EXPR_DEREF, ptr_target, unary);
@@ -1216,14 +1217,14 @@ Expr* parse_atom(Parser* p) {
             TyIndex left_ty = ty_unwrap_alias(left->ty);
 
             if_unlikely (TY_KIND(left_ty) != TY_PTR) {
-                parse_error(p, expr_leftmost_token(left), expr_rightmost_token(left), REPORT_ERROR, 
+                parse_error(p, expr_leftmost_token(left), expr_rightmost_token(left), REPORT_ERROR,
                     "cannot dereference type %s", ty_name(left->ty));
             }
             TyIndex record_ty = ty_unwrap_alias(ty_get_ptr_target(left_ty));
             TyKind record_ty_kind = TY_KIND(record_ty);
 
             if_unlikely (record_ty_kind != TY_STRUCT && record_ty_kind != TY_STRUCT_PACKED && record_ty_kind != TY_UNION) {
-                parse_error(p, expr_leftmost_token(left), expr_rightmost_token(left), REPORT_ERROR, 
+                parse_error(p, expr_leftmost_token(left), expr_rightmost_token(left), REPORT_ERROR,
                     "type %s is not a STRUCT or UNION", ty_name(record_ty));
             }
             TyRecord* record = TY(record_ty, TyRecord);
@@ -1245,7 +1246,7 @@ Expr* parse_atom(Parser* p) {
             }
 
             if_unlikely (member_ty == TY_VOID) {
-                parse_error(p, p->cursor, p->cursor, REPORT_ERROR, 
+                parse_error(p, p->cursor, p->cursor, REPORT_ERROR,
                     "type %s has no member '"str_fmt"'", ty_name(record_ty), str_arg(member_span));
             }
 
@@ -1262,7 +1263,7 @@ Expr* parse_atom(Parser* p) {
             TyKind record_ty_kind = TY_KIND(record_ty);
 
             if_unlikely (record_ty_kind != TY_STRUCT && record_ty_kind != TY_STRUCT_PACKED && record_ty_kind != TY_UNION) {
-                parse_error(p, expr_leftmost_token(left), expr_rightmost_token(left), REPORT_ERROR, 
+                parse_error(p, expr_leftmost_token(left), expr_rightmost_token(left), REPORT_ERROR,
                     "type %s is not a STRUCT or UNION", ty_name(record_ty));
             }
             TyRecord* record = TY(record_ty, TyRecord);
@@ -1284,7 +1285,7 @@ Expr* parse_atom(Parser* p) {
             }
 
             if_unlikely (member_ty == TY_VOID) {
-                parse_error(p, p->cursor, p->cursor, REPORT_ERROR, 
+                parse_error(p, p->cursor, p->cursor, REPORT_ERROR,
                     "type %s has no member '"str_fmt"'", ty_name(record_ty), str_arg(member_span));
             }
 
@@ -1343,7 +1344,7 @@ Expr* parse_atom(Parser* p) {
                 }
 
                 if_unlikely (!ty_compatible(param->ty, arg->ty, arg->kind == EXPR_LITERAL)) {
-                    error_at_expr(p, arg, REPORT_ERROR, 
+                    error_at_expr(p, arg, REPORT_ERROR,
                         "type %s cannot coerce to %s", ty_name(arg->ty), ty_name(param->ty));
                 }
 
@@ -1359,7 +1360,7 @@ Expr* parse_atom(Parser* p) {
             }
             expect(p, TOK_CLOSE_PAREN);
             advance(p);
-            
+
             Expr** args = (Expr**)dynbuf_to_arena(p, args_start);
             dynbuf_restore(args_start);
 
@@ -1421,7 +1422,7 @@ Expr* parse_unary(Parser* p) {
         advance(p);
         Expr* inner = parse_unary(p);
         if_unlikely (!is_lvalue(inner)) {
-            error_at_expr(p, inner, REPORT_ERROR, 
+            error_at_expr(p, inner, REPORT_ERROR,
                 "cannot take address of r-value");
         }
         Expr* addrof = new_expr(p, EXPR_ADDROF, ty_get_ptr(inner->ty), unary);
@@ -1433,7 +1434,7 @@ Expr* parse_unary(Parser* p) {
         advance(p);
         Expr* inner = parse_unary(p);
         if_unlikely (!ty_is_integer(inner->ty)) {
-            error_at_expr(p, inner, REPORT_ERROR, 
+            error_at_expr(p, inner, REPORT_ERROR,
                 "type %s is not an integer", ty_name(inner->ty));
         }
         if (inner->kind == EXPR_LITERAL) {
@@ -1450,7 +1451,7 @@ Expr* parse_unary(Parser* p) {
         advance(p);
         Expr* inner = parse_unary(p);
         if_unlikely (!ty_is_integer(inner->ty)) {
-            error_at_expr(p, inner, REPORT_ERROR, 
+            error_at_expr(p, inner, REPORT_ERROR,
                 "type %s is not an integer", ty_name(inner->ty));
         }
         if (inner->kind == EXPR_LITERAL) {
@@ -1467,7 +1468,7 @@ Expr* parse_unary(Parser* p) {
         advance(p);
         Expr* inner = parse_unary(p);
         if_unlikely (!ty_is_scalar(inner->ty)) {
-            error_at_expr(p, inner, REPORT_ERROR, 
+            error_at_expr(p, inner, REPORT_ERROR,
                 "type %s is not scalar", ty_name(inner->ty));
         }
         if (inner->kind == EXPR_LITERAL) {
@@ -1488,7 +1489,7 @@ Expr* parse_unary(Parser* p) {
         TyIndex to_ty = parse_type(p, false);
 
         if_unlikely(!ty_can_cast(to_ty, inner->ty, inner->kind == EXPR_LITERAL)) {
-            error_at_expr(p, inner, REPORT_ERROR, 
+            error_at_expr(p, inner, REPORT_ERROR,
                 "type %s cannot cast to %s", ty_name(inner->ty), ty_name(to_ty));
         }
 
@@ -1562,19 +1563,19 @@ static bool is_bool_op(ExprKind op_kind) {
 Expr* parse_binary(Parser* p, isize precedence) {
     ArenaState save = arena_save(&p->arena);
     Expr* lhs = parse_unary(p);
-    
+
     while (precedence < bin_precedence(p->current.kind)) {
         isize n_prec = bin_precedence(p->current.kind);
         ExprKind op_kind = binary_expr_kind(p->current.kind);
         u32 op_token_index = p->cursor;
-        
+
         advance(p);
         Expr* rhs = parse_binary(p, n_prec);
 
         TyIndex op_ty = target_uword;
         if (!is_bool_op(op_kind)) {
             if_unlikely (!ty_compatible(lhs->ty, rhs->ty, rhs->kind == EXPR_LITERAL)) {
-                parse_error(p, op_token_index, op_token_index, REPORT_ERROR, 
+                parse_error(p, op_token_index, op_token_index, REPORT_ERROR,
                     "types %s and %s are not compatible", ty_name(lhs->ty), ty_name(rhs->ty));
             }
             // parse_error(p, op_token_index, op_token_index, REPORT_NOTE, "yuh");
@@ -1582,11 +1583,11 @@ Expr* parse_binary(Parser* p, isize precedence) {
             op_ty = lhs->ty;
         } else {
             if_unlikely(!ty_is_scalar(lhs->ty)) {
-                parse_error(p, expr_leftmost_token(lhs), expr_rightmost_token(lhs), REPORT_ERROR, 
+                parse_error(p, expr_leftmost_token(lhs), expr_rightmost_token(lhs), REPORT_ERROR,
                     "type %s is not scalar", ty_name(lhs->ty));
             }
             if_unlikely(!ty_is_scalar(rhs->ty)) {
-                parse_error(p, expr_leftmost_token(rhs), expr_rightmost_token(rhs), REPORT_ERROR, 
+                parse_error(p, expr_leftmost_token(rhs), expr_rightmost_token(rhs), REPORT_ERROR,
                     "type %s is not scalar", ty_name(rhs->ty));
             }
         }
@@ -1594,7 +1595,7 @@ Expr* parse_binary(Parser* p, isize precedence) {
         if (lhs->kind == EXPR_LITERAL && rhs->ty != EXPR_LITERAL) {
             op_ty = rhs->ty;
         }
-        
+
         if (lhs->kind == EXPR_LITERAL && rhs->kind == EXPR_LITERAL) {
             bool signed_op = ty_is_signed(lhs->ty) || ty_is_signed(rhs->ty);
             u64 lhs_val = lhs->literal;
@@ -1604,19 +1605,19 @@ Expr* parse_binary(Parser* p, isize precedence) {
             arena_restore(&p->arena, save);
             Expr* lit = new_expr(p, EXPR_LITERAL, op_ty, literal);
             lit->token_index = leftmost;
-            
+
             switch (op_kind) {
             case EXPR_ADD: lit->literal = lhs_val + rhs_val; break;
             case EXPR_SUB: lit->literal = lhs_val - rhs_val; break;
             case EXPR_MUL: lit->literal = lhs_val * rhs_val; break;
-            case EXPR_DIV: 
+            case EXPR_DIV:
                 if (signed_op) {
                     lit->literal = (isize)lhs_val / (isize)rhs_val;
                 } else {
                     lit->literal = lhs_val / rhs_val;
                 }
                 break;
-            case EXPR_REM: 
+            case EXPR_REM:
                 if (signed_op) {
                     lit->literal = (isize)lhs_val % (isize)rhs_val;
                 } else {
@@ -1634,7 +1635,7 @@ Expr* parse_binary(Parser* p, isize precedence) {
                     lit->literal = lhs_val >> rhs_val;
                 }
                 break;
-            case EXPR_ROR: lit->literal = (lhs_val >> rhs_val) 
+            case EXPR_ROR: lit->literal = (lhs_val >> rhs_val)
                                         | (lhs_val << (ty_size(target_uword) * 8 - rhs_val)); // 💀
                 break;
             case EXPR_EQ:  lit->literal = lhs_val == rhs_val; break;
@@ -1672,7 +1673,7 @@ Expr* parse_binary(Parser* p, isize precedence) {
             }
             lhs = lit;
         } else {
-            Expr* op = new_expr(p, op_kind, op_ty, binary); 
+            Expr* op = new_expr(p, op_kind, op_ty, binary);
             op->binary.lhs = lhs;
             op->binary.rhs = rhs;
             lhs = op;
@@ -1931,7 +1932,7 @@ Expr* parse_initializer(Parser* p, TyIndex ty) {
 
 Stmt* parse_var_decl(Parser* p, StorageKind storage) {
     Stmt* decl = new_stmt(p, STMT_VAR_DECL, var_decl);
-    
+
     string identifier = tok_span(p->current);
     Entity* var = get_or_create(p, identifier);
     decl->var_decl.var = var;
@@ -1989,7 +1990,7 @@ Stmt* parse_var_decl(Parser* p, StorageKind storage) {
             error_at_expr(p, value, REPORT_ERROR, "type %s cannot coerce to EXTERN type %s",
                     ty_name(value->ty), ty_name(var->ty));
         }
-        
+
         // if_unlikely (!ty_is_scalar(value->ty)) {
         //     error_at_expr(p, value, REPORT_ERROR, "cannot use non-scalar type %s",
         //         ty_name(value->ty));
@@ -2190,7 +2191,7 @@ Stmt* parse_stmt_if(Parser* p) {
         if_false = parse_stmt_if(p);
         break;
     }
-    
+
     if (if_true.retkind == RETKIND_YES && if_false && if_false->retkind == RETKIND_YES) {
         if_->retkind = RETKIND_YES;
     } else if (if_true.retkind == RETKIND_MAYBE || (if_false && if_false->retkind == RETKIND_MAYBE)) {
@@ -2280,7 +2281,7 @@ Stmt* parse_stmt(Parser* p) {
     case TOK_KW_PUBLIC:
     case TOK_KW_PRIVATE:
     case TOK_KW_EXTERN:
-        parse_error(p, p->cursor, p->cursor, REPORT_ERROR, 
+        parse_error(p, p->cursor, p->cursor, REPORT_ERROR,
             "storage class cannot be used locally");
         break;
     case TOK_KW_TYPE:
@@ -2288,11 +2289,11 @@ Stmt* parse_stmt(Parser* p) {
     case TOK_KW_UNION:
     case TOK_KW_ENUM:
     case TOK_KW_FNPTR:
-        parse_error(p, p->cursor, p->cursor, REPORT_ERROR, 
+        parse_error(p, p->cursor, p->cursor, REPORT_ERROR,
             "cannot locally declare type");
         break;
     case TOK_KW_FN:
-        parse_error(p, p->cursor, p->cursor, REPORT_ERROR, 
+        parse_error(p, p->cursor, p->cursor, REPORT_ERROR,
             "cannot locally declare function");
         break;
     default:
@@ -2309,7 +2310,7 @@ Entity* get_incomplete_type_entity(Parser* p, string identifier) {
         TY_KIND(entity->ty) = TY_ALIAS_INCOMPLETE;
         TY(entity->ty, TyAlias)->entity = entity;
     } else if (entity->kind != ENTKIND_TYPE) {
-        parse_error(p, p->cursor, p->cursor, REPORT_ERROR, 
+        parse_error(p, p->cursor, p->cursor, REPORT_ERROR,
             "symbol already exists");
     }
     return entity;
@@ -2484,6 +2485,13 @@ Stmt* parse_fn_decl(Parser* p, u8 storage) {
         parse_error(p, ident_pos, ident_pos, REPORT_ERROR, "type differs from previous EXTERN type");
     }
     if (fnptr_ty != TY__INVALID && !ty_equal(fnptr_ty, decl_ty)) {
+        // printf("fnptr type: %d\n", TY(fnptr_ty, TyFn)->len);
+        printf("fnptr type: %s\n", ty_name(fnptr_ty));
+        printf("decl type:  %s\n", ty_name(decl_ty));
+
+        // printf("fnptr type: %d\n", fnptr_ty);
+        // printf("decl type:  %d\n", decl_ty);
+
         parse_error(p, fnptr_decl_loc, fnptr_decl_loc, REPORT_NOTE, "from FNPTR declaration");
         parse_error(p, ident_pos, ident_pos, REPORT_ERROR, "type differs from provided FNPTR type");
     }
@@ -2499,7 +2507,7 @@ Stmt* parse_fn_decl(Parser* p, u8 storage) {
 
         TyFn* fn_type = TY(decl_ty, TyFn);
 
-        fn_decl->fn_decl.parameters = vec_new(Entity*, fn_type->len);
+        fn_decl->fn_decl.parameters = vec_new(Entity*, max(1, fn_type->len));
 
         p->current_function = fn;
 
@@ -2572,6 +2580,9 @@ Stmt* parse_fn_decl(Parser* p, u8 storage) {
 
         fn_decl->fn_decl.body.stmts = stmts;
         fn_decl->fn_decl.body.len = stmts_len;
+        fn->storage = storage;
+        fn->decl = fn_decl;
+        return fn_decl;
     } else {
         fn->decl = new_stmt(p, STMT_DECL_LOCATION, nothing);
         fn->decl->token_index = ident_pos;
@@ -2855,7 +2866,7 @@ void parse_global_decl(Parser* p) {
         parse_fn_decl(p, STORAGE_PUBLIC);
         break;
     default:
-        parse_error(p, p->cursor, p->cursor, REPORT_ERROR, 
+        parse_error(p, p->cursor, p->cursor, REPORT_ERROR,
             "expected global declaration");
     }
 }

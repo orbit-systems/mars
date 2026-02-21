@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "common/util.h"
+#include "common/portability.h"
 #include "iron/iron.h"
 
 static u8 extra_size_table[FE__INST_END] = {
@@ -237,7 +238,7 @@ void fe_ipool_destroy(FeInstPool* pool) {
         Fe__InstPoolChunk* this = top;
         top = top->next;
         fe_free(this);
-    } 
+    }
     *pool = (FeInstPool){0};
 }
 

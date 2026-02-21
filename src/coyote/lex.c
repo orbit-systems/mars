@@ -165,13 +165,13 @@ static u8 lex_categorize_keyword(char* s, size_t len) {
 }
 
 static bool is_alphabetic(char c) {
-    return 
+    return
         ('a' <= c && c <= 'z') ||
         ('A' <= c && c <= 'Z') ||
         c == '_';
 }
 static bool is_alphanumeric(char c) {
-    return 
+    return
         ('a' <= c && c <= 'z') ||
         ('A' <= c && c <= 'Z') ||
         ('0' <= c && c <= '9') ||
@@ -270,7 +270,7 @@ static Token lex_next_raw(Lexer* l) {
                 while (is_alphanumeric(peek(l, length))) {
                     ++length;
                 }
-        
+
                 if (length > LEX_MAX_TOKEN_LEN) {
                     TODO("token is longer than max token len");
                 }
@@ -332,19 +332,19 @@ static Token lex_next_raw(Lexer* l) {
                     return construct_and_advance(l, TOK_LSHIFT_EQ, 3);
                 else
                     return construct_and_advance(l, TOK_LSHIFT, 2);
-            } 
+            }
             else if (peek(l, 1) == '=')
                 return construct_and_advance(l, TOK_LESS_EQ, 2);
             else
                 return construct_and_advance(l, TOK_LESS, 1);
-        
+
         case '>':
             if (peek(l, 1) == '>') {
                 if (peek(l, 2) == '=')
                     return construct_and_advance(l, TOK_RSHIFT_EQ, 2);
                 else
                     return construct_and_advance(l, TOK_RSHIFT, 2);
-            } 
+            }
             else if (peek(l, 1) == '=')
                 return construct_and_advance(l, TOK_GREATER_EQ, 2);
             else
@@ -377,7 +377,7 @@ static Token lex_next_raw(Lexer* l) {
                 } else {
                     seen_slash = c == '\\';
                 }
-                
+
                 ++length;
                 c = peek(l, length);
             }
@@ -418,7 +418,7 @@ static Token lex_next_raw(Lexer* l) {
     UNREACHABLE;
 }
 
-// ------------------------- PREPROCESSOR ------------------------- 
+// ------------------------- PREPROCESSOR -------------------------
 
 static Token lex_with_preproc(Lexer* l, LexState* state, PreprocScope* scope);
 
@@ -432,7 +432,7 @@ static bool replacement_exists_immediate(string key, PreprocScope* scope) {
 
 static bool replacement_exists(string key, PreprocScope* scope) {
     if (scope == nullptr) return false;
-    return replacement_exists_immediate(key, scope) 
+    return replacement_exists_immediate(key, scope)
         || replacement_exists(key, scope->parent);
 }
 
@@ -466,7 +466,7 @@ static CompactString preproc_collect_complex_string(Lexer* l) {
     span.len = l->cursor;
 
     usize bracket_depth = 1;
-    while (bracket_depth != 0) {    
+    while (bracket_depth != 0) {
         Token t = lex_next_raw(l);
         switch (t.kind) {
         case TOK_OPEN_BRACKET:  ++bracket_depth; break;
@@ -547,9 +547,9 @@ static PreprocVal preproc_collect_value(Lexer* l, LexState* state, PreprocScope*
                     TODO("error: string too long");
                 }
 
-                string newstr = arena_strcat(state->arena, 
-                    from_compact(lhs.string), 
-                    from_compact(rhs.string), 
+                string newstr = arena_strcat(state->arena,
+                    from_compact(lhs.string),
+                    from_compact(rhs.string),
                     false
                 );
 
@@ -567,8 +567,8 @@ static PreprocVal preproc_collect_value(Lexer* l, LexState* state, PreprocScope*
             } else {
                 TODO("error: invalid operator");
             }
-        } else if ((TOK_PLUS <= op.kind && op.kind <= TOK_GREATER) 
-            || op.kind == TOK_KW_AND || op.kind == TOK_KW_OR) 
+        } else if ((TOK_PLUS <= op.kind && op.kind <= TOK_GREATER)
+            || op.kind == TOK_KW_AND || op.kind == TOK_KW_OR)
         {
             PreprocVal lhs = preproc_collect_value(l, state, scope);
             PreprocVal rhs = preproc_collect_value(l, state, scope);
@@ -658,7 +658,7 @@ static void preproc_define(Lexer* l, LexState* state, PreprocScope* scope) {
 
     // consume value
     PreprocVal v = preproc_collect_value(l, state, scope);
-    v.source = (CompactString){   
+    v.source = (CompactString){
         .len = name.len,
         .raw = name.raw,
     };
@@ -725,7 +725,7 @@ static void preproc_macro(Lexer* l, LexState* state, PreprocScope* scope) {
 
     PreprocVal macro = {
         .kind = PPVAL_MACRO,
-        .source = (CompactString){   
+        .source = (CompactString){
             .len = name.len,
             .raw = name.raw,
         },
@@ -740,7 +740,7 @@ static void preproc_macro(Lexer* l, LexState* state, PreprocScope* scope) {
 }
 
 static void preproc_if(Lexer* l, LexState* state, PreprocScope* scope) {
-    
+
     PreprocVal cond_val = preproc_collect_value(l, state, scope);
     if (cond_val.kind != PPVAL_INTEGER) {
         TODO("#IF condition is not an integer");
@@ -866,8 +866,8 @@ static void preproc_include(Lexer* l, LexState* state, PreprocScope* scope) {
     //
     // If we find the exact include path string in the hash set of included
     // files, then ignore this directive.
-    
-    
+
+
     string path_string = tok_span(path);
 
     if (strmap_get(&state->included_files, path_string) != STRMAP_NOT_FOUND) {
@@ -879,10 +879,10 @@ static void preproc_include(Lexer* l, LexState* state, PreprocScope* scope) {
 
     if (strncmp(path_string.raw, "<inc>/", 5) == 0) {
         path_string = substring(path_string, 5, path_string.len - 5);
-        
+
         for_n(i, 0, vec_len(state->incdirs)) {
             string incdir = state->incdirs[i];
-            
+
             path_cstring = arena_strcat(state->arena,
                 incdir,
                 path_string,
@@ -896,10 +896,10 @@ static void preproc_include(Lexer* l, LexState* state, PreprocScope* scope) {
         }
     } else if (strncmp(path_string.raw, "<ll>/", 4) == 0) {
         path_string = substring(path_string, 5, path_string.len - 5);
-        
+
         for_n(i, 0, vec_len(state->libdirs)) {
             string libdir = state->libdirs[i];
-            
+
             path_cstring = arena_strcat(state->arena,
                 libdir,
                 path_string,
@@ -924,7 +924,7 @@ static void preproc_include(Lexer* l, LexState* state, PreprocScope* scope) {
         }
     }
 
-    string included_src = fs_read_entire(included);
+    string included_src = fs_read_entire(included, false);
     Lexer included_lexer = lexer_from_string(included_src);
     vec_append(&state->tokens, preproc_token(TOK_PREPROC_INCLUDE_PASTE, tok_span(path)));
 
@@ -951,7 +951,7 @@ static Token preproc_dispatch(Lexer* l, LexState* state, PreprocScope* scope) {
     switch (t.kind) {
     case TOK_KW_IF:
         preproc_if(l, state, scope);
-        break;      
+        break;
     case TOK_KW_ELSE:
     case TOK_KW_ELSEIF:
     case TOK_KW_END:
@@ -959,7 +959,7 @@ static Token preproc_dispatch(Lexer* l, LexState* state, PreprocScope* scope) {
         // pass it back.
         return t;
     }
-    
+
     string span = tok_span(t);
     if (string_eq(span, strlit("INCLUDE"))) {
         preproc_include(l, state, scope);
@@ -1040,7 +1040,7 @@ static CompactString collect_macro_arg(Lexer* l, PreprocScope* scope) {
 
     usize bracket_depth = 0;
     for (Token t = lex_next_raw(l);; t = lex_next_raw(l)) {
-        
+
         if (bracket_depth == 0 && (t.kind == TOK_COMMA || t.kind == TOK_CLOSE_PAREN)) {
             break;
         }
@@ -1127,7 +1127,7 @@ static void collect_macro_args_and_emit(Lexer* l, PreprocVal macro, LexState* st
     --emit_depth;
 }
 
-// ------------------------- LEX THAT FILE DAMMIT ------------------------- 
+// ------------------------- LEX THAT FILE DAMMIT -------------------------
 
 // returns the last token it sees.
 static Token lex_with_preproc(Lexer* l, LexState* state, PreprocScope* scope) {
@@ -1224,7 +1224,7 @@ Parser lex_entrypoint(SrcFile* f, LexState* state) {
     ctx.global_scope->super = nullptr;
     strmap_init(&ctx.global_scope->map, 128);
     ctx.current_scope = ctx.global_scope;
-    
+
     arena_init(&ctx.entities);
 
     for_n(i, 0, vec_len(state->tokens)) {

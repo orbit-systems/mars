@@ -18,15 +18,15 @@ interface sealed Pointer {
 }
 
 interface sealed Integer {
-    require Arithmetic(self);
+    require Scalar(self);
     require BitLogic(self);
 }
 
 interface sealed Float {
-    require Arithmetic(self);
+    require Scalar(self);
 }
 
-interface Arithmetic(Rhs: type) {
+interface Scalar(Rhs: type) {
     require ops::Add(Rhs), ops::AssignAdd(Rhs);
     require ops::Sub(Rhs), ops::AssignSub(Rhs);
     require ops::Neg;

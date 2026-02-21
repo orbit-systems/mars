@@ -52,7 +52,7 @@ pub struct Vec[A: std::Allocator](E: type, allocator: ^static A) {
         self.data[0] = item;
         self.len += 1;
     }
-    
+
     pub fun prepend_many(^self, items: []const E): AllocErr?void {
         try self.ensure_capacity(self.len + 1);
         builtin::copy_back(&self.data[items.len], self.data, self.len);
@@ -112,7 +112,7 @@ pub struct Vec[A: std::Allocator](E: type, allocator: ^static A) {
 
     impl builtin::ops::Index(usize) {
         pub def Result = E;
-        pub fun op(^self, i: usize): ^Result {
+        pub fun op(^self, i: usize): ?^null Result {
             &self.data[i]
         }
     }

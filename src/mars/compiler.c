@@ -33,7 +33,7 @@ SourceFileId marsc_get_file(MarsCompiler* marsc, string path) {
     }
 
     SourceFile srcfile = {
-        .source = fs_read_entire(file),
+        .source = fs_read_entire(file, true),
         .path = arena_strdup(&marsc->permanent, (string){
             .len = file->path.len,
             .raw = file->path.raw,

@@ -1,4 +1,5 @@
 #include "common/util.h"
+#include "common/portability.h"
 
 #include "iron/iron.h"
 #include <string.h>
@@ -57,7 +58,7 @@ void fe_cmap_put(FeCompactMap* cmap, u32 key, uintptr_t val) {
         cmap->exists = fe_malloc(sizeof(usize));
         cmap->values = fe_malloc(sizeof(cmap->values[0]) * USIZE_BITS);
 
-        cmap->exists[0] = id_bit; 
+        cmap->exists[0] = id_bit;
         cmap->values[id - cmap->id_start * USIZE_BITS] = val;
 
         return;

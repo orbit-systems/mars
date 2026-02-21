@@ -2,7 +2,7 @@ def Ptr = builtin::types::Pointer;
 
 pub interface Allocator {
     pub enum Err {
-        OutOfMemory
+        OutOfMemory,
     }
 
     pub fun alloc(^self, def P: Ptr, count: usize): Err?P;

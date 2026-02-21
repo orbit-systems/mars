@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "common/util.h"
 #include "common/fs.h"
 #include "common/str.h"
 #include "lex.h"
@@ -31,7 +32,7 @@ static u32 col_number(string src, string snippet) {
 }
 
 static void print_snippet(string line, string snippet, const char* color, usize pad, string msg) {
-    
+
     fprintf(stderr, Blue"| "Reset);
 
     for_n(i, 0, line.len) {
@@ -158,7 +159,7 @@ void report_line(ReportLine* report) {
     // fprintf(stderr, " -> "str_fmt":%u:%u ", str_arg(report->path), line_num, col_num);
     fprintf(stderr, ": "Bold str_fmt Reset, str_arg(report->msg));
     fprintf(stderr, "\n");
-    
+
     usize line_digits = digits(line_num);
 
     for_n(i, 0, line_digits) {
@@ -176,18 +177,18 @@ void report_line(ReportLine* report) {
     fprintf(stderr, Blue "%u ", line_num);
 
     if (report->reconstructed_line.raw != nullptr) {
-        print_snippet(line, report->snippet, color, line_digits + 1, 
+        print_snippet(line, report->snippet, color, line_digits + 1,
             strlit("in this invocation")
         );
     } else {
         print_snippet(line, report->snippet, color, line_digits + 1, report->msg);
     }
 
-    
+
     if (report->reconstructed_line.raw != nullptr) {
 
         string line = snippet_line(report->reconstructed_line, report->reconstructed_snippet);
-        
+
         for_n(i, 0, line_digits) {
             fprintf(stderr, " ");
         }

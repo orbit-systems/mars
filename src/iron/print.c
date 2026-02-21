@@ -126,7 +126,7 @@ thread_local static bool should_ansi = true;
 
 static void print_ty(FeDataBuffer* db, FeTy ty, FeComplexTy* cty) {
     if (ty == FE_TY_RECORD) {
-        if (cty != nullptr) {
+        if (cty == nullptr) {
             FE_CRASH("ty is record but no FeComplexTy was provided");
         }
         fe_db_writecstr(db, "{ ");
@@ -489,8 +489,8 @@ void fe_emit_ir_func(FeDataBuffer* db, FeFunc* f, bool fancy) {
     u32 stack_counter = 1;
     for (FeStackItem* item = f->stack_bottom; item != nullptr; item = item->next) {
         item->flags = stack_counter;
-        fe_db_writef(db, "    s%d: ", stack_counter);
-        print_ty(db, item->ty, item->complex_ty);
+        fe_db_writef(db, "    s%d: size %u align %u", stack_counter, item->size, item->align);
+        // print_ty(db, item->ty, item->complex_ty);
         fe_db_writecstr(db, "\n");
         stack_counter++;
     }
