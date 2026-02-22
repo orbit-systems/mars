@@ -497,8 +497,8 @@ static bool try_alias_relax(FeFunc* f, FeInstSet* wlist, FeInst* inst) {
     // make a new, reduced mem_merge based on that.
     if (inst_dependency->kind == FE_MEM_MERGE) {
         bool actually_depends_like_for_real[inst_dependency->in_len];
-        usize dependency_count = 0;
 
+        usize dependency_count = 0;
         FeInst* last_dep = nullptr;
         for_n(i, 0, inst_dependency->in_len) {
             FeInst* dependency = inst_dependency->inputs[i];
@@ -522,7 +522,22 @@ static bool try_alias_relax(FeFunc* f, FeInstSet* wlist, FeInst* inst) {
             return true;
         } else if (dependency_count != inst_dependency->in_len) {
             // we can make a new mem_merge!
-            FE_CRASH("todo!");
+            FeInst* new_merge = fe_inst_mem_merge(f, dependency_count);
+            fe_insert_before(inst, new_merge);
+
+            for_n(i, 0, inst_dependency->in_len) {
+                if (actually_depends_like_for_real[i]) {
+                    fe_add_input(f, new_merge, inst_dependency->inputs[i]);
+                }
+            }
+
+            fe_set_input(f, inst, 0, new_merge);
+            fe_iset_push(wlist, inst);
+            fe_iset_push(wlist, new_merge);
+            fe_iset_push(wlist, inst_dependency);
+            push_uses(wlist, inst);
+            push_inputs(wlist, inst);
+            return true;
         }
     }
 
@@ -581,7 +596,13 @@ static bool try_coalesce_mem_merge(FeFunc* f, FeInstSet* wlist, FeInst* inst) {
             for_n(j, 1, dep->in_len) {
                 fe_add_input(f, inst, dep->inputs[j]);
             }
+            fe_iset_push(wlist, dep);
         }
+    }
+
+    if (can_do_anything) {
+        fe_iset_push(wlist, inst);
+        push_uses(wlist, inst);
     }
 
     return can_do_anything;
