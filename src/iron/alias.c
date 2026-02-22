@@ -488,14 +488,18 @@ static bool insts_may_alias(FeFunc* f, FeInst* i1, FeInst* i2) {
         return false;
     }
 
+
     if (is_load_or_store(i1) && is_load_or_store(i2)) {
+        // printf("GUH!    i1: %d    i2: %d\n", i1->id, i2->id);
+        // printf("       i1^: %d   i2^: %d\n", i1->inputs[1]->id, i2->inputs[1]->id);
         // analyze pointers
-        return pointers_may_overlap(
+        bool ptrs_overlap = pointers_may_overlap(
             i1->inputs[1], 
             load_or_store_width(i1), 
             i2->inputs[1],
             load_or_store_width(i2)
         );
+        return ptrs_overlap;
     }
 
     // pessimistic answer :( not smart enough yet

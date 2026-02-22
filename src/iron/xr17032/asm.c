@@ -29,12 +29,12 @@ static void print_store_io(FeDataBuffer* db, FeVRegBuffer* vrbuf, FeInst* inst, 
     XrInstImm* imm_extra = fe_extra(inst, XrInstImm);
     
     fe_db_writef(db, "mov %s [", specifier);
-    print_reg(db, vrbuf, inst->inputs[1]);
+    print_reg(db, vrbuf, inst->inputs[0]);
     if (imm_extra->imm != 0) {
-        fe_db_writef(db, "+ %u", imm_extra->imm);
+        fe_db_writef(db, " + %u", imm_extra->imm);
     }
     fe_db_writecstr(db, "], ");
-    print_reg(db, vrbuf, inst->inputs[0]);
+    print_reg(db, vrbuf, inst->inputs[1]);
 }
 
 static const char* shift_kind_op[4] = {
@@ -209,9 +209,12 @@ static void print_inst(FeDataBuffer* db, FeFunc* f, FeInst* inst) {
 
     case XR_P_RET: fe_db_writecstr(db, "ret"); break;
     case XR_P_NOP: fe_db_writecstr(db, "nop"); break;
+    case XR_P_MOV: print_regular_unop(db, vrbuf, inst, "mov"); break;
 
     default:
-        FE_CRASH("xr: unhandled inst %d when printing asm", inst->kind);
+        fe_db_writecstr(db, "unhandled");
+        break;
+        // FE_CRASH("xr: unhandled inst %d when printing asm", inst->kind);
     }
 
     fe_db_writecstr(db, "\n");
@@ -266,6 +269,7 @@ void fe_xr_print_text(FeDataBuffer* db, FeModule* m) {
 
             // emit instruction by instruction
             for_blocks(b, f) {
+                fe_db_writef(db, ".B%u:\n", b->id);
                 for_inst(i, b) {
                     print_inst(db, f, i);
                 }

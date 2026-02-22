@@ -1,0 +1,6 @@
+FN foo(ptr: ^WORD, val: WORD): WORD
+    ptr^ = val
+    NOTHING
+    (ptr + 8)^ = val
+    RETURN ptr^
+END

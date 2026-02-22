@@ -172,8 +172,7 @@ int main(int argc, char** argv) {
         printf("%.*s", (int)db.len, db.at);
     }
 
-
-    string out_path = arena_strcat(&arena, lex_state.current_file, strlit(".s"), true);
+    string out_path = arena_strcat(&arena, lex_state.current_file, strlit(".out"), true);
 
     FsFile* outfile = fs_open(out_path.raw, true, true);
 

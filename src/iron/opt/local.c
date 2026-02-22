@@ -461,102 +461,70 @@ static bool try_alias_relax(FeFunc* f, FeInstSet* wlist, FeInst* inst) {
         return false;
     }
 
-    for_n(i, 0, inst->use_len) {
-        // this is dangerous...
-        // try to force users to be processed first 
-        // BUT only if they were eventually going to be processed anyway
-        FeInst* use = FE_USE_PTR(inst->uses[i]);
-        if (fe_iset_contains(wlist, use)) {
-            fe_iset_remove(wlist, use);
+    // see if we can turn
+    //  W dep THIS dep Y dep Z
+    // into
+    //  W dep (THIS, Y), THIS dep Z, Y dep Z
+    FeInst* inst_dependency = inst->inputs[0];
+    if (fe_inst_has_trait(inst_dependency->kind, FE_TRAIT_MEM_SINGLE_USE)) {
+
+        if (!fe_insts_may_alias(f, inst, inst_dependency)) {
+            // this operation doesn't alias its dependency, we can try to relax it
+            // FE_CRASH("can relax!!\n");
+
+            // create a mem_merge for the dependencies of `inst` to use
+            FeInst* merge = fe_inst_mem_merge(f, 2);
+            fe_insert_after(inst, merge);
+
+            fe_replace_uses(f, inst, merge);
+            
+            fe_add_input(f, merge, inst);
+            fe_add_input(f, merge, inst_dependency);
+
+            fe_set_input(f, inst, 0, inst_dependency->inputs[0]);
+
             fe_iset_push(wlist, inst);
-            // return try_memory(f, wlist, use);
-            return try_all(f, wlist, use);
-        }
-    }
+            fe_iset_push(wlist, merge);
 
-    if (fe_inst_has_trait(inst->inputs[0]->kind, FE_TRAIT_MEM_SINGLE_USE)) {
-        if (!fe_insts_may_alias(f, inst, inst->inputs[0])) {
-            fe_iset_push(wlist, inst->inputs[0]->inputs[0]);
-            fe_iset_push(wlist, inst->inputs[0]);
-            fe_iset_push(wlist, inst);
+            push_uses(wlist, merge);
 
-            fe_set_input(f, inst, 0, inst->inputs[0]->inputs[0]);
-
-            if (fe_inst_has_trait(inst->kind, FE_TRAIT_MEM_DEF)) {
-                push_uses(wlist, inst);
-            }
             return true;
         }
     }
-    if (inst->inputs[0]->kind == FE_MEM_PHI) {
-        // FE_ASSERT(false && "YAAAAAAAAAAAAAAAAAAAA\n");
-        if (inst->inputs[0]->use_len == 1) {
-            // we can modify this in-place.
-            FeInst* mem_phi = inst->inputs[0];
-            bool changed = false;
-            // push back inputs until we cant anymore
-            for_n(i, 0, mem_phi->in_len) {
-                while (!fe_insts_may_alias(f, inst, mem_phi->inputs[i])) {
-                    changed = true;
-                    fe_iset_push(wlist, mem_phi->inputs[i]);
-                    fe_set_input(f, mem_phi, i, mem_phi->inputs[i]->inputs[0]);
-                }
-            }
-            if (changed) {
-                fe_iset_push(wlist, mem_phi);
-                push_uses(wlist, mem_phi);
-            }
 
-            return changed;
-        } else {
-            // we have to create a new mem-phi and modify it
-            // FE_CRASH("TODO create a new mem-phi in-place");
-            FeInst* old_mem_phi = inst->inputs[0];
-            FeInst* mem_phi = fe_insert_after(old_mem_phi, fe_inst_mem_phi(f, old_mem_phi->in_len));
-            
-            for_n(i, 0, old_mem_phi->in_len) {
-                fe_phi_add_src(f, mem_phi, 
-                    old_mem_phi->inputs[i], 
-                    fe_extra(old_mem_phi, FeInstPhi)->blocks[i]
-                );
-            }
+    // if the dependency is a mem_merge, we want to investiage what things 
+    // in the mem_merge our instruction actually depends on, and conditionally 
+    // make a new, reduced mem_merge based on that.
+    if (inst_dependency->kind == FE_MEM_MERGE) {
+        bool actually_depends_like_for_real[inst_dependency->in_len];
+        usize dependency_count = 0;
 
-            fe_set_input(f, inst, 0, mem_phi);
-            fe_iset_push(wlist, mem_phi);
+        FeInst* last_dep = nullptr;
+        for_n(i, 0, inst_dependency->in_len) {
+            FeInst* dependency = inst_dependency->inputs[i];
+            bool does_depend =  fe_insts_may_alias(f, inst, dependency);
+            actually_depends_like_for_real[i] = does_depend;
+            if (does_depend) {
+                last_dep = dependency;
+                dependency_count += 1;
+            }
         }
-        fe_iset_push(wlist, inst);
 
-        return true;
-    } else if (inst->inputs[0]->kind == FE_MEM_MERGE) {
-        // FE_ASSERT(false && "YAAAAAAAAAAAAAAAAAAAA\n");
-        if (inst->inputs[0]->use_len == 1) {
-            // we can modify this in-place.
-            FeInst* mem_merge = inst->inputs[0];
-            bool changed = false;
-            // push back inputs until we cant anymore
-            for_n(i, 0, mem_merge->in_len) {
-                while (!fe_insts_may_alias(f, inst, mem_merge->inputs[i])) {
-                    changed = true;
-                    fe_iset_push(wlist, mem_merge->inputs[i]);
-                    fe_set_input(f, mem_merge, i, mem_merge->inputs[i]->inputs[0]);
-                }
-            }
-            if (changed) {
-                fe_iset_push(wlist, mem_merge);
-                fe_iset_push(wlist, inst);
-            }
+        if (dependency_count == 1) {
+            // just depend on the single thing, no need to make a new mem_merge
+            fe_set_input(f, inst, 0, last_dep);
 
-            return changed;
-        } else {
-            // we have to create a new mem-merge and modify it
-            FE_CRASH("TODO create a new mem-merge in-place");
+            fe_iset_push(wlist, inst);
+            fe_iset_push(wlist, last_dep);
+            fe_iset_push(wlist, inst_dependency);
+            push_uses(wlist, inst);
+            push_inputs(wlist, inst);
+            return true;
+        } else if (dependency_count != inst_dependency->in_len) {
+            // we can make a new mem_merge!
+            FE_CRASH("todo!");
         }
-        fe_iset_push(wlist, inst);
-
-        return true;
     }
-
-    push_inputs(wlist, inst);
 
     return false;
 }
@@ -590,6 +558,33 @@ static bool try_phi_merge_reduce(FeFunc* f, FeInstSet* wlist, FeInst* inst) {
     }
 
     return false;
+}
+
+static bool try_coalesce_mem_merge(FeFunc* f, FeInstSet* wlist, FeInst* inst) {
+    if (inst->kind != FE_MEM_MERGE) {
+        return false;
+    }
+
+    // the goal is to turn:
+    //  %1 = mem-merge ^x, ^y
+    //  %2 = mem-merge ^%1, ^z
+    // into
+    //  %2 = mem-merge ^x, ^y, ^z
+
+    bool can_do_anything = false;
+    for_n(i, 0, inst->in_len) {
+        FeInst* dep = inst->inputs[i];
+        if (dep->kind == FE_MEM_MERGE && dep->use_len == 1) {
+            can_do_anything = true;
+
+            fe_set_input(f, inst, i, dep->inputs[0]);
+            for_n(j, 1, dep->in_len) {
+                fe_add_input(f, inst, dep->inputs[j]);
+            }
+        }
+    }
+
+    return can_do_anything;
 }
 
 static bool try_phi_elim(FeFunc* f, FeInstSet* wlist, FeInst* inst) {
@@ -633,11 +628,12 @@ static bool try_all(FeFunc* f, FeInstSet* wlist, FeInst* inst) {
         || try_strength_binop(f, wlist, inst)
         || try_identity_binop(f, wlist, inst)
         || try_consteval_binop(f, wlist, inst)
+        || try_coalesce_mem_merge(f, wlist, inst)
         || try_phi_merge_reduce(f, wlist, inst)
         || try_phi_elim(f, wlist, inst)
+        || try_alias_relax(f, wlist, inst)
         || try_load_elim(f, wlist, inst)
         || try_store_elim(f, wlist, inst)
-        || try_alias_relax(f, wlist, inst)
     ;
 }
 
