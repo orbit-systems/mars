@@ -42,6 +42,10 @@ static PtrOffset trace_ptr_offset(FeInst* ptr) {
             offset += fe_extra(ptr->inputs[1], FeInstConst)->val;
             ptr = ptr->inputs[0];
             break;
+        case FE_PTR_OFFSET:
+            offset += fe_extra(ptr, FeInstConst)->val;
+            ptr = ptr->inputs[0];
+            break;
         default:
             goto done;
         }
@@ -333,12 +337,12 @@ static bool is_load_or_store(FeInst* inst) {
     return inst->kind == FE_STORE || inst->kind == FE_LOAD;
 }
 
-static usize load_or_store_width(FeInst* inst) {
+static usize load_or_store_width(const FeTarget* tgt, FeInst* inst) {
     switch (inst->kind) {
     case FE_LOAD:
-        return fe_ty_get_size(inst->ty, nullptr);
+        return fe_ty_get_size(tgt, inst->ty, nullptr);
     case FE_STORE:
-        return fe_ty_get_size(inst->inputs[2]->ty, nullptr);
+        return fe_ty_get_size(tgt, inst->inputs[2]->ty, nullptr);
     default:
         FE_CRASH("load_or_store_width called with inst that isnt a load or store");
     }
@@ -495,9 +499,9 @@ static bool insts_may_alias(FeFunc* f, FeInst* i1, FeInst* i2) {
         // analyze pointers
         bool ptrs_overlap = pointers_may_overlap(
             i1->inputs[1], 
-            load_or_store_width(i1), 
+            load_or_store_width(f->mod->target, i1), 
             i2->inputs[1],
-            load_or_store_width(i2)
+            load_or_store_width(f->mod->target, i2)
         );
         return ptrs_overlap;
     }

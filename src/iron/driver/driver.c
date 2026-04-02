@@ -11,7 +11,7 @@ static void quick_print(FeFunc* f) {
 FeFunc* make_store_test(FeModule* mod, FeInstPool* ipool, FeVRegBuffer* vregs) {
     FeSection* text = fe_section_new(mod, "text", 0, FE_SECTION_EXECUTABLE);
 
-    FeTy ptr_ty = mod->target->ptr_ty;
+    FeTy ptr_ty = FE_TY_PTR;
 
     FeFuncSig* f_sig = fe_funcsig_new(FE_CCONV_ANY, 2, 1);
     fe_funcsig_param(f_sig, 0)->ty = ptr_ty;
@@ -63,7 +63,7 @@ FeFunc* make_store_test(FeModule* mod, FeInstPool* ipool, FeVRegBuffer* vregs) {
 FeFunc* make_alg_test(FeModule* mod, FeInstPool* ipool, FeVRegBuffer* vregs) {
     FeSection* text = fe_section_new(mod, "text", 0, FE_SECTION_EXECUTABLE);
 
-    FeTy ptr_ty = mod->target->ptr_ty;
+    FeTy ptr_ty = FE_TY_PTR;
 
     FeFuncSig* f_sig = fe_funcsig_new(FE_CCONV_ANY, 1, 1);
     fe_funcsig_param(f_sig, 0)->ty = ptr_ty;
@@ -105,7 +105,7 @@ FeFunc* make_struct_test(FeModule* mod, FeInstPool* ipool, FeVRegBuffer* vregs) 
     FeFunc* f = fe_func_new(mod, f_sym, f_sig, ipool, vregs);
 
     FeBlock* entry = f->entry_block;
-    FeTy ptr_ty = mod->target->ptr_ty;
+    FeTy ptr_ty = FE_TY_PTR;
 
     /*
         struct Foo {
@@ -133,9 +133,8 @@ FeFunc* make_struct_test(FeModule* mod, FeInstPool* ipool, FeVRegBuffer* vregs) 
     FeInst* stackaddr = fe_append_end(entry, fe_inst_stack_addr(f, item));
     FeInst* trunc = fe_append_end(entry, fe_inst_unop(f, FE_TY_I8, FE_TRUNC, param0));
     FeInst* store_i8 = fe_append_end(entry, fe_inst_store(f, stackaddr, trunc, FE_MEMOP_ALIGN_DEFAULT, 0));
-    FeInst* i32_offset = fe_append_end(entry, fe_inst_const(f, ptr_ty, 4));
-    FeInst* i32_addr = fe_append_end(entry, fe_inst_binop(f, ptr_ty, FE_IADD, stackaddr, i32_offset));
-    // FeInst* store_i32 = fe_append_end(entry, `fe_inst_store(f, i32_addr, param0, FE_MEMOP_ALIGN_DEFAULT, 0));
+    FeInst* i32_addr = fe_append_end(entry, fe_inst_ptr_offset(f, stackaddr, 4));
+
     FeInst* load_i32 = fe_append_end(entry, fe_inst_load(f, FE_TY_I32, i32_addr, FE_MEMOP_ALIGN_DEFAULT, 0));
     
     FeInst* ret = fe_append_end(entry, fe_inst_return(f));
@@ -150,7 +149,7 @@ FeFunc* make_struct_test(FeModule* mod, FeInstPool* ipool, FeVRegBuffer* vregs) 
 FeFunc* make_store_test2(FeModule* mod, FeInstPool* ipool, FeVRegBuffer* vregs) {
 
     /*
-        fun foo(ptr, val: i32): i32 {
+        fun foo(ptr: ^i32, val: i32): i32 {
             ptr^ = val;
             (ptr + 8)^ = val;
             return ptr^;
@@ -159,7 +158,7 @@ FeFunc* make_store_test2(FeModule* mod, FeInstPool* ipool, FeVRegBuffer* vregs) 
 
     FeSection* text = fe_section_new(mod, "text", 0, FE_SECTION_EXECUTABLE);
 
-    FeTy ptr_ty = mod->target->ptr_ty;
+    FeTy ptr_ty = FE_TY_PTR;
 
     FeFuncSig* f_sig = fe_funcsig_new(FE_CCONV_ANY, 2, 1);
     fe_funcsig_param(f_sig, 0)->ty = ptr_ty;
@@ -176,8 +175,7 @@ FeFunc* make_store_test2(FeModule* mod, FeInstPool* ipool, FeVRegBuffer* vregs) 
     auto val = fe_func_param(f, 1);
 
     auto store1 = fe_append_end(entry, fe_inst_store(f, ptr, val, FE_MEMOP_ALIGN_DEFAULT, 0));
-    auto const8 = fe_append_end(entry, fe_inst_const(f, ptr->ty, 8));
-    auto ptr_offset = fe_append_end(entry, fe_inst_binop(f, ptr->ty, FE_IADD, ptr, const8));
+    auto ptr_offset = fe_append_end(entry, fe_inst_ptr_offset(f, ptr, 8));
     auto store2 = fe_append_end(entry, fe_inst_store(f, ptr_offset, val, FE_MEMOP_ALIGN_DEFAULT, 0));
 
     auto load1 = fe_append_end(entry, fe_inst_load(f, ptr_ty, ptr, FE_MEMOP_ALIGN_DEFAULT, 0));

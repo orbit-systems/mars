@@ -1,8 +1,3 @@
-FN foo(IN p: UWORD): UWORD
-    p = p + 2
-    IF p THEN
-        p = p - 1
-    END
-    p = p + 2
-    RETURN p
+FN foo(IN a: UWORD, IN b: UWORD): UWORD
+    RETURN a + b
 END

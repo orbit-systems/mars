@@ -3,11 +3,12 @@
 
 FeRegClass fe_xr_choose_regclass(FeInstKind kind, FeTy ty) {
     switch (ty) {
+    case FE_TY_BOOL:
     case FE_TY_I8:
     case FE_TY_I16:
     case FE_TY_I32:
     case FE_TY_I64:
-    case FE_TY_BOOL:
+    case FE_TY_PTR:
         return XR_REGCLASS_GPR;
     default:
         FE_CRASH("cant select regclass for type %s", fe_ty_name(ty));

@@ -55,14 +55,11 @@ static bool is_neg_const_u16(FeInst* inst) {
 }
 
 static bool is_const_u16_offset(FeInst* inst) {
-    if (inst->kind != FE_IADD) {
+    if (inst->kind != FE_PTR_OFFSET) {
         return false;
     }
-    return is_const_u16(inst->inputs[1]);
-}
-
-static u64 const_u16_offset(FeInst* inst) {
-    return fe_extra(inst->inputs[1], FeInstConst)->val;
+    u64 val = fe_extra(inst, FeInstConst)->val;
+    return (val & 0xFFFF) == val;
 }
 
 static u64 const_val(FeInst* inst) {
@@ -199,6 +196,16 @@ FeInstChain fe_xr_isel(FeFunc* f, FeBlock* block, FeInst* inst) {
 
         // ARITHMETIC
 
+        case FE_PTR_OFFSET: {
+            FeInst* sel = xr_inst(f, XR_ADDI, 1, sizeof(XrInstImm));
+            sel->ty = FE_TY_I32;
+            fe_set_input(f, sel, 0, inst->inputs[0]);
+            FE_ASSERT(fe_extra(inst, FeInstConst)->val < 0xFFFF);
+            fe_extra(sel, XrInstImm)->imm = fe_extra(inst, FeInstConst)->val;
+            return fe_chain_new(sel);
+        }
+
+        case FE_PTR_INDEX:
         case FE_IADD: {
             if (is_const_u16(inst->inputs[1])) {
                 FeInst* sel = xr_inst(f, XR_ADDI, 1, sizeof(XrInstImm));
@@ -261,8 +268,6 @@ FeInstChain fe_xr_isel(FeFunc* f, FeBlock* block, FeInst* inst) {
             FeInst* ptr = inst->inputs[1];
             FeInst* val = inst->inputs[2];
 
-            FE_ASSERT(val->ty == FE_TY_I32);
-
             // can put in small-immediate?
             if (is_const_u5(val) && const_val(val) != 0) {
                 FeInst* store = xr_inst(f, XR_STORE32_SI, 1, sizeof(XrInstImm));
@@ -272,7 +277,7 @@ FeInstChain fe_xr_isel(FeFunc* f, FeBlock* block, FeInst* inst) {
                 // is pointer a 16-bit offset?
                 if (is_const_u16_offset(ptr)) {
                     fe_set_input(f, store, 0, ptr->inputs[0]);
-                    fe_extra(store, XrInstImm)->imm = const_u16_offset(ptr);
+                    fe_extra(store, XrInstImm)->imm = fe_extra(ptr, FeInstConst)->val;
                 } else {
                     fe_set_input(f, store, 0, ptr);
                     fe_extra(store, XrInstImm)->imm = 0;
@@ -289,7 +294,7 @@ FeInstChain fe_xr_isel(FeFunc* f, FeBlock* block, FeInst* inst) {
                 // is pointer a 16-bit offset?
                 if (is_const_u16_offset(ptr)) {
                     fe_set_input(f, store, 0, ptr->inputs[0]);
-                    fe_extra(store, XrInstImm)->imm = const_u16_offset(ptr);
+                    fe_extra(store, XrInstImm)->imm = fe_extra(ptr, FeInstConst)->val;
                 } else {
                     fe_set_input(f, store, 0, ptr);
                     fe_extra(store, XrInstImm)->imm = 0;

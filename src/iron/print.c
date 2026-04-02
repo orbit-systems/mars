@@ -15,6 +15,8 @@ static const char* ty_name[] = {
     [FE_TY_I32] = "i32",
     [FE_TY_I64] = "i64",
 
+    [FE_TY_PTR] = "ptr",
+
     [FE_TY_F32] = "f32",
     [FE_TY_F64] = "f64",
 
@@ -60,6 +62,9 @@ static const char* inst_name[FE__BASE_INST_END] = {
     [FE__ROOT] = "root",
 
     [FE_PROJ] = "proj",
+
+    [FE_PTR_OFFSET] = "ptr-offset",
+    [FE_PTR_INDEX] = "ptr-index",
 
     [FE_IADD] = "iadd",
     [FE_ISUB] = "isub",
@@ -297,6 +302,10 @@ static void print_inst(FeFunc* f, FeDataBuffer* db, FeInst* inst) {
         fe__emit_ir_ref(db, f, inst->inputs[0]);
         fe_db_writef(db, ", %u", fe_extra(inst, FeInstProj)->index);
         break;
+    case FE_PTR_OFFSET:
+        fe__emit_ir_ref(db, f, inst->inputs[0]);
+        fe_db_writef(db, ", %lu", fe_extra(inst, FeInstConst)->val);
+        break;
     case FE_IADD ... FE_FREM:
         print_input_list(db, f, inst, 0);
         break;
@@ -432,7 +441,7 @@ static void print_inst(FeFunc* f, FeDataBuffer* db, FeInst* inst) {
             fe_db_writef(db, "[TODO]");
             break;
         }
-        break;
+        break;        
     case FE__MACH_REG:
         ;
         FeVReg vr = inst->vr_def;

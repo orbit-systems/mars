@@ -14,11 +14,11 @@ const FeTarget* fe_make_target(FeArch arch, FeSystem system) {
     switch (arch) {
     case FE_ARCH_X64:
         printf("warning: x64 target is under construction\n");
-        t->ptr_ty = FE_TY_I64;
+        t->ptr_int_ty = FE_TY_I64;
         t->stack_pointer_align = 8;
         break;
     case FE_ARCH_XR17032:
-        t->ptr_ty = FE_TY_I32;
+        t->ptr_int_ty = FE_TY_I32;
         t->stack_pointer_align = 4;
         t->num_regclasses = XR_REGCLASS__COUNT;
         t->regclass_lens = fe_xr_regclass_lens;

@@ -74,7 +74,11 @@ FeComplexTy* fe_ty_array_new(u32 array_len, FeTy elem_ty, FeComplexTy* elem_cty)
     return array;
 }
 
-usize fe_ty_get_align(FeTy ty, FeComplexTy *cty) {
+static inline uintptr_t align_forward(uintptr_t ptr, uintptr_t align) {
+    return (ptr + align - 1) & ~(align - 1);
+}
+
+usize fe_ty_get_align(const FeTarget* tgt, FeTy ty, FeComplexTy *cty) {
     switch (ty) {
     case FE_TY_VOID:
         FE_CRASH("cant get align of void");
@@ -84,7 +88,7 @@ usize fe_ty_get_align(FeTy ty, FeComplexTy *cty) {
         if (cty != nullptr) {
             FE_CRASH("ty is array but no FeComplexTy was provided");
         }
-        return fe_ty_get_align(cty->array.elem_ty, cty->array.complex_elem_ty);
+        return fe_ty_get_align(tgt, cty->array.elem_ty, cty->array.complex_elem_ty);
     case FE_TY_RECORD: {
         if (cty == nullptr) {
             FE_CRASH("ty is record but no FeComplexTy was provided");
@@ -92,7 +96,7 @@ usize fe_ty_get_align(FeTy ty, FeComplexTy *cty) {
         usize align = 1;
         FeRecordField* fields = cty->record.fields;
         for_n(i, 0, cty->record.fields_len) {
-            usize field_align = fe_ty_get_align(fields[i].ty, fields[i].complex_ty);
+            usize field_align = fe_ty_get_align(tgt, fields[i].ty, fields[i].complex_ty);
             if (align < field_align) {
                 align = field_align;
             }
@@ -110,6 +114,8 @@ usize fe_ty_get_align(FeTy ty, FeComplexTy *cty) {
     case FE_TY_I64:
     case FE_TY_F64:
         return 8;
+    case FE_TY_PTR:
+        return fe_ty_get_align(tgt, tgt->ptr_int_ty, nullptr);
     default:
         if (FE_TY_IS_VEC(ty)) {
             switch (FE_TY_VEC_SIZETY(ty)) {
@@ -127,7 +133,7 @@ usize fe_ty_get_align(FeTy ty, FeComplexTy *cty) {
     }
 }
 
-usize fe_ty_get_size(FeTy ty, FeComplexTy *cty) {
+usize fe_ty_get_size(const FeTarget* tgt, FeTy ty, FeComplexTy *cty) {
     switch (ty) {
     case FE_TY_VOID:
         FE_CRASH("cant get size of void");
@@ -137,16 +143,16 @@ usize fe_ty_get_size(FeTy ty, FeComplexTy *cty) {
         if (cty == nullptr) {
             FE_CRASH("ty is array but no FeComplexTy was provided");
         }
-        return cty->array.len * fe_ty_get_size(cty->array.elem_ty, cty->array.complex_elem_ty);
+        return cty->array.len * fe_ty_get_size(tgt, cty->array.elem_ty, cty->array.complex_elem_ty);
     case FE_TY_RECORD: {
         if (cty == nullptr) {
             FE_CRASH("ty is record but no FeComplexTy was provided");
         }
 
-        usize align = fe_ty_get_align(ty, cty);
+        usize align = fe_ty_get_align(tgt, ty, cty);
 
         FeRecordField* last_field = &cty->record.fields[cty->record.fields_len];
-        return last_field->offset + last_field->offset;
+        return align_forward(last_field->offset, align);
     }
     case FE_TY_BOOL:
     case FE_TY_I8:
@@ -159,6 +165,8 @@ usize fe_ty_get_size(FeTy ty, FeComplexTy *cty) {
     case FE_TY_I64:
     case FE_TY_F64:
         return 8;
+    case FE_TY_PTR:
+        return fe_ty_get_size(tgt, tgt->ptr_int_ty, nullptr);
     default:
         if (FE_TY_IS_VEC(ty)) {
             switch (FE_TY_VEC_SIZETY(ty)) {
@@ -855,7 +863,7 @@ FeInst* fe_inst_const_f32(FeFunc* f, f32 val) {
 FeInst* fe_inst_stack_addr(FeFunc* f, FeStackItem* item) {
     FeInst* i = fe_inst_new(f, 0, sizeof(FeInstStack));
     i->kind = FE_STACK_ADDR;
-    i->ty = f->mod->target->ptr_ty;
+    i->ty = FE_TY_PTR;
 
     fe_extra(i, FeInstStack)->item = item;
 
@@ -865,7 +873,7 @@ FeInst* fe_inst_stack_addr(FeFunc* f, FeStackItem* item) {
 FeInst* fe_inst_sym_addr(FeFunc* f, FeSymbol* sym) {
     FeInst* i = fe_inst_new(f, 0, sizeof(FeInstSymAddr));
     i->kind = FE_SYM_ADDR;
-    i->ty = f->mod->target->ptr_ty;
+    i->ty = FE_TY_PTR;
 
     fe_extra(i, FeInstSymAddr)->sym = sym;
 
@@ -879,6 +887,29 @@ FeInst* fe_inst_unop(FeFunc* f, FeTy ty, FeInstKind kind, FeInst* val) {
 
     fe_set_input(f, i, 0,
         val);
+
+    return i;
+}
+
+FeInst* fe_inst_ptr_offset(FeFunc* f, FeInst* ptr, u64 offset) {
+    FeInst* i = fe_inst_new(f, 1, sizeof(FeInstConst));
+    i->kind = FE_PTR_OFFSET;
+    i->ty = FE_TY_PTR;
+
+    fe_set_input(f, i, 0, ptr);
+
+    fe_extra(i, FeInstConst)->val = offset;
+
+    return i;
+}
+
+FeInst* fe_inst_ptr_index(FeFunc* f, FeInst* ptr, FeInst* offset) {
+    FeInst* i = fe_inst_new(f, 2, 0);
+    i->kind = FE_PTR_INDEX;
+    i->ty = FE_TY_PTR;
+
+    fe_set_input(f, i, 0, ptr);
+    fe_set_input(f, i, 1, offset);
 
     return i;
 }
@@ -900,7 +931,7 @@ FeInst* fe_inst_load(FeFunc* f, FeTy ty, FeInst* ptr, u16 align, u8 offset) {
     i->ty = ty;
 
     if (align == FE_MEMOP_ALIGN_DEFAULT) {
-        align = fe_ty_get_align(ty, nullptr);
+        align = fe_ty_get_align(f->mod->target, ty, nullptr);
     }
 
     fe_set_input_null(i, 0); // no last_effect yet
@@ -918,7 +949,7 @@ FeInst* fe_inst_store(FeFunc* f, FeInst* ptr, FeInst* val, u16 align, u8 offset)
     i->ty = FE_TY_VOID;
 
     if (align == FE_MEMOP_ALIGN_DEFAULT) {
-        align = fe_ty_get_align(val->ty, nullptr);
+        align = fe_ty_get_align(f->mod->target, val->ty, nullptr);
     }
 
     fe_set_input_null(i, 0); // no last_effect yet

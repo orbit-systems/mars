@@ -139,13 +139,15 @@ typedef enum: u8 {
     FE_TY_I32,
     FE_TY_I64,
 
+    FE_TY_PTR,
+
     FE_TY_F32,
     FE_TY_F64,
 
     // member types dependent on source inst
     FE_TY_TUPLE,
 
-    // there's an FeRecord associated with this somewhere near
+    // there's an FeComplexTy associated with this somewhere near
     FE_TY_RECORD,
     FE_TY_ARRAY,
 
@@ -208,8 +210,8 @@ FeComplexTy* fe_ty_record_new(u32 fields_len);
 FeComplexTy* fe_ty_array_new(u32 array_len, FeTy elem_ty, FeComplexTy* elem_cty);
 
 // if ty is not a complex type, cty should be nullptr
-usize fe_ty_get_size(FeTy ty, FeComplexTy* cty);
-usize fe_ty_get_align(FeTy ty, FeComplexTy* cty);
+usize fe_ty_get_size(const FeTarget* tgt, FeTy ty, FeComplexTy* cty);
+usize fe_ty_get_align(const FeTarget* tgt, FeTy ty, FeComplexTy* cty);
 
 // -------------------------------------
 // architecture/ABI stuff
@@ -412,24 +414,40 @@ typedef struct FeBlock {
 
 typedef u16 FeInstKind;
 typedef enum FeInstKindGeneric : FeInstKind {
-    // Bookend
+    // Serves as the start and end of every basic block,
+    // containing a pointer to the block itself.
+    // {} & FeInstBookend
     FE__BOOKEND = 1,
 
-    // FeInstParam
-    FE__ROOT, // root instruction
+    // The first instruction of every function.
+    // {} & FeInstParam
+    FE__ROOT,
 
-    // FeInstProj
-    // {tuple}
+    // Get a projection from a tuple.
+    // {tuple} & FeInstProj
     FE_PROJ,
 
-    // FeInstConst
+    // Create a constant of some type.
+    // {} & FeInstConst
     FE_CONST,
 
-    // FeInstSymAddr
+    // Get the address of a symbol in the module.
+    // {} & FeInstSymAddr
     FE_SYM_ADDR,
-    // FeInstStack
+
+    // Get the address of a stack item.
+    // {} & FeInstStack
     FE_STACK_ADDR,
 
+    // Offset a pointer by a constant amount.
+    // {ptr} & FeInstConst
+    FE_PTR_OFFSET,
+
+    // Offset a pointer by a variable amount.
+    // {ptr, offset}
+    FE_PTR_INDEX,
+
+    // Simple binary arithmetic operations.
     // {lhs, rhs}
     FE_IADD,
     FE_ISUB,
@@ -477,9 +495,8 @@ typedef enum FeInstKindGeneric : FeInstKind {
     // (void)
     FE_MEM_BARRIER,
 
-    // (void)
-    // terminator inst that assumes control flow cannot reach it
-    // optimizations may do with this what they want
+    // Terminator that assumes control flow cannot reach it.
+    // Optimizations may do with this what they please.
     FE_UNREACHABLE,
 
     // FeInstBranch
@@ -510,9 +527,9 @@ typedef enum FeInstKindGeneric : FeInstKind {
     // {?last_mem, in1, in2, ...} -> {out1, out2, ...}
     FE_INLINE_ASM,
 
-    // (void)
+    // {}
     FE__MACH_REG,
-    FE__MACH_RETURN, // signals that the final instruction returns, even if its not a terminator
+    FE__MACH_RETURN, // signals that the final instruction returns, even if it itself not a terminator
 
     // FeInstStack
     FE__MACH_STACK_SPILL,
@@ -921,6 +938,8 @@ FeInst* fe_inst_const_f64(FeFunc* f, f64 val);
 FeInst* fe_inst_const_f32(FeFunc* f, f32 val);
 FeInst* fe_inst_stack_addr(FeFunc* f, FeStackItem* item);
 FeInst* fe_inst_sym_addr(FeFunc* f, FeSymbol* sym);
+FeInst* fe_inst_ptr_offset(FeFunc* f, FeInst* ptr, u64 offset);
+FeInst* fe_inst_ptr_index(FeFunc* f, FeInst* ptr, FeInst* offset);
 FeInst* fe_inst_unop(FeFunc* f, FeTy ty, FeInstKind kind, FeInst* val);
 FeInst* fe_inst_binop(FeFunc* f, FeTy ty, FeInstKind kind, FeInst* lhs, FeInst* rhs);
 FeInst* fe_inst_load(FeFunc* f, FeTy ty, FeInst* ptr, u16 align, u8 offset);
@@ -1136,7 +1155,7 @@ typedef struct FeTarget {
     FeArch arch;
     FeSystem system;
 
-    FeTy ptr_ty;
+    FeTy ptr_int_ty;
 
     FeInst** (*list_inputs)(FeInst* inst, usize* len_out);
     FeBlock** (*list_targets)(FeInst* term, usize* len_out);

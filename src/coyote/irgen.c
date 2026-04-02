@@ -134,8 +134,8 @@ static FeInst* irgen_integer_cast(IRGen* ig, FeInst* expr, FeTy to) {
     if (expr->ty == to) {
         return expr;
     }
-    usize from_size = fe_ty_get_size(expr->ty, nullptr);
-    usize to_size = fe_ty_get_size(to, nullptr);
+    usize from_size = fe_ty_get_size(ig->m->target, expr->ty, nullptr);
+    usize to_size = fe_ty_get_size(ig->m->target, to, nullptr);
     bool signext = ty_is_signed(to);
 
 
@@ -295,8 +295,8 @@ static StmtInfo irgen_stmt_vardecl(IRGen* ig, Stmt* stmt) {
     var->fe_ty = iron_ty.ty;
     var->fe_cty = iron_ty.cty;
     assert(var->fe_cty == nullptr);
-    usize ty_size = fe_ty_get_size(iron_ty.ty, iron_ty.cty);
-    usize ty_align = fe_ty_get_align(iron_ty.ty, iron_ty.cty);
+    usize ty_size = fe_ty_get_size(ig->m->target, iron_ty.ty, iron_ty.cty);
+    usize ty_align = fe_ty_get_align(ig->m->target, iron_ty.ty, iron_ty.cty);
 
     FeStackItem* stack_slot = fe_stack_append_top(ig->f, fe_stack_item_new(ty_size, ty_align));
 
@@ -480,8 +480,8 @@ static void irgen_function(IRGen* ig) {
 
         // TODO dont recalculate this, get it from earlier somewhere
         TySelectResult iron_ty = select_iron_type(ig, entity->ty);
-        usize ty_size = fe_ty_get_size(iron_ty.ty, iron_ty.cty);
-        usize ty_align = fe_ty_get_align(iron_ty.ty, iron_ty.cty);
+        usize ty_size = fe_ty_get_size(ig->m->target, iron_ty.ty, iron_ty.cty);
+        usize ty_align = fe_ty_get_align(ig->m->target, iron_ty.ty, iron_ty.cty);
 
         FeStackItem* stack_slot = fe_stack_append_top(ig->f, fe_stack_item_new(ty_size, ty_align));
 
@@ -532,7 +532,7 @@ static TySelectResult select_iron_type(IRGen* ig, TyIndex ty_index) {
         ty = FE_TY_I64;
         break;
     case TY_PTR:
-        ty = ig->m->target->ptr_ty;
+        ty = FE_TY_PTR;
         break;
     case TY_STRUCT:
         UNREACHABLE;
