@@ -1,3 +1,5 @@
+module vec;
+
 def AllocErr = std::Allocator::Err;
 
 pub struct Vec[A: std::Allocator](E: type, allocator: ^static A) {

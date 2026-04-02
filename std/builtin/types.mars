@@ -3,7 +3,7 @@ import builtin::ops;
 // interfaces which describe the behavior of built-in types
 // 'sealed' means that they cannot be implemented in other modules.
 
-interface sealed Pointer {
+pub interface sealed Pointer {
     require ops::Deref;
     require ops::As(usize);
 
@@ -17,16 +17,16 @@ interface sealed Pointer {
     pub def is_static: bool;
 }
 
-interface sealed Integer {
+pub interface sealed Integer {
     require Scalar(self);
     require BitLogic(self);
 }
 
-interface sealed Float {
+pub interface sealed Float {
     require Scalar(self);
 }
 
-interface Scalar(Rhs: type) {
+pub interface Scalar(Rhs: type) {
     require ops::Add(Rhs), ops::AssignAdd(Rhs);
     require ops::Sub(Rhs), ops::AssignSub(Rhs);
     require ops::Neg;
@@ -35,7 +35,7 @@ interface Scalar(Rhs: type) {
     require ops::Rem(Rhs), ops::AssignRem(Rhs);
 }
 
-interface BitLogic(Rhs: type) {
+pub interface BitLogic(Rhs: type) {
     require ops::And(Rhs), ops::AssignAnd(Rhs);
     require ops::Or(Rhs), ops::AssignOr(Rhs);
     require ops::Xor(Rhs), ops::AssignXor(Rhs);
@@ -44,12 +44,21 @@ interface BitLogic(Rhs: type) {
     require ops::Shr(Rhs), ops::AssignShr(Rhs);
 }
 
-interface InlineOptional {
+pub interface Optional {
+    def V: value;
+    def E: error;
+
+    inline fun from(value: V): Self;
+    inline fun from_err(value: E): Self;
+    inline fun is_null(self): bool;
+}
+
+pub interface InlineOptional {
     inline fun new_null(): Self;
     inline fun is_null(self): bool;
 }
 
-interface InlineEnumOptional(T: builtin::types::Integer) {
+pub interface InlineEnumOptional(T: builtin::types::Integer) {
     inline fun set_tag(^self, tag: T);
     inline fun get_tag(self): T;
 }

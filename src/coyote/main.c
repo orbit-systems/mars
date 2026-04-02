@@ -147,6 +147,9 @@ int main(int argc, char** argv) {
     db.len = 0;
     for_funcs(func, m) {
         fe_opt_local(func);
+        fe_opt_gvn(func);
+        fe_opt_local(func);
+        fe_opt_gvn(func);
     }
     if (flags.passes) {
         for_funcs(func, m) {

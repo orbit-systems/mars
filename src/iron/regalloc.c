@@ -1,7 +1,18 @@
 #include "iron/iron.h"
 #include <stdio.h>
 
-bool is_canon_def(FeVirtualReg* inst_out, FeInst* inst) {
+static bool regalloc_ignore(FeInst* inst) {
+    switch (inst->kind) {
+    case FE_MEM_PHI:
+    case FE_MEM_BARRIER:
+    case FE_MEM_MERGE:
+        return true;
+    default:
+        return false;
+    }
+}
+
+static bool is_canon_def(FeVirtualReg* inst_out, FeInst* inst) {
     return (inst->kind == FE__MACH_UPSILON)
         || inst_out->def == inst;
 }
@@ -64,7 +75,11 @@ static void calculate_liveness(FeFunc* f) {
             FeInst** inputs = inst->inputs;
             for_n(i, 0, inst->in_len) {
                 FeInst* input = inputs[i];
+                if (input->vr_def == FE_VREG_NONE) continue;
                 FeVirtualReg* vr = fe_vreg(f->vregs, input->vr_def);
+                if (vr == nullptr) {
+                    continue;
+                }
                 if (input->kind == FE__MACH_UPSILON || vr->def_block != block) {
                     add_live_in(block->live, input->vr_def);
                 }
@@ -232,6 +247,9 @@ void fe_regalloc_basic(FeFunc* f) {
         }
 
         for_inst_reverse(inst, block) {
+            // if (regalloc_ignore(inst)) {
+            //     continue;
+            // }
             // if we come across a canonical definition of a vreg, end its life
             FeVReg vr = inst->vr_def;
             if (vr != FE_VREG_NONE && is_canon_def(&vbuf->at[vr], inst)) {

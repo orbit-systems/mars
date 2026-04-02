@@ -473,7 +473,7 @@ static bool insts_may_alias(FeFunc* f, FeInst* i1, FeInst* i2) {
         if (!is_load_or_store(i2)) {
             return true;
         }
-        
+
         FeInst* ptr = i2->inputs[1];
     
         return pointer_may_escape(ptr);

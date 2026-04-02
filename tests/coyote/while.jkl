@@ -1,5 +1,5 @@
 FN while(): UWORD
-    x := 0
+    x := 1
 
     WHILE x DO
         x = x + 1

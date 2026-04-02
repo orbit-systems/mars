@@ -183,6 +183,7 @@ static inline usize usize_log2(usize x) {
 // if not 3, must be a power of two
 void* fe_ipool_list_alloc(FeInstPool* pool, usize list_cap) {
     // list_len = usize_next_pow_2(list_len);
+    // printf("DBG: allocating cap %zu\n", list_cap);
 
     if_unlikely (!is_pow_2(list_cap)) {
         FE_CRASH("list_len is %zu, not a power of two", list_cap);
@@ -208,8 +209,11 @@ void fe_ipool_list_free(FeInstPool* pool, void* list, usize list_cap) {
 
     usize index = usize_log2(list_cap);
 
+    // printf("DBG: freeing %p cap %zu\n", list, list_cap);
+
     if (index < lengthof(pool->lists_pow_2)) {
         // insert into free list
+        // printf("     inserting into %zu (size %zu)\n", index, 1ul <<index);
         Fe__InstPoolFreeSpace* space = (Fe__InstPoolFreeSpace*) list;
         space->next = pool->lists_pow_2[index];
         pool->lists_pow_2[index] = space;
@@ -219,6 +223,8 @@ void fe_ipool_list_free(FeInstPool* pool, void* list, usize list_cap) {
     // list is too big! we must decompose into smaller chunks
     constexpr usize top_index = lengthof(pool->lists_pow_2) - 1;
     constexpr usize chunk_len = (1ull << top_index);
+
+    // printf("     decomposing!\n");
 
     while (list_cap != 0) {
         // insert into free list

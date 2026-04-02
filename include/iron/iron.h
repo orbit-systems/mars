@@ -58,8 +58,8 @@ typedef float    f32;
 
 #ifdef FE_HOST_X64
     typedef struct FeCompactStr {
-        i64 data : 48;
         u64 len : 16;
+        i64 data : 48;
     } FeCompactStr;
     #define fe_compstr(data_, len_) ((FeCompactStr){.data = (i64)(char*)(data_), .len = (len_)})
     #define fe_compstr_data(compstr) ((char*)(i64)(compstr).data)
@@ -661,6 +661,25 @@ typedef struct {
     FeFuncSig* sig;
 } FeInstCall;
 
+// typedef enum: u8 {
+//     FE_ALLOC_TRACKER_INST_ALLOC,
+//     FE_ALLOC_TRACKER_INST_FREE,
+//     FE_ALLOC_TRACKER_LIST_ALLOC,
+//     FE_ALLOC_TRACKER_LIST_FREE,
+// } FeAllocTrackerEventKind;
+
+// typedef struct FeAllocTrackerEvent {
+//     FeAllocTrackerEventKind kind;
+//     union {
+//         FeInstKind inst_kind;
+//         u16 list_size;
+//     };
+// } FeAllocTrackerEvent;
+
+// typedef struct FeAllocTracker {
+//     Vec(FeAllocTrackerEvent) events;
+// } FeAllocTracker;
+
 #define FE_STACK_OFFSET_UNDEF UINT32_MAX
 
 typedef struct FeStackItem {
@@ -1017,6 +1036,7 @@ void fe_write_blocks_rpo(FeFunc* f, FeBlock** output_array, bool renumber);
 void fe_construct_domtree(FeFunc* f);
 void fe_opt_reorder_blocks_rpo(FeFunc* f);
 void fe_opt_local(FeFunc* f);
+bool fe_opt_gvn(FeFunc* f);
 void fe_opt_tdce(FeFunc* f);
 void fe_opt_compact_ids(FeFunc* f);
 void fe_opt_post_regalloc(FeFunc* f);

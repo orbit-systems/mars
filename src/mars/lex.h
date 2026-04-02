@@ -6,7 +6,7 @@
 
 /// The kind/type of a token.
 typedef enum TokenKind : u8 {
-    TOK_INVALID = 0,
+    TOK__INVALID = 0,
 
     TOK_EOF,
     TOK_NEWLINE,
@@ -87,11 +87,14 @@ typedef enum TokenKind : u8 {
     TOK_K_LET,
     TOK_K_VAR,
 
+    TOK_K_IMPL,
+
     TOK_K_IF,
     TOK_K_THEN,
     TOK_K_ELSE,
     TOK_K_SWITCH,
     TOK_K_CASE,
+    TOK_K_FOR,
     TOK_K_WHILE,
     TOK_K_DEFER,
     TOK_K_TRY,
@@ -126,10 +129,12 @@ typedef enum TokenKind : u8 {
     TOK_K_ISIZE,
     TOK_K_USIZE,
 
+    TOK_K_MODULE,
     TOK_K_STRUCT,
     TOK_K_UNION,
     TOK_K_ENUM,
     TOK_K_INTERFACE,
+    TOK_K_VECTOR,
 } TokenKind;
 
 #ifdef HOST_POINTER_48_BITS

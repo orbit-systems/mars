@@ -1,18 +1,144 @@
+#include "common/portability.h"
+#include "common/util.h"
+#include "common/vec.h"
 #include <iron/iron.h>
+#include <stdint.h>
 
 static u32 hashes[256];
 
-u32 inst_hash(FeInst* inst) {
+typedef struct {
+    FeInst* inst;
+    u32 hash;
+} ValueNumber;
+
+static u32 retrieve_hash(FeInst* inst, Vec(ValueNumber) vn) {
+    for_n(i, 0, vec_len(vn)) {
+        if (vn[i].inst == inst) {
+            return vn[i].hash;
+        }
+    }
+
+    // for some cases like phi inputs, we dont have a value number for it at this point.
+    // fall back to the instruction pointer bits. yeah yeah whatever
+    return (u32)(uintptr_t)inst;
+}
+
+static FeInst* retrieve_inst(u32 hash, Vec(ValueNumber) vn) {
+    for_n(i, 0, vec_len(vn)) {
+        if (vn[i].hash == hash) {
+            return vn[i].inst;
+        }
+    }
+
+    // unable to find hash in table
+    return nullptr;
+}
+
+static u32 calculate_hash(FeInst* inst, Vec(ValueNumber) vn) {
     FE_ASSERT(inst->kind < 128);
     u32 hash = hashes[inst->kind];
 
-    for_n(i, 0, inst->in_len) {
+    switch (inst->kind) {
+    case FE_PROJ:
+        hash ^= fe_extra(inst, FeInstProj)->index;
+        break;
+    case FE_CONST:
+        hash ^= fe_extra(inst, FeInstConst)->val;
+        break;
+    case FE_STACK_ADDR:
+        hash ^= (uintptr_t)fe_extra(inst, FeInstStack)->item;
+        break;
+    case FE_SYM_ADDR:
+        hash ^= (uintptr_t)fe_extra(inst, FeInstSymAddr)->sym;
+        break;
+    case FE_STORE:
+    case FE_LOAD:
+        hash ^= fe_extra(inst, FeInstMemop)->align;
+        hash ^= fe_extra(inst, FeInstMemop)->offset;
+        break;
+    case FE_BRANCH:
+        hash ^= (uintptr_t)fe_extra(inst, FeInstBranch)->if_true;
+        hash ^= (uintptr_t)fe_extra(inst, FeInstBranch)->if_false;
+        break;
+    case FE_JUMP:
+        hash ^= (uintptr_t)fe_extra(inst, FeInstJump)->to;
+        break;
+    case FE_PHI:
+        for_n(i, 0, inst->in_len) {
+            hash ^= (uintptr_t)fe_extra(inst, FeInstPhi)->blocks[i];
+        }
+        break;
     }
 
-    switch (inst->kind) {
-    // case FE_
+    for_n(i, 0, inst->in_len) {
+        FeInst* input = inst->inputs[i];
+        hash ^= retrieve_hash(input, vn) << (i + 1);
+        // hash ^= (uintptr_t)input;
     }
+
+    return hash;
 }
+
+// returns true if we made modifications to the program
+static bool dvnt_gvn(FeFunc* f, FeBlock* b, Vec(FeBlock*)* domtree_children, Vec(ValueNumber)* vn) {
+    usize vn_len = vec_len(*vn);    
+
+    bool changed = false;
+
+    for_inst(i, b) {
+        u32 hash = calculate_hash(i, *vn);
+
+        FeInst* retrieved = retrieve_inst(hash, *vn);
+        if (retrieved != nullptr) {
+            // inst is identical to some earlier instruction, so we can replace its uses
+            fe_replace_uses(f, i, retrieved);
+            changed = true;
+        } else {
+            // inst is unique, so we push it
+            ValueNumber n = {
+                .inst = i,
+                .hash = hash,
+            };
+            vec_append(vn, n);
+        }
+    }
+
+    Vec(FeBlock*) dom_children = domtree_children[b->id];
+    if (dom_children != nullptr) {
+        for_n(i, 0, vec_len(dom_children)) {
+            changed |= dvnt_gvn(f, dom_children[i], domtree_children, vn);
+        }
+    }
+
+    vec_len(*vn) = vn_len;
+
+    return changed;
+}
+
+bool fe_opt_gvn(FeFunc* f) {
+    fe_construct_domtree(f);
+
+    Vec(FeBlock*) domtree_children[f->next_block_id];
+    memset(domtree_children, 0, sizeof(domtree_children[0]) * f->next_block_id);
+    
+    for_blocks(b, f) {
+        FeBlock* idom = b->idom;
+        if (idom == nullptr) {
+            continue;
+        }
+
+        if (domtree_children[idom->id] == nullptr) {
+            domtree_children[idom->id] = vec_new(FeBlock*, 16);
+        }
+
+        vec_append(&domtree_children[idom->id], b);
+    }
+
+    Vec(ValueNumber) vn = vec_new(ValueNumber, 512);
+
+    return dvnt_gvn(f, f->entry_block, domtree_children, &vn);
+}
+
 
 static u32 hashes[256] = {
     0x874665b3, 0xdf820ac5, 0x7b38d898, 0x6646b890, 

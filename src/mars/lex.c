@@ -170,6 +170,37 @@ bool lexer_next_token(Lexer* l) {
     case '\n':
         advance(l);
         break;
+    case '/':
+        if (peek_match(l, 1, '/')) {
+            while (!is_eof(l) && current(l) != '\n') {
+                advance(l);
+            }
+        } else
+        if (peek_match(l, 1, '*')) {
+            advance_n(l, 2);
+            usize nest = 1;
+            while (nest != 0) {
+                if (current(l) == '/' && peek_match(l, 1, '*')) {
+                    nest += 1;
+                    advance_n(l, 2);
+                } else 
+                if (current(l) == '*' && peek_match(l, 1, '/')) {
+                    nest -= 1;
+                    advance_n(l, 2);
+                } else {
+                    advance(l);
+                }
+            }
+            break;
+        } else
+        if (peek_match(l, 1, '=')) {
+            add_token(l, TOK_DIV_EQ); 
+            advance_n(l, 2);
+            break;
+        }
+        add_token(l, TOK_DIV); 
+        advance_n(l, 1);
+        break;
     case '(':
         vec_append(&l->unclosed_delimiters, add_token(l, TOK_OPEN_PAREN));
         advance(l);
@@ -208,6 +239,68 @@ bool lexer_next_token(Lexer* l) {
             break;
         }
         add_token(l, TOK_COLON); 
+        advance(l); 
+        break;
+    case '-':
+        if (peek_match(l, 1, '>')) {
+            add_token(l, TOK_RARROW); 
+            advance_n(l, 2);
+            break;
+        } else 
+        if (peek_match(l, 1, '=')) {
+            add_token(l, TOK_MINUS_EQ); 
+            advance_n(l, 2);
+            break;
+        }
+        add_token(l, TOK_MINUS); 
+        advance(l); 
+        break;
+    case '<':
+        if (peek_match(l, 1, '<')) {
+            if (peek_match(l, 2, '=')) {
+                add_token(l, TOK_LSHIFT_EQ);
+                advance_n(l, 3);
+                break;
+            }
+            add_token(l, TOK_LSHIFT);
+            advance_n(l, 2);
+            break;
+        } else
+        if (peek_match(l, 1, '=')) {
+            add_token(l, TOK_LESS_EQ); 
+            advance_n(l, 2);
+            break;
+        } else 
+        if (peek_match(l, 1, '-')) {
+            if (peek_match(l, 2, '>')) {
+                add_token(l, TOK_ARROW);
+                advance_n(l, 3);
+                break;
+            }
+            add_token(l, TOK_LARROW);
+            advance_n(l, 2);
+            break;
+        }
+        add_token(l, TOK_LESS); 
+        advance(l); 
+        break;
+    case '>':
+        if (peek_match(l, 1, '>')) {
+            if (peek_match(l, 2, '=')) {
+                add_token(l, TOK_RSHIFT_EQ);
+                advance_n(l, 3);
+                break;
+            }
+            add_token(l, TOK_RSHIFT);
+            advance_n(l, 2);
+            break;
+        } else
+        if (peek_match(l, 1, '=')) {
+            add_token(l, TOK_GREATER_EQ); 
+            advance_n(l, 2);
+            break;
+        }
+        add_token(l, TOK_GREATER); 
         advance(l); 
         break;
     case ',': add_token(l, TOK_COMMA); advance(l); break;

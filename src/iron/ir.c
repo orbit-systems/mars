@@ -685,7 +685,7 @@ void fe_set_input(FeFunc* f, FeInst* inst, u16 n, FeInst* input) {
         memcpy(new_uses, input->uses, sizeof(new_uses[0]) * input->use_len);
 
         // set the top list to zero
-        memset(&new_uses[input->use_len], 0, sizeof(new_uses[0]) * input->use_len);
+        // memset(&new_uses[input->use_len], 0, sizeof(new_uses[0]) * (input->use_cap - input->use_len));
 
         // free old list
         fe_ipool_list_free(pool, input->uses, input->use_len);

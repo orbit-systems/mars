@@ -66,6 +66,8 @@ atomic_expr =
 unary_op =
     | "-"
     | "&"
+    | "~"
+    | "!"
     ;
 
 unary_expr =
@@ -115,6 +117,7 @@ ty_expr =
     | "^"                       {reference_qualifier} ty_expr      (* pointer *)
     | "[" ["^"]  [":" expr] "]" {reference_qualifier} ty_expr      (* slice [pointer] *)
     | "[" expr   [":" expr] "]" ty_expr                            (* array *)
+    | "vector" "[" expr "]" ty_expr                                (* vector *)
     | "fun" ["[" [param_list] "]"] "(" [param_list] ")" [":" expr] (* function type *)
     | "?" {optional_qualifer} ty_expr                              (* optional *)
     | ty_expr "?" {optional_qualifer} ty_expr                      (* enum optional *)
@@ -177,3 +180,5 @@ enum_decl =
 interface_decl = "interface" ["sealed"] ident ["(" param_list ")"] "{"
         {fun_signature}
     "}";
+
+impl_block = "impl" ["[" param_list "]"];
