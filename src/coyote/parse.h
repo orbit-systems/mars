@@ -111,6 +111,8 @@ bool ty_is_signed(TyIndex t);
 bool ty_is_integer(TyIndex t);
 bool ty_is_scalar(TyIndex t);
 
+const char* ty_name(TyIndex t);
+
 // ------------------- PARSE/SEMA ------------------- 
 
 void token_error(Parser* ctx, ReportKind kind, u32 start_index, u32 end_index, const char* msg);
@@ -147,9 +149,10 @@ typedef struct Entity {
         u64 variant_value;
     };
 
-    // for locals, irgen uses this for the stackaddr pointer
+    FeAliasCategory alias_cat;
     FeTy fe_ty;
     FeComplexTy* fe_cty;
+    // for locals, irgen uses this for the stackaddr pointer
     void* extra;
 } Entity;
 

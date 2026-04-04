@@ -249,7 +249,8 @@ static void recursive_solve(FeFunc* f, FeBlock* b, FeBlock* pred, FeAliasMap* am
             continue;
         }
 
-        if (inst->kind == FE__ROOT || inst->kind == FE_RETURN) {
+        // if (inst->kind == FE__ROOT || inst->kind == FE_RETURN) {
+        if (inst->kind == FE__ROOT) {
             for_n(i, 0, amap->num_cat) {
                 fe_amap_add(amap, inst->id, (FeAliasCategory){i});
             }
@@ -308,7 +309,6 @@ static void recursive_solve(FeFunc* f, FeBlock* b, FeBlock* pred, FeAliasMap* am
         }
     }
 }
-
 
 void fe_solve_mem(FeFunc* f, FeAliasMap* amap) {
 

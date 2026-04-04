@@ -185,6 +185,29 @@ static inline usize u64_log2(usize x) {
     return (sizeof(x) * 8 - 1) - __builtin_clzll(x);
 }
 
+/*
+    %2 = ptr_offset %1, x
+    %3 = ptr_offset %2, y
+->
+    
+    %2 = ptr_offset %1, x
+    %3 = ptr_offset %1, x+y
+*/
+static bool try_ptr_offset_reduce(FeFunc* f, FeInstSet* wlist, FeInst* inst) {
+    if (inst->kind != FE_PTR_OFFSET) {
+        return false;
+    }
+    if (inst->inputs[0]->kind != FE_PTR_OFFSET) {
+        return false;
+    }
+
+    fe_extra(inst, FeInstConst)->val += fe_extra(inst->inputs[0], FeInstConst)->val;
+    fe_set_input(f, inst, 0, inst->inputs[0]->inputs[0]);
+    fe_iset_push(wlist, inst);
+
+    return true;
+}
+
 static bool try_strength_binop(FeFunc* f, FeInstSet* wlist, FeInst* inst) {
     if (!fe_inst_has_trait(inst->kind, FE_TRAIT_BINOP)) {
         return false;
@@ -575,6 +598,7 @@ static bool try_all(FeFunc* f, FeInstSet* wlist, FeInst* inst) {
         || try_tdce(f, wlist, inst)
         || try_commute(f, wlist, inst)
         || try_reassoc(f, wlist, inst)
+        || try_ptr_offset_reduce(f, wlist, inst)
         || try_strength_binop(f, wlist, inst)
         || try_identity_binop(f, wlist, inst)
         || try_consteval_binop(f, wlist, inst)

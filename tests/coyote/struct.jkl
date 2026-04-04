@@ -1,11 +1,19 @@
-STRUCT Foo
-    X : BYTE,
-    Y : WORD,
+STRUCT Bar
+    a : UWORD,
+    b : UWORD,
 END
 
-FN bruh()
-    f: Foo
+STRUCT Foo
+    a : BYTE,
+    b : Bar,
+END
 
-    f.X = 1
-    f.Y = 2
+FN get_bar(): UWORD
+    x : Bar
+    x.a = 1
+    RETURN x.a
+END
+
+FN get_foo(IN f: ^Foo): UWORD
+    RETURN f^.b.b
 END

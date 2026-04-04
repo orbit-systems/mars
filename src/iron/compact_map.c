@@ -105,6 +105,10 @@ void fe_cmap_remove(FeCompactMap* cmap, u32 key) {
     u32 exists_block_index = id / USIZE_BITS;
     usize id_bit = (usize)(1) << (id % USIZE_BITS);
 
+    if (cmap->exists == nullptr) {
+        return;
+    }
+
     if_likely (cmap->id_start <= exists_block_index && exists_block_index < cmap->id_end) {
         usize exists_block = cmap->exists[exists_block_index - cmap->id_start];
         if (exists_block & id_bit) {
@@ -114,6 +118,10 @@ void fe_cmap_remove(FeCompactMap* cmap, u32 key) {
 }
 
 uintptr_t fe_cmap_pop_next(FeCompactMap* cmap) {
+    
+    if (cmap->exists == nullptr) {
+        return 0;
+    }
 
     u32 blocks_len = cmap->id_end - cmap->id_start;
     for_n (exists_block_index, 0, blocks_len) {
@@ -143,6 +151,9 @@ uintptr_t fe_cmap_pop_next(FeCompactMap* cmap) {
 }
 
 void fe_cmap_destroy(FeCompactMap* cmap) {
+    if (cmap->exists == nullptr) {
+        return;
+    }
     fe_free(cmap->values);
     fe_free(cmap->exists);
     *cmap = (FeCompactMap){0};

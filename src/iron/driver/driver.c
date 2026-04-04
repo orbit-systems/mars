@@ -158,12 +158,11 @@ FeFunc* make_store_test2(FeModule* mod, FeInstPool* ipool, FeVRegBuffer* vregs) 
 
     FeSection* text = fe_section_new(mod, "text", 0, FE_SECTION_EXECUTABLE);
 
-    FeTy ptr_ty = FE_TY_PTR;
 
     FeFuncSig* f_sig = fe_funcsig_new(FE_CCONV_ANY, 2, 1);
-    fe_funcsig_param(f_sig, 0)->ty = ptr_ty;
+    fe_funcsig_param(f_sig, 0)->ty = FE_TY_PTR;
     fe_funcsig_param(f_sig, 1)->ty = FE_TY_I32;
-    fe_funcsig_return(f_sig, 0)->ty = ptr_ty;
+    fe_funcsig_return(f_sig, 0)->ty = FE_TY_PTR;
 
     // make the function and its symbol
     FeSymbol* f_sym = fe_symbol_new(mod, "foo", 0, text, FE_BIND_GLOBAL);
@@ -178,7 +177,7 @@ FeFunc* make_store_test2(FeModule* mod, FeInstPool* ipool, FeVRegBuffer* vregs) 
     auto ptr_offset = fe_append_end(entry, fe_inst_ptr_offset(f, ptr, 8));
     auto store2 = fe_append_end(entry, fe_inst_store(f, ptr_offset, val, FE_MEMOP_ALIGN_DEFAULT, 0));
 
-    auto load1 = fe_append_end(entry, fe_inst_load(f, ptr_ty, ptr, FE_MEMOP_ALIGN_DEFAULT, 0));
+    auto load1 = fe_append_end(entry, fe_inst_load(f, FE_TY_I32, ptr, FE_MEMOP_ALIGN_DEFAULT, 0));
 
     FeInst* ret = fe_inst_return(f);
     fe_append_end(entry, ret);

@@ -42,6 +42,7 @@ static u32 calculate_hash(FeInst* inst, Vec(ValueNumber) vn) {
     case FE_PROJ:
         hash ^= fe_extra(inst, FeInstProj)->index;
         break;
+    case FE_PTR_OFFSET:
     case FE_CONST:
         hash ^= fe_extra(inst, FeInstConst)->val;
         break;

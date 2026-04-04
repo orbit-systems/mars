@@ -2570,7 +2570,7 @@ Stmt* parse_fn_decl(Parser* p, u8 storage) {
 
         if (!has_returned && fn_type->ret_ty != TY_VOID) {
             parse_error(p, ident_pos, ident_pos, REPORT_NOTE, "in function '"str_fmt"'", str_arg(identifier));
-            parse_error(p, p->cursor, p->cursor, REPORT_WARNING, "function may not return with defined value");
+            parse_error(p, p->cursor, p->cursor, REPORT_ERROR, "function may not return with defined value");
         }
         advance(p);
 

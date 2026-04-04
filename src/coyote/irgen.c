@@ -1,3 +1,4 @@
+#include "common/portability.h"
 #include "common/strmap.h"
 #include "common/util.h"
 
@@ -5,6 +6,8 @@
 #include "iron/iron.h"
 #include "lex.h"
 #include "parse.h"
+#include <assert.h>
+#include <string.h>
 
 // typedef struct IrGenFunction {
 //     Entity* entity;
@@ -119,6 +122,13 @@ FeModule* irgen(CompilationUnit* cu) {
     return ig->m;
 }
 
+typedef struct AddrInfo {
+    FeInst* val;
+    FeAliasCategory cat;
+} AddrInfo;
+
+static AddrInfo irgen_addr(IRGen* ig, Expr* expr);
+
 #define TY(index, T) ((T*)&tybuf.at[index])
 #define TY_KIND(index) ((TyBase*)&tybuf.at[index])->kind
 
@@ -137,7 +147,6 @@ static FeInst* irgen_integer_cast(IRGen* ig, FeInst* expr, FeTy to) {
     usize from_size = fe_ty_get_size(ig->m->target, expr->ty, nullptr);
     usize to_size = fe_ty_get_size(ig->m->target, to, nullptr);
     bool signext = ty_is_signed(to);
-
 
     if (from_size > to_size) {
         // truncation
@@ -175,7 +184,7 @@ static FeInst* irgen_value_entity(IRGen* ig, Expr* expr) {
             FE_MEMOP_ALIGN_DEFAULT,
             0
         ));
-        fe_amap_add(ig->amap, load->id, ig->alias.stack);
+        fe_amap_add(ig->amap, load->id, expr->entity->alias_cat);
 
         return load;
     } break;
@@ -232,16 +241,30 @@ static FeInst* irgen_value(IRGen* ig, Expr* expr) {
         return irgen_value_integer_binop(ig, expr);
     case EXPR_DEREF:
         return irgen_value_load(ig, expr);
+    case EXPR_MEMBER: {
+        AddrInfo member_addr = irgen_addr(ig, expr);
+        TySelectResult member_ty = select_iron_type(ig, expr->ty);
+        assert(member_ty.cty == nullptr);
+        FeInst* load = fe_append_end(ig->b, fe_inst_load(
+            ig->f,
+            member_ty.ty,
+            member_addr.val,
+            FE_MEMOP_ALIGN_DEFAULT,
+            0
+        ));
+        fe_amap_add(ig->amap, load->id, member_addr.cat);
+        return load;
+    }
+        // TODO("generate member %d of '%s' inside '"fe_compstr_fmt"'", 
+        //     expr->member_access.member_index, 
+        //     ty_name(expr->member_access.aggregate->ty),
+        //     fe_compstr_arg(ig->f->sym->name)
+        // );
     default:
         CRASH("failed to generate value expression %d", expr->kind);
         // UNREACHABLE;
     }
 }
-
-typedef struct AddrInfo {
-    FeInst* val;
-    FeAliasCategory cat;
-} AddrInfo;
 
 static AddrInfo irgen_addr_entity(IRGen* ig, Expr* expr) {
     switch (expr->entity->storage) {
@@ -255,10 +278,10 @@ static AddrInfo irgen_addr_entity(IRGen* ig, Expr* expr) {
         //     FE_MEMOP_ALIGN_DEFAULT,
         //     0
         // ));
-        return (AddrInfo){expr->entity->extra, ig->alias.stack};
+        return (AddrInfo){expr->entity->extra, expr->entity->alias_cat};
     } break;
     default:
-        UNREACHABLE;
+        TODO("storage kind %u", expr->entity->storage);
     }
 }
 
@@ -268,8 +291,40 @@ static AddrInfo irgen_addr(IRGen* ig, Expr* expr) {
         return irgen_addr_entity(ig, expr);
     case EXPR_DEREF:
         return (AddrInfo){irgen_value(ig, expr->unary), ig->alias.memory};
+    case EXPR_MEMBER: {
+        TySelectResult aggregate_ty = select_iron_type(ig, 
+            expr->member_access.aggregate->ty
+        );
+        usize offset = aggregate_ty.cty->record.fields[expr->member_access.member_index].offset;
+
+        AddrInfo aggregate_addr = irgen_addr(ig, expr->member_access.aggregate);
+        
+        FeInst* member_addr = fe_append_end(ig->b, fe_inst_ptr_offset(
+            ig->f, 
+            aggregate_addr.val, 
+            offset
+        ));
+        return (AddrInfo){member_addr, aggregate_addr.cat};
+    }
+    case EXPR_DEREF_MEMBER: {
+        TyIndex aggregate_ptr_ty = expr->member_access.aggregate->ty;
+
+        TySelectResult aggregate_ty = select_iron_type(ig, 
+            TY(aggregate_ptr_ty, TyPtr)->to
+        );
+        usize offset = aggregate_ty.cty->record.fields[expr->member_access.member_index].offset;
+
+        FeInst* aggregate_addr = irgen_value(ig, expr->member_access.aggregate);
+        
+        FeInst* member_addr = fe_append_end(ig->b, fe_inst_ptr_offset(
+            ig->f, 
+            aggregate_addr, 
+            offset
+        ));
+        return (AddrInfo){member_addr, ig->alias.memory};
+    }
     default:
-        UNREACHABLE;
+        TODO("expr kind %u", expr->kind);
     }
 }
 
@@ -282,6 +337,7 @@ static StmtInfo irgen_stmt_return(IRGen* ig, Stmt* stmt) {
         fe_funcsig_return(ig->f->sig, 0)->ty
     );
     FeInst* ret = fe_append_end(ig->b, fe_inst_return(ig->f));
+    fe_amap_add(ig->amap, ret->id, ig->alias.memory);
     fe_return_set_arg(ig->f, ret, 0, ret_expr);
 
     return STMTINFO(true);
@@ -289,12 +345,13 @@ static StmtInfo irgen_stmt_return(IRGen* ig, Stmt* stmt) {
 
 static StmtInfo irgen_stmt_vardecl(IRGen* ig, Stmt* stmt) {
     Entity* var = stmt->var_decl.var;
+    var->alias_cat = fe_amap_new_category(ig->amap);
 
     // create stack slot
     TySelectResult iron_ty = select_iron_type(ig, var->ty);
     var->fe_ty = iron_ty.ty;
     var->fe_cty = iron_ty.cty;
-    assert(var->fe_cty == nullptr);
+    // assert(var->fe_cty == nullptr);
     usize ty_size = fe_ty_get_size(ig->m->target, iron_ty.ty, iron_ty.cty);
     usize ty_align = fe_ty_get_align(ig->m->target, iron_ty.ty, iron_ty.cty);
 
@@ -303,16 +360,25 @@ static StmtInfo irgen_stmt_vardecl(IRGen* ig, Stmt* stmt) {
     FeInst* stackaddr = fe_append_end(ig->b, fe_inst_stack_addr(ig->f, stack_slot));
     var->extra = stackaddr;
 
-    FeInst* value = irgen_value(ig, stmt->var_decl.expr);
-    value = irgen_integer_cast(ig, value, iron_ty.ty);
+    bool var_is_complex_ty = var->fe_cty != nullptr;
 
-    FeInst* store = fe_append_end(ig->b, fe_inst_store(ig->f,
-        stackaddr,
-        value,
-        FE_MEMOP_ALIGN_DEFAULT,
-        0
-    ));
-    fe_amap_add(ig->amap, store->id, ig->alias.stack);
+    if (stmt->var_decl.expr != nullptr) {
+        if (!var_is_complex_ty) {
+            FeInst* value = irgen_value(ig, stmt->var_decl.expr);
+            value = irgen_integer_cast(ig, value, iron_ty.ty);
+
+            FeInst* store = fe_append_end(ig->b, fe_inst_store(ig->f,
+                stackaddr,
+                value,
+                FE_MEMOP_ALIGN_DEFAULT,
+                0
+            ));
+            fe_amap_add(ig->amap, store->id, var->alias_cat);
+        } else {
+            TODO("compound initializer");
+        }
+    }
+
 
     return STMTINFO(false);
 }
@@ -470,13 +536,15 @@ static void irgen_function(IRGen* ig) {
 
     FeAliasMap amap;
     fe_amap_init(&amap);
-    ig->alias.stack = fe_amap_new_category(&amap);
-    ig->alias.memory = fe_amap_new_category(&amap);
     ig->amap = &amap;
+    ig->alias.memory = fe_amap_new_category(ig->amap);
 
     // generate stack slots for parameters
     for_n(i, 0, vec_len(function_decl->fn_decl.parameters)) {
         Entity* entity = function_decl->fn_decl.parameters[i];
+        if (entity->alias_cat._ == 0) {
+            entity->alias_cat = fe_amap_new_category(ig->amap);
+        }
 
         // TODO dont recalculate this, get it from earlier somewhere
         TySelectResult iron_ty = select_iron_type(ig, entity->ty);
@@ -494,13 +562,22 @@ static void irgen_function(IRGen* ig) {
             fe_func_param(ig->f, i),
             FE_MEMOP_ALIGN_DEFAULT, 0
         ));
-        fe_amap_add(ig->amap, store->id, ig->alias.stack);
+        fe_amap_add(ig->amap, store->id, entity->alias_cat);
     }
 
     // generate each statement in turn
+    StmtInfo info;
     for_n(i, 0, function_decl->fn_decl.body.len) {
         Stmt* stmt = function_decl->fn_decl.body.stmts[i];
-        irgen_stmt(ig, stmt);
+        info = irgen_stmt(ig, stmt);
+        if (info.diverges) {
+            break;
+        }
+    }
+    if (!info.diverges) {
+        // create a return
+        FeInst* ret = fe_append_end(ig->b, fe_inst_return(ig->f));
+        fe_amap_add(ig->amap, ret->id, ig->alias.memory);
     }
 
     // fe_opt_reorder_blocks_rpo(ig->f);
@@ -511,36 +588,63 @@ static void irgen_function(IRGen* ig) {
     fe_amap_destroy(&amap);
 }
 
-static TySelectResult select_iron_type(IRGen* ig, TyIndex ty_index) {
-    FeTy ty = TY_VOID;
-    FeComplexTy* cty = nullptr;
+static TySelectResult create_iron_type(IRGen* ig, TyIndex ty_index) {
+
     switch (TY_KIND(ty_index)) {
-    case TY_BYTE:
-    case TY_UBYTE:
-        ty = FE_TY_I8;
-        break;
-    case TY_INT:
-    case TY_UINT:
-        ty = FE_TY_I16;
-        break;
-    case TY_LONG:
-    case TY_ULONG:
-        ty = FE_TY_I32;
-        break;
-    case TY_QUAD:
-    case TY_UQUAD:
-        ty = FE_TY_I64;
-        break;
     case TY_PTR:
-        ty = FE_TY_PTR;
-        break;
-    case TY_STRUCT:
-        UNREACHABLE;
+        return (TySelectResult){FE_TY_PTR, nullptr};
+    case TY_ALIAS:
+        return select_iron_type(ig, TY(ty_index, TyAlias)->aliasing);
+    case TY_ENUM:
+        return select_iron_type(ig, TY(ty_index, TyEnum)->backing_ty);
+    case TY_STRUCT: {
+        TyRecord* rec = TY(ty_index, TyRecord);
+        FeComplexTy* cty = fe_ty_record_new(rec->len);
+        for_n(i, 0, rec->len) {
+            cty->record.fields[i].offset = rec->members[i].offset;
+            // cty->record.fields[i].
+            TySelectResult member_ty = select_iron_type(ig, rec->members[i].type);
+            cty->record.fields[i].ty = member_ty.ty;
+            cty->record.fields[i].complex_ty = member_ty.cty;
+        }
+        return (TySelectResult){FE_TY_RECORD, cty};
+    }
     default:
-        UNREACHABLE;
+        TODO("cannot translate frontend type %u with kind %u to iron type", ty_index, TY_KIND(ty_index));
     }
 
-    return (TySelectResult){ty, nullptr};
+}
+
+static TySelectResult select_iron_type(IRGen* ig, TyIndex ty_index) {
+
+    static TySelectResult* select_cache = nullptr;
+
+    assert(ty_index != TY_VOID);
+
+    // initialize the first time
+    if_unlikely (select_cache == nullptr) {
+        select_cache = malloc(sizeof(select_cache[0]) * tybuf.len);
+        memset(select_cache, 0, sizeof(select_cache[0]) * tybuf.len);
+
+        select_cache[TY_VOID]  = (TySelectResult){FE_TY_VOID, nullptr};
+        select_cache[TY_BYTE]  = (TySelectResult){FE_TY_I8, nullptr};
+        select_cache[TY_UBYTE] = (TySelectResult){FE_TY_I8, nullptr};
+        select_cache[TY_INT]   = (TySelectResult){FE_TY_I16, nullptr};
+        select_cache[TY_UINT]  = (TySelectResult){FE_TY_I16, nullptr};
+        select_cache[TY_LONG]  = (TySelectResult){FE_TY_I32, nullptr};
+        select_cache[TY_ULONG] = (TySelectResult){FE_TY_I32, nullptr};
+        select_cache[TY_QUAD]  = (TySelectResult){FE_TY_I64, nullptr};
+        select_cache[TY_UQUAD] = (TySelectResult){FE_TY_I64, nullptr};
+    }
+
+    TySelectResult select = select_cache[ty_index];
+    if (select.ty == FE_TY_VOID) {
+        select = create_iron_type(ig, ty_index);
+        select_cache[ty_index] = select;
+    }
+
+    return select;
+
 }
 
 static FeFuncSig* generate_signature(IRGen* ig) {

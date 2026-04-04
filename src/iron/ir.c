@@ -151,8 +151,9 @@ usize fe_ty_get_size(const FeTarget* tgt, FeTy ty, FeComplexTy *cty) {
 
         usize align = fe_ty_get_align(tgt, ty, cty);
 
-        FeRecordField* last_field = &cty->record.fields[cty->record.fields_len];
-        return align_forward(last_field->offset, align);
+        FeRecordField* last_field = &cty->record.fields[cty->record.fields_len - 1];
+        usize last_field_size = fe_ty_get_size(tgt, last_field->ty, last_field->complex_ty);
+        return max(align, align_forward(last_field->offset + last_field_size, align));
     }
     case FE_TY_BOOL:
     case FE_TY_I8:
@@ -598,6 +599,9 @@ FeInstChain fe_chain_new(FeInst* initial) {
 }
 
 FeInstChain fe_chain_append_end(FeInstChain chain, FeInst* i) {
+    if (chain.begin == nullptr) {
+        return fe_chain_new(i);
+    }
     chain.end->next = i;
     i->prev = chain.end;
     chain.end = i;
@@ -605,6 +609,9 @@ FeInstChain fe_chain_append_end(FeInstChain chain, FeInst* i) {
 }
 
 FeInstChain fe_chain_append_begin(FeInstChain chain, FeInst* i) {
+    if (chain.begin == nullptr) {
+        return fe_chain_new(i);
+    }
     chain.begin->prev = i;
     i->next = chain.begin;
     chain.begin = i;
@@ -626,6 +633,9 @@ FeInstChain fe_chain_concat(FeInstChain front, FeInstChain back) {
     return front;
 }
 void fe_insert_chain_before(FeInst* point, FeInstChain chain) {
+    if (chain.begin == nullptr) {
+        return;
+    }
     FeInst* p_prev = point->prev;
     p_prev->next = chain.begin;
     point->prev = chain.end;
@@ -634,6 +644,9 @@ void fe_insert_chain_before(FeInst* point, FeInstChain chain) {
 }
 
 void fe_insert_chain_after(FeInst* point, FeInstChain chain) {
+    if (chain.begin == nullptr) {
+        return;
+    }
     FeInst* p_next = point->next;
     p_next->prev = chain.end;
     point->next = chain.begin;

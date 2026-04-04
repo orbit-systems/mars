@@ -25,7 +25,6 @@ typedef struct {
     FeAliasMap* amap;
 
     struct {
-        FeAliasCategory stack;
         FeAliasCategory memory;
     } alias;
 } IRGen;
@@ -39,12 +38,10 @@ static TySelectResult select_iron_type(IRGen* ig, TyIndex ty_index);
 static FeFuncSig* generate_signature(IRGen* ig);
 static void irgen_function(IRGen* ig);
 
-
 typedef struct {
     bool diverges;
 } StmtInfo;
 #define STMTINFO(...) (StmtInfo){__VA_ARGS__}
-
 
 
 static FeInst* irgen_value(IRGen* ig, Expr* expr);
