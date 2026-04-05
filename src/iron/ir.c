@@ -14,8 +14,7 @@ static const char* inst_name(const FeTarget* t, FeInst* inst) {
 }
 
 FeModule* fe_module_new(FeArch arch, FeSystem system) {
-    FeModule* mod = fe_malloc(sizeof(*mod));
-    memset(mod, 0, sizeof(*mod));
+    FeModule* mod = fe_zalloc(sizeof(*mod));
 
     mod->target = fe_make_target(arch, system);
     fe_symtab_init(&mod->symtab);
@@ -441,8 +440,7 @@ static void place_params(FeFunc* f, FeInst* root, FeTy ty, FeComplexTy* cty, usi
 }
 
 FeFunc* fe_func_new(FeModule* mod, FeSymbol* sym, FeFuncSig* sig, FeInstPool* ipool, FeVRegBuffer* vregs) {
-    FeFunc* f = fe_malloc(sizeof(FeFunc));
-    memset(f, 0, sizeof(*f));
+    FeFunc* f = fe_zalloc(sizeof(FeFunc));
     f->sig = sig;
     f->mod = mod;
     f->ipool = ipool;
@@ -519,9 +517,54 @@ void fe_func_destroy(FeFunc *f) {
     } else {
         f->list_prev->list_next = f->list_next;
     }
-    // f->list_next = NULL;
-    // f->list_prev = NULL;
+    
+    f->sym->kind = FE_SYMKIND_NONE;
+    f->sym->func = nullptr;
+
     fe_free(f);
+}
+
+FeStatic* fe_static_new(FeModule* mod, FeSymbol* sym, FeTy ty, FeComplexTy* cty) {
+    FeStatic* s = fe_malloc(sizeof(*s));
+    *s = (FeStatic){
+        .sym = sym,
+        .ty = ty,
+        .cty = cty,
+    };
+    sym->kind = FE_SYMKIND_STATIC;
+    sym->stat = s;
+
+    // append to function list
+    if (mod->statics.first == nullptr) {
+        mod->statics.first = s;
+        mod->statics.last = s;
+    } else {
+        s->list_prev = mod->statics.last;
+        s->list_prev->list_next = s;
+        mod->statics.last = s;
+    }
+
+    return s;
+}
+void fe_static_destroy(FeModule* mod, FeStatic* s) {
+    
+
+    // remove from linked list
+    if (s->list_next == nullptr) { // at back of list
+        mod->statics.last = s->list_prev;
+    } else {
+        s->list_next->list_prev = s->list_prev;
+    }
+    if (s->list_prev == nullptr) { // at front of list
+        mod->statics.first = s->list_next;
+    } else {
+        s->list_prev->list_next = s->list_next;
+    }
+    
+    s->sym->kind = FE_SYMKIND_NONE;
+    s->sym->stat = nullptr;
+
+    fe_free(s);
 }
 
 FeInst* fe_func_param(FeFunc* f, u16 index) {

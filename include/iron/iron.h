@@ -109,6 +109,7 @@ typedef struct FeBlock FeBlock;
 typedef struct FeSymbol FeSymbol;
 typedef struct FeFunc FeFunc;
 typedef struct FeFuncSig FeFuncSig;
+typedef struct FeStatic FeStatic;
 typedef struct FeSection FeSection;
 typedef struct FeModule FeModule;
 typedef struct FeTarget FeTarget;
@@ -268,7 +269,7 @@ typedef enum FeSymbolBinding : u8 {
 typedef enum FeSymbolKind : u8 {
     FE_SYMKIND_NONE = 0,
     FE_SYMKIND_FUNC,
-    FE_SYMKIND_DATA,
+    FE_SYMKIND_STATIC,
 } FeSymbolKind;
 
 typedef struct FeSymbol {
@@ -280,6 +281,7 @@ typedef struct FeSymbol {
 
     union {
         FeFunc* func;
+        FeStatic* stat;
     };
 } FeSymbol;
 
@@ -320,11 +322,16 @@ typedef struct FeFunc {
     FeStackItem* stack_bottom;
 } FeFunc;
 
-typedef struct FeStaticData {
+typedef struct FeStatic {
     FeSymbol* sym;
-    FeComplexTy* ty;
-    /// TODO make this actually real lmao
-} FeStaticData;
+
+    FeTy ty;
+    FeComplexTy* cty;
+
+    FeStatic* list_next;
+    FeStatic* list_prev;
+
+} FeStatic;
 
 typedef struct FeSymTab {
     struct {
@@ -369,6 +376,11 @@ typedef struct FeModule {
         FeFunc* first;
         FeFunc* last;
     } funcs;
+
+    struct {
+        FeStatic* first;
+        FeStatic* last;
+    } statics;
 
     const FeTarget* target;
 
@@ -797,6 +809,9 @@ void fe_inst_replace_pos(FeInst* from, FeInst* to);
 // might need to allocate
 void fe_cfg_add_edge(FeFunc* f, FeBlock* pred, FeBlock* succ);
 void fe_cfg_remove_edge(FeBlock* pred, FeBlock* succ);
+
+FeStatic* fe_static_new(FeModule* mod, FeSymbol* sym, FeTy ty, FeComplexTy* cty);
+void fe_static_destroy(FeModule* mod, FeStatic* s);
 
 // -------------------------------------
 // worklist/CompactMap

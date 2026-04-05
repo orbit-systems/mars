@@ -99,7 +99,7 @@ FeModule* irgen(CompilationUnit* cu) {
             kind = FE_SYMKIND_FUNC;
             break;
         case ENTKIND_VAR:
-            kind = FE_SYMKIND_DATA;
+            kind = FE_SYMKIND_STATIC;
             break;
         default:
             UNREACHABLE;
@@ -121,11 +121,15 @@ FeModule* irgen(CompilationUnit* cu) {
         if (e->kind != ENTKIND_VAR) {
             continue;
         }
-
-        TODO("generate static variable '"str_fmt"'", str_arg(from_compact(e->name)));
         
-        // FeFunc* new = ;
-        // FeStaticData* data = fe_static
+        FeSymbol* sym = fe_symtab_get(&ig->m->symtab, from_compact(e->name).raw, from_compact(e->name).len);
+        assert(sym != nullptr);
+
+        TySelectResult fe_ty = select_iron_type(ig, e->ty);
+
+        FeStatic* s = fe_static_new(ig->m, sym, fe_ty.ty, fe_ty.cty);
+
+        // TODO("generate static variable '"str_fmt"'", str_arg(from_compact(e->name)));
     }
     
     // generate functions
@@ -234,13 +238,23 @@ static FeInst* irgen_value_entity(IRGen* ig, Expr* expr) {
         FeSymbol* sym = fe_symtab_get(&ig->m->symtab, name.raw, name.len);
         assert(sym != nullptr);
 
+        FeInst* addr = fe_append_end(ig->b, fe_inst_sym_addr(ig->f, sym));
         if (sym->kind == FE_SYMKIND_FUNC) {
-            // get the address of the function itself
-            FeInst* addr = fe_append_end(ig->b, fe_inst_sym_addr(ig->f, sym));
+            // function, get the address of the function itself
             return addr;
         }
-
-        TODO("");
+        // static data
+        assert(sym->stat->cty == nullptr);
+        FeInst* load = fe_append_end(ig->b, fe_inst_load(
+            ig->f, 
+            sym->stat->ty, 
+            addr,
+            FE_MEMOP_ALIGN_DEFAULT,
+            0
+        ));
+        // fe_inst_load(f)
+        fe_amap_add(ig->amap, load->id, ig->alias.memory);
+        return load;
     }
     default:
         UNREACHABLE;

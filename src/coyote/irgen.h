@@ -1,7 +1,6 @@
 #ifndef IRGEN_H
 #define IRGEN_H
 
-#include "lex.h"
 #include "parse.h"
 
 #include "iron/iron.h"
@@ -41,7 +40,6 @@ typedef struct {
     bool diverges;
 } StmtInfo;
 #define STMTINFO(...) (StmtInfo){__VA_ARGS__}
-
 
 static FeInst* irgen_value(IRGen* ig, Expr* expr);
 static StmtInfo irgen_stmt(IRGen* ig, Stmt* stmt);

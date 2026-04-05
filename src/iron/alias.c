@@ -258,6 +258,13 @@ static void recursive_solve(FeFunc* f, FeBlock* b, FeBlock* pred, FeAliasMap* am
 
         usize num_aliases = fe_amap_get_len(amap, inst->id);
         FeAliasCategory* aliases = fe_amap_get(amap, inst->id);
+        // assert(aliases )
+        if (aliases == nullptr) {
+            FE_CRASH("instruction %u '%s' has no alias set(s)", 
+                inst->id, 
+                fe_inst_name(f->mod->target, inst->kind)
+            );
+        }
 
         if (is_single_use) {
             if (num_aliases > 1) {
