@@ -1,0 +1,5 @@
+myvar: UWORD
+
+FN access(): UWORD
+    RETURN myvar
+END

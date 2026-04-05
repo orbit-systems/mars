@@ -15,7 +15,6 @@ typedef struct {
     FeSection* default_data;
     FeSection* default_rodata;
 
-    Entity* e;
     FeModule* m;
     FeFunc* f;
 
@@ -35,8 +34,8 @@ typedef struct {
 } TySelectResult;
 
 static TySelectResult select_iron_type(IRGen* ig, TyIndex ty_index);
-static FeFuncSig* generate_signature(IRGen* ig);
-static void irgen_function(IRGen* ig);
+static FeFuncSig* generate_signature(IRGen* ig, TyIndex ty);
+static void irgen_function(IRGen* ig, Stmt* function_decl);
 
 typedef struct {
     bool diverges;

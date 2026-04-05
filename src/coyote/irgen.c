@@ -76,10 +76,6 @@ FeModule* irgen(CompilationUnit* cu) {
         if (e == nullptr) {
             continue;
         }
-        // generate for functions first
-        if (e->kind != ENTKIND_FN) {
-            continue;
-        }
 
         FeSymbolBinding bind = FE_BIND_GLOBAL;
         switch (e->storage) {
@@ -97,15 +93,58 @@ FeModule* irgen(CompilationUnit* cu) {
         case STORAGE_OUT_PARAM:
             UNREACHABLE;
         }
+        FeSymbolKind kind = FE_SYMKIND_NONE;
+        switch (e->kind) {
+        case ENTKIND_FN:
+            kind = FE_SYMKIND_FUNC;
+            break;
+        case ENTKIND_VAR:
+            kind = FE_SYMKIND_DATA;
+            break;
+        default:
+            UNREACHABLE;
+        }
 
         // FeSection* section = e->kind == ENTKIND_FN ? default_text : default_data;
         FeSection* section = ig->default_text;
         FeSymbol* sym = fe_symbol_new(ig->m, from_compact(e->name).raw, from_compact(e->name).len, section, bind);
-        sym->kind = FE_SYMKIND_FUNC;
+        sym->kind = kind;
+    }
+    
+    // generate static data
+    for_n(i, 0, cu->top_scope->map.cap) {
+        Entity* e = cu->top_scope->map.vals[i];
+        if (e == nullptr) {
+            continue;
+        }
 
-        ig->e = e;
+        if (e->kind != ENTKIND_VAR) {
+            continue;
+        }
 
-        FeFuncSig* signature = generate_signature(ig);
+        TODO("generate static variable '"str_fmt"'", str_arg(from_compact(e->name)));
+        
+        // FeFunc* new = ;
+        // FeStaticData* data = fe_static
+    }
+    
+    // generate functions
+    for_n(i, 0, cu->top_scope->map.cap) {
+        Entity* e = cu->top_scope->map.vals[i];
+        if (e == nullptr) {
+            continue;
+        }
+
+        if (e->kind != ENTKIND_FN) {
+            continue;
+        }
+
+        FeSymbol* sym = fe_symtab_get(&ig->m->symtab, from_compact(e->name).raw, from_compact(e->name).len);
+        assert(sym != nullptr);
+
+        // ig->e = e;
+
+        FeFuncSig* signature = generate_signature(ig, e->ty);
 
         if (e->storage == STORAGE_EXTERN) {
             continue;
@@ -116,7 +155,7 @@ FeModule* irgen(CompilationUnit* cu) {
         ig->f = func;
         ig->b = func->entry_block;
 
-        irgen_function(ig);
+        irgen_function(ig, e->decl);
     }
 
     return ig->m;
@@ -187,7 +226,22 @@ static FeInst* irgen_value_entity(IRGen* ig, Expr* expr) {
         fe_amap_add(ig->amap, load->id, expr->entity->alias_cat);
 
         return load;
-    } break;
+    }
+    case STORAGE_PUBLIC:
+    case STORAGE_PRIVATE:
+    case STORAGE_EXTERN: {
+        string name = from_compact(expr->entity->name);
+        FeSymbol* sym = fe_symtab_get(&ig->m->symtab, name.raw, name.len);
+        assert(sym != nullptr);
+
+        if (sym->kind == FE_SYMKIND_FUNC) {
+            // get the address of the function itself
+            FeInst* addr = fe_append_end(ig->b, fe_inst_sym_addr(ig->f, sym));
+            return addr;
+        }
+
+        TODO("");
+    }
     default:
         UNREACHABLE;
     }
@@ -255,11 +309,59 @@ static FeInst* irgen_value(IRGen* ig, Expr* expr) {
         fe_amap_add(ig->amap, load->id, member_addr.cat);
         return load;
     }
-        // TODO("generate member %d of '%s' inside '"fe_compstr_fmt"'", 
-        //     expr->member_access.member_index, 
-        //     ty_name(expr->member_access.aggregate->ty),
-        //     fe_compstr_arg(ig->f->sym->name)
-        // );
+    case EXPR_DEREF_MEMBER: {
+        FeInst* member_addr = irgen_value(ig, expr);
+        TySelectResult member_ty = select_iron_type(ig, expr->ty);
+        assert(member_ty.cty == nullptr);
+        FeInst* load = fe_append_end(ig->b, fe_inst_load(
+            ig->f,
+            member_ty.ty,
+            member_addr,
+            FE_MEMOP_ALIGN_DEFAULT,
+            0
+        ));
+        fe_amap_add(ig->amap, load->id, ig->alias.memory);
+        return load;
+    }
+    case EXPR_CALL: {
+        FeInst* function_addr = irgen_value(ig, expr->call.callee);
+
+        FeInst* arg_values[expr->call.args_len];
+        for_n(i, 0, expr->call.args_len) {
+            arg_values[i] = irgen_value(ig, expr->call.args[i]);
+        }
+
+        TyIndex fn_ty = expr->call.callee->ty;
+        if (TY_KIND(fn_ty) == TY_PTR) {
+            fn_ty = TY(fn_ty, TyPtr)->to;
+        }
+        assert(TY_KIND(fn_ty) == TY_FN);
+
+        FeFuncSig* sig = generate_signature(ig, fn_ty);
+
+        FeInst* call = fe_append_end(ig->b, 
+            fe_inst_call(ig->f, function_addr, sig)
+        );
+        fe_amap_add(ig->amap, call->id, ig->alias.memory);
+        for_n(i, 0, expr->call.args_len) {
+            fe_call_set_arg(ig->f, call, i, arg_values[i]);
+        }
+
+        FeInst* returnval = nullptr;
+
+        // manage return values
+        if (sig->return_len > 0) {
+            returnval = fe_append_end(ig->b,
+                fe_inst_proj(ig->f, call, 0)
+            );
+        }
+        for_n(i, 1, sig->return_len) {
+            TODO("assign OUT parameters");
+        }
+        
+        return returnval;
+
+    }
     default:
         CRASH("failed to generate value expression %d", expr->kind);
         // UNREACHABLE;
@@ -531,8 +633,7 @@ static StmtInfo irgen_stmt(IRGen* ig, Stmt* stmt) {
     }
 }
 
-static void irgen_function(IRGen* ig) {
-    Stmt* function_decl = ig->e->decl;
+static void irgen_function(IRGen* ig, Stmt* function_decl) {
 
     FeAliasMap amap;
     fe_amap_init(&amap);
@@ -602,7 +703,17 @@ static TySelectResult create_iron_type(IRGen* ig, TyIndex ty_index) {
         FeComplexTy* cty = fe_ty_record_new(rec->len);
         for_n(i, 0, rec->len) {
             cty->record.fields[i].offset = rec->members[i].offset;
-            // cty->record.fields[i].
+            TySelectResult member_ty = select_iron_type(ig, rec->members[i].type);
+            cty->record.fields[i].ty = member_ty.ty;
+            cty->record.fields[i].complex_ty = member_ty.cty;
+        }
+        return (TySelectResult){FE_TY_RECORD, cty};
+    }
+    case TY_UNION: {
+        TyRecord* rec = TY(ty_index, TyRecord);
+        FeComplexTy* cty = fe_ty_record_new(rec->len);
+        for_n(i, 0, rec->len) {
+            cty->record.fields[i].offset = 0;
             TySelectResult member_ty = select_iron_type(ig, rec->members[i].type);
             cty->record.fields[i].ty = member_ty.ty;
             cty->record.fields[i].complex_ty = member_ty.cty;
@@ -644,14 +755,15 @@ static TySelectResult select_iron_type(IRGen* ig, TyIndex ty_index) {
     }
 
     return select;
-
 }
 
-static FeFuncSig* generate_signature(IRGen* ig) {
+static FeFuncSig* generate_signature(IRGen* ig, TyIndex ty) {
     u16 param_len = 0;
     u16 return_len = 0;
-
-    TyFn* fn_ty = TY(ig->e->ty, TyFn);
+    
+    // printf("tyname %s\n", ty_name(ty));
+    assert(TY_KIND(ty) == TY_FN);
+    TyFn* fn_ty = TY(ty, TyFn);
 
     for_n(i, 0, fn_ty->len) {
         Ty_FnParam* parameter = &fn_ty->params[i];

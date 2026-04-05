@@ -1,5 +1,6 @@
 #include "common/util.h"
 #include "iron/iron.h"
+#include <assert.h>
 
 // various local transformations
 // this has ballooned into everything lmfao
@@ -22,6 +23,8 @@ static bool load_elim_store(FeFunc* f, FeInstSet* wlist, FeInst* dependent_store
     if (dependent_store->inputs[1] != load->inputs[1]) {
         return false;
     }
+
+    assert(dependent_store->inputs[2]->ty == load->ty);
 
     FeInst* new_val = dependent_store->inputs[2];
 
@@ -60,6 +63,9 @@ static bool load_elim_phi(FeFunc* f, FeInstSet* wlist, FeInst* dependent_phi, Fe
     for_n(i, 0, dependent_phi->in_len) {
         FeInst* dependent_store = dependent_phi->inputs[i];
         FeInst* stored_value = dependent_store->inputs[2];
+
+        assert(dependent_store->inputs[2]->ty == load->ty);
+
         fe_phi_add_src(f, 
             phi, 
             stored_value,

@@ -18,6 +18,9 @@ static inline u32 xr_immsym_imm_val(XrInstImm32OrSym* immsym) {
 static inline void xr_immsym_set_imm(XrInstImm32OrSym* immsym, u32 imm) {
     immsym->imm = (1 | (imm << 1));
 }
+static inline void xr_immsym_set_sym(XrInstImm32OrSym* immsym, FeSymbol* sym) {
+    immsym->sym = sym;
+}
 
 typedef enum : u8 {
     XR_SHIFT_LSH = 0, // left shift

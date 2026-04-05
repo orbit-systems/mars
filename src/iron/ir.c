@@ -4,12 +4,12 @@
 #include "iron/iron.h"
 #include <string.h>
 
-static const char* inst_name(FeInst* inst) {
-    FeInst* bookend = inst;
-    while (bookend->kind != FE__BOOKEND) {
-        bookend = bookend->next;
-    }
-    const FeTarget* t = fe_extra(bookend, FeInst_Bookend)->block->func->mod->target;
+static const char* inst_name(const FeTarget* t, FeInst* inst) {
+    // FeInst* bookend = inst;
+    // while (bookend->kind != FE__BOOKEND) {
+    //     bookend = bookend->next;
+    // }
+    // const FeTarget* t = fe_extra(bookend, FeInst_Bookend)->block->func->mod->target;
     return fe_inst_name(t, inst->kind);
 }
 
@@ -530,7 +530,7 @@ FeInst* fe_func_param(FeFunc* f, u16 index) {
 
 FeBlock** fe_list_terminator_successors(const FeTarget* t, FeInst* term, usize* len_out) {
     if (!fe_inst_has_trait(term->kind, FE_TRAIT_TERMINATOR)) {
-        FE_CRASH("list_targets: inst %s is not a terminator", inst_name(term));
+        FE_CRASH("list_targets: inst %s is not a terminator", inst_name(t, term));
     }
     if (term->kind > FE__BASE_INST_END) {
         return t->list_targets(term, len_out);
@@ -834,8 +834,9 @@ void fe_inst_destroy(FeFunc* f, FeInst* inst) {
 
 
 FeInst* fe_inst_proj(FeFunc* f, FeInst* inst, usize index) {
-    FeInst* i = fe_inst_new(f, 0, sizeof(FeInstProj));
+    FeInst* i = fe_inst_new(f, 1, sizeof(FeInstProj));
     i->kind = FE_PROJ;
+    fe_set_input(f, i, 0, inst);
     i->ty = fe_proj_ty(inst, index);
 
     fe_extra(i, FeInstProj)->index = index;
@@ -976,16 +977,18 @@ FeInst* fe_inst_store(FeFunc* f, FeInst* ptr, FeInst* val, u16 align, u8 offset)
 }
 
 FeInst* fe_inst_call(FeFunc* f, FeInst* callee, FeFuncSig* sig) {
-    FeInst* i = fe_inst_new(f, 2 + sig->param_len, sizeof(FeInstMemop));
-    i->kind = FE_STORE;
-    if (sig->param_len == 0) {
+    FeInst* i = fe_inst_new(f, 2 + sig->param_len, sizeof(FeInstCall));
+    i->kind = FE_CALL;
+    if (sig->return_len == 0) {
         i->ty = FE_TY_VOID;
     } else {
         i->ty = FE_TY_TUPLE;
     }
 
     fe_set_input_null(i, 0); // no last_effect yet
-    fe_set_input(f, i, 0, callee);
+    fe_set_input(f, i, 1, callee);
+
+    fe_extra(i, FeInstCall)->sig = sig;
 
     for_n (n, 0, sig->param_len) {
         // fill in parameters
@@ -1165,18 +1168,19 @@ void fe_jump_set_target(FeFunc* f, FeInst* jump, FeBlock* block) {
 
 FeTy fe_proj_ty(FeInst* tuple, usize index) {
     if (tuple->ty != FE_TY_TUPLE) {
-        FE_CRASH("projection on non-tuple inst %s", inst_name(tuple));
+        FE_CRASH("projection on non-tuple inst %d", tuple->kind);
     }
     switch (tuple->kind) {
-    case FE_CALL:
-        ;
+    case FE_CALL: {
         FeInstCall* icall = fe_extra(tuple);
         if (index < icall->sig->return_len) {
             return fe_funcsig_return(icall->sig, index)->ty;
         }
-        FE_CRASH("index %zu out of bounds for [0, %u)", icall->sig->return_len);
+        return FE_TY_VOID;
+        // FE_CRASH("index %zu out of bounds for [0, %u)", icall->sig->return_len);
+    }
     default:
-        FE_CRASH("unknown inst kind (%s) %u", inst_name(tuple), tuple->kind);
+        FE_CRASH("unknown inst kind %u", tuple->kind);
     }
 }
 

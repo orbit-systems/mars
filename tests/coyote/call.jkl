@@ -1,0 +1,9 @@
+FN bar(IN x: UWORD): UWORD
+    RETURN x + 1
+END
+
+FN foo(): UWORD
+    bruh: UWORD = 10
+
+    RETURN bar(bruh) + 1
+END

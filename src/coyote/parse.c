@@ -1342,6 +1342,8 @@ Expr* parse_atom(Parser* p) {
                 } else {
                     arg = parse_expr(p);
                 }
+                arg_n += 1;
+                vec_append(&dynbuf, arg);
 
                 if_unlikely (!ty_compatible(param->ty, arg->ty, arg->kind == EXPR_LITERAL)) {
                     error_at_expr(p, arg, REPORT_ERROR,
@@ -1354,9 +1356,10 @@ Expr* parse_atom(Parser* p) {
                     break;
                 }
 
-                vec_append(&dynbuf, arg);
 
-                arg_n++;
+            }
+            if_unlikely (arg_n != fn->len) {
+                parse_error(p, p->cursor, p->cursor, REPORT_ERROR, "not enough arguments, expected %u, got %u", fn->len, arg_n);
             }
             expect(p, TOK_CLOSE_PAREN);
             advance(p);

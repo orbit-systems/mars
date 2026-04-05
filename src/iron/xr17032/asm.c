@@ -212,7 +212,7 @@ static void print_inst(FeDataBuffer* db, FeFunc* f, FeInst* inst) {
     case XR_P_MOV: print_regular_unop(db, vrbuf, inst, "mov"); break;
 
     default:
-        fe_db_writecstr(db, "unhandled");
+        fe_db_writecstr(db, "!!!unhandled!!!");
         break;
         // FE_CRASH("xr: unhandled inst %d when printing asm", inst->kind);
     }

@@ -205,6 +205,18 @@ FeInstChain fe_xr_isel(FeFunc* f, FeBlock* block, FeInst* inst) {
             return fe_chain_new(sel);
         }
 
+        case FE_SYM_ADDR: {
+            FeInst* sel = xr_inst(f, XR_P_LA, 0, sizeof(XrInstImm32OrSym));
+            sel->ty = FE_TY_I32;
+            xr_immsym_set_sym(fe_extra(sel), fe_extra(inst, FeInstSymAddr)->sym);
+            return fe_chain_new(sel);
+        }
+
+        // case FE_CALL: {
+        //     FeInst* sel = xr_inst(f, XR_P_JR, 0, sizeof(XrInstImm32OrSym));
+
+        // }
+
         case FE_PTR_INDEX:
         case FE_IADD: {
             if (is_const_u16(inst->inputs[1])) {
